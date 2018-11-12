@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "dasio.h"
+#include "msg.h"
 #include "nl_assert.h"
 
 /**
@@ -33,6 +34,7 @@ DAS_IO_Interface::DAS_IO_Interface(const char *name, int bufsz) {
   n_suppressed = 0;
   total_errors = 0;
   total_suppressed = 0;
+  qerr_threshold = 5;
 }
 
 DAS_IO_Interface::~DAS_IO_Interface() {
@@ -189,11 +191,13 @@ void DAS_IO_Interface::consume(int nchars) {
   }
 }
 
-void DAS_IO_Interface::report_err( const char *msg, ... ) {
+void DAS_IO_Interface::report_err( const char *fmt, ... ) {
   ++total_errors;
-  if ( n_errors < QERR_THRESHOLD )
+  // Here we're counting up only if there is a threshold and we're still under it
+  if ( qerr_threshold >= 0 && n_errors < qerr_threshold )
     ++n_errors;
-  if ( n_suppressed == 0 && n_errors < QERR_THRESHOLD ) {
+  // Here we display if there is no threshold or we're under the threshold
+  if ( n_suppressed == 0 && ( qerr_threshold < 0 || n_errors < qerr_threshold )) {
     va_list args;
 
     va_start(args, fmt);
@@ -209,37 +213,16 @@ void DAS_IO_Interface::report_err( const char *msg, ... ) {
   }
 }
 
-#ifdef IMPLEMENTED
 /**
  * Signals that a successful protocol transfer occurred,
  * reducing the qualified error count, potentially reenabling
  * logging of errors.
  */
-void DAS_IO_Interface::report_ok();
-/**
- * Parsing routines useful for parsing ASCII input data.
- * All of these operate on buf with the current offset
- * at cp and the total number of characters being nc.
- * These all return true if the thing they are looking
- * for was not found. The idea is to string a bunch
- * of these together as:
- *  if (not_a() || not_b() || not_c()) {
- *    report_err("Something went wrong");
- *  } else {
- *    process
- *  }
- * If the error occurs before the end of the input, then
- * an error message is reported via report_err(). In general
- * this should mean that the only error that would need to
- * be manually reported would be for syntax that is not
- * supported by one of the not_*() functions or a timeout.
- */
-int not_found(unsigned char c);
-int not_hex(unsigned short &hexval);
-int not_int(int &val );
-int not_str(const char *str, unsigned int len);
-int not_str(const std::string &s);
-int not_str(const char *str);
-int not_float( float &val );
-
-#endif
+void DAS_IO_Interface::report_ok() {
+  if ( n_errors > 0 ) {
+    if ( --n_errors <= 0 && n_suppressed ) {
+      msg( 0, "Error recovery: %d error messages suppressed", n_suppressed );
+      n_suppressed = 0;
+    }
+  }
+}

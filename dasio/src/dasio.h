@@ -32,6 +32,12 @@ class DAS_IO_Interface {
     static const int Fl_Write = 2;
     static const int Fl_Except = 4;
     static const int Fl_Timeout = 8;
+    /**
+     * Set the threshold to a negative value to report all errors.
+     * The default threshold value is 5.
+     * @param thr New qualified protocol error threshold value
+     */
+    void set_qerr_threshold(int thr);
     DAS_IO_Loop *Loop;
     /**
      * Method to map a global flag number to a bit mask to be
@@ -201,6 +207,8 @@ class DAS_IO_Interface {
     /** Timeout object */
     Timeout TO;
   private:
+    /** The qualified protocol error threshold */
+    int qerr_threshold;
     /** Number of qualified protocol errors. Decremented by report_ok() */
     int n_errors;
     /** Number of protocol error messages currently suppressed. */
@@ -236,3 +244,7 @@ class DAS_IO_Loop {
     virtual int ProcessTimeout();
     virtual Timeout *GetTimeout();
 };
+
+extern const char *ascii_escape(const char *str, int len);
+extern const char *ascii_escape(const std::string &s);
+extern const char *ascii_esc(const char *str);

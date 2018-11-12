@@ -1,11 +1,15 @@
-/* nl.h include file for libnl
+/** \file nl.h include file for libnl.
  *
- * Based on nortlib2
+ * The library under this name was created in November 2018
+ * based on nortlib2.
+ *
+ * The MSG_ codes are documented on the \ref MSG_CODES page.
  */
 #ifndef _NL_H_INCLUDED
 #define _NL_H_INCLUDED
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <sys/types.h>
 
 #ifdef __cplusplus
@@ -17,11 +21,13 @@ int Skel_copy(FILE *ofp, const char *label, int copyout);
 
 extern int (*nl_error)(int level, const char *s, ...); /* nl_error.c */
 int nl_err(int level, const char *s, ...); /* nl_error.c */
-#ifdef va_start
-  int nl_verror(FILE *ef, int level, const char *fmt, va_list args); /* nl_verr.c */
-#endif
+int nl_verror(FILE *ef, int level, const char *fmt, va_list args); /* nl_verr.c */
 
-/* These codes are taken from the old msg.h */
+/**
+ * \defgroup MSG_CODES msg() severity level codes
+ * @{
+ * The MSG_ codes are nl_error()-compatible severity level codes.
+ */
 #define MSG_DEBUG -2
 #define MSG_EXIT -1
 #define MSG_EXIT_NORM MSG_EXIT
@@ -33,6 +39,7 @@ int nl_err(int level, const char *s, ...); /* nl_error.c */
 #define MSG_FATAL 3
 #define MSG_EXIT_ABNORM 4
 #define MSG_DBG(X) (MSG_DEBUG-(X))
+/** @} */
 
 extern int nl_debug_level; /* nldbg.c */
 extern int nl_response; /* nlresp.c */
@@ -53,9 +60,6 @@ void *nl_new_memory(size_t size);
 void nl_free_memory(void *p);
 char *nrtl_strdup(const char *s);
 
-/* ascii_escape.c */
-const char *ascii_escape(const char *ibuf);
-
 #if defined(__QNXNTO__)
   #define OPTIND_RESET 1
 #else
@@ -64,6 +68,11 @@ const char *ascii_escape(const char *ibuf);
 
 #ifdef __cplusplus
 };
+#else
+/** ascii_escape.c
+ * Only expose definition to C programs to avoid conflict with C++ version.
+ */
+const char *ascii_escape(const char *ibuf);
 #endif
 
 #endif

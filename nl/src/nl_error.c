@@ -30,14 +30,16 @@ nl_error() functions provide standard printf-style formatting
 for status messages. The level argument determines how the
 message is handled:
 
-- 0: Informational Message
-- 1: Warning Message
-- 2: Error Message
-- 3: Fatal Error Message
-- 4: Internal Fatal Error Message
-- -1: Normal Exit with Message
-- -2: Debug level 1 Message
-- -3: Debug level 2 Message
+Macro                   | Value | Meaning
+------------------------|:-----:|--------
+MSG                     | 0     | Informational Message
+MSG_WARN                | 1     | Warning Message
+MSG_ERROR               | 2     | Error Message
+MAG_FATAL               | 3     | Fatal Error Message
+MSG_EXIT_ABNORM         | 4     | Internal Fatal Error Message
+MSG_EXIT                | -1    | Normal Exit with Message
+MSG_DEBUG, MSG_DBG(0)   | -2    | Debug level 1 Message
+MSG_DBG(1)              | -3    | Debug level 2 Message
 
 Debug messages normally do not appear, but you can adjust the
 debug level to see some or all of your debugging messages. For
