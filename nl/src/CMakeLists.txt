@@ -4,6 +4,5 @@ install(TARGETS nl
   DESTINATION lib
 )
 install(FILES nl.h nl_assert.h
-  PUBLIC_HEADER
   DESTINATION include
 )

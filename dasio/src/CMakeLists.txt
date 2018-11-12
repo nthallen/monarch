@@ -8,6 +8,5 @@ install(TARGETS dasio
   DESTINATION lib
 )
 install(FILES dasio.h Timeout.h
-  PUBLIC_HEADER
   DESTINATION include
 )
