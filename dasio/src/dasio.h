@@ -13,7 +13,7 @@ class DAS_IO_Loop;
 class DAS_IO_Interface {
   public:
     DAS_IO_Interface(const char *name, int bufsz);
-    ~DAS_IO_Interface();
+    virtual ~DAS_IO_Interface();
     /**
      * @param flag bit-mapped value indicating which event(s) triggered this call.
      * @return true if we should quit
