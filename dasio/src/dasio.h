@@ -106,24 +106,36 @@ class DAS_IO_Interface {
      * Called by ProcessData() when new data is available to the protocol level.
      * @return true on an error requiring termination of the driver
      */
-    bool protocol_input();
+    virtual bool protocol_input();
     /**
      * Called by ProcessData() when timeout is reported by select() and
      * this interface has a timeout set, and this interface's timeout
      * has expired. If the interface is also waiting for input, protocol_input()
      * will be called before protocol_timeout(). If the protocol_input()
      * clears the timeout, then protocol_timeout() will not be called.
-     * @return true on an error requiring termination of the driver
+     * @return true on a condition requiring termination of the driver
      */
-    bool protocol_timeout();
+    virtual bool protocol_timeout();
     /**
      * Called by ProcessData() when an exception occurs.
      * I have yet to encounter and exceptional condition, so I don't know what to expect.
      * That may not be true: maybe if a socket gets closed or something?
-     * @return true on an error requiring termination of the driver
+     * @return true on a condition requiring termination of the driver
      */
-    bool protocol_except(int flag);
+    virtual bool protocol_except();
+    /**
+     * Called by ProcessData() when gflag(0) is received.
+     * @return true on a condition requiring termination of the driver
+     */
+    virtual bool tm_sync();
 
+    /**
+     * Updates the input buffer size, reallocating memory as necessary.
+     * Failure to allocate the buffer is a fatal error.
+     * @param bufsz The size of the input buffer.
+     */
+    void set_ibufsize(int bufsz);
+    
     /**
      * Calls fillbuf(bufsize); If an error is encountered,
      * will return the response from read_error(errno)

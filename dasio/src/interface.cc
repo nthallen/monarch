@@ -22,8 +22,8 @@
 DAS_IO_Interface::DAS_IO_Interface(const char *name, int bufsz) {
   iname = name;
   nc = cp = 0;
-  bufsize = bufsz;
-  buf = bufsz > 0 ? (unsigned char *)new_memory(bufsz) : 0;
+  bufsize = 0;
+  buf = 0;
   fd = -1;
   flags = 0;
   Loop = 0;
@@ -35,10 +35,15 @@ DAS_IO_Interface::DAS_IO_Interface(const char *name, int bufsz) {
   total_errors = 0;
   total_suppressed = 0;
   qerr_threshold = 5;
+  set_ibufsize(bufsz);
 }
 
 DAS_IO_Interface::~DAS_IO_Interface() {
-  // clean up children
+  if (fd >= 0) {
+    close(fd);
+    fd = -1;
+  }
+  set_ibufsize(0);
 }
 
 /**
@@ -50,12 +55,21 @@ Timeout *DAS_IO_Interface::GetTimeout() {
   return &TO;
 }
 
-/**
- * Additional commentary on ProcessData.
- * Much more work to do here!!!
- */
 bool DAS_IO_Interface::ProcessData(int flag) {
-  return true;
+  if ((flags & flag & gflag(0)) && tm_sync())
+    return true;
+  if ((flags&Fl_Read) && (flags&flag&(Fl_Read|Fl_Timeout))) {
+    if (fillbuf()) return true;
+    if (protocol_input())
+      return true;
+  }
+  if ((flags & flag & Fl_Write) && iwrite_check())
+    return true;
+  if ((flags & flag & Fl_Except) && protocol_except())
+    return true;
+  if ((flags & flag & Fl_Timeout) && TO.Expired() && protocol_timeout())
+    return true;
+  return false;
 }
 
 /**
@@ -131,7 +145,6 @@ bool DAS_IO_Interface::read_error(int my_errno) {
  * The default reports unexpected input and returns false;
  */
 bool DAS_IO_Interface::protocol_input() {
-  if (fillbuf()) return true;
   cp = 0;
   if (nc > 0)
     report_err("Unexpected input");
@@ -148,8 +161,23 @@ bool DAS_IO_Interface::protocol_timeout() {
 /**
  * The default does nothing and returns false.
  */
-bool DAS_IO_Interface::protocol_except(int flag) {
+bool DAS_IO_Interface::protocol_except() {
   return false;
+}
+
+/**
+ * The default does nothing and returns false.
+ */
+bool DAS_IO_Interface::tm_sync() {
+  return false;
+}
+
+void DAS_IO_Interface::set_ibufsize(int bufsz) {
+  if (bufsize != bufsz) {
+    if (buf) free_memory(buf);
+    bufsize = bufsz;
+    buf = bufsize ? (unsigned char *)new_memory(bufsz) : 0;
+  }
 }
 
 bool DAS_IO_Interface::fillbuf(int N) {
