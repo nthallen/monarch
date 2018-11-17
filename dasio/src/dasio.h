@@ -4,6 +4,7 @@
  */
 #include <string>
 #include <vector>
+#include <atomic>
 #include "Timeout.h"
 
 class DAS_IO_Loop;
@@ -238,7 +239,13 @@ typedef std::vector<DAS_IO_Interface *> InterfaceVec;
 class DAS_IO_Loop {
   public:
     DAS_IO_Loop();
-    ~DAS_IO_Loop();
+    virtual ~DAS_IO_Loop();
+    
+    /**
+     * Adds the interface as a child of the loop. This adds the interface's fd
+     * to the list of fds in the loop's select() call, depending on the
+     * interface's flags.
+     */
     void add_child(DAS_IO_Interface *P);
     // I don't think these functions are used currently, but they may become
     // relevant in a server. In that case, though, I feel as though the interface
@@ -246,14 +253,41 @@ class DAS_IO_Loop {
     // I'll defer the definition until I come across the application.
     // void delete_child(int fd_in);
     // int update_flags(int fd_in, int flag);
+
+    /**
+     * Sets a bit in the global flags word. Selectees can set
+     * a corresponding bit in their flags word to request
+     * notification when the bit gets set. The function
+     * Selector::gflag(gflag_index) returns the bit that
+     * corresponds to set_gflag(gflag_index). gflag_index
+     * can take on values from 0 to 8*sizeof(int)-4.
+     * @param gflag_index non-negative gflag index.
+     */
     void set_gflag( unsigned gflag_index );
+    /**
+     * Loops waiting on select(), using the fds and flags of
+     * each DAS_IO_Interface registered via add_child(). When select()
+     * indicates that an fd is ready, the corresponding DAS_IO_Interface's
+     * ProcessData() method is invoked with the flag value indicating
+     * what action is ready.
+     */
     void event_loop();
   private:
     InterfaceVec S;
     InterfaceVec::iterator find_child_by_fd(int fd);
     bool children_changed;
-    int gflags;
+    std::atomic<int> gflags;
+    /**
+     * Virtual method called whenever select() returns 0. The default does nothing,
+     * but it can be overridden.
+     * @return non-zero if the event loop should terminate.
+     */
     virtual int ProcessTimeout();
+    /**
+     * Virtual method to allow Selector to bid on the select() timeout
+     * along with the Selectee children. The minimum timeout value is used.
+     * @return a Timeout * indicating the requested timeout value or 0.
+     */
     virtual Timeout *GetTimeout();
 };
 
