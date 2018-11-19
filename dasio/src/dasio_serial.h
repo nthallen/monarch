@@ -1,7 +1,12 @@
 /** @file dasio_serial.h Serial interface layer */
+#ifndef DASIO_SERIAL_H_INCLUDED
+#define DASIO_SERIAL_H_INCLUDED
+
 #include "dasio.h"
 
-class DAS_IO_Serial : public DAS_IO_Interface {
+namespace DAS_IO {
+  
+class Serial : public Interface {
   public:
     /**
      * Initializes interface and opens the device.
@@ -10,14 +15,14 @@ class DAS_IO_Serial : public DAS_IO_Interface {
      * @param path Path to the device
      * @param open_flags Flags passed to open()
      */
-    DAS_IO_Serial(const char *iname, int bufsz, const char *path, int open_flags);
+    Serial(const char *iname, int bufsz, const char *path, int open_flags);
     /**
      * Initializes interface without opening device.
      * @param iname Interface name for messages
      * @param bufsz The input buffer size
      */
-    DAS_IO_Serial(const char *iname, int bufsz);
-    virtual ~DAS_IO_Serial();
+    Serial(const char *iname, int bufsz);
+    virtual ~Serial();
     /**
      * init() can be used to initialize the device if the path is
      * not known at construction.
@@ -56,3 +61,6 @@ class DAS_IO_Serial : public DAS_IO_Interface {
     /** Flag to indicate whether or not termios_p has been setup */
     bool termios_init;
 };
+
+}
+#endif

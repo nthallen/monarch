@@ -2,19 +2,23 @@
  * \file dasio.h
  * Header for the Harvard Link Engineering Data Acquisition System I/O library
  */
+#ifndef DAS_IO_H_INCLUDED
+#define DAS_IO_H_INCLUDED
 #include <string>
 #include <vector>
 #include <atomic>
 #include "Timeout.h"
 
-class DAS_IO_Loop;
+namespace DAS_IO {
+  
+class Loop;
 
 /**
  */
-class DAS_IO_Interface {
+class Interface {
   public:
-    DAS_IO_Interface(const char *name, int bufsz);
-    virtual ~DAS_IO_Interface();
+    Interface(const char *name, int bufsz);
+    virtual ~Interface();
     /**
      * @param flag bit-mapped value indicating which event(s) triggered this call.
      * @return true if we should quit
@@ -39,10 +43,10 @@ class DAS_IO_Interface {
      * @param thr New qualified protocol error threshold value
      */
     void set_qerr_threshold(int thr);
-    DAS_IO_Loop *Loop;
+    Loop *Loop;
     /**
      * Method to map a global flag number to a bit mask to be
-     * set in a DAS_IO_Interface's flags word.
+     * set in a Interface's flags word.
      * @param gflag_index global flag bit number
      * @return bit mask selecting the specified global flag.
      */
@@ -231,22 +235,22 @@ class DAS_IO_Interface {
     int total_suppressed;
 };
 
-typedef std::vector<DAS_IO_Interface *> InterfaceVec;
+typedef std::vector<Interface *> InterfaceVec;
 
 /**
  * The class formerly known as Selector
  */
-class DAS_IO_Loop {
+class Loop {
   public:
-    DAS_IO_Loop();
-    virtual ~DAS_IO_Loop();
+    Loop();
+    virtual ~Loop();
     
     /**
      * Adds the interface as a child of the loop. This adds the interface's fd
      * to the list of fds in the loop's select() call, depending on the
      * interface's flags.
      */
-    void add_child(DAS_IO_Interface *P);
+    void add_child(Interface *P);
     // I don't think these functions are used currently, but they may become
     // relevant in a server. In that case, though, I feel as though the interface
     // should have an opportunity to cleanup before the child is deleted.
@@ -266,8 +270,8 @@ class DAS_IO_Loop {
     void set_gflag( unsigned gflag_index );
     /**
      * Loops waiting on select(), using the fds and flags of
-     * each DAS_IO_Interface registered via add_child(). When select()
-     * indicates that an fd is ready, the corresponding DAS_IO_Interface's
+     * each Interface registered via add_child(). When select()
+     * indicates that an fd is ready, the corresponding Interface's
      * ProcessData() method is invoked with the flag value indicating
      * what action is ready.
      */
@@ -291,6 +295,10 @@ class DAS_IO_Loop {
     virtual Timeout *GetTimeout();
 };
 
+}
+
 extern const char *ascii_escape(const char *str, int len);
 extern const char *ascii_escape(const std::string &s);
 extern const char *ascii_esc(const char *str);
+
+#endif

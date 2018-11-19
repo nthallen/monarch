@@ -6,18 +6,20 @@
 #include "nl.h"
 #include "dasio_serial.h"
 
-DAS_IO_Serial::DAS_IO_Serial(const char *iname, int bufsz) : DAS_IO_Interface(iname, bufsz) {
+namespace DAS_IO {
+  
+Serial::Serial(const char *iname, int bufsz) : Interface(iname, bufsz) {
   termios_init = false;
 }
 
-DAS_IO_Serial::DAS_IO_Serial(const char *iname, int bufsz, const char *path, int open_flags)
-    : DAS_IO_Serial(iname, bufsz) {
+Serial::Serial(const char *iname, int bufsz, const char *path, int open_flags)
+    : Serial(iname, bufsz) {
   init(path, open_flags);
 }
 
-DAS_IO_Serial::~DAS_IO_Serial() {}
+Serial::~Serial() {}
 
-void DAS_IO_Serial::init(const char *path, int open_flags) {
+void Serial::init(const char *path, int open_flags) {
   termios_init = false;
   if (path == 0) {
     fd = -1;
@@ -46,7 +48,7 @@ void DAS_IO_Serial::init(const char *path, int open_flags) {
   #endif
 #endif
 
-void DAS_IO_Serial::setup( int baud, int bits, char par, int stopbits,
+void Serial::setup( int baud, int bits, char par, int stopbits,
                 int min, int time ) {
   int bitsflag;
 
@@ -94,7 +96,7 @@ void DAS_IO_Serial::setup( int baud, int bits, char par, int stopbits,
     nl_error( 2, "Error on tcsetattr: %s", strerror(errno) );
 }
 
-void DAS_IO_Serial::update_tc_vmin(int new_vmin) {
+void Serial::update_tc_vmin(int new_vmin) {
   if (! termios_init) {
     if (tcgetattr(fd, &termios_p)) {
       nl_error(2, "Error from tcgetattr: %s",
@@ -112,9 +114,11 @@ void DAS_IO_Serial::update_tc_vmin(int new_vmin) {
   }
 }
 
-void DAS_IO_Serial::flush_input() {
+void Serial::flush_input() {
   do {
     nc = cp = 0;
     if (fillbuf()) return;
   } while (nc > 0);
+}
+
 }

@@ -5,7 +5,9 @@
 #include "nl.h"
 #include "nl_assert.h"
 
-DAS_IO_Loop::DAS_IO_Loop() {
+namespace DAS_IO {
+  
+Loop::Loop() {
   children_changed = false;
   gflags = 0;
 }
@@ -14,37 +16,37 @@ DAS_IO_Loop::DAS_IO_Loop() {
  * Destructor should not delete children, since it does not know
  * how they were allocated
  */
-DAS_IO_Loop::~DAS_IO_Loop() {
+Loop::~Loop() {
 }
 
-void DAS_IO_Loop::add_child(DAS_IO_Interface *P) {
+void Loop::add_child(Interface *P) {
   if (find_child_by_fd(P->fd) == S.end() ) {
     S.push_back(P);
     P->Loop = this;
     children_changed = true;
   } else {
-    nl_error( 4, "fd %d already inserted in DAS_IO_Loop::add_child", P->fd );
+    nl_error( 4, "fd %d already inserted in DAS_IO::Loop::add_child", P->fd );
   }
 }
 
-InterfaceVec::iterator DAS_IO_Loop::find_child_by_fd(int fd) {
+InterfaceVec::iterator Loop::find_child_by_fd(int fd) {
   InterfaceVec::iterator pos;
   for ( pos = S.begin(); pos != S.end(); ++pos ) {
-    DAS_IO_Interface *P;
+    Interface *P;
     P = *pos;
     if (P->fd == fd) return pos;
   }
   return S.end();
 }
 
-void DAS_IO_Loop::set_gflag( unsigned gflag_index ) {
+void Loop::set_gflag( unsigned gflag_index ) {
   nl_assert(gflag_index+4 < sizeof(int)*8 );
   // gflags |= gflag(gflag_index);
   // atomic_set((unsigned *)&gflags, gflag(gflag_index));
-  gflags |= DAS_IO_Interface::gflag(gflag_index);
+  gflags |= Interface::gflag(gflag_index);
 }
 
-void DAS_IO_Loop::event_loop() {
+void Loop::event_loop() {
   int keep_going = 1;
   int width = 0;
   int rc;
@@ -60,7 +62,7 @@ void DAS_IO_Loop::event_loop() {
     to.Set_Min(GetTimeout());
     children_changed = false;
     for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
-      DAS_IO_Interface *P = *Sp;
+      Interface *P = *Sp;
       int flag = gflags.fetch_and(~P->flags) & P->flags;
       if (flag) {
         P->ProcessData(flag);
@@ -72,7 +74,7 @@ void DAS_IO_Loop::event_loop() {
       // }
     }
     for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
-      DAS_IO_Interface *P = *Sp;
+      Interface *P = *Sp;
       if (P->flags & P->Fl_Read) FD_SET(P->fd, &readfds);
       if (P->flags & P->Fl_Write) FD_SET(P->fd, &writefds);
       if (P->flags & P->Fl_Except) FD_SET(P->fd, &exceptfds);
@@ -84,7 +86,7 @@ void DAS_IO_Loop::event_loop() {
       if ( ProcessTimeout() )
         keep_going = 0;
       for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
-        DAS_IO_Interface *P = *Sp;
+        Interface *P = *Sp;
         if ((P->flags & P->Fl_Timeout) && P->ProcessData(P->Fl_Timeout))
           keep_going = 0;
       }
@@ -93,7 +95,7 @@ void DAS_IO_Loop::event_loop() {
       else if (errno == EBADF || errno == EHOSTDOWN) {
         bool handled = false;
         for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
-          DAS_IO_Interface *P = *Sp;
+          Interface *P = *Sp;
           int flags = 0;
           if (P->flags & P->Fl_Except) {
             if ( P->ProcessData(P->Fl_Except) )
@@ -103,15 +105,15 @@ void DAS_IO_Loop::event_loop() {
           }
         }
         if (!handled) {
-          nl_error(3, "DAS_IO_Loop::event_loop(): Unhandled EBADF or EHOSTDOWN");
+          nl_error(3, "DAS_IO::Loop::event_loop(): Unhandled EBADF or EHOSTDOWN");
         }
       } else {
         nl_error(3,
-          "DAS_IO_Loop::event_loop(): Unexpected error from select: %d", errno);
+          "DAS_IO::Loop::event_loop(): Unexpected error from select: %d", errno);
       }
     } else {
       for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
-        DAS_IO_Interface *P = *Sp;
+        Interface *P = *Sp;
         int flags = 0;
         if ( (P->flags & P->Fl_Read) && FD_ISSET(P->fd, &readfds) )
           flags |= P->Fl_Read;
@@ -129,5 +131,7 @@ void DAS_IO_Loop::event_loop() {
   }
 }
 
-int DAS_IO_Loop::ProcessTimeout() { return 0; }
-Timeout *DAS_IO_Loop::GetTimeout() { return 0; }
+int Loop::ProcessTimeout() { return 0; }
+Timeout *Loop::GetTimeout() { return 0; }
+
+}

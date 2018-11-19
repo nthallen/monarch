@@ -9,6 +9,8 @@
 #include "msg.h"
 #include "nl_assert.h"
 
+namespace DAS_IO {
+
 /**
  * I am assuming here that this level is low enough that I don't
  * need to have two separate invocations, once for deferred
@@ -19,7 +21,7 @@
  * reporting statistics.
  * @param bufsz The size of the input buffer
  */
-DAS_IO_Interface::DAS_IO_Interface(const char *name, int bufsz) {
+Interface::Interface(const char *name, int bufsz) {
   iname = name;
   nc = cp = 0;
   bufsize = 0;
@@ -38,7 +40,7 @@ DAS_IO_Interface::DAS_IO_Interface(const char *name, int bufsz) {
   set_ibufsize(bufsz);
 }
 
-DAS_IO_Interface::~DAS_IO_Interface() {
+Interface::~Interface() {
   if (fd >= 0) {
     close(fd);
     fd = -1;
@@ -51,11 +53,11 @@ DAS_IO_Interface::~DAS_IO_Interface() {
  * along with the Loop. The minimum timeout value is used.
  * @return a Timeout * indicating the requested timeout value or NULL.
  */
-Timeout *DAS_IO_Interface::GetTimeout() {
+Timeout *Interface::GetTimeout() {
   return &TO;
 }
 
-bool DAS_IO_Interface::ProcessData(int flag) {
+bool Interface::ProcessData(int flag) {
   if ((flags & flag & gflag(0)) && tm_sync())
     return true;
   if ((flags&Fl_Read) && (flags&flag&(Fl_Read|Fl_Timeout))) {
@@ -85,7 +87,7 @@ bool DAS_IO_Interface::ProcessData(int flag) {
  * @param cp The starting offset within the output buffer
  * @return true if a fatal error occurs
  */
-bool DAS_IO_Interface::iwrite(const char *str, unsigned int nc, unsigned int cp) {
+bool Interface::iwrite(const char *str, unsigned int nc, unsigned int cp) {
   nl_assert(fd >= 0);
   obuf = (unsigned char *)str;
   onc = nc;
@@ -93,7 +95,7 @@ bool DAS_IO_Interface::iwrite(const char *str, unsigned int nc, unsigned int cp)
   return iwrite_check();
 }
 
-bool DAS_IO_Interface::iwrite_check() {
+bool Interface::iwrite_check() {
   if (!obuf_empty()) {
     int nb = onc-ocp;
     int ntr = write(fd, obuf, nb);
@@ -112,23 +114,23 @@ bool DAS_IO_Interface::iwrite_check() {
   return false;
 }
 
-bool DAS_IO_Interface::iwrite(const std::string &s) {
+bool Interface::iwrite(const std::string &s) {
   return iwrite(s.c_str(), s.length());
 }
 
-bool DAS_IO_Interface::iwrite(const char *str) {
+bool Interface::iwrite(const char *str) {
   return iwrite(str, strlen(str));
 }
 
 /**
  * The default implementation does nothing.
  */
-void DAS_IO_Interface::iwritten(int nb) {}
+void Interface::iwritten(int nb) {}
 
 /**
  * The default implementation returns true.
  */
-bool DAS_IO_Interface::iwrite_error(int my_errno) {
+bool Interface::iwrite_error(int my_errno) {
   nl_error(2, "%s: write error %d: %s", iname, my_errno, strerror(my_errno));
   return true;
 }
@@ -136,7 +138,7 @@ bool DAS_IO_Interface::iwrite_error(int my_errno) {
 /**
  * The default function returns true.
  */
-bool DAS_IO_Interface::read_error(int my_errno) {
+bool Interface::read_error(int my_errno) {
   nl_error(2, "%s: read error %d: %s", iname, my_errno, strerror(my_errno));
   return true;
 }
@@ -144,7 +146,7 @@ bool DAS_IO_Interface::read_error(int my_errno) {
 /**
  * The default reports unexpected input and returns false;
  */
-bool DAS_IO_Interface::protocol_input() {
+bool Interface::protocol_input() {
   cp = 0;
   if (nc > 0)
     report_err("Unexpected input");
@@ -154,25 +156,25 @@ bool DAS_IO_Interface::protocol_input() {
 /**
  * The default does nothing and returns false.
  */
-bool DAS_IO_Interface::protocol_timeout() {
+bool Interface::protocol_timeout() {
   return false;
 }
 
 /**
  * The default does nothing and returns false.
  */
-bool DAS_IO_Interface::protocol_except() {
+bool Interface::protocol_except() {
   return false;
 }
 
 /**
  * The default does nothing and returns false.
  */
-bool DAS_IO_Interface::tm_sync() {
+bool Interface::tm_sync() {
   return false;
 }
 
-void DAS_IO_Interface::set_ibufsize(int bufsz) {
+void Interface::set_ibufsize(int bufsz) {
   if (bufsize != bufsz) {
     if (buf) free_memory(buf);
     bufsize = bufsz;
@@ -180,7 +182,7 @@ void DAS_IO_Interface::set_ibufsize(int bufsz) {
   }
 }
 
-bool DAS_IO_Interface::fillbuf(int N) {
+bool Interface::fillbuf(int N) {
   int i;
   if (!buf) nl_error(4, "Ser_Sel::fillbuf with no buffer");
   if (N > bufsize)
@@ -205,7 +207,7 @@ bool DAS_IO_Interface::fillbuf(int N) {
   return 0;
 }
 
-void DAS_IO_Interface::consume(int nchars) {
+void Interface::consume(int nchars) {
   if ( nchars > 0 ) {
     ++n_empties;
     if ( nchars < nc ) {
@@ -219,7 +221,7 @@ void DAS_IO_Interface::consume(int nchars) {
   }
 }
 
-void DAS_IO_Interface::report_err( const char *fmt, ... ) {
+void Interface::report_err( const char *fmt, ... ) {
   ++total_errors;
   // Here we're counting up only if there is a threshold and we're still under it
   if ( qerr_threshold >= 0 && n_errors < qerr_threshold )
@@ -246,11 +248,13 @@ void DAS_IO_Interface::report_err( const char *fmt, ... ) {
  * reducing the qualified error count, potentially reenabling
  * logging of errors.
  */
-void DAS_IO_Interface::report_ok() {
+void Interface::report_ok() {
   if ( n_errors > 0 ) {
     if ( --n_errors <= 0 && n_suppressed ) {
       msg( 0, "Error recovery: %d error messages suppressed", n_suppressed );
       n_suppressed = 0;
     }
   }
+}
+
 }
