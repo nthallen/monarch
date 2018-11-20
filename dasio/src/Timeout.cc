@@ -1,7 +1,7 @@
 #include <string.h>
 #include <errno.h>
 #include "Timeout.h"
-#include "nortlib.h"
+#include "nl.h"
 
 Timeout::Timeout() {
   Clear();
