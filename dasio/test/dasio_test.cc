@@ -7,11 +7,11 @@ class TO_test : public ::testing::Test {
   protected:
     void SetUp() {
       TO.Clear();
-	  socket = new socket(/*no clue*/);
+	  // socket = new socket(/*no clue*/);
     }
     Timeout TO;
 	TimeoutAccumulator TA;
-	Socket socket;
+	// Socket socket;
 };
 
 TEST_F(TO_test, StartsClear) {
@@ -53,18 +53,20 @@ TEST_F(TO_test) {
   TA.Set(TO);
   TO.Set(6,0);
   TA.Set(TO);
-  EXPECT_FALSE(TA.timeval==2);
+  ts = TA.timeout_val();
+  EXPECT_FALSE(ts.tv_sec < 2 && ts.tv_sec >= 1);
   TA.Set_Min();
-  EXPECT_TRUE(TA.timeval==2);
+  ts = TA.timeout_val();
+  EXPECT_TRUE(ts.tv_sec < 2 && ts.tv_sec >= 1);
 }
 
 // This method tests functionality of the socket
-TEST_F(TO_test) {
+/* TEST_F(TO_test) {
   socket.connect();
   socket.readSockError(0);
   socket.reset();
   socket.readSockError(0);
-}
+} */
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
