@@ -29,7 +29,7 @@ TEST_F(TO_test, TimesOut) {
 // Code added by Miles on 20 November 2018
 
 // This method tests that the timer Set method instantiates correctly.
-TEST_F(TO_test) {
+TEST_F(TO_test, SetExpired) {
   EXPECT_FALSE(TO.Set());
   TO.Set(2,0);
   EXPECT_TRUE(TO.Set());
@@ -37,7 +37,7 @@ TEST_F(TO_test) {
 }
 
 // This method tests the functionality of the Clear method when Set.
-TEST_F(TO_test) {
+TEST_F(TO_test, ClearSet) {
   TO.Set(2,0);
   sleep(1);
   EXPECT_FALSE(TO.Expired());
@@ -47,18 +47,18 @@ TEST_F(TO_test) {
 }
 
 // This method tests the functionality of the Set_Min method.
-TEST_F(TO_test) {
+TEST_F(TO_test, SetMinTest) {
   TO.Set(2,0);
-  TA.Set(TO);
+  TA.Set(&TO);
   TO.Set(4,0);
-  TA.Set_Min(TO);
+  TA.Set_Min(&TO);
   TO.Set(6,0);
-  TA.Set_Min(TO);
+  TA.Set_Min(&TO);
+  struct timeval* ts = TA.timeout_val();
+  EXPECT_FALSE(ts->tv_sec < 2 && ts->tv_sec >= 1);
+  TA.Set_Min(&TO);
   ts = TA.timeout_val();
-  EXPECT_FALSE(ts.tv_sec < 2 && ts.tv_sec >= 1);
-  TA.Set_Min();
-  ts = TA.timeout_val();
-  EXPECT_TRUE(ts.tv_sec < 2 && ts.tv_sec >= 1);
+  EXPECT_TRUE(ts->tv_sec < 2 && ts->tv_sec >= 1);
 }
 
 // This method tests functionality of the socket
