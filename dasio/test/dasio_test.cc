@@ -50,15 +50,16 @@ TEST_F(TO_test, ClearSet) {
 TEST_F(TO_test, SetMinTest) {
   TO.Set(6,0);
   TA.Set(&TO);
-  TO.Set(4,0);
-  TA.Set(&TO);
-  TO.Set(2,0);
-  TA.Set(&TO);
   struct timeval* ts = TA.timeout_val();
-  EXPECT_FALSE(ts->tv_sec < 2 && ts->tv_sec >= 1);
+  EXPECT_FALSE(ts->tv_sec == 2 && ts->tv_usec == 0);
+  TO.Set(4,0);
   TA.Set_Min(&TO);
   ts = TA.timeout_val();
-  EXPECT_TRUE(ts->tv_sec < 2 && ts->tv_sec >= 1);
+  EXPECT_FALSE(ts->tv_sec == 2 && ts->tv_usec == 0);
+  TO.Set(2,0);
+  TA.Set_Min(&TO);
+  ts = TA.timeout_val();
+  EXPECT_TRUE(ts->tv_sec == 2 && ts->tv_usec == 0);
 }
 
 // This method tests functionality of the socket
