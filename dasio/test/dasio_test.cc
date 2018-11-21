@@ -41,8 +41,9 @@ TEST_F(TO_test) {
   TO.Set(2,0);
   sleep(1);
   EXPECT_FALSE(TO.Expired());
+  EXPECT_TRUE(TO.Set());
   TO.Clear();
-  EXPECT_TRUE(TO.Expired());
+  EXPECT_FALSE(TO.Set());
 }
 
 // This method tests the functionality of the Set_Min method.
