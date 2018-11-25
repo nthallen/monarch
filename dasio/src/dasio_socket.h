@@ -36,7 +36,7 @@ class Socket : public Interface {
      * shorter than the network library's is desired.
      */
     void connect();
-  protected:
+
     /**
      * The default configuration is set_retries(-1,5,60);
      * @param max_retries Set to 0 for no retries, -1 for unlimited.
@@ -56,6 +56,8 @@ class Socket : public Interface {
      * parameters specified by set_retries().
      */
     void reset();
+
+  protected:
 
     /**
      * Called upon successful connection. The library

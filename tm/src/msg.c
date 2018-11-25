@@ -8,7 +8,9 @@
 #include "oui.h"
 #include "nortlib.h"
 #include "msg.h"
-#include "tm.h"
+// #include "tm.h" was needed for tm_dev_name
+// I hacked that out, but this needs to interface to C++ to provide proper IPC
+// with memo.
 
 /** Handle -h option
  */
@@ -75,7 +77,8 @@ void msg_init_options(const char *hdr, int argc, char **argv) {
   if ( ( write_to_file || write_to_stderr ) && write_to_memo == 1 )
     write_to_memo = 0;
   if ( write_to_memo ) {
-    memo_fp = fopen( tm_dev_name( "memo" ), "w" );
+    // memo_fp = fopen( tm_dev_name( "memo" ), "w" );
+    memo_fp = fopen( "memo.log", "w" );
     if ( memo_fp == NULL ) {
       fprintf( stderr, "Unable to contact memo\n" );
       write_to_stderr = 1;

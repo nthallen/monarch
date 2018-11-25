@@ -1,4 +1,4 @@
-add_library(nl nl_error.c nl_verr.c nldbg.c nlresp.c strdup.c)
+add_library(nl nl_error.c nl_verr.c nldbg.c nlresp.c strdup.c newmem.c)
 install(TARGETS nl
   ARCHIVE
   DESTINATION lib

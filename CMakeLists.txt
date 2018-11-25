@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 2.8.8)
 cmake_policy(SET CMP0048 NEW)
 project(le_das VERSION 2.0.0)
-# set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+add_definitions( -D_POSIX_SOURCE=1 -D_XOPEN_SOURCE=500 )
 
 # Download and unpack googletest at configure time
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
@@ -34,3 +37,5 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/dasio/test"
                  "${CMAKE_BINARY_DIR}/dasio/test")
 add_subdirectory("${CMAKE_SOURCE_DIR}/nl/src"
                  "${CMAKE_BINARY_DIR}/nl/src")
+add_subdirectory("${CMAKE_SOURCE_DIR}/tm/src"
+                 "${CMAKE_BINARY_DIR}/tm/src")

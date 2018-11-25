@@ -24,6 +24,8 @@ Socket::Socket(const char *iname, int bufsz, const char *service, bool server) :
   connect();
 }
 
+Socket::~Socket() {}
+
 void Socket::common_init() {
   set_retries(-1, 5, 60);
   conn_fail_reported = false;
@@ -31,6 +33,7 @@ void Socket::common_init() {
 
 void Socket::connect() {
   reconn_seconds = reconn_seconds_min;
+  reconn_retries = 0;
   
   switch (socket_type) {
     case Socket_Unix:
@@ -46,8 +49,8 @@ void Socket::connect() {
         if (svc_len > UNIX_PATH_MAX)
           nl_error(3, "Service name /var/linkeng/%s/%s exceeds UNIX_PATH_MAX (%d) chars",
             Exp, service, UNIX_PATH_MAX);
-        char *new_unix_path = (char *)new_memory(svc_len);
-        snprintf(new_unix_path, svc_len, fmt, Exp, service);
+        char *new_unix_path = (char *)new_memory(svc_len+1);
+        snprintf(new_unix_path, svc_len+1, fmt, Exp, service);
         unix_path = (const char *)new_unix_path;
         
         fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -65,8 +68,8 @@ void Socket::connect() {
         if (is_server) {
           unlink(local.sun_path);
           if (bind(fd, (struct sockaddr *)&local, SUN_LEN(&local)) < 0) {
-            nl_error(3, "bind() failure in DAS_IO::Socket(%s): %s", iname,
-              std::strerror(errno));
+            nl_error(3, "bind() failure in DAS_IO::Socket(%s,%s): %s", iname,
+              unix_path, std::strerror(errno));
           }
 
           if (listen(fd, MAXPENDING) < 0) {
@@ -147,6 +150,11 @@ bool Socket::ProcessData(int flag) {
   return 0;
 }
 
+void Socket::set_retries(int max_retries, int min_dly, int max_foldback_dly) {
+  reconn_max = max_retries;
+  reconn_seconds_min = min_dly;
+  reconn_seconds_max = max_foldback_dly;
+}
 
 void Socket::close() {
   if (fd >= 0) {
@@ -172,6 +180,8 @@ void Socket::reset() {
   TO.Set(delay_secs,0);
   flags |= Fl_Timeout;
 }
+
+void Socket::connect_failed() {}
 
 bool Socket::readSockError(int *sock_err) {
   socklen_t optlen = sizeof(*sock_err);
