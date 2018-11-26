@@ -4,11 +4,15 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include "sys/socket.h"
-#include "sys/un.h"
+#include <sys/socket.h>
+#include <sys/un.h>
 #include "dasio_socket.h"
 #include "nl.h"
 #include "nl_assert.h"
+
+#ifndef UNIX_PATH_MAX
+#define UNIX_PATH_MAX 108
+#endif
 
 namespace DAS_IO {
 

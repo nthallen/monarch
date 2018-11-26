@@ -43,7 +43,7 @@ class Interface {
      * @param thr New qualified protocol error threshold value
      */
     void set_qerr_threshold(int thr);
-    Loop *Loop;
+    Loop *ELoop;
     /**
      * Method to map a global flag number to a bit mask to be
      * set in a Interface's flags word.

@@ -22,7 +22,7 @@ Loop::~Loop() {
 void Loop::add_child(Interface *P) {
   if (find_child_by_fd(P->fd) == S.end() ) {
     S.push_back(P);
-    P->Loop = this;
+    P->ELoop = this;
     children_changed = true;
   } else {
     nl_error( 4, "fd %d already inserted in DAS_IO::Loop::add_child", P->fd );

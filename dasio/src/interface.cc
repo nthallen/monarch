@@ -28,7 +28,7 @@ Interface::Interface(const char *name, int bufsz) {
   buf = 0;
   fd = -1;
   flags = 0;
-  Loop = 0;
+  ELoop = 0;
   n_fills = n_empties = n_eagain = n_eintr = 0;
   obuf = 0;
   onc = ocp = 0;
