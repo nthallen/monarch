@@ -56,6 +56,8 @@ class Socket : public Interface {
      * parameters specified by set_retries().
      */
     void reset();
+    
+    static const char *company;
 
   protected:
 
@@ -80,6 +82,7 @@ class Socket : public Interface {
 
     const char *hostname;
     const char *service;
+    const char *exp_path;
     const char *unix_path;
     bool is_server;
     bool conn_fail_reported;
