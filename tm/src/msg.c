@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "oui.h"
-#include "nortlib.h"
+#include "nl.h"
 #include "msg.h"
 // #include "tm.h" was needed for tm_dev_name
 // I hacked that out, but this needs to interface to C++ to provide proper IPC
