@@ -5,6 +5,12 @@
 #include "dasio.h"
 
 namespace DAS_IO {
+
+typedef enum { Socket_disconnected, Socket_connecting,
+                          Socket_listening, Socket_connected }
+                     socket_state_t;
+typedef enum { Socket_Unix, Socket_TCP, Socket_UDP, Socket_CAN }
+                     socket_type_t;
   
 class Socket : public Interface {
   public:
@@ -56,6 +62,9 @@ class Socket : public Interface {
      * parameters specified by set_retries().
      */
     void reset();
+
+    inline socket_state_t get_socket_state() { return socket_state; }
+    inline socket_type_t get_socket_type() { return socket_type; }
     
     static const char *company;
 
@@ -91,11 +100,8 @@ class Socket : public Interface {
     int reconn_max; /**< The maximum number of retries */
     int reconn_seconds_min; /**< Seconds delay for first retry */
     int reconn_seconds_max; /**< Max seconds delay after multiple retries */
-    enum socket_state_t { Socket_disconnected, Socket_connecting,
-                          Socket_listening, Socket_connected }
-                     socket_state;
-    enum socket_type_t { Socket_Unix, Socket_TCP, Socket_UDP, Socket_CAN }
-                     socket_type;
+    socket_state_t socket_state;
+    socket_type_t socket_type;
   private:
     static const int MAXPENDING = 5;
     void common_init();
