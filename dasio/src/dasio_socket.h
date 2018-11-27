@@ -57,7 +57,7 @@ class Socket : public Interface {
      */
     void reset();
 
-    typedef enum { Socket_disconnected, Socket_connecting,
+    typedef enum { Socket_disconnected, Socket_locking, Socket_connecting,
                               Socket_listening, Socket_connected }
                          socket_state_t;
     typedef enum { Socket_Unix, Socket_TCP, Socket_UDP, Socket_CAN }
@@ -103,7 +103,7 @@ class Socket : public Interface {
          */
         bool is_locked();
         /**
-         * Populates pid_name
+         * Populates pid_name. Must call lock() prior to claim_server().
          * @return true if we have successfully staked a claim for the specified
          * server name. false means an active process owns the space.
          */
@@ -120,6 +120,15 @@ class Socket : public Interface {
          */
         void release_server();
       private:
+        /**
+         * Accepts [-\._a-zA-Z0-9]
+         * @param w the string to test
+         * @param context The name of the parameter being tested for use in
+         * error messages.
+         * @return true if w points to a string of acceptable characters
+         */
+        bool is_word(const char *w, const char *context);
+        int lock_fd;
         const char *lock_name;
         const char *exp_name;
         const char *svc_name;

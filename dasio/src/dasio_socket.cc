@@ -39,8 +39,7 @@ Socket::~Socket() {
 const char *Socket::company = "linkeng";
 
 void Socket::common_init() {
-  unix_path = 0;
-  exp_path = 0;
+  unix_name = 0;
   set_retries(-1, 5, 60);
   conn_fail_reported = false;
 }
@@ -51,34 +50,27 @@ void Socket::connect() {
   
   switch (socket_type) {
     case Socket_Unix:
+      if (unix_name == 0) {
+        unix_name = new unix_name_t();
+        if (!unix_name->set_service(service)) {
+          nl_error(3, "%s: Invalid service name", iname);
+        }
+      }
+      if (is_server) {
+        if (!unix_name->lock()) {
+          socket_state = Socket_locking;
+          TO.Set(0,200);
+          flags |= Fl_Timeout;
+          return;
+        }
+        if (!unix_name->claim_server()) {
+          nl_error(3, "%s: Unable to create server socket %s",
+            iname, unix_name->get_svc_name());
+        }
+      }
       { struct hostent *hostinfo = 0;
         struct sockaddr_un local;
         nl_assert(iname != 0 && service != 0);
-        const char *fmt = "/var/run/%s/%s/%s";
-        const char *Exp = std::getenv("Experiment");
-        if (Exp == 0) {
-          Exp = "none";
-        }
-        int svc_len = snprintf(0, 0, fmt, company, Exp, service);
-        if (svc_len > UNIX_PATH_MAX)
-          nl_error(3, "Service name /var/run/%s/%s/%s exceeds UNIX_PATH_MAX (%d) chars",
-            company, Exp, service, UNIX_PATH_MAX);
-        char * new_unix_path = (char *)new_memory(svc_len+1);
-        char * new_exp_path = (char*)new_memory(svc_len+1);
-        
-        // Make sure $Experiment directory exists
-        snprintf(new_exp_path, svc_len+1, "/var/run/%s/%s", company, Exp);
-        exp_path = new_exp_path;
-        if (mkdir(exp_path, 0660) && errno != EEXIST) {
-          nl_error(3, "Unable to create %s dir: %s", exp_path, strerror(errno));
-          // if (errno == EEXIST) ==> not really an error
-          // if (errno == EACCES) ==> don't have write permission
-          // if (errno == ENOENT) ==> missing parent directory
-          // if (errno == ENOTDIR) ==> parent directory not directory
-        }
-        
-        snprintf(new_unix_path, svc_len+1, fmt, company, Exp, service);
-        unix_path = new_unix_path;
        
         fd = socket(AF_UNIX, SOCK_STREAM, 0);
         if (fd < 0)
@@ -86,7 +78,7 @@ void Socket::connect() {
             std::strerror(errno));
             
         local.sun_family = AF_UNIX;
-        strncpy(local.sun_path, unix_path, UNIX_PATH_MAX);
+        strncpy(local.sun_path, unix_name->get_svc_name(), UNIX_PATH_MAX);
         if (fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK) == -1) {
           nl_error(3, "fcntl() failure in DAS_IO::Socket(%s): %s", iname,
             std::strerror(errno));
@@ -96,7 +88,7 @@ void Socket::connect() {
           unlink(local.sun_path);
           if (bind(fd, (struct sockaddr *)&local, SUN_LEN(&local)) < 0) {
             nl_error(3, "bind() failure in DAS_IO::Socket(%s,%s): %s", iname,
-              unix_path, std::strerror(errno));
+              local.sun_path, std::strerror(errno));
           }
 
           if (listen(fd, MAXPENDING) < 0) {
@@ -190,13 +182,12 @@ void Socket::close() {
     socket_state = Socket_disconnected;
     TO.Clear();
     flags &= ~(Fl_Write|Fl_Read|Fl_Except|Fl_Timeout);
-    if (unix_path) {
-      if (unlink(unix_path)) {
-        nl_error(1, "Unable to remove socket %s: %s", unix_path, strerror(errno));
+    if (unix_name) {
+      if (unix_name->is_server()) {
+        unix_name->release_server();
       }
-      unlink(exp_path);
-      free_memory((void *)unix_path);
-      free_memory((void *)exp_path);
+      delete(unix_name);
+      unix_name = 0;
     }
   }
 }
