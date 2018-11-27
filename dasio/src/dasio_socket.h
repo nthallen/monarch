@@ -68,6 +68,65 @@ class Socket : public Interface {
     
     static const char *company;
 
+    class unix_name_t {
+      public:
+        unix_name_t();
+        /**
+         * Releases any allocated names.
+         */
+        ~unix_name_t();
+        /**
+         * @param service single word (e.g. cmd, DG, TM, memo)
+         * Populates exp_name and svc_name. May only be called
+         * once.
+         * @return true if generated svc_name is valid
+         */
+        bool set_service(const char *service);
+        /**
+         * @return The full path for the service socket.
+         */
+        const char *get_svc_name();
+        /**
+         * The lock applies to all names on this system for this Experiment.
+         * If the lock is not obtained, caller can retry later.
+         * If the /var/run/$company directory does not exist, a fatal error
+         * will occur.
+         * @return true if lock is obtained
+         */
+        bool lock();
+        /**
+         * Release lock on socket names.
+         */
+        void unlock();
+        /**
+         * @return true if we hold the lock on the Experiment name space.
+         */
+        bool is_locked();
+        /**
+         * Populates pid_name
+         * @return true if we have successfully staked a claim for the specified
+         * server name. false means an active process owns the space.
+         */
+        bool claim_server();
+        /**
+         * @return true if claim_server() has been successfully called.
+         */
+        bool is_server();
+        /**
+         * Deletes socket and PID files.
+         * Attempts to unlink the Experiment directory and deletes the
+         * Experiment lock file. Only valid if we have successfully
+         * called claim_server().
+         */
+        void release_server();
+      private:
+        const char *lock_name;
+        const char *exp_name;
+        const char *svc_name;
+        const char *pid_name;
+        bool locked;
+        bool server_claimed;
+    };
   protected:
 
     /**
@@ -89,10 +148,9 @@ class Socket : public Interface {
      */
     virtual void connect_failed();
 
+    unix_name_t *unix_name;
     const char *hostname;
     const char *service;
-    const char *exp_path;
-    const char *unix_path;
     bool is_server;
     bool conn_fail_reported;
     int reconn_seconds; /**< Current retry delay */
