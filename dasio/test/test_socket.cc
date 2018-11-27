@@ -21,7 +21,7 @@ TEST(SocketTest,ServerSetup) {
   // EXPECT_CALL(socket, connected()).Times(0);
   // EXPECT_CALL(socket, connect_failed()).Times(0);
   socket.connect();
-  ASSERT_EQ(socket.get_socket_state(), DAS_IO::Socket_listening);
+  ASSERT_EQ(socket.get_socket_state(), DAS_IO::Socket::Socket_listening);
   socket.close();
 }
 

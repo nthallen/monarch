@@ -5,12 +5,6 @@
 #include "dasio.h"
 
 namespace DAS_IO {
-
-typedef enum { Socket_disconnected, Socket_connecting,
-                          Socket_listening, Socket_connected }
-                     socket_state_t;
-typedef enum { Socket_Unix, Socket_TCP, Socket_UDP, Socket_CAN }
-                     socket_type_t;
   
 class Socket : public Interface {
   public:
@@ -62,6 +56,12 @@ class Socket : public Interface {
      * parameters specified by set_retries().
      */
     void reset();
+
+    typedef enum { Socket_disconnected, Socket_connecting,
+                              Socket_listening, Socket_connected }
+                         socket_state_t;
+    typedef enum { Socket_Unix, Socket_TCP, Socket_UDP, Socket_CAN }
+                         socket_type_t;
 
     inline socket_state_t get_socket_state() { return socket_state; }
     inline socket_type_t get_socket_type() { return socket_type; }
