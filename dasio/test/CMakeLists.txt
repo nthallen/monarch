@@ -13,6 +13,11 @@ target_link_libraries(dasio_test dasio nl gtest)
 add_executable(test_socket test_socket.cc)
 target_include_directories(test_socket PUBLIC
   ../src
-  ${CMAKE_BINARY_DIR}/googletest-src/googletest/include
-  ${CMAKE_BINARY_DIR}/googletest-src/googlemock/include)
-target_link_libraries(test_socket dasio nl tm gtest gmock)
+  ${CMAKE_BINARY_DIR}/googletest-src/googletest/include)
+target_link_libraries(test_socket dasio nl tm gtest)
+
+add_executable(test_unix_name test_unix_name.cc)
+target_include_directories(test_unix_name PUBLIC
+  ../src
+  ${CMAKE_BINARY_DIR}/googletest-src/googletest/include)
+target_link_libraries(test_unix_name dasio nl tm gtest)

@@ -119,6 +119,9 @@ bool Socket::ProcessData(int flag) {
   int sock_err;
 
   switch (socket_state) {
+    case Socket_locking:
+      connect();
+      return 0;
     case Socket_connecting:
       if (!readSockError(&sock_err))
         return 0;

@@ -20,7 +20,6 @@ TEST(SocketTest,ServerSetup) {
   socket.set_retries(0, 1, 5);
   // EXPECT_CALL(socket, connected()).Times(0);
   // EXPECT_CALL(socket, connect_failed()).Times(0);
-  socket.connect();
   ASSERT_EQ(socket.get_socket_state(), DAS_IO::Socket::Socket_listening);
   socket.close();
 }

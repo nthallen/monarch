@@ -51,12 +51,13 @@ bool Socket::unix_name_t::is_word(const char *w, const char *context) {
     nl_error(2, "%s is empty", context);
     return false; // empty string
   }
-  while (*w != '\0') {
+  for (;*w != '\0'; ++w) {
     if (!std::isalnum(*w) && *w != '-' && *w != '_' && *w != '.') {
       nl_error(2, "%s contains invalid character(s)", context);
       return false;
     }
   }
+  return true;
 }
 
 bool Socket::unix_name_t::set_service(const char *service) {
@@ -66,6 +67,9 @@ bool Socket::unix_name_t::set_service(const char *service) {
   }
   // Verify that company, Experiment and service are all valid words
   const char *Exp = std::getenv("Experiment");
+  if (Exp == 0) {
+    Exp = "none";
+  }
   if (!is_word(company, "company") || !is_word(Exp, "Experiment") || !is_word(service, "service"))
     return false;
   int exp_len = snprintf(0, 0, "/var/run/%s/%s", company, Exp)+1;
@@ -160,9 +164,11 @@ bool Socket::unix_name_t::claim_server() {
       int rv = kill(pid, 0);
       if (rv == 0) {
         nl_error(2, "Service %s in use by PID %d", svc_name, pid);
+        unlock();
         return false;
-      } else if (rv != ESRCH) {
+      } else if (errno != ESRCH) {
         nl_error(2, "kill(pid,0) returned %s", strerror(errno));
+        unlock();
         return false;
       }
     }
@@ -177,6 +183,7 @@ bool Socket::unix_name_t::claim_server() {
   fprintf(pidf, "%d\n", getpid());
   fclose(pidf);
   server_claimed = true;
+  unlock();
   return true;
 }
 
