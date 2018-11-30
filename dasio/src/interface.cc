@@ -248,12 +248,15 @@ void Interface::report_err( const char *fmt, ... ) {
  * reducing the qualified error count, potentially reenabling
  * logging of errors.
  */
-void Interface::report_ok() {
+void Interface::report_ok(int nchars) {
   if ( n_errors > 0 ) {
     if ( --n_errors <= 0 && n_suppressed ) {
       msg( 0, "Error recovery: %d error messages suppressed", n_suppressed );
       n_suppressed = 0;
     }
+  }
+  if (nchars > 0) {
+    consume(nchars);
   }
 }
 

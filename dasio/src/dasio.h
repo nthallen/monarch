@@ -5,7 +5,7 @@
 #ifndef DAS_IO_H_INCLUDED
 #define DAS_IO_H_INCLUDED
 #include <string>
-#include <vector>
+#include <list>
 #include <atomic>
 #include "Timeout.h"
 
@@ -26,7 +26,7 @@ class Interface {
     virtual bool ProcessData(int flag);
     /**
      * @return a pointer to a Timeout object or zero if no timeout is required.
-     * The default implementation returns zero.
+     * The default implementation returns a pointer to the TO member.
      */
     virtual Timeout *GetTimeout();
     /** The file descriptor for this interface */
@@ -43,7 +43,10 @@ class Interface {
      * @param thr New qualified protocol error threshold value
      */
     void set_qerr_threshold(int thr);
+    /** The event loop we belong to */
     Loop *ELoop;
+    /** getter for interface name. */
+    inline const char *get_iname() { return iname; }
     /**
      * Method to map a global flag number to a bit mask to be
      * set in a Interface's flags word.
@@ -176,8 +179,9 @@ class Interface {
      * Signals that a successful protocol transfer occurred,
      * reducing the qualified error count, potentially reenabling
      * logging of errors.
+     * @param nchars Optionally call consume(nchars)
      */
-    void report_ok();
+    void report_ok(int nchars = 0);
     /**
      * Parsing routines useful for parsing ASCII input data.
      * All of these operate on buf with the current offset
@@ -235,7 +239,7 @@ class Interface {
     int total_suppressed;
 };
 
-typedef std::vector<Interface *> InterfaceVec;
+typedef std::list<Interface *> InterfaceList;
 
 /**
  * The class formerly known as Selector
@@ -248,9 +252,24 @@ class Loop {
     /**
      * Adds the interface as a child of the loop. This adds the interface's fd
      * to the list of fds in the loop's select() call, depending on the
-     * interface's flags.
+     * interface's flags. Also ensures that all non-negative interface fds are
+     * unique.
      */
     void add_child(Interface *P);
+    
+    /**
+     * @param P the Interface to be removed.
+     * Removes the specified Interface from the list of active interfaces.
+     */
+    void remove_child(Interface *P);
+    
+    /**
+     * @param P the Interface to be deleted.
+     * Removes the specified Interface from the list of active interfaces,
+     * and marks it for deletion at a later time.
+     */
+    void delete_child(Interface *P);
+    
     // I don't think these functions are used currently, but they may become
     // relevant in a server. In that case, though, I feel as though the interface
     // should have an opportunity to cleanup before the child is deleted.
@@ -277,8 +296,18 @@ class Loop {
      */
     void event_loop();
   private:
-    InterfaceVec S;
-    InterfaceVec::iterator find_child_by_fd(int fd);
+    /** The list of child interfaces */
+    InterfaceList S;
+    /** List of interfaces pending deletion */
+    InterfaceList PendingDeletion;
+    
+    /**
+     * Locates the position in list S of the Interface with the matching fd.
+     * Will not match anything if fd < 0.
+     * @param fd The fd we are searching for
+     * @return The position in S of the Interface with the matching fd.
+     */
+    InterfaceList::iterator find_child_by_fd(int fd);
     bool children_changed;
     std::atomic<int> gflags;
     /**

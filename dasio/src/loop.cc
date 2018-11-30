@@ -29,12 +29,28 @@ void Loop::add_child(Interface *P) {
   }
 }
 
-InterfaceVec::iterator Loop::find_child_by_fd(int fd) {
-  InterfaceVec::iterator pos;
-  for ( pos = S.begin(); pos != S.end(); ++pos ) {
-    Interface *P;
-    P = *pos;
-    if (P->fd == fd) return pos;
+void Loop::remove_child(Interface *P) {
+  for (InterfaceList::iterator pos = S.begin(); pos != S.end(); ++pos ) {
+    if (P == *pos) {
+      S.erase(pos);
+      return;
+    }
+  }
+  nl_error(1, "remove_child Interface(%s,%d) not found", P->get_iname(), P->fd);
+}
+
+void Loop::delete_child(Interface *P) {
+  remove_child(P);
+  PendingDeletion.push_back(P);
+}
+
+InterfaceList::iterator Loop::find_child_by_fd(int fd) {
+  if (fd >= 0) {
+    for (InterfaceList::iterator pos = S.begin(); pos != S.end(); ++pos ) {
+      Interface *P;
+      P = *pos;
+      if (P->fd == fd) return pos;
+    }
   }
   return S.end();
 }
@@ -53,13 +69,19 @@ void Loop::event_loop() {
   fd_set readfds, writefds, exceptfds;
   
   while (keep_going) {
-    TimeoutAccumulator to;
-    InterfaceVec::const_iterator Sp;
+    TimeoutAccumulator TA;
+    InterfaceList::const_iterator Sp;
 
+    while (!PendingDeletion.empty()) {
+      Interface *P = PendingDeletion.front();
+      delete(P);
+      PendingDeletion.pop_front();
+    }
+    
     FD_ZERO(&readfds);
     FD_ZERO(&writefds);
     FD_ZERO(&exceptfds);
-    to.Set_Min(GetTimeout());
+    TA.Set(GetTimeout());
     children_changed = false;
     for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
       Interface *P = *Sp;
@@ -75,13 +97,15 @@ void Loop::event_loop() {
     }
     for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
       Interface *P = *Sp;
-      if (P->flags & P->Fl_Read) FD_SET(P->fd, &readfds);
-      if (P->flags & P->Fl_Write) FD_SET(P->fd, &writefds);
-      if (P->flags & P->Fl_Except) FD_SET(P->fd, &exceptfds);
-      if (P->flags & P->Fl_Timeout) to.Set_Min( P->GetTimeout() );
-      if (width <= P->fd) width = P->fd+1;
+      if (P->fd >= 0) {
+        if (P->flags & P->Fl_Read) FD_SET(P->fd, &readfds);
+        if (P->flags & P->Fl_Write) FD_SET(P->fd, &writefds);
+        if (P->flags & P->Fl_Except) FD_SET(P->fd, &exceptfds);
+        if (P->flags & P->Fl_Timeout) TA.Set_Min( P->GetTimeout() );
+        if (width <= P->fd) width = P->fd+1;
+      }
     }
-    rc = select(width, &readfds, &writefds, &exceptfds, to.timeout_val());
+    rc = select(width, &readfds, &writefds, &exceptfds, TA.timeout_val());
     if ( rc == 0 ) {
       if ( ProcessTimeout() )
         keep_going = 0;
@@ -115,21 +139,34 @@ void Loop::event_loop() {
       for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
         Interface *P = *Sp;
         int flags = 0;
-        if ( (P->flags & P->Fl_Read) && FD_ISSET(P->fd, &readfds) )
-          flags |= P->Fl_Read;
-        if ( (P->flags & P->Fl_Write) && FD_ISSET(P->fd, &writefds) )
-          flags |= P->Fl_Write;
-        if ( (P->flags & P->Fl_Except) && FD_ISSET(P->fd, &exceptfds) )
-          flags |= P->Fl_Except;
-        if ( flags ) {
-          if ( P->ProcessData(flags) )
-            keep_going = 0;
-          if (children_changed) break; // Changes can occur during ProcessData
+        if (P->fd >= 0) {
+          if ( (P->flags & P->Fl_Read) && FD_ISSET(P->fd, &readfds) )
+            flags |= P->Fl_Read;
+          if ( (P->flags & P->Fl_Write) && FD_ISSET(P->fd, &writefds) )
+            flags |= P->Fl_Write;
+          if ( (P->flags & P->Fl_Except) && FD_ISSET(P->fd, &exceptfds) )
+            flags |= P->Fl_Except;
+          if ( flags ) {
+            if ( P->ProcessData(flags) )
+              keep_going = 0;
+            if (children_changed) break; // Changes can occur during ProcessData
+          }
         }
       }
     }
   }
 }
+
+/*
+ * Regarding children_changed, the most likely change during P->ProcessData() is
+ * the removal of the child pointing to P. Given the properties of lists,
+ * it is possible to restructure the loop so that even if the current element
+ * gets removed, we can continue processing the list. This would involve
+ * incrementing the iterator before calling ProcessData(). That's fine until
+ * we come to a corner case where some action on one interface causes another
+ * interface to shut down. Simply restarting the loop is probably the safest
+ * policy.
+ */
 
 int Loop::ProcessTimeout() { return 0; }
 Timeout *Loop::GetTimeout() { return 0; }

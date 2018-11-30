@@ -29,6 +29,36 @@ Socket::Socket(const char *iname, int bufsz, const char *service, bool server) :
   common_init();
   connect();
 }
+    /**
+     * Called by server when creating client interfaces after accept().
+     * @param iname The interface name
+     * @param bufsz Size of the input buffer
+     * @param stype The socket type (Socket_TCP or Socket_Unix)
+     * @param service The service of the server
+     * @param hostname When Socket_TCP, the client's address
+     * @fd The socket
+     */
+Socket::Socket(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname) :
+  Interface(iname, bufsz),
+  service(service),
+  hostname(hostname),
+  is_server(false),
+  socket_type(stype),
+  socket_state(Socket_connected)
+{
+  common_init();
+  switch(socket_type) {
+    case Socket_Unix:
+      unix_name = new unix_name_t();
+      if (!unix_name->set_service(service)) {
+        nl_error(3, "%s: Invalid service name", iname);
+      }
+      break;
+    case Socket_TCP:
+      // probably something required here
+      break;
+  }
+}
 
 Socket::~Socket() {
   if (fd >= 0) {
@@ -101,8 +131,10 @@ void Socket::connect() {
           if (::connect(fd, (struct sockaddr *)&local,
                 SUN_LEN(&local)) < 0) {
             if (errno != EINPROGRESS) {
-              nl_error(3, "connect() failure in DAS_IO::Socket(%s): %s", iname,
+              nl_error(2, "connect() failure in DAS_IO::Socket(%s): %s", iname,
                 std::strerror(errno));
+              reset();
+              return;
             }
           }
           socket_state = Socket_connecting;
@@ -121,10 +153,10 @@ bool Socket::ProcessData(int flag) {
   switch (socket_state) {
     case Socket_locking:
       connect();
-      return 0;
+      return false;
     case Socket_connecting:
       if (!readSockError(&sock_err))
-        return 0;
+        return false;
       if ((flag & Fl_Write) &&
           (sock_err == EISCONN || sock_err == 0)) {
         nl_error(0, "Connected");
@@ -134,8 +166,7 @@ bool Socket::ProcessData(int flag) {
         flags |= Fl_Read;
         reconn_retries = 0;
         conn_fail_reported = false;
-        connected();
-        return 0;
+        return connected();
       } else {
         if (!conn_fail_reported) {
           if (TO.Expired()) {
@@ -146,12 +177,25 @@ bool Socket::ProcessData(int flag) {
           }
         }
         reset();
-        connect_failed();
-        return 0;
+        return connect_failed();
+      }
+    case Socket_listening:
+      if (ELoop && flag & Fl_Read) {
+        int new_fd = accept(fd, 0, 0);
+        if (new_fd < 0) {
+          nl_error(2, "%s: Error from accept(): %s", iname, strerror(errno));
+          return false;
+        } else {
+          Socket *client = new_client("clientcon", bufsize, new_fd, socket_type, service);
+          ELoop->add_child(client);
+          // create a new Socket and add it to the Loop
+          // probably mark it as negotiating
+          return client->connected();
+        }
+      } else {
+        nl_error(1, "Socket_listening: connection sensed, but no Loop");
       }
       break;
-    case Socket_listening:
-      nl_error(3, "Socket_listening: not implemented");
     case Socket_disconnected:
       // Handle timeout (i.e. attempt reconnection)
       if (TO.Expired()) {
@@ -163,13 +207,7 @@ bool Socket::ProcessData(int flag) {
     default:
       nl_error(4, "DAS_IO::Socket::ProcessData: Invalid socket_state: %d", socket_state);
   }
-  // flag &= ~(Fl_Write|Fl_Read|
-            // Fl_Except|Fl_Timeout);
-  // if (flag)
-    // return ProcessFlag(flag);
-  // if (socket_state == Socket_writing)
-    // process_requests();
-  return 0;
+  return false;
 }
 
 void Socket::set_retries(int max_retries, int min_dly, int max_foldback_dly) {
@@ -210,7 +248,13 @@ void Socket::reset() {
   flags |= Fl_Timeout;
 }
 
-void Socket::connect_failed() {}
+bool Socket::connected() { return false; }
+
+bool Socket::connect_failed() { return false; }
+
+Socket *Socket::new_client(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname) {
+  return new Socket(iname, bufsz, fd, stype, service, hostname);
+}
 
 bool Socket::readSockError(int *sock_err) {
   socklen_t optlen = sizeof(*sock_err);

@@ -8,7 +8,13 @@ namespace DAS_IO {
   
 class Socket : public Interface {
   public:
-    // Socket(const char *iname, int bufsz);
+    typedef enum { Socket_disconnected, Socket_locking, Socket_connecting,
+                              Socket_listening, Socket_connected }
+                         socket_state_t;
+    typedef enum { Socket_Unix, Socket_TCP, Socket_UDP, Socket_CAN }
+                         socket_type_t;
+
+                         // Socket(const char *iname, int bufsz);
     /**
      * Connect to a Unix Domain socket using the service name
      */
@@ -21,10 +27,18 @@ class Socket : public Interface {
      * Called by server when creating client interfaces after accept().
      * @param iname The interface name
      * @param bufsz Size of the input buffer
+     * @param stype The socket type (Socket_TCP or Socket_Unix)
+     * @param service The service of the server
+     * @param hostname When Socket_TCP, the client's address
      * @fd The socket
      */
-    Socket(const char *iname, int bufsz, int fd);
+    Socket(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname = 0);
     virtual ~Socket();
+    /**
+     * The flags bits consist of Fl_Read, Fl_Write, Fl_Except, Fl_Timeout and the gflag() values.
+     * @param flag Bit-mapped list of events that triggered this call.
+     * @return true to exit the event loop.
+     */
     bool ProcessData(int flag);
 
     /**
@@ -56,12 +70,6 @@ class Socket : public Interface {
      * parameters specified by set_retries().
      */
     void reset();
-
-    typedef enum { Socket_disconnected, Socket_locking, Socket_connecting,
-                              Socket_listening, Socket_connected }
-                         socket_state_t;
-    typedef enum { Socket_Unix, Socket_TCP, Socket_UDP, Socket_CAN }
-                         socket_type_t;
 
     inline socket_state_t get_socket_state() { return socket_state; }
     inline socket_type_t get_socket_type() { return socket_type; }
@@ -141,8 +149,11 @@ class Socket : public Interface {
     /**
      * Called upon successful connection. The library
      * will have already reported the connection.
+     * The default method does nothing.
+     *
+     * @return true if the event loop should exit.
      */
-    virtual void connected() = 0;
+    virtual bool connected();
 
     /**
      * Called when connection has failed. The library will
@@ -154,8 +165,21 @@ class Socket : public Interface {
      * This method can be used to adjust the retry interval
      * from the default, or to take some other application-
      * specific action. The default method does nothing.
+     *
+     * @return true if the event loop should exit.
      */
-    virtual void connect_failed();
+    virtual bool connect_failed();
+    
+    /**
+     * Called by server when creating client interfaces after accept().
+     * @param iname The interface name
+     * @param bufsz Size of the input buffer
+     * @param stype The socket type (Socket_TCP or Socket_Unix)
+     * @param service The service of the server
+     * @param hostname When Socket_TCP, the client's address
+     * @fd The socket
+     */
+    virtual Socket *new_client(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname = 0);
 
     unix_name_t *unix_name;
     const char *hostname;
