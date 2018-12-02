@@ -106,6 +106,10 @@ class Interface {
      */
     inline bool obuf_empty() { return ocp >= onc; }
     /**
+     * Called from fillbuf() when read() returns an error. If read() returns zero,
+     * read_error() is called with EOK, which higher-level processors can use
+     * to investigate.
+     * @param my_errno The errno value or EOK
      * @return true if the error is fatal, false if it has been handled
      */
     virtual bool read_error(int my_errno);
@@ -136,6 +140,12 @@ class Interface {
      * @return true on a condition requiring termination of the driver
      */
     virtual bool tm_sync();
+    /**
+     * Called when 0 bytes are read from the interface. The default
+     * returns true, but this is not appropriate in all situations.
+     * @return true if the event loop should terminate.
+     */
+    virtual bool closed();
 
     /**
      * Updates the input buffer size, reallocating memory as necessary.

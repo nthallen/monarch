@@ -21,3 +21,9 @@ target_include_directories(test_unix_name PUBLIC
   ../src
   ${CMAKE_BINARY_DIR}/googletest-src/googletest/include)
 target_link_libraries(test_unix_name dasio nl tm gtest)
+
+add_executable(echosrvr echosrvr.cc)
+target_include_directories(echosrvr PUBLIC
+  ../src
+  ${CMAKE_SOURCE_DIR}/nl/src)
+target_link_libraries(echosrvr dasio nl tm)

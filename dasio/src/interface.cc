@@ -58,6 +58,7 @@ Timeout *Interface::GetTimeout() {
 }
 
 bool Interface::ProcessData(int flag) {
+  // nl_error(0, "%s: Interface::ProcessData(%d)", iname, flag);
   if ((flags & flag & gflag(0)) && tm_sync())
     return true;
   if ((flags&Fl_Read) && (flags&flag&(Fl_Read|Fl_Timeout))) {
@@ -98,7 +99,7 @@ bool Interface::iwrite(const char *str, unsigned int nc, unsigned int cp) {
 bool Interface::iwrite_check() {
   if (!obuf_empty()) {
     int nb = onc-ocp;
-    int ntr = write(fd, obuf, nb);
+    int ntr = write(fd, obuf+ocp, nb);
     if (ntr < 0 && errno != EAGAIN) {
       flags &= ~Fl_Write;
       return(iwrite_error(errno));
@@ -174,6 +175,10 @@ bool Interface::tm_sync() {
   return false;
 }
 
+bool Interface::closed() {
+  return true;
+}
+
 void Interface::set_ibufsize(int bufsz) {
   if (bufsize != bufsz) {
     if (buf) free_memory(buf);
@@ -188,7 +193,7 @@ bool Interface::fillbuf(int N) {
   if (N > bufsize)
     nl_error(4, "Ser_Sel::fillbuf(N) N > bufsize: %d > %d",
       N, bufsize);
-  if (nc > N-1) return 0;
+  if (nc > N-1) return false;
   ++n_fills;
   i = read( fd, &buf[nc], N - 1 - nc );
   if ( i < 0 ) {
@@ -197,14 +202,15 @@ bool Interface::fillbuf(int N) {
     } else if (errno == EINTR) {
       ++n_eintr;
     } else {
-      nl_error( 2, "Error %d on read from serial port", errno );
-      return 1;
+      return read_error(errno);
     }
-    return 0;
+    return false;
+  } else if (i == 0) {
+    return closed();
   }
   nc += i;
   buf[nc] = '\0';
-  return 0;
+  return false;
 }
 
 void Interface::consume(int nchars) {

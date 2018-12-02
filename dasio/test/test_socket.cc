@@ -96,17 +96,50 @@ bool echosrvr::protocol_input() {
 
 const char *opt_string = "vo:mV";
 
+class clientsocket : public DAS_IO::Socket {
+  public:
+    inline clientsocket() : DAS_IO::Socket("IPCclient", 512, "cmd", false) {}
+    ~clientsocket();
+    void transmit(const char *cmd);
+    bool protocol_input();
+};
+
+clientsocket::~clientsocket() {}
+void clientsocket::transmit(const char *cmd) {
+  iwrite(cmd);
+}
+bool clientsocket::protocol_input() {
+  cp = 0;
+  if (nc > 0) {
+    // nl_error(0, "%s: Received '%s'", iname, buf);
+    report_ok(nc);
+  }
+  return false;
+}
+
 TEST(SocketTest,ClientSetup) {
   int flags, exp_flags;
   
-  DAS_IO::Socket client("IPCclient", 512, "cmd", false);
+  clientsocket client; // ("IPCclient", 512, "cmd", false);
   client.set_retries(2, 1, 5);
   EXPECT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_connecting);
+  flags = select_once(&client);
+  exp_flags = client.Fl_Write;
+  EXPECT_EQ(flags, exp_flags);
+  EXPECT_FALSE(client.ProcessData(flags));
+  EXPECT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_connected);
+  client.transmit("EHello");
+  // nl_error(0, "Transmitted EHello. flags = %d", client.flags);
   flags = select_once(&client);
   exp_flags = client.Fl_Read;
   EXPECT_EQ(flags, exp_flags);
   EXPECT_FALSE(client.ProcessData(flags));
-  EXPECT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_connected);
+  client.transmit("C"); // Close the connection on the remote end
+  flags = select_once(&client);
+  exp_flags = client.Fl_Read;
+  EXPECT_EQ(flags, exp_flags);
+  EXPECT_TRUE(client.ProcessData(flags));
+  EXPECT_EQ(client.fd, -1);
 }
 
 void child_process() {
@@ -117,7 +150,7 @@ void child_process() {
 }
 
 int main(int argc, char **argv) {
-  pid_t child = fork();
+  pid_t child = -1; // fork();
   if (child == 0) {
     child_process();
   } else {

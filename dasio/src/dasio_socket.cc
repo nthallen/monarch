@@ -47,6 +47,8 @@ Socket::Socket(const char *iname, int bufsz, int fd, socket_type_t stype, const 
   socket_state(Socket_connected)
 {
   common_init();
+  is_server_client = true;
+  this->fd = fd;
   switch(socket_type) {
     case Socket_Unix:
       unix_name = new unix_name_t();
@@ -58,6 +60,7 @@ Socket::Socket(const char *iname, int bufsz, int fd, socket_type_t stype, const 
       // probably something required here
       break;
   }
+  flags = Fl_Except | Fl_Read;
 }
 
 Socket::~Socket() {
@@ -72,6 +75,7 @@ void Socket::common_init() {
   unix_name = 0;
   set_retries(-1, 5, 60);
   conn_fail_reported = false;
+  is_server_client = false;
 }
 
 void Socket::connect() {
@@ -126,6 +130,7 @@ void Socket::connect() {
               std::strerror(errno));
           }
           socket_state = Socket_listening;
+          flags = 0;
         } else {
           /* Establish the connection to the server */
           if (::connect(fd, (struct sockaddr *)&local,
@@ -138,8 +143,9 @@ void Socket::connect() {
             }
           }
           socket_state = Socket_connecting;
+          flags = Fl_Write;
         }
-        flags = Fl_Read | Fl_Except;
+        flags |= Fl_Read | Fl_Except;
       }
       break;
     default:
@@ -150,16 +156,19 @@ void Socket::connect() {
 bool Socket::ProcessData(int flag) {
   int sock_err;
 
+  // nl_error(0, "%s: Socket::ProcessData(%d)", iname, flag);
   switch (socket_state) {
     case Socket_locking:
       connect();
       return false;
     case Socket_connecting:
-      if (!readSockError(&sock_err))
+      if (!readSockError(&sock_err)) {
+        reset();
         return false;
+      }
       if ((flag & Fl_Write) &&
           (sock_err == EISCONN || sock_err == 0)) {
-        nl_error(0, "Connected");
+        // nl_error(0, "Connected");
         socket_state = Socket_connected;
         TO.Clear();
         flags &= ~(Fl_Write|Fl_Timeout);
@@ -186,6 +195,10 @@ bool Socket::ProcessData(int flag) {
           nl_error(2, "%s: Error from accept(): %s", iname, strerror(errno));
           return false;
         } else {
+          if (fcntl(new_fd, F_SETFL, fcntl(new_fd, F_GETFL, 0) | O_NONBLOCK) == -1) {
+            nl_error(3, "fcntl() failure in DAS_IO::Socket(%s): %s", iname,
+              std::strerror(errno));
+          }
           Socket *client = new_client("clientcon", bufsize, new_fd, socket_type, service);
           ELoop->add_child(client);
           // create a new Socket and add it to the Loop
@@ -248,6 +261,58 @@ void Socket::reset() {
   flags |= Fl_Timeout;
 }
 
+bool Socket::read_error(int my_errno) {
+  nl_error(2, "%s: read error %d: %s", iname,
+    my_errno, strerror(my_errno));
+  
+  if (is_server) {
+    close();
+    return true;
+  } else if (is_server_client) {
+    close();
+    ELoop->delete_child(this);
+    return false;
+  } else {
+    reset();
+    return false;
+  }
+}
+
+bool Socket::iwrite_error(int my_errno) {
+  nl_error(2, "%s: write error %d: %s", iname, my_errno, strerror(my_errno));
+  
+  if (is_server) {
+    close();
+    return true;
+  } else if (is_server_client) {
+    close();
+    ELoop->delete_child(this);
+    return false;
+  } else {
+    reset();
+    return false;
+  }
+}
+
+bool Socket::protocol_except() {
+  nl_error(2, "Socket::protocol_except not implemented");
+  return true;
+}
+
+bool Socket::closed() {
+  if (is_server) {
+    nl_error(2, "%s: Should not have been reading from listening socket", iname);
+    return true;
+  } else if (is_server_client) {
+    close();
+    ELoop->delete_child(this);
+    return false;
+  } else {
+    close();
+    return true;
+  }
+}
+
 bool Socket::connected() { return false; }
 
 bool Socket::connect_failed() { return false; }
@@ -261,8 +326,7 @@ bool Socket::readSockError(int *sock_err) {
 
   if (getsockopt(fd, SOL_SOCKET, SO_ERROR,
         sock_err, &optlen) == -1) {
-    nl_error(2, "Error %d from getsockopt", errno);
-    reset();
+    nl_error(2, "%s: Error from getsockopt() %d: %s", iname, errno, strerror(errno));
     return false;
   }
   return true;

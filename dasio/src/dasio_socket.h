@@ -61,6 +61,42 @@ class Socket : public Interface {
     void set_retries(int max_retries, int min_dly, int max_foldback_dly);
 
     /**
+     * If the socket is a listener, then return true.
+     * If the socket is a server client, just tear it down.
+     * Otherwise tear it down and attempt to reconnect.
+     * @param The errno value
+     * @return true if event loop should exit
+     */
+    bool read_error(int my_errno);
+    /**
+     * If the socket is a listener, then return true. (but should not be writing!)
+     * If the socket is a server client, just tear it down.
+     * Otherwise tear it down and attempt to reconnect.
+     * @param The errno value
+     * @return true if event loop should exit
+     */
+    bool iwrite_error(int my_errno);
+    /**
+     * Check socket error to determine if there is a problem.
+     * @return true it the event loop should exit
+     */
+    bool protocol_except();
+    /**
+     * Called when read returns zero, indicating normal EOF.
+     * The default action for clients is to close() the connection and
+     * return true. Hence clients that are handling multiple interfaces
+     * may need to override this method to make a finer grained determination
+     * of the appropriate action.
+     * For server side client connections, the default is
+     * to close() the connection and delete the interface. Listening
+     * server interfaces should never be reading, so should never see
+     * this condition, so the default is to report an error and return
+     * true.
+     * @return true it the event loop should exit
+     */
+    bool closed();
+    
+    /**
      * Shut down the connection.
      */
     void close();
@@ -184,7 +220,10 @@ class Socket : public Interface {
     unix_name_t *unix_name;
     const char *hostname;
     const char *service;
+    /** True if this interface is a listening socket */
     bool is_server;
+    /** True if this interface was established after accept() */
+    bool is_server_client;
     bool conn_fail_reported;
     int reconn_seconds; /**< Current retry delay */
     int reconn_retries; /**< The current number of reconnects attempted */
@@ -198,18 +237,10 @@ class Socket : public Interface {
     void common_init();
 
     /**
-     * Use getsockopt to read socket error. reset()s the
-     * socket and returns false if getsockopt fails,
-     * otherwise sets sock_err and returns true
+     * Use getsockopt to read socket error.
+     * @return true if getsockopt succeeds.
      */
     bool readSockError(int *sock_err);
-};
-
-class Socket_Server : public Interface { // or DAS_IO_Socket?
-  public:
-    Socket_Server(const char *iname, const char *service, int opt);
-    virtual ~Socket_Server();
-  protected:
 };
 
 }

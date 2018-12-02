@@ -72,6 +72,7 @@ void Loop::event_loop() {
     TimeoutAccumulator TA;
     InterfaceList::const_iterator Sp;
 
+    // nl_error(0, "Loop: %d children", S.size());
     while (!PendingDeletion.empty()) {
       Interface *P = PendingDeletion.front();
       delete(P);
@@ -89,14 +90,10 @@ void Loop::event_loop() {
       if (flag) {
         P->ProcessData(flag);
       }
-      // if (P->flags & gflags) {
-        // int flag = P->flags & gflags;
-        // atomic_clr((unsigned *)&gflags, flag);
-        // P->ProcessData(flag);
-      // }
     }
     for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
       Interface *P = *Sp;
+      // nl_error(0, "%s fd %d flags %d", P->get_iname(), P->fd, P->flags);
       if (P->fd >= 0) {
         if (P->flags & P->Fl_Read) FD_SET(P->fd, &readfds);
         if (P->flags & P->Fl_Write) FD_SET(P->fd, &writefds);
