@@ -104,8 +104,9 @@ class Socket : public Interface {
     /**
      * Close and then try to reconnect after longish delay using
      * parameters specified by set_retries().
+     * @return true if all retries have been exhausted
      */
-    void reset();
+    bool reset();
 
     inline socket_state_t get_socket_state() { return socket_state; }
     inline socket_type_t get_socket_type() { return socket_type; }

@@ -54,6 +54,7 @@ class echosrvr : public DAS_IO::Socket {
     ~echosrvr();
     DAS_IO::Socket *new_client(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname=0);
     bool protocol_input();
+    bool connected();
 };
 
 echosrvr::echosrvr(const char *iname, int bufsz, const char *service,
@@ -63,9 +64,17 @@ echosrvr::echosrvr(const char *iname, int bufsz, const char *service,
 echosrvr::echosrvr(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname)
     : DAS_IO::Socket(iname, bufsz, fd, stype, service, hostname) {
 }
-echosrvr::~echosrvr() {}
+echosrvr::~echosrvr() {
+  nl_error(-2, "echosrvr shutting down");
+}
+
+bool echosrvr::connected() {
+  nl_error(-2, "%s: connected. flags = %d", iname, flags);
+  return false;
+}
 
 DAS_IO::Socket *echosrvr::new_client(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname) {
+  nl_error(-2, "%s: New client connection created. %s fd = %d", this->iname, iname, fd);
   echosrvr *clt = new echosrvr(iname, bufsz, fd, stype, service, hostname);
   return clt;
 }
@@ -75,13 +84,23 @@ bool echosrvr::protocol_input() {
   if (cp < nc) {
     switch (buf[cp]) {
       case 'E':
+        nl_error(-2, "Received '%s'", buf);
         iwrite((const char *)buf, nc, 1);
         report_ok(nc);
         return false;
       case 'Q':
+        nl_error(-2, "Received Quit command");
         report_ok(nc);
         return true;
       case 'C':
+        nl_error(-2, "Received Close command");
+        report_ok(nc);
+        close();
+        ELoop->delete_child(this);
+        return false;
+      case 'A': // Close connection after acknowledge
+        nl_error(-2, "Received Acknowledge and close");
+        iwrite("OK");
         report_ok(nc);
         close();
         ELoop->delete_child(this);
@@ -111,7 +130,7 @@ void clientsocket::transmit(const char *cmd) {
 bool clientsocket::protocol_input() {
   cp = 0;
   if (nc > 0) {
-    // nl_error(0, "%s: Received '%s'", iname, buf);
+    //nl_error(0, "%s: Received '%s'", iname, buf);
     report_ok(nc);
   }
   return false;
@@ -123,23 +142,59 @@ TEST(SocketTest,ClientSetup) {
   clientsocket client; // ("IPCclient", 512, "cmd", false);
   client.set_retries(2, 1, 5);
   EXPECT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_connecting);
-  flags = select_once(&client);
+  flags = select_once(&client) & client.Fl_Write;
   exp_flags = client.Fl_Write;
   EXPECT_EQ(flags, exp_flags);
   EXPECT_FALSE(client.ProcessData(flags));
-  EXPECT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_connected);
+  ASSERT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_connected);
   client.transmit("EHello");
   // nl_error(0, "Transmitted EHello. flags = %d", client.flags);
   flags = select_once(&client);
   exp_flags = client.Fl_Read;
   EXPECT_EQ(flags, exp_flags);
   EXPECT_FALSE(client.ProcessData(flags));
+  ASSERT_TRUE(client.fd >= 0);
   client.transmit("C"); // Close the connection on the remote end
   flags = select_once(&client);
   exp_flags = client.Fl_Read;
   EXPECT_EQ(flags, exp_flags);
   EXPECT_TRUE(client.ProcessData(flags));
   EXPECT_EQ(client.fd, -1);
+}
+
+TEST(SocketTest,ConnClosedOnWrite) {
+  int flags, exp_flags;
+  
+  clientsocket client; // ("IPCclient", 512, "cmd", false);
+  client.set_retries(2, 1, 5);
+  ASSERT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_connecting);
+  flags = select_once(&client);
+  exp_flags = client.Fl_Write;
+  EXPECT_EQ(flags, exp_flags);
+  EXPECT_FALSE(client.ProcessData(flags));
+  ASSERT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_connected);
+  client.transmit("A");
+  flags = select_once(&client);
+  exp_flags = client.Fl_Read;
+  EXPECT_EQ(flags, exp_flags);
+  EXPECT_FALSE(client.ProcessData(flags));
+  client.transmit("EHello");
+  flags = select_once(&client);
+  exp_flags = client.Fl_Read;
+  EXPECT_EQ(flags, exp_flags);
+  EXPECT_FALSE(client.ProcessData(flags));
+  EXPECT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_disconnected);
+  flags = select_once(&client);
+  exp_flags = client.Fl_Timeout;
+  EXPECT_EQ(flags, exp_flags);
+  EXPECT_FALSE(client.ProcessData(flags));
+  EXPECT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_connecting);
+  flags = select_once(&client);
+  exp_flags = client.Fl_Write;
+  EXPECT_EQ(flags, exp_flags);
+  EXPECT_FALSE(client.ProcessData(flags));
+  ASSERT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_connected);
+  client.transmit("Q");
 }
 
 void child_process() {
@@ -150,10 +205,11 @@ void child_process() {
 }
 
 int main(int argc, char **argv) {
-  pid_t child = -1; // fork();
+  pid_t child = fork();
   if (child == 0) {
     child_process();
   } else {
+    sleep(1); // give the server a chance to start up
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
   }

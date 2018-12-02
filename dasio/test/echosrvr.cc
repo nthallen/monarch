@@ -49,6 +49,13 @@ bool echosrvr::protocol_input() {
         close();
         ELoop->delete_child(this);
         return false;
+      case 'A': // Close connection after acknowledge
+        nl_error(0, "Received Acknowledge and close");
+        iwrite("OK");
+        report_ok(nc);
+        close();
+        ELoop->delete_child(this);
+        return false;
       default:
         report_err("Unrecognized input:");
         consume(nc);

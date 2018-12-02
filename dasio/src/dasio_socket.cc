@@ -138,7 +138,9 @@ void Socket::connect() {
             if (errno != EINPROGRESS) {
               nl_error(2, "connect() failure in DAS_IO::Socket(%s): %s", iname,
                 std::strerror(errno));
-              reset();
+              if (reset()) {
+                nl_error(3, "%s: Connect failure fatal after all retries", iname);
+              }
               return;
             }
           }
@@ -163,8 +165,7 @@ bool Socket::ProcessData(int flag) {
       return false;
     case Socket_connecting:
       if (!readSockError(&sock_err)) {
-        reset();
-        return false;
+        return reset();
       }
       if ((flag & Fl_Write) &&
           (sock_err == EISCONN || sock_err == 0)) {
@@ -185,8 +186,7 @@ bool Socket::ProcessData(int flag) {
               strerror(sock_err));
           }
         }
-        reset();
-        return connect_failed();
+        return( reset() || connect_failed());
       }
     case Socket_listening:
       if (ELoop && flag & Fl_Read) {
@@ -225,7 +225,7 @@ bool Socket::ProcessData(int flag) {
 
 void Socket::set_retries(int max_retries, int min_dly, int max_foldback_dly) {
   reconn_max = max_retries;
-  reconn_seconds_min = min_dly;
+  reconn_seconds = reconn_seconds_min = min_dly;
   reconn_seconds_max = max_foldback_dly;
 }
 
@@ -246,12 +246,14 @@ void Socket::close() {
   }
 }
 
-void Socket::reset() {
+bool Socket::reset() {
   close();
   if (reconn_max == 0) {
-    nl_error(3, "DAS_IO::Socket::reset(): No retries requested");
-  } else if (reconn_retries++ >= reconn_max) {
-    nl_error(3, "DAS_IO::Socket::reset(): Maximum connection retries exceeded");
+    nl_error(2, "DAS_IO::Socket::reset(): No retries requested");
+    return true;
+  } else if (reconn_max > 0 && reconn_retries++ >= reconn_max) {
+    nl_error(2, "DAS_IO::Socket::reset(): Maximum connection retries exceeded");
+    return true;
   }
   int delay_secs = reconn_seconds;
   reconn_seconds *= 2;
@@ -259,6 +261,7 @@ void Socket::reset() {
     reconn_seconds = reconn_seconds_max;
   TO.Set(delay_secs,0);
   flags |= Fl_Timeout;
+  return false;
 }
 
 bool Socket::read_error(int my_errno) {
@@ -273,8 +276,7 @@ bool Socket::read_error(int my_errno) {
     ELoop->delete_child(this);
     return false;
   } else {
-    reset();
-    return false;
+    return reset();
   }
 }
 
@@ -289,8 +291,7 @@ bool Socket::iwrite_error(int my_errno) {
     ELoop->delete_child(this);
     return false;
   } else {
-    reset();
-    return false;
+    return reset();
   }
 }
 
