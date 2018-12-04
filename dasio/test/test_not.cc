@@ -35,10 +35,12 @@ bool not_tester::seed_buf(const char *str) {
 }
 
 /* This method tests functionality of the constructor */
-TEST(NotTest, NotFloatTest) {
+TEST(NotTest, NotTesterTest) {
   not_tester::not_tester("NotTesterInstance",8);
   EXPECT_FALSE(not_tester::seed_buf("FarFarFarTooBig"));
+  EXPECT_FALSE(DAS_IO::Interface::cp < DAS_IO::Interface::nc);
   EXPECT_TRUE(not_tester::seed_buf("Correct"));
+  EXPECT_TRUE(DAS_IO::Interface::cp < DAS_IO::Interface::nc);
 }
 
 /* This method tests functionality of not_float() */
