@@ -10,7 +10,7 @@ class not_tester : public DAS_IO::Interface {
   public:
     not_tester(const char *str, int buf_size);
     ~not_tester();
-    void seed_buf(const char *str);
+    bool seed_buf(const char *str);
 }
 
 /* Constructor method */
@@ -34,11 +34,20 @@ bool not_tester::seed_buf(const char *str) {
   }
 }
 
+/* This method tests functionality of the constructor */
+TEST(NotTest, NotFloatTest) {
+  not_tester::not_tester("NotTesterInstance",8);
+  EXPECT_FALSE(not_tester::seed_buf("FarFarFarTooBig"));
+  EXPECT_TRUE(not_tester::seed_buf("Correct"));
+}
+
 /* This method tests functionality of not_float() */
 TEST(NotTest, NotFloatTest) {
-  not_tester::not_tester("NotTesterInstance",5);
-  not_tester::seed_buf("NotFloat");
+  not_tester::not_tester("NotTesterInstance",15);
+  not_tester::seed_buf("NotAFloat");
   EXPECT_TRUE(DAS_IO::Interface::not_float());
+  not_tester::seed_buf("8.15");
+  EXPECT_FALSE(DAS_IO::Interface::not_float());
 }
 
 /* Main method */
