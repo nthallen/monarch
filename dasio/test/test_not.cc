@@ -55,6 +55,34 @@ TEST(NotTest, NotFloatTest) {
   EXPECT_FALSE(DAS_IO::Interface::not_float());
 }
 
+/* This method tests functionality of not_found() */
+TEST(NotTest, NotFoundTest) {
+  not_tester::not_tester("NotTesterInstance",15);
+  not_tester::seed_buf("NotFound");
+  unsigned char c = 'f';
+  EXPECT_FALSE(DAS_IO::Interface::not_found(c));
+  c = 'c';
+  EXPECT_TRUE(DAS_IO::Interface::not_found(c));
+}
+
+/* This method tests functionality of not_hex() */
+TEST(NotTest, NotHexTest) {
+  not_tester::not_tester("NotTesterInstance",15);
+  not_tester::seed_buf("0xE9");
+  EXPECT_FALSE(DAS_IO::Interface::not_hex());
+  not_tester::seed_buf("NotHex");
+  EXPECT_TRUE(DAS_IO::Interface::not_hex());
+}
+
+/* This method tests functionality of not_int() */
+TEST(NotTest, NotIntTest) {
+  not_tester::not_tester("NotTesterInstance",15);
+  not_tester::seed_buf("233");
+  EXPECT_FALSE(DAS_IO::Interface::not_int());
+  not_tester::seed_buf("NotInt");
+  EXPECT_TRUE(DAS_IO::Interface::not_int());
+}
+
 /* Main method */
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
