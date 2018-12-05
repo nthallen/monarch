@@ -116,6 +116,21 @@ class Interface {
     
     /**
      * Called by ProcessData() when new data is available to the protocol level.
+     *
+     * protocol_input() and the parsing functions use the Interface's buf, cp and nc
+     * members to define the current input text. nc is the total number
+     * of characters in buf, and cp defines the current offset into
+     * buf. Hence the next input character to consider is always buf[cp],
+     * and we can only advance while cp < nc.
+     *
+     * The not_*() parsing functions
+     * will advance cp as a side effect. nc is updated by fillbuf()
+     * when input is received and by consume() when protocol_input()
+     * is finished with input characters. cp is set to zero before
+     * protocol_input() is called, so it is important that protocol_input()
+     * take care to clear out any characters that have already been fully
+     * processed.
+     *
      * @return true on an error requiring termination of the driver
      */
     virtual bool protocol_input();
@@ -125,18 +140,6 @@ class Interface {
      * has expired. If the interface is also waiting for input, protocol_input()
      * will be called before protocol_timeout(). If the protocol_input()
      * clears the timeout, then protocol_timeout() will not be called.
-     *
-     * protocol_input() and the parsing functions use the Interface's buf, cp and nc
-     * members to define the current input text. nc is the total number
-     * of characters in buf, and cp defines the current offset into
-     * buf. Hence the next input character to consider is always buf[cp],
-     * and we can only advance while cp < nc. These parsing functions
-     * will advance cp as a side effect. nc is updated by fillbuf()
-     * when input is received and by consume() when protocol_input()
-     * is finished with input characters. cp is set to zero before
-     * protocol_input() is called, so it is important that protocol_input()
-     * take care to clear out any characters that have already been fully
-     * processed.
      *
      * @return true on a condition requiring termination of the driver
      */
@@ -242,6 +245,7 @@ class Interface {
      * The idea is that a protocol_input() implementation should be
      * able to string together a string of these functions, such as:
      *
+     * ```
      * if (not_int(val1) || not_str(",") || not_int(val2) ||
      *     not_str(",") || not_float(flt1)) {
      *   if (cp < nc) {
@@ -251,6 +255,7 @@ class Interface {
      * } else {
      *   // valid input, can reference val1, val2, flt1 
      * }
+     * ```
      *
      * Note that failure of a parsing function is only a real error
      * if cp < nc. Otherwise, it probably just means that we are 
