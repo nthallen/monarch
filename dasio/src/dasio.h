@@ -125,6 +125,19 @@ class Interface {
      * has expired. If the interface is also waiting for input, protocol_input()
      * will be called before protocol_timeout(). If the protocol_input()
      * clears the timeout, then protocol_timeout() will not be called.
+     *
+     * protocol_input() and the parsing functions use the Interface's buf, cp and nc
+     * members to define the current input text. nc is the total number
+     * of characters in buf, and cp defines the current offset into
+     * buf. Hence the next input character to consider is always buf[cp],
+     * and we can only advance while cp < nc. These parsing functions
+     * will advance cp as a side effect. nc is updated by fillbuf()
+     * when input is received and by consume() when protocol_input()
+     * is finished with input characters. cp is set to zero before
+     * protocol_input() is called, so it is important that protocol_input()
+     * take care to clear out any characters that have already been fully
+     * processed.
+     *
      * @return true on a condition requiring termination of the driver
      */
     virtual bool protocol_timeout();
@@ -193,30 +206,138 @@ class Interface {
      */
     void report_ok(int nchars = 0);
     /**
-     * Parsing routines useful for parsing ASCII input data.
-     * All of these operate on buf with the current offset
-     * at cp and the total number of characters being nc.
-     * These all return true if the thing they are looking
-     * for was not found. The idea is to string a bunch
-     * of these together as:
-     *  if (not_a() || not_b() || not_c()) {
-     *    report_err("Something went wrong");
-     *  } else {
-     *    process
-     *  }
-     * If the error occurs before the end of the input, then
-     * an error message is reported via report_err(). In general
-     * this should mean that the only error that would need to
-     * be manually reported would be for syntax that is not
-     * supported by one of the not_*() functions or a timeout.
+     * Parsing utility function that searches forward in the buffer for the
+     * specified framing character. On success, cp is updated to point just
+     * past the location of the framing character and the function returns
+     * false. If the character is not found, the buffer is emptied and the
+     * function returns true.
+     *
+     * See not_hex() for a more detailed description of these parsing
+     * functions.
+     *
+     * @param c A framing character
+     * @return false if the character is found.
      */
-    int not_found(unsigned char c);
-    int not_hex(unsigned short &hexval);
-    int not_int(int &val );
-    int not_str(const char *str, unsigned int len);
-    int not_str(const std::string &s);
-    int not_str(const char *str);
-    int not_float( float &val );
+    bool not_found(unsigned char c);
+    /**
+     * Parsing utility function to read in a hex integer starting
+     * at the current position. Integer may be proceeded by optional
+     * whitespace.
+     *
+     * Read the description of protocol_input() to understand how
+     * we use buf, cp and nc.
+     *
+     * These parsing utility functions advance cp, looking for a
+     * specific syntactic element (in this case, a hex integer
+     * optionally preceded by whitespace). If the element is
+     * found, the converted value is stored in the referenced
+     * variable (hexval here) and the function will return false.
+     *
+     * If the function encounters an invalid character or reaches
+     * the end of the input text (cp == nc) before the semantic
+     * element has been found, the function will return true.
+     * If the error occurs before the end of the input buffer,
+     * an error will also be reported via report_err().
+     *
+     * The idea is that a protocol_input() implementation should be
+     * able to string together a string of these functions, such as:
+     *
+     * if (not_int(val1) || not_str(",") || not_int(val2) ||
+     *     not_str(",") || not_float(flt1)) {
+     *   if (cp < nc) {
+     *     // input error
+     *   }
+     *   return false;
+     * } else {
+     *   // valid input, can reference val1, val2, flt1 
+     * }
+     *
+     * Note that failure of a parsing function is only a real error
+     * if cp < nc. Otherwise, it probably just means that we are 
+     * awaiting more input. How exactly to recover from real input
+     * errors is very much dependent on the nature of the input
+     * source. If this is a socket connection from another program,
+     * it is probably appropriate to consume() all the characters in
+     * the input buffer. If the input is coming from a serial device
+     * and there is some sort of framing character in the input protocol,
+     * it may be reasonable to consume() only up to cp and then search
+     * for the framing character using not_found().
+     *
+     * @param[out] hexval The integer value
+     * @return false if a hexadecimal integer was found and converted,
+     * true if the current char is not a digit.
+     */
+    bool not_hex(unsigned short &hexval);
+    /**
+     * Parsing utility function to read in a decimal integer starting
+     * at the current position. Integer may be proceeded by optional
+     * whitespace and an optional sign.
+     *
+     * See not_hex() for a more detailed description of these parsing
+     * functions.
+     *
+     * @param[out] val The integer value
+     * @return zero if an integer was converted, non-zero if the current char is not a digit.
+     */
+    bool not_int(int &val );
+    /**
+     * Parsing utility function to check that the specified string matches the
+     * input at the current position. On success, advances cp to just
+     * after the matched string. On failure, cp points to the first
+     * character that does not match, which may be the end of the
+     * input buffer.
+     *
+     * Since both str and len are specified, the specified string may
+     * include NUL characters.
+     *
+     * See not_hex() for a more detailed description of these parsing
+     * functions.
+     *
+     * @param str The comparison string
+     * @param len The length of the string
+     * @return zero if the string matches the input buffer.
+     */
+    bool not_str(const char *str, unsigned int len);
+    /**
+     * Parsing utility function to check that the specified string matches the
+     * input at the current position. On success, advances cp to just
+     * after the matched string. On failure, cp points to the first
+     * character that does not match, which may be the end of the
+     * input buffer.
+     *
+     * See not_hex() for a more detailed description of these parsing
+     * functions.
+     *
+     * @param s The comparison string
+     * @return zero if the string matches the input buffer.
+     */
+    bool not_str(const std::string &s);
+    /**
+     * Parsing utility function to check that the specified string matches the
+     * input at the current position. On success, advances cp to just
+     * after the matched string. On failure, cp points to the first
+     * character that does not match, which may be the end of the
+     * input buffer.
+     *
+     * See not_hex() for a more detailed description of these parsing
+     * functions.
+     *
+     * @param str The comparison ASCIIZ string.
+     * @return zero if the string matches the input buffer.
+     */
+    bool not_str(const char *str);
+    /**
+     * Parsing utility function to convert a string in the input
+     * buffer to a float value. Updates cp to point just after the
+     * converted string on success.
+     *
+     * See not_hex() for a more detailed description of these parsing
+     * functions.
+     *
+     * @param val[out] The converted value
+     * @return false if the conversion succeeded.
+     */
+    bool not_float( float &val );
     /** The name of this interface. Used in diagnostic messages. */
     const char *iname;
     /** The number of characters in buf */
