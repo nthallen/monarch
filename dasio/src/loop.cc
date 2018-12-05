@@ -33,6 +33,7 @@ void Loop::remove_child(Interface *P) {
   for (InterfaceList::iterator pos = S.begin(); pos != S.end(); ++pos ) {
     if (P == *pos) {
       S.erase(pos);
+      children_changed = true;
       return;
     }
   }
@@ -72,9 +73,10 @@ void Loop::event_loop() {
     TimeoutAccumulator TA;
     InterfaceList::const_iterator Sp;
 
-    // nl_error(0, "Loop: %d children", S.size());
+    // nl_error(0, "Loop: %sempty, %d children", S.empty() ? "" : "not ", S.size());
     while (!PendingDeletion.empty()) {
       Interface *P = PendingDeletion.front();
+      // nl_error(0, "Deleting Interface %d", P->get_iname());
       delete(P);
       PendingDeletion.pop_front();
     }

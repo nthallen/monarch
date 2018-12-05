@@ -67,6 +67,10 @@ Socket::~Socket() {
   if (fd >= 0) {
     close();
   }
+  if (unix_name) {
+    delete(unix_name);
+    unix_name = 0;
+  }
 }
 
 const char *Socket::company = "linkeng";
@@ -180,9 +184,9 @@ bool Socket::ProcessData(int flag) {
       } else {
         if (!conn_fail_reported) {
           if (TO.Expired()) {
-            nl_error(2, "connect error: Client Timeout");
+            nl_error(2, "%s: connect error: Client Timeout", iname);
           } else {
-            nl_error(2, "connect error: %s",
+            nl_error(2, "%s: connect error %d: %s", iname, sock_err,
               strerror(sock_err));
           }
         }
@@ -212,6 +216,8 @@ bool Socket::ProcessData(int flag) {
     case Socket_disconnected:
       // Handle timeout (i.e. attempt reconnection)
       if (TO.Expired()) {
+        nl_error(0, "%s: reconnecting after timeout", iname);
+        TO.Clear();
         connect();
       }
       break;
@@ -240,8 +246,6 @@ void Socket::close() {
       if (unix_name->is_server()) {
         unix_name->release_server();
       }
-      delete(unix_name);
-      unix_name = 0;
     }
   }
 }
@@ -249,10 +253,10 @@ void Socket::close() {
 bool Socket::reset() {
   close();
   if (reconn_max == 0) {
-    nl_error(2, "DAS_IO::Socket::reset(): No retries requested");
+    nl_error(2, "%s: DAS_IO::Socket::reset(): No retries requested", iname);
     return true;
   } else if (reconn_max > 0 && reconn_retries++ >= reconn_max) {
-    nl_error(2, "DAS_IO::Socket::reset(): Maximum connection retries exceeded");
+    nl_error(2, "%s: DAS_IO::Socket::reset(): Maximum connection retries exceeded", iname);
     return true;
   }
   int delay_secs = reconn_seconds;
@@ -281,7 +285,8 @@ bool Socket::read_error(int my_errno) {
 }
 
 bool Socket::iwrite_error(int my_errno) {
-  nl_error(2, "%s: write error %d: %s", iname, my_errno, strerror(my_errno));
+  nl_error(2, "%s: write error %d: %s", iname,
+    my_errno, strerror(my_errno));
   
   if (is_server) {
     close();
@@ -301,6 +306,8 @@ bool Socket::protocol_except() {
 }
 
 bool Socket::closed() {
+  nl_error(2, "%s: Socket closed", iname);
+  
   if (is_server) {
     nl_error(2, "%s: Should not have been reading from listening socket", iname);
     return true;

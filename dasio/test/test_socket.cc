@@ -168,7 +168,7 @@ TEST(SocketTest,ConnClosedOnWrite) {
   clientsocket client; // ("IPCclient", 512, "cmd", false);
   client.set_retries(2, 1, 5);
   ASSERT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_connecting);
-  flags = select_once(&client);
+  flags = select_once(&client) & client.Fl_Write;
   exp_flags = client.Fl_Write;
   EXPECT_EQ(flags, exp_flags);
   EXPECT_FALSE(client.ProcessData(flags));
@@ -182,12 +182,17 @@ TEST(SocketTest,ConnClosedOnWrite) {
   flags = select_once(&client);
   exp_flags = client.Fl_Read;
   EXPECT_EQ(flags, exp_flags);
-  EXPECT_FALSE(client.ProcessData(flags));
-  EXPECT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_disconnected);
-  flags = select_once(&client);
-  exp_flags = client.Fl_Timeout;
-  EXPECT_EQ(flags, exp_flags);
-  EXPECT_FALSE(client.ProcessData(flags));
+  if (client.ProcessData(flags)) {
+    EXPECT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_disconnected);
+    // will not reconnect on its own. error was seen as a regular close
+    client.connect();
+  } else {
+    EXPECT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_disconnected);
+    flags = select_once(&client);
+    exp_flags = client.Fl_Timeout;
+    EXPECT_EQ(flags, exp_flags);
+    EXPECT_FALSE(client.ProcessData(flags));
+  }
   EXPECT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_connecting);
   flags = select_once(&client);
   exp_flags = client.Fl_Write;
