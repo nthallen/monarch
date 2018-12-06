@@ -158,4 +158,464 @@ bool DAS_IO_Interface::not_float( float &val ) {
   return true;
 }
 
+/* Added from TCCON/coelostat.cc by Miles, 6th December 2018 */
+bool DAS_IO::Interface::not_fix(int fix, int16_t &val) {
+  int saw_decimals = 0, saw_neg = 0, saw_digits = 0;
+
+  val = 0;
+  if (buf[cp] == '-') {
+    saw_neg = 1;
+    ++cp;
+  }
+  while (cp < nc) {
+    if ( isdigit(buf[cp]) ) {
+      saw_digits = 1;
+      val = val * 10 + buf[cp++] - '0';
+      if ( saw_decimals && saw_decimals++ == fix ) break;
+    } else if ( !saw_decimals && buf[cp] == '.' ) {
+      ++cp;
+      saw_decimals = 1;
+    } else break;
+  }
+  if ( saw_decimals == 0 ) {
+    // report_err("Missing decimal point at col %d", cp);
+    while ( ++saw_decimals <= fix ) val *= 10;
+  }
+  if ( !saw_digits ) {
+    report_err("No digits in not_fix at col %d", cp);
+    return true;
+  }
+  if (saw_neg) val = -val;
+  return false;
+}
+
+bool DAS_IO::Interface::not_alternate(int &is_first, const char *first,
+                                  const char *second) {
+  uint16_t start_cp = cp;
+  uint16_t i;
+  int is_second = 1;
+  int chk_first = 1;
+  int chk_second = 1;
+  is_first = 1;
+  if ( cp < 0 || cp > nc || nc < 0 || buf == 0 )
+    nl_error( 4, "Ser_Sel precondition failed: "
+      "cp = %d, nc = %d, buf %s",
+      cp, nc, buf ? "not NULL" : "is NULL" );
+  for (i = 0; cp < nc && (chk_first || chk_second); ++i, ++cp) {
+    if ( chk_first ) {
+      if (first[i] == '\0') break;
+      else if (first[i] != buf[start_cp+i] ) {
+        is_first = 0;
+        chk_first = 0;
+      }
+    }
+    if ( chk_second ) {
+      if (second[i] == '\0') break;
+      else if (second[i] != buf[start_cp+i] ) {
+        is_second = 0;
+        chk_second = 0;
+      }
+    }
+  }
+  if (!(is_first || is_second)) {
+    report_err( "Expected '%s' or '%s' at column %d",
+          first, second, start_cp );
+    return true;
+  }
+  return false;
+}
+
+bool DAS_IO::Interface::not_alt(const char *alt1, const char *alt0, int &is_alt1,
+	  const char *context) {
+  int rv1, rv0;
+  is_alt1 = -1;
+  rv1 = match(alt1);
+  if (rv1 > 0) {
+    is_alt1 = 1; // definite match
+    consume(nc);
+    return false;
+  } else {
+    rv0 = match(alt0);
+    if (rv0 > 0) {
+      is_alt1 = 0; // definite match
+      consume(nc);
+      return false;
+    }
+  }
+  if (rv0 == 0 || rv1 == 0) return false;
+  report_err("Unexpected string for '%s'", context);
+  consume(nc);
+  return true;
+}
+
+bool DAS_IO::Interface::not_any(const char *alternatives) {
+  if (cp < nc) {
+    for (const char *alt = alternatives; *alt; ++alt) {
+      if (buf[cp] == *alt) {
+        ++cp;
+        return false;
+      }
+    }
+    report_err("No match for alternatives '%s' at column %d", alternatives, cp);
+  }
+  return true;
+}
+
+bool DAS_IO::Interface::not_fixed_1( uint16_t &val ) {
+  val = 0;
+  if (cp >= nc)
+    return true;
+  while (cp < nc && isspace(buf[cp]))
+    ++cp;
+  if (!isdigit(buf[cp])) {
+    if (buf[cp] == '-') {
+      while (cp < nc && (buf[cp] == '-' || buf[cp] == '.'))
+	++cp;
+      val = 9999;
+      return false;
+    } else {
+      report_err("Expected digit at columnt %d", cp);
+      return true;
+    }
+  }
+  while (cp < nc && isdigit(buf[cp])) {
+    val = val*10 + buf[cp++] - '0';
+  }
+  if (cp >= nc) {
+    return true;
+  } else if (buf[cp] != '.') {
+    report_err("Expected decimal in not_fixed_1 at column %d", cp);
+    return true;
+  }
+  if (!isdigit(buf[++cp])) {
+    report_err("Expected digit after decimal in not_fixed_1 at column %d", cp);
+    return true;
+  }
+  val = val*10 + buf[cp++] - '0';
+  if (!isspace(buf[cp])) {
+    report_err("Expected end of field after decimal");
+    return true;
+  }
+  return false;
+}
+
+bool DAS_IO::Interface::not_bin(uint16_t &word, int nbits) {
+  int nbits_in = nbits;
+  while (cp < nc && isspace(buf[cp])) {
+    ++cp;
+  }
+  word = 0;
+  while (nbits > 0 && cp < nc && (buf[cp] == '0' || buf[cp] == '1')) {
+    word = (word<<1) | (buf[cp++]-'0');
+    --nbits;
+  }
+  if (nbits > 0) {
+    if (cp < nc)
+      report_err("Invalid bit in not_bin(%d) at column %d after %d bits",
+	nbits_in, cp, nbits_in-nbits);
+    return true;
+  }
+  return false;
+}
+
+bool DAS_IO::Interface::not_ndigits(int n, int &value) {
+  int i = n;
+  value = 0;
+  while ( i > 0 && cp < nc && isdigit(buf[cp])) {
+    value = value*10 + buf[cp++] - '0';
+    --i;
+  }
+  if (i > 0) {
+    if (cp < nc)
+      report_err("Expected %d digits at column %d", n, cp+i-n);
+    return true;
+  }
+  return false;
+}
+
+bool DAS_IO::Interface::not_zeno_time(double &Time) {
+  struct tm buft;
+  float secs;
+  time_t ltime;
+
+  if (not_ndigits(2, buft.tm_year) ||
+      not_str("/",1) ||
+      not_ndigits(2, buft.tm_mon) ||
+      not_str("/",1) ||
+      not_ndigits(2, buft.tm_mday) ||
+      not_str(",", 1) ||
+      not_ndigits(2, buft.tm_hour) ||
+      not_str(":",1) ||
+      not_ndigits(2, buft.tm_min) ||
+      not_str(":",1) ||
+      not_float(secs))
+    return true;
+  buft.tm_year += 100;
+  buft.tm_mon -= 1;
+  buft.tm_sec = 0;
+  ltime = mktime(&buft);
+  if (ltime == (time_t)(-1))
+    report_err("mktime returned error");
+  else Time = ltime + secs;
+  return false;
+}
+
+bool DAS_IO::Interface::not_ushort(uint16_t &val) {
+  val = 0;
+  if (buf[cp] == '-') {
+    if (isdigit(buf[++cp])) {
+      while (isdigit(buf[cp])) {
+        ++cp;
+      }
+      if (cp < nc)
+        report_err("not_ushort: Negative int truncated at col %d", cp);
+    } else {
+      if (cp < nc)
+        report_err("Found '-' and no digits at col %d", cp);
+      return true;
+    }
+  } else if (isdigit(buf[cp])) {
+    while (isdigit(buf[cp])) {
+      val = val*10 + buf[cp++] - '0';
+    }
+  } else {
+    if (cp < nc)
+      report_err("not_ushort: no digits at col %d", cp);
+    return true;
+  }
+  return false;
+}
+
+bool DAS_IO::Interface::not_fix(int fix, int16_t &val) {
+  int saw_decimals = 0, saw_neg = 0;
+
+  val = 0;
+  if (buf[cp] == '-') {
+    saw_neg = 1;
+    ++cp;
+  }
+  if (! isdigit(buf[cp])) {
+    if (cp < nc)
+      report_err("No digits in not_fix at column %d", cp);
+    return true;
+  }
+  while (cp < nc) {
+    if ( isdigit(buf[cp]) ) {
+      val = val * 10 + buf[cp++] - '0';
+      if ( saw_decimals && saw_decimals++ == fix ) break;
+    } else if ( !saw_decimals && buf[cp] == '.' ) {
+      ++cp;
+      saw_decimals = 1;
+    } else break;
+  }
+  if ( saw_decimals == 0 ) {
+    // report_err("Missing decimal point at col %d", cp);
+    while ( ++saw_decimals <= fix ) val *= 10;
+  }
+  return false;
+}
+
+bool DAS_IO::Interface::not_hex( uint32_t &hexval ) {
+  if (! isxdigit(buf[cp])) {
+    if (cp < nc)
+      report_err("No hex digits at col %d", cp);
+    return true;
+  }
+  while ( isxdigit(buf[cp]) ) {
+    unsigned short digval = isdigit(buf[cp]) ? ( buf[cp] - '0' ) :
+           ( tolower(buf[cp]) - 'a' + 10 );
+    hexval = hexval * 16 + digval;
+    cp++;
+  }
+  return false;
+}
+
+bool DAS_IO::Interface::not_ndigits(int n, int &value) {
+  int i = n;
+  value = 0;
+  while ( i > 0 && cp < nc && isdigit(buf[cp])) {
+    value = value*10 + buf[cp++] - '0';
+    --i;
+  }
+  if (i > 0) {
+    if (cp < nc)
+      report_err("Expected %d digits at column %d", n, cp-i);
+    return true;
+  }
+  return false;
+}
+
+bool DAS_IO::Interface::not_ISO8601(double *Time) {
+  struct tm buft;
+  float secs;
+  time_t ltime;
+
+  if (not_ndigits(4, buft.tm_year) ||
+      not_str("-",1) ||
+      not_ndigits(2, buft.tm_mon) ||
+      not_str("-",1) ||
+      not_ndigits(2, buft.tm_mday) ||
+      not_str("T", 1) ||
+      not_ndigits(2, buft.tm_hour) ||
+      not_str(":",1) ||
+      not_ndigits(2, buft.tm_min) ||
+      not_str(":",1) ||
+      not_float(secs))
+    return true;
+  buft.tm_year -= 1900;
+  buft.tm_mon -= 1;
+  buft.tm_sec = 0;
+  ltime = mktime(&buft);
+  if (ltime == (time_t)(-1))
+    report_err("mktime returned error");
+  else *Time = ltime + secs;
+  return false;
+}
+
+bool DAS_IO::Interface::not_nfloat(float *value) {
+  float val;
+  while (cp < nc && buf[cp] == ' ') ++cp;
+  if (cp >= nc) return true;
+  if (buf[cp] == ',' || buf[cp] == '\r' || buf[cp] == '\n') {
+    *value = 99999.;
+    return false;
+  }
+  if (not_float(val)) return true;
+  *value = val;
+  return false;
+}
+
+bool DAS_IO::Interface::not_ndigits(int n, int &value) {
+  int i = n;
+  value = 0;
+  while ( i > 0 && cp < nc && isdigit(buf[cp])) {
+    value = value*10 + buf[cp++] - '0';
+    --i;
+  }
+  if (i > 0) {
+    report_err("%s Expected %d digits at column %d", KW, n, cp-i);
+    return true;
+  }
+  return false;
+}
+
+bool DAS_IO::Interface::not_double( double *value ) {
+  char *endptr;
+  int ncf;
+  if ( cp < 0 || cp > nc || nc < 0 || buf == 0 )
+    msg( 4, "%s not_float precondition failed: "
+      "cp = %d, nc = %d, buf %s",
+      KW, cp, nc, buf ? "not NULL" : "is NULL" );
+  *value = strtod( (char*)&buf[cp], &endptr );
+  ncf = endptr - (char*)&buf[cp];
+  if ( ncf == 0 ) {
+    report_err( "%s Expected float at column %d", KW, cp );
+    return true;
+  } else {
+    nl_assert( ncf > 0 && cp + ncf <= nc );
+    cp += ncf;
+    return false;
+  }
+}
+
+bool DAS_IO::Interface::not_ISO8601(double *Time, bool w_hyphens) {
+  struct tm buft;
+  float secs;
+  time_t ltime;
+
+  if (not_ndigits(4, buft.tm_year) ||
+      (w_hyphens && not_str("-",1)) ||
+      not_ndigits(2, buft.tm_mon) ||
+      (w_hyphens && not_str("-",1)) ||
+      not_ndigits(2, buft.tm_mday) ||
+      not_str("T", 1) ||
+      not_ndigits(2, buft.tm_hour) ||
+      not_str(":",1) ||
+      not_ndigits(2, buft.tm_min) ||
+      not_str(":",1) ||
+      not_float(&secs))
+    return true;
+  buft.tm_year -= 1900;
+  buft.tm_mon -= 1;
+  buft.tm_sec = 0;
+  ltime = mktime(&buft);
+  if (ltime == (time_t)(-1))
+    report_err("%s mktime returned error", KW);
+  else *Time = ltime + secs;
+  return false;
+}
+
+bool DAS_IO::Interface::not_nfloat(float *value, float NaNval) {
+  float val;
+  while (cp < nc && buf[cp] == ' ') ++cp;
+  if (cp >= nc) return true;
+  if (buf[cp] == ',' || buf[cp] == '\r' || buf[cp] == '\n') {
+    *value = NaNval;
+    return false;
+  }
+  if (strnicmp((const char *)&buf[cp], "NaN", 3) == 0) {
+    cp += 3;
+    *value = NaNval;
+    return false;
+  }
+  if (not_float(&val)) return true;
+  *value = val;
+  return false;
+}
+
+bool DAS_IO::Interface::not_uchar(unsigned char &val) {
+  int sval;
+  if (not_int(sval)) return true;
+  if (sval < 0 || sval > 255) {
+    report_err("%s uchar value out of range: %d", KW, sval);
+    return true;
+  }
+  val = sval;
+  return false;
+}
+
+bool DAS_IO::Interface::not_int(int &val) {
+  bool negative = false;
+  // fillbuf() guarantees the buffer will be NUL-terminated, so any check
+  // that will fail on a NUL is OK without checking the cp < nc
+  while (isspace(buf[cp]))
+    ++cp;
+  if (buf[cp] == '-') {
+    negative = true;
+    ++cp;
+  } else if (buf[cp] == '+') ++cp;
+  if ( isdigit(buf[cp]) ) {
+    val = buf[cp++] - '0';
+    while ( isdigit(buf[cp]) ) {
+      val = 10*val + buf[cp++] - '0';
+    }
+    if (negative) val = -val;
+    return false;
+  } else {
+    report_err( "%s Expected int at column %d", KW, cp );
+    return true;
+  }
+}
+
+bool DAS_IO::Interface::not_KW(char *KWbuf) {
+  int KWi = 0;
+  while (cp < nc && isspace(buf[cp]))
+    ++cp;
+  while (cp < nc && KWi < 30 && !isspace(buf[cp]) &&
+         buf[cp] != ',') {
+    KWbuf[KWi++] = buf[cp++];  
+  }
+  if (KWi >= 30) {
+    report_err("Keyword overflow");
+    return true;
+  } else if (buf[cp] == ',') {
+    KWbuf[KWi] = '\0';
+    ++cp;
+    return false;
+  } else {
+    report_err("Unexpected char in not_KW");
+    return true;
+  }
+}
+
 #endif

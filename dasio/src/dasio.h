@@ -314,7 +314,7 @@ class Interface {
      * functions.
      *
      * @param s The comparison string
-     * @return zero if the string matches the input buffer.
+     * @return false if the string matches the input buffer.
      */
     bool not_str(const std::string &s);
     /**
@@ -328,7 +328,7 @@ class Interface {
      * functions.
      *
      * @param str The comparison ASCIIZ string.
-     * @return zero if the string matches the input buffer.
+     * @return false if the string matches the input buffer.
      */
     bool not_str(const char *str);
     /**
@@ -343,6 +343,169 @@ class Interface {
      * @return false if the conversion succeeded.
      */
     bool not_float( float &val );
+	/**
+	 * From coelostat.cc
+	 * Parsing function to check if the value is missing a decimal point?
+	 * 
+	 * @return false if it is?
+	 */
+	bool not_fix(int fix, int16_t &val);
+	/**
+	 * From coelostat.cc
+	 *
+	 * @return false if ?
+	 */
+	bool not_alternate(int &is_first, const char *first, const char *second);
+	/**
+	 * From SunRoof.cc
+	 *
+	 * @return false if ?
+	 */
+	bool not_alt(const char *alt1, const char *alt0, int &is_alt1, const char *context);
+	/**
+	 * From sq_cmd.cc
+	 * 
+	 * Checks the next character and advances if it
+     * matches any of the characters in alternatives.
+	 * 
+     * @return true if a match was found.
+	 */
+	bool not_any(const char *alternatives);
+	/**
+	 * From UPS_parsers.cc
+	 * 
+	 * Looking for int "." int and converting
+	 * to a fixed float stored as 1 int
+	 * 
+     * @return true if ?
+	 */
+	bool not_fixed_1(uint16_t &val);
+	/**
+	 * From UPS_parsers.cc
+	 * 
+	 * Check if binary?
+	 * 
+     * @return true if ?
+	 */
+	bool not_bin(uint16_t &word, int nbits);
+	/**
+	 * From Zeno_Ser.cc
+	 * 
+	 * Check if @param value is not length n digits?
+	 * 
+     * @return false on failure
+	 */
+	bool not_ndigits(int n, int &value);
+	/**
+	 * From Zeno_Ser.cc
+	 * 
+	 * Check if ?
+	 * 
+     * @return false ?
+	 */
+	bool not_zeno_time(double &Time);
+	/**
+	 * From Zeno_Ser.cc
+	 * 
+	 * Check if @param val is not type ushort
+	 * 
+     * @return true on failure
+	 */
+	bool not_ushort(uint16_t &val);
+	/**
+	 * From Zeno_Ser.cc
+	 * 
+	 * Check if ?
+	 * 
+     * @return true on failure
+	 */
+	bool not_fix(int fix, int16_t &val);
+	/**
+	 * From Zeno_Ser.cc
+	 * 
+	 * Check if @param hexval is hexadecimal
+	 * 
+     * @return false if it is
+	 */
+	bool not_hex( uint32_t &hexval );
+	/**
+	 * From IWG1.cc
+	 * 
+	 * Check if @param value is not length n digits?
+	 * 
+     * @return false on failure
+	 */
+	bool not_ndigits(int n, int &value);
+	/**
+	 * From IWG1.cc
+	 * 
+	 * Check if ?
+	 * 
+     * @return false?
+	 */
+	bool not_ISO8601(double *Time);
+	/**
+	 * from IWG1.cc
+	 * 
+	 * accept a float or return a NaN (99999.)
+     * if the next char is a comma or CR
+     */
+	bool not_nfloat(float *value);
+	/**
+	 * from UserPkts2.cc
+	 * 
+	 * ?
+	 * 
+	 * @return false ?
+     */
+	bool not_ndigits(int n, int &value);
+	/**
+	 * from UserPkts2.cc
+	 * 
+	 * ?
+	 * 
+	 * @return false ?
+     */
+	bool not_double( double *value );
+	/**
+	 * from UserPkts2.cc
+	 * 
+	 * ?
+	 * 
+	 * @return false ?
+     */
+	bool not_ISO8601(double *Time, bool w_hyphens);
+	/**
+	 * from UserPkts2.cc
+	 * 
+	 * accept a float or return a NaN (99999.)
+     * if the next char is a comma or CR
+     */
+	bool not_nfloat(float *value, float NaNval);
+	/**
+	 * from UserPkts2.cc
+	 * 
+	 * Checks if @param val is unsigned char
+	 * 
+	 * @return false if it is
+     */
+	bool not_uchar(unsigned char &val);
+	/**
+	 * from UserPkts2.cc
+	 * 
+	 * Checks if @param val is not an int?
+	 * 
+	 * @return false ?
+     */
+	bool not_int(int &val);
+	/**
+	 * from UserPkts2.cc
+	 * 
+	 * ?
+	 * 
+	 * @return false ?
+     */
+	bool not_KW(char *KWbuf);
     /** The name of this interface. Used in diagnostic messages. */
     const char *iname;
     /** The number of characters in buf */
