@@ -374,15 +374,6 @@ class Interface {
 	/**
 	 * From UPS_parsers.cc
 	 * 
-	 * Looking for int "." int and converting
-	 * to a fixed float stored as 1 int
-	 * 
-     * @return true if ?
-	 */
-	bool not_fixed_1(uint16_t &val);
-	/**
-	 * From UPS_parsers.cc
-	 * 
 	 * Check if binary?
 	 * 
      * @return true if ?
@@ -399,43 +390,11 @@ class Interface {
 	/**
 	 * From Zeno_Ser.cc
 	 * 
-	 * Check if ?
-	 * 
-     * @return false ?
-	 */
-	bool not_zeno_time(double &Time);
-	/**
-	 * From Zeno_Ser.cc
-	 * 
 	 * Check if @param val is not type ushort
 	 * 
      * @return true on failure
 	 */
-	bool not_ushort(uint16_t &val);
-	/**
-	 * From Zeno_Ser.cc
-	 * 
-	 * Check if ?
-	 * 
-     * @return true on failure
-	 */
-	bool not_fix(int fix, int16_t &val);
-	/**
-	 * From Zeno_Ser.cc
-	 * 
-	 * Check if @param hexval is hexadecimal
-	 * 
-     * @return false if it is
-	 */
-	bool not_hex( uint32_t &hexval );
-	/**
-	 * From IWG1.cc
-	 * 
-	 * Check if @param value is not length n digits?
-	 * 
-     * @return false on failure
-	 */
-	bool not_ndigits(int n, int &value);
+	bool not_uint16(uint16_t &val);
 	/**
 	 * From IWG1.cc
 	 * 
@@ -451,14 +410,6 @@ class Interface {
      * if the next char is a comma or CR
      */
 	bool not_nfloat(float *value);
-	/**
-	 * from UserPkts2.cc
-	 * 
-	 * ?
-	 * 
-	 * @return false ?
-     */
-	bool not_ndigits(int n, int &value);
 	/**
 	 * from UserPkts2.cc
 	 * 
@@ -490,14 +441,6 @@ class Interface {
 	 * @return false if it is
      */
 	bool not_uchar(unsigned char &val);
-	/**
-	 * from UserPkts2.cc
-	 * 
-	 * Checks if @param val is not an int?
-	 * 
-	 * @return false ?
-     */
-	bool not_int(int &val);
 	/**
 	 * from UserPkts2.cc
 	 * 
