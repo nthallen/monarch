@@ -2,6 +2,7 @@
 #ifndef DASIO_SERIAL_H_INCLUDED
 #define DASIO_SERIAL_H_INCLUDED
 
+#include <termios.h>
 #include "dasio.h"
 
 namespace DAS_IO {
@@ -45,6 +46,7 @@ class Serial : public Interface {
       int min, int time );
     /** Buffer to hold serial parameters */
     termios termios_p;
+    class Modbus;
   protected:
     /**
      * Invokes fillbuf() until there is no input remaining.

@@ -1,11 +1,13 @@
 /** @file modbus_rtu.h */
 #ifndef MODBUS_RTU_H_INCLUDED
 #define MODBUS_RTU_H_INCLUDED
+
+#include <deque>
 #include "dasio_serial.h"
 
 namespace DAS_IO {
 
-class Serial::Modbus : public Serial {
+class Serial::Modbus : public DAS_IO::Serial {
   public:
     /**
      * Initializes interface and opens the device.
@@ -25,7 +27,15 @@ class Serial::Modbus : public Serial {
     bool protocol_input();
     bool protocol_timeout();
     bool tm_sync();
+    
+    /**
+     * @param rep pointer to buffer
+     * @param nb size of buffer including 2-byte crc
+     * @return true if the CRC checks out OK
+     */
+    bool crc_ok(uint8_t *rep, unsigned nb);
 
+    class modbus_device;
     class modbus_req {
       public:
         typedef enum { Req_unconfigured, Req_addressed, Req_pre_crc, Req_ready }
@@ -33,7 +43,7 @@ class Serial::Modbus : public Serial {
 
         modbus_req();
         ~modbus_req();
-        void setup(uint8_t device, uint8_t function_code, uint16_t address,
+        void setup(modbus_device *device, uint8_t function_code, uint16_t address,
           uint16_t count);
         /**
          * Fills in all the data for the specified request in byte order.
@@ -53,16 +63,23 @@ class Serial::Modbus : public Serial {
         // void setup_data(uint32_t *data);
         inline req_state_t get_req_state() { return req_state; }
         const char *ascii_escape();
-        // uint8_t MB_err_code;
+        void process_pdu();
+        
+        /**
+         * @param buf pointer to buffer
+         * @param nb size of buffer not counting 2-byte crc
+         * @return the 16-bit CRC code
+         */
+        uint16_t crc(uint8_t *buf, uint16_t nb);
+        
+        static const int MODBUS_RTU_REQ_MAX = 256;
         uint8_t req_buf[MODBUS_RTU_REQ_MAX];
         unsigned rep_sz;
         unsigned req_sz;
+        uint16_t address;
         uint16_t count;
         uint8_t devID;
-        static const int MODBUS_RTU_REQ_MAX = 256;
       protected:
-        // virtual void process_pdu(uint8_t *rep) = 0;
-        
         /**
          * Sets the CRC bytes in the request. The request must
          * be in the Req_pre_crc state, as set by setup() and/or
@@ -70,23 +87,10 @@ class Serial::Modbus : public Serial {
          */
         void crc_set();
         
-        /**
-         * @param rep pointer to buffer
-         * @param nb size of buffer including 2-byte crc
-         * @return true if the CRC checks out OK
-         */
-        bool crc_ok(uint8_t *rep, unsigned nb);
-        
-        /**
-         * @param buf pointer to buffer
-         * @param nb size of buffer not counting 2-byte crc
-         * @return the 16-bit CRC code
-         */
-        uint16_t crc(uint8_t *buf, unsigned nb);
-        
         void float_swap(uint8_t *dest, uint8_t *src);
         void word_swap(uint8_t *dest, uint8_t *src);
         // unsigned reqb_sz;
+        modbus_device *device; // should this be protected?
       private:
         req_state_t req_state;
     };
@@ -94,7 +98,7 @@ class Serial::Modbus : public Serial {
     modbus_req *new_modbus_req();
     std::deque<modbus_req *> polls;
     std::deque<modbus_req *> cmds;
-    std::deque<modbus_cmd_float *> req_free;
+    std::deque<modbus_req *> req_free;
     std::deque<modbus_req *>::const_iterator cur_poll;
     modbus_req *pending;
     
@@ -102,20 +106,28 @@ class Serial::Modbus : public Serial {
       public:
         /**
          * @param MB Pointer to the DAS_IO::Serial::Modbus object
-         * @param address The device's Modbus RTU address
+         * @param dev_name a short descriptor for this device
+         * @param devID The device's Modbus RTU address
          */
-        modbus_device(Modbus *MB, unit8_t address);
+        modbus_device(Modbus *MB, const char * dev_name, uint8_t devID);
         virtual ~modbus_device();
-        /**
-         * The Modbus RTU device address
-         */
-        uint8_t device_addr;
+
+        inline uint8_t get_devID() { return devID; }
+        inline const char *get_iname() { return MB ? MB->get_iname() : "unknown"; }
+        inline const char *get_dev_name() { return dev_name; }
         /**
          * Called during Modbus::add_device().
          */
-        virtual void enqueue_polls();
+        virtual void enqueue_polls() = 0;
+        virtual void process_pdu(modbus_req *req, uint16_t address) = 0;
       protected:
+        /**
+         * The Modbus RTU device address. Must be unique among
+         * devices on this Modbus.
+         */
+        uint8_t devID;
         Modbus *MB;
+        const char *dev_name;
     };
 
     /**
@@ -139,6 +151,12 @@ class Serial::Modbus : public Serial {
      * a write error to the device.
      */
     bool process_requests();
+    
+    /**
+     * Internal function to call the device's process_pdu() function.
+     */
+    void process_pdu();
+    
     /**
      * If pending is set, decides whether to place the request on the
      * free list or not, then clears pending.

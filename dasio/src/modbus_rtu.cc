@@ -1,35 +1,37 @@
 /** @file modbus_rtu.cc */
+#include <string.h>
 #include "modbus_rtu.h"
+#include "nl.h"
 
-namespace DAS_IO::Serial {
+namespace DAS_IO {
   
-  Modbus::Modbus(const char *iname, int bufsz, const char *path, int open_flags)
+  Serial::Modbus::Modbus(const char *iname, int bufsz, const char *path, int open_flags)
       : DAS_IO::Serial(iname, bufsz, path, open_flags) {
     
   }
   
-  Modbus::Modbus(const char *iname, int bufsz) : DAS_IO::Serial(iname, bufsz) {
+  Serial::Modbus::Modbus(const char *iname, int bufsz) : DAS_IO::Serial(iname, bufsz) {
     
   }
   
-  Modbus::~Modbus() {}
+  Serial::Modbus::~Modbus() {}
   
   /**
    * Parses the incoming response
    * @return true if the event loop should terminate
    */
-  bool Modbus::protocol_input() {
+  bool Serial::Modbus::protocol_input() {
     if (!pending) {
       report_err("%s: Unexpected input", iname);
       consume(nc);
     } else {
       if (nc < 5) return false; /* dev, cmd|err, exc. code, CRC */
-      else if (!(buf[1] & 0x80) && (nc < rep_sz)) return false;
+      else if (!(buf[1] & 0x80) && (nc < pending->rep_sz)) return false;
       else if (buf[0] != pending->req_buf[0]) {
         report_err("%s: Reply address mismatch. Expected 0x%02X, Recd 0x%02X",
             iname, pending->req_buf[0], buf[0]);
         consume(nc);
-      } else if ((buf[1] & 0x7F) != req_buf[1]) {
+      } else if ((buf[1] & 0x7F) != pending->req_buf[1]) {
         report_err("%s: Reply function code mismatch. Expected 0x%02X, Recd 0x%02X",
             iname, pending->req_buf[1], buf[1] & 0x7F);
         consume(nc);
@@ -41,14 +43,15 @@ namespace DAS_IO::Serial {
         }
         nl_error(0, "%s: Request was: %s", iname, pending->ascii_escape());
         consume(nc);
-      } else if (!crc_ok(buf, rep_sz)) {
-        nl_error(2, "%s: %s on reply", iname, nc > rep_sz ? "CRC error + extra chars" : "CRC error");
+      } else if (!crc_ok(buf, pending->rep_sz)) {
+        nl_error(2, "%s: %s on reply", iname,
+          nc > pending->rep_sz ? "CRC error + extra chars" : "CRC error");
         nl_error(0, "%s: Request was: %s", iname, pending->ascii_escape());
         consume(nc);
       } else {
-        pending->process_pdu(buf);
-        cp = rep_sz;
-        if (nc > rep_sz) {
+        cp = pending->rep_sz;
+        process_pdu();
+        if (nc > cp) {
           report_err("%s: Extra chars after reply", iname);
           consume(nc);
         } else {
@@ -61,12 +64,18 @@ namespace DAS_IO::Serial {
     return false;
   }
 
+  void Serial::Modbus::process_pdu() {
+    if (pending) {
+      pending->process_pdu();
+    }
+  }
+  
   /**
    * Terminates the current request/response and advances
    * to the next request.
    * @return true if the event loop should terminate
    */
-  bool Modbus::protocol_timeout() {
+  bool Serial::Modbus::protocol_timeout() {
     if (pending) {
       report_err("%s: Timeout awaiting reply", iname);
       nl_error(0, "%s: Request was: %s", iname, pending->ascii_escape());
@@ -82,14 +91,24 @@ namespace DAS_IO::Serial {
    * Reinitializes the list of poll requests.
    * @return true if the event loop should terminate
    */
-  bool Modbus::tm_sync() {
+  bool Serial::Modbus::tm_sync() {
     if (cur_poll == polls.end()) {
       cur_poll = polls.begin();
     }
     return process_requests();
   }
+
+  bool Serial::Modbus::crc_ok(uint8_t *rep, unsigned nb) {
+    if (pending) {
+      unsigned short crc_rep = (rep[nb-1]<<8) + rep[nb-2];
+      unsigned short crc_calc = pending->crc(rep, nb-2);
+      return crc_rep == crc_calc;
+    } else {
+      return false;
+    }
+  }
   
-  bool Modbus::process_requests() {
+  bool Serial::Modbus::process_requests() {
     while (!pending) {
       if (!cmds.empty()) {
         pending = cmds.front();
@@ -99,8 +118,8 @@ namespace DAS_IO::Serial {
         ++cur_poll;
       }
       if (pending) {
-        if (pending->get_req_state == Modbus::modbus_req::Req_ready) {
-          return iwrite((const char *)pending->req_buf[0], pending->req_sz);
+        if (pending->get_req_state() == Serial::Modbus::modbus_req::Req_ready) {
+          return iwrite((const char *)&pending->req_buf[0], pending->req_sz);
         } else {
           dispose_pending();
         }
@@ -109,27 +128,32 @@ namespace DAS_IO::Serial {
     return false;
   }
   
-  Modbus::modbus_req *Modbus::new_modbus_req() {
+  Serial::Modbus::modbus_req *Serial::Modbus::new_modbus_req() {
     if (req_free.empty()) {
-      return new Modbus::modbus_req;
+      return new Serial::Modbus::modbus_req;
     } else {
-      Modbus::modbus_req *req = req_free.front();
+      Serial::Modbus::modbus_req *req = req_free.front();
       req_free.pop_front();
       return req;
     }
   }
   
-  Modbus::modbus_req::modbus_req(uint8_t device, uint8_t function_code,
-          unsigned req_size, uint16_t rep_size)
-    : devID(device), req_size(req_size), rep_size(rep_size) {
-    req_buf
+  Serial::Modbus::modbus_req::modbus_req() {
+    req_state = Req_unconfigured;
+    device = 0;
+    address = 0;
+    rep_sz = req_sz = 0;
+    count = 0;
+    devID = 0;
   }
   
-  void Modbus::modbus_req::setup(uint8_t device, uint8_t function_code,
-          uint16_t address, uint16_t count) {
+  void Serial::Modbus::modbus_req::setup(Serial::Modbus::modbus_device *device,
+          uint8_t function_code, uint16_t address, uint16_t count) {
     uint8_t byte_count;
-    devID = device;
+    this->device = device;
+    this->devID = device->get_devID();
     this->count = count;
+    this->address = address;
     req_buf[0] = devID;
     req_buf[1] = function_code;
     word_swap(&req_buf[2], (uint8_t*)&address);
@@ -179,9 +203,9 @@ namespace DAS_IO::Serial {
     return;
   }
 
-  void Modbus::modbus_req::setup_data(uint8_t *data) {
+  void Serial::Modbus::modbus_req::setup_data(uint8_t *data) {
     if (req_state != Req_addressed) {
-      nl_error(2, "%s: setup_data(): Invalid input state %d", iname, req_state);
+      nl_error(2, "%s: setup_data(): Invalid input state %d", device->get_iname(), req_state);
     } else {
       uint8_t function_code = req_buf[1];
       uint8_t byte_count;
@@ -190,14 +214,14 @@ namespace DAS_IO::Serial {
         case 2:
         case 3:
         case 4:
-          nl_eror(2, "%s: setup_data() invalid for read functions", iname);
+          nl_error(2, "%s: setup_data() invalid for read functions", device->get_iname());
           break;
         case 5:
         case 6:
         case 16:
           nl_error(2,
             "%s: setup_data(uint8_t) incorrect data type for function_code %d",
-            iname, function_code);
+            device->get_iname(), function_code);
           break;
         case 15:
           byte_count = req_buf[6];
@@ -206,7 +230,7 @@ namespace DAS_IO::Serial {
           return;
         default:
           nl_error(2, "%s: setup_data() Invalid function %d",
-            iname, function_code);
+            device->get_iname(), function_code);
           break;
       }
     }
@@ -214,9 +238,10 @@ namespace DAS_IO::Serial {
     return;
   }
 
-  void Modbus::modbus_req::setup_data(uint16_t *data) {
+  void Serial::Modbus::modbus_req::setup_data(uint16_t *data) {
     if (req_state != Req_addressed) {
-      nl_error(2, "%s: setup_data(): Invalid input state %d", iname, req_state);
+      nl_error(2, "%s/%s: setup_data(): Invalid input state %d",
+          device->get_iname(), device->get_dev_name(), req_state);
     } else {
       uint8_t function_code = req_buf[1];
       uint8_t word_count;
@@ -225,12 +250,13 @@ namespace DAS_IO::Serial {
         case 2:
         case 3:
         case 4:
-          nl_eror(2, "%s: setup_data() invalid for read functions", iname);
+          nl_error(2, "%s/%s: setup_data() invalid for read functions",
+            device->get_iname(), device->get_dev_name());
           break;
         case 5:
         case 6:
         case 16:
-          word_swap(&word_count, req_buf[4]);
+          word_swap(&word_count, &req_buf[4]);
           for (int i = 0; i < word_count; ++i) {
             word_swap(&req_buf[7+2*i], (uint8_t*)&data[i]);
           }
@@ -238,12 +264,12 @@ namespace DAS_IO::Serial {
           return;
         case 15:
           nl_error(2,
-            "%s: setup_data(uint8_t) incorrect data type for function_code %d",
-            iname, function_code);
+            "%s/%s: setup_data(uint8_t) incorrect data type for function_code %d",
+            device->get_iname(), device->get_dev_name(), function_code);
           break;
         default:
-          nl_error(2, "%s: setup_data() Invalid function %d",
-            iname, function_code);
+          nl_error(2, "%s/%s: setup_data() Invalid function %d",
+            device->get_iname(), device->get_dev_name(), function_code);
           break;
       }
     }
@@ -255,26 +281,20 @@ namespace DAS_IO::Serial {
    * Requires no arguments because this is only called on the
    * request, and the buffer and size are stored in the object.
    */
-  void Modbus::modbus_req::crc_set() {
+  void Serial::Modbus::modbus_req::crc_set() {
     if (req_state == Req_pre_crc) {
       uint16_t crc_calc = crc(req_buf, req_sz-2);
       req_buf[req_sz-2] = crc_calc & 0xFF;
       req_buf[req_sz-1] = (crc_calc>>8) & 0xFF;
       req_state = Req_ready;
     } else {
-      nl_error(2, "%s: Incomplete request in crc_set(): %d", iname,
+      nl_error(2, "%s: Incomplete request in crc_set(): %d", device->get_iname(),
         req_state);
       req_state = Req_unconfigured;
     }
   }
 
-  bool Modbus::modbus_req::crc_ok(uint8_t *rep, unsigned nb) {
-    unsigned short crc_rep = (rep[nb-1]<<8) + rep[nb-2];
-    unsigned short crc_calc = crc(rep, nb-2);
-    return crc_rep == crc_calc;
-  }
-
-  uint16_t Modbus::modbus_req::crc(uint8_t *puchMsg, uint16_t usDataLen) {
+  uint16_t Serial::Modbus::modbus_req::crc(uint8_t *puchMsg, uint16_t usDataLen) {
 
     /* Table of CRC values for high–order byte */
     static unsigned char auchCRCHi[] = {
@@ -331,23 +351,35 @@ namespace DAS_IO::Serial {
     return (uchCRCHi << 8 | uchCRCLo) ;
   }
 
+  void Serial::Modbus::modbus_req::process_pdu() {
+    if (device) {
+      device->process_pdu(this, address);
+    }
+  }
+  
   /* This byte order comes from the Watlow driver, for which the documentation was very
    * sketchy. Modbus is supposed to use BigEndian, and it appears to do so on the
    * 16-bit register level, but apparently the combination of registers to form longer
    * data types (such as 32-bit floats), may be application dependent.
    * As such, verify the correct byte order, and make necessary changes.
    */
-  void Modbus::modbus_req::float_swap(uint8_t *dest, uint8_t *src) {
-    word_swap(dest, src)
-    dest[1] = src[0];
-    dest[0] = src[1];
-    dest[3] = src[2];
-    dest[2] = src[3];
+  void Serial::Modbus::modbus_req::float_swap(uint8_t *dest, uint8_t *src) {
+    word_swap(dest, src);
+    word_swap(dest+2, src+2);
   }
   
-  void Modbus::modbus_req::word_swap(uint8_t *dest, uint8_t *src) {
+  void Serial::Modbus::modbus_req::word_swap(uint8_t *dest, uint8_t *src) {
     dest[1] = src[0];
     dest[0] = src[1];
   }
 
+  Serial::Modbus::modbus_device::modbus_device(Serial::Modbus *MB,
+      const char *dev_name, uint8_t dev_addr)
+      : MB(MB), dev_name(dev_name), devID(devID) {
+    if (!MB || !dev_name) {
+      nl_error(3, "Invalid modbus_device construction");
+    }
+  }
+
+  Serial::Modbus::modbus_device::~modbus_device() { }
 }

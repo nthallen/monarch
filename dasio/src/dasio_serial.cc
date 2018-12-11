@@ -1,5 +1,4 @@
 /** @file dasio_serial.cc */
-#include <termios.h>
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
