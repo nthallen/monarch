@@ -18,6 +18,7 @@ namespace DAS_IO {
       void close();
       bool connected();
       inline bool is_negotiated() { return neg_state == Neg_negotiated; }
+      inline void set_subservice(const char *subs) { sub_service = subs; }
     private:
       static const int obufsize = 128;
       char obuf[obufsize];

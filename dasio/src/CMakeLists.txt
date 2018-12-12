@@ -3,13 +3,13 @@
 #project(dasio_proj VERSION 2.0.0)
 add_library(dasio interface.cc ascii_escape.cc not_parsed.cc dasio_serial.cc
   Timeout.cc loop.cc dasio_socket.cc unix_name.cc modbus_rtu.cc
-  negotiate.cc)
+  negotiate.cc dasio_tm.cc)
 target_include_directories(dasio PUBLIC ../../nl/src ../../tm/src)
 install(TARGETS dasio
   ARCHIVE
   DESTINATION lib
 )
 install(FILES dasio.h dasio_serial.h Timeout.h dasio_socket.h modbus_rtu.h
-  negotiate.h
+  negotiate.h dasio_tm.h
   DESTINATION include
 )
