@@ -99,7 +99,7 @@ class Socket : public Interface {
     /**
      * Shut down the connection.
      */
-    void close();
+    virtual void close();
 
     /**
      * Close and then try to reconnect after longish delay using
@@ -181,6 +181,7 @@ class Socket : public Interface {
         bool locked;
         bool server_claimed;
     };
+    class Negotiate;
   protected:
 
     /**
