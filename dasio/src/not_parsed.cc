@@ -16,11 +16,16 @@
  * be manually reported would be for syntax that is not
  * supported by one of the not_*() functions or a timeout.
  */
+#include <string.h>
+#include <strings.h>
+#include <stdio.h>
+#include <regex.h>
 #include "dasio.h"
+#include "nl.h"
+#include "msg.h"
+#include "nl_assert.h"
 
-#ifdef IMPLEMENTED
-
-bool DAS_IO_Interface::not_found(unsigned char c) {
+bool DAS_IO::Interface::not_found(unsigned char c) {
   while ( cp < nc ) {
     if ( buf[cp++] == c )
       return false;
@@ -32,7 +37,7 @@ bool DAS_IO_Interface::not_found(unsigned char c) {
   return true;
 }
 
-bool DAS_IO_Interface::not_hex( unsigned short &hexval ) {
+bool DAS_IO::Interface::not_hex( uint16_t &hexval ) {
   hexval = 0;
   while (cp < nc && isspace(buf[cp]))
     ++cp;
@@ -50,7 +55,7 @@ bool DAS_IO_Interface::not_hex( unsigned short &hexval ) {
   return false;
 }
 
-bool DAS_IO_Interface::not_int( int &val ) {
+bool DAS_IO::Interface::not_int( int &val ) {
   bool negative = false;
   // fillbuf() guarantees the buffer will be NUL-terminated, so any check
   // that will fail on a NUL is OK without checking the cp < nc
@@ -74,12 +79,12 @@ bool DAS_IO_Interface::not_int( int &val ) {
   }
 }
 
-bool DAS_IO_Interface::not_str( const char *str_in, unsigned int len ) {
+bool DAS_IO::Interface::not_str( const char *str_in, unsigned int len ) {
   unsigned int start_cp = cp;
   unsigned int i;
   const unsigned char *str = (const unsigned char *)str_in;
   if ( cp < 0 || cp > nc || nc < 0 || buf == 0 )
-    nl_error( 4, "DAS_IO_Interface precondition failed: "
+    nl_error( 4, "DAS_IO::Interface precondition failed: "
       "cp = %d, nc = %d, buf %s",
       cp, nc, buf ? "not NULL" : "is NULL" );
   for (i = 0; i < len; ++i) {
@@ -95,15 +100,15 @@ bool DAS_IO_Interface::not_str( const char *str_in, unsigned int len ) {
   return false;
 }
 
-bool DAS_IO_Interface::not_str( const char *str ) {
+bool DAS_IO::Interface::not_str( const char *str ) {
   return not_str(str, strlen(str));
 }
 
-bool DAS_IO_Interface::not_str(const std::string &s) {
+bool DAS_IO::Interface::not_str(const std::string &s) {
   return not_str(s.c_str(), s.length());
 }
 
-bool DAS_IO_Interface::not_float( float &val ) {
+bool DAS_IO::Interface::not_float( float &val ) {
   char *endptr;
   int start_cp = cp;
   int ncf;
@@ -223,6 +228,14 @@ bool DAS_IO::Interface::not_alternate(int &is_first, const char *first,
     return true;
   }
   return false;
+}
+
+int DAS_IO::Interface::match(const char *str) {
+  int i;
+  for (i = 0; cp+i < nc && *str != '\0' && buf[cp+i] == *str; ++i, ++str);
+  if (*str == '\0') return 1;
+  else if (cp+i >= nc) return 0;
+  else return -1;
 }
 
 bool DAS_IO::Interface::not_alt(const char *alt1, const char *alt0, int &is_alt1,
@@ -364,6 +377,7 @@ bool DAS_IO::Interface::not_nfloat(float *value) {
 bool DAS_IO::Interface::not_double( double *value ) {
   char *endptr;
   int ncf;
+  const char* KW;
   if ( cp < 0 || cp > nc || nc < 0 || buf == 0 )
     msg( 4, "%s not_float precondition failed: "
       "cp = %d, nc = %d, buf %s",
@@ -384,6 +398,7 @@ bool DAS_IO::Interface::not_ISO8601(double *Time, bool w_hyphens) {
   struct tm buft;
   float secs;
   time_t ltime;
+  const char* KW;
 
   if (not_ndigits(4, buft.tm_year) ||
       (w_hyphens && not_str("-",1)) ||
@@ -395,7 +410,7 @@ bool DAS_IO::Interface::not_ISO8601(double *Time, bool w_hyphens) {
       not_str(":",1) ||
       not_ndigits(2, buft.tm_min) ||
       not_str(":",1) ||
-      not_float(&secs))
+      not_float(secs))
     return true;
   buft.tm_year -= 1900;
   buft.tm_mon -= 1;
@@ -415,18 +430,19 @@ bool DAS_IO::Interface::not_nfloat(float *value, float NaNval) {
     *value = NaNval;
     return false;
   }
-  if (strnicmp((const char *)&buf[cp], "NaN", 3) == 0) {
+  if (strncasecmp((const char *)&buf[cp], "NaN", 3) == 0) {
     cp += 3;
     *value = NaNval;
     return false;
   }
-  if (not_float(&val)) return true;
+  if (not_float(val)) return true;
   *value = val;
   return false;
 }
 
 bool DAS_IO::Interface::not_uchar(unsigned char &val) {
   int sval;
+  const char* KW;
   if (not_int(sval)) return true;
   if (sval < 0 || sval > 255) {
     report_err("%s uchar value out of range: %d", KW, sval);
@@ -456,5 +472,3 @@ bool DAS_IO::Interface::not_KW(char *KWbuf) {
     return true;
   }
 }
-
-#endif

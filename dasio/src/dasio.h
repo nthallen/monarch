@@ -479,6 +479,7 @@ class Interface {
     /** Total number of errors found. */
     int total_errors;
     int total_suppressed;
+	int match(const char *str);
 };
 
 typedef std::list<Interface *> InterfaceList;
