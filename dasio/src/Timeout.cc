@@ -1,19 +1,16 @@
+/** @file Timeout.cc */
+
 #include <string.h>
 #include <errno.h>
-#include "Timeout.h"
+#include "dasio/timeout.h"
 #include "nl.h"
+
+namespace DAS_IO {
 
 Timeout::Timeout() {
   Clear();
 }
 
-/**
- * Specifies a desired timeout relative to the current time. The event loop
- * will subtract the then-current time to determine the correct relative
- * timeout value.
- * @param secs Seconds
- * @param msecs Milleseconds
- */
 void Timeout::Set( time_t secs, long msecs ) {
   int whole_secs;
   int rv = clock_gettime(CLOCK_REALTIME, &when);
@@ -105,4 +102,6 @@ struct timeval *TimeoutAccumulator::timeout_val() {
     }
   }
   return &how_soon;
+}
+
 }

@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <ctype.h>
-#include "dasio_socket.h"
+#include "dasio/socket.h"
 #include "nl.h"
 
 #ifndef UNIX_PATH_MAX

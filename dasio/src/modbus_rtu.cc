@@ -1,26 +1,26 @@
 /** @file modbus_rtu.cc */
 #include <string.h>
-#include "modbus_rtu.h"
+#include "dasio/modbus_rtu.h"
 #include "nl.h"
 
-namespace DAS_IO {
+namespace DAS_IO::Modbus {
   
-  Serial::Modbus::Modbus(const char *iname, int bufsz, const char *path, int open_flags)
+  RTU::Modbus(const char *iname, int bufsz, const char *path, int open_flags)
       : DAS_IO::Serial(iname, bufsz, path, open_flags) {
     
   }
   
-  Serial::Modbus::Modbus(const char *iname, int bufsz) : DAS_IO::Serial(iname, bufsz) {
+  RTU::Modbus(const char *iname, int bufsz) : DAS_IO::Serial(iname, bufsz) {
     
   }
   
-  Serial::Modbus::~Modbus() {}
+  RTU::~Modbus() {}
   
   /**
    * Parses the incoming response
    * @return true if the event loop should terminate
    */
-  bool Serial::Modbus::protocol_input() {
+  bool RTU::protocol_input() {
     if (!pending) {
       report_err("%s: Unexpected input", iname);
       consume(nc);
@@ -64,7 +64,7 @@ namespace DAS_IO {
     return false;
   }
 
-  void Serial::Modbus::process_pdu() {
+  void RTU::process_pdu() {
     if (pending) {
       pending->process_pdu();
     }
@@ -75,7 +75,7 @@ namespace DAS_IO {
    * to the next request.
    * @return true if the event loop should terminate
    */
-  bool Serial::Modbus::protocol_timeout() {
+  bool RTU::protocol_timeout() {
     if (pending) {
       report_err("%s: Timeout awaiting reply", iname);
       nl_error(0, "%s: Request was: %s", iname, pending->ascii_escape());
@@ -91,14 +91,14 @@ namespace DAS_IO {
    * Reinitializes the list of poll requests.
    * @return true if the event loop should terminate
    */
-  bool Serial::Modbus::tm_sync() {
+  bool RTU::tm_sync() {
     if (cur_poll == polls.end()) {
       cur_poll = polls.begin();
     }
     return process_requests();
   }
 
-  bool Serial::Modbus::crc_ok(uint8_t *rep, unsigned nb) {
+  bool RTU::crc_ok(uint8_t *rep, unsigned nb) {
     if (pending) {
       unsigned short crc_rep = (rep[nb-1]<<8) + rep[nb-2];
       unsigned short crc_calc = pending->crc(rep, nb-2);
@@ -108,7 +108,7 @@ namespace DAS_IO {
     }
   }
   
-  bool Serial::Modbus::process_requests() {
+  bool RTU::process_requests() {
     while (!pending) {
       if (!cmds.empty()) {
         pending = cmds.front();
@@ -118,7 +118,7 @@ namespace DAS_IO {
         ++cur_poll;
       }
       if (pending) {
-        if (pending->get_req_state() == Serial::Modbus::modbus_req::Req_ready) {
+        if (pending->get_req_state() == RTU::modbus_req::Req_ready) {
           return iwrite((const char *)&pending->req_buf[0], pending->req_sz);
         } else {
           dispose_pending();
@@ -128,17 +128,17 @@ namespace DAS_IO {
     return false;
   }
   
-  Serial::Modbus::modbus_req *Serial::Modbus::new_modbus_req() {
+  RTU::modbus_req *RTU::new_modbus_req() {
     if (req_free.empty()) {
-      return new Serial::Modbus::modbus_req;
+      return new RTU::modbus_req;
     } else {
-      Serial::Modbus::modbus_req *req = req_free.front();
+      RTU::modbus_req *req = req_free.front();
       req_free.pop_front();
       return req;
     }
   }
   
-  Serial::Modbus::modbus_req::modbus_req() {
+  RTU::modbus_req::modbus_req() {
     req_state = Req_unconfigured;
     device = 0;
     address = 0;
@@ -147,7 +147,7 @@ namespace DAS_IO {
     devID = 0;
   }
   
-  void Serial::Modbus::modbus_req::setup(Serial::Modbus::modbus_device *device,
+  void RTU::modbus_req::setup(RTU::modbus_device *device,
           uint8_t function_code, uint16_t address, uint16_t count) {
     uint8_t byte_count;
     this->device = device;
@@ -203,7 +203,7 @@ namespace DAS_IO {
     return;
   }
 
-  void Serial::Modbus::modbus_req::setup_data(uint8_t *data) {
+  void RTU::modbus_req::setup_data(uint8_t *data) {
     if (req_state != Req_addressed) {
       nl_error(2, "%s: setup_data(): Invalid input state %d", device->get_iname(), req_state);
     } else {
@@ -238,7 +238,7 @@ namespace DAS_IO {
     return;
   }
 
-  void Serial::Modbus::modbus_req::setup_data(uint16_t *data) {
+  void RTU::modbus_req::setup_data(uint16_t *data) {
     if (req_state != Req_addressed) {
       nl_error(2, "%s/%s: setup_data(): Invalid input state %d",
           device->get_iname(), device->get_dev_name(), req_state);
@@ -281,7 +281,7 @@ namespace DAS_IO {
    * Requires no arguments because this is only called on the
    * request, and the buffer and size are stored in the object.
    */
-  void Serial::Modbus::modbus_req::crc_set() {
+  void RTU::modbus_req::crc_set() {
     if (req_state == Req_pre_crc) {
       uint16_t crc_calc = crc(req_buf, req_sz-2);
       req_buf[req_sz-2] = crc_calc & 0xFF;
@@ -294,7 +294,7 @@ namespace DAS_IO {
     }
   }
 
-  uint16_t Serial::Modbus::modbus_req::crc(uint8_t *puchMsg, uint16_t usDataLen) {
+  uint16_t RTU::modbus_req::crc(uint8_t *puchMsg, uint16_t usDataLen) {
 
     /* Table of CRC values for high–order byte */
     static unsigned char auchCRCHi[] = {
@@ -351,7 +351,7 @@ namespace DAS_IO {
     return (uchCRCHi << 8 | uchCRCLo) ;
   }
 
-  void Serial::Modbus::modbus_req::process_pdu() {
+  void RTU::modbus_req::process_pdu() {
     if (device) {
       device->process_pdu(this, address);
     }
@@ -363,17 +363,17 @@ namespace DAS_IO {
    * data types (such as 32-bit floats), may be application dependent.
    * As such, verify the correct byte order, and make necessary changes.
    */
-  void Serial::Modbus::modbus_req::float_swap(uint8_t *dest, uint8_t *src) {
+  void RTU::modbus_req::float_swap(uint8_t *dest, uint8_t *src) {
     word_swap(dest, src);
     word_swap(dest+2, src+2);
   }
   
-  void Serial::Modbus::modbus_req::word_swap(uint8_t *dest, uint8_t *src) {
+  void RTU::modbus_req::word_swap(uint8_t *dest, uint8_t *src) {
     dest[1] = src[0];
     dest[0] = src[1];
   }
 
-  Serial::Modbus::modbus_device::modbus_device(Serial::Modbus *MB,
+  RTU::modbus_device::modbus_device(RTU *MB,
       const char *dev_name, uint8_t dev_addr)
       : MB(MB), dev_name(dev_name), devID(devID) {
     if (!MB || !dev_name) {
@@ -381,5 +381,5 @@ namespace DAS_IO {
     }
   }
 
-  Serial::Modbus::modbus_device::~modbus_device() { }
+  RTU::modbus_device::~modbus_device() { }
 }

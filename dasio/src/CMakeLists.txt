@@ -9,7 +9,3 @@ install(TARGETS dasio
   ARCHIVE
   DESTINATION lib
 )
-install(FILES dasio.h dasio_serial.h Timeout.h dasio_socket.h modbus_rtu.h
-  negotiate.h dasio_tm.h
-  DESTINATION include
-)

@@ -1,9 +1,9 @@
-/** @file dasio_serial.h Serial interface layer */
+/** @file dasio/serial.h Serial interface layer */
 #ifndef DASIO_SERIAL_H_INCLUDED
 #define DASIO_SERIAL_H_INCLUDED
 
 #include <termios.h>
-#include "dasio.h"
+#include "dasio/interface.h"
 
 namespace DAS_IO {
   

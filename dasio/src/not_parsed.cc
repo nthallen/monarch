@@ -20,7 +20,7 @@
 #include <strings.h>
 #include <stdio.h>
 #include <regex.h>
-#include "dasio.h"
+#include "dasio/interface.h"
 #include "nl.h"
 #include "msg.h"
 #include "nl_assert.h"

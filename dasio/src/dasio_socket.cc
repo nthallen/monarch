@@ -8,7 +8,7 @@
 #include <sys/un.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "dasio_socket.h"
+#include "dasio/socket.h"
 #include "nl.h"
 #include "nl_assert.h"
 

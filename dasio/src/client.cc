@@ -1,43 +1,36 @@
-/** @file negotiate.cc */
+/** @file client.cc */
 #include <stdio.h>
 #include <stdlib.h>
-#include "negotiate.h"
+#include "dasio/client.h"
 
 namespace DAS_IO {
 
-  Socket::Negotiate::Negotiate(const char *iname, int bufsz, const char *service,
+  Client::Client(const char *iname, int bufsz, const char *service,
         const char *sub_service)
     : DAS_IO::Socket(iname, bufsz, service), sub_service(sub_service) {
     neg_state = Neg_connecting;
   }
   
-  Socket::Negotiate::~Negotiate() {}
+  Client::~Client() {}
   
-  bool Socket::Negotiate::ProcessData(int flag) {
-    switch (socket_state) {
-      case Neg_connecting:
-      case Neg_negotiated:
-        return DAS_IO::Socket::ProcessData(flag);
-      case Neg_negotiating:
-        if (fillbuf()) return true;
-        cp = 0;
-        if (not_str("OK\n")) {
-          report_err("%s: Negotiation failed", iname);
-          consume(nc);
-          return true;
-        }
-        neg_state = Neg_negotiated;
-        report_ok(nc);
-        return false;
+  bool Client::protocol_input() {
+    if (is_negotiated()) return app_input();
+    if (not_str("OK\n")) {
+      report_err("%s: Negotiation failed", iname);
+      consume(nc);
+      return true;
     }
+    neg_state = Neg_negotiated;
+    report_ok(nc);
+    return app_connected();
   }
   
-  void Socket::Negotiate::close() {
+  void Client::close() {
     DAS_IO::Socket::close();
     neg_state = Neg_connecting;
   }
   
-  bool Socket::Negotiate::connected() {
+  bool Client::connected() {
     // Issue the negotiation string
     int req_len;
     const char *Exp = getenv("Experiment");

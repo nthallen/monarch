@@ -3,7 +3,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include "nl.h"
-#include "dasio_serial.h"
+#include "dasio/serial.h"
 
 namespace DAS_IO {
   

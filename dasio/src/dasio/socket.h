@@ -1,8 +1,8 @@
-/** @file dasio_socket.h */
+/** @file dasio/socket.h */
 #ifndef DASIO_SOCKET_H_INCLUDED
 #define DASIO_SOCKET_H_INCLUDED
 
-#include "dasio.h"
+#include "dasio/interface.h"
 
 namespace DAS_IO {
   
@@ -181,7 +181,6 @@ class Socket : public Interface {
         bool locked;
         bool server_claimed;
     };
-    class Negotiate;
   protected:
 
     /**

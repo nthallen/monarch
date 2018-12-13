@@ -1,13 +1,13 @@
 /** @file modbus_rtu.h */
-#ifndef MODBUS_RTU_H_INCLUDED
-#define MODBUS_RTU_H_INCLUDED
+#ifndef DASIO_MODBUS_RTU_H_INCLUDED
+#define DASIO_MODBUS_RTU_H_INCLUDED
 
 #include <deque>
-#include "dasio_serial.h"
+#include "dasio/serial.h"
 
-namespace DAS_IO {
+namespace DAS_IO::Modbus {
 
-class Serial::Modbus : public DAS_IO::Serial {
+class RTU : public DAS_IO::Serial {
   public:
     /**
      * Initializes interface and opens the device.
@@ -16,14 +16,14 @@ class Serial::Modbus : public DAS_IO::Serial {
      * @param path Path to the device
      * @param open_flags Flags passed to ::open()
      */
-    Modbus(const char *iname, int bufsz, const char *path, int open_flags);
+    RTU(const char *iname, int bufsz, const char *path, int open_flags);
     /**
      * Initializes interface without opening device.
      * @param iname Interface name for messages
      * @param bufsz The input buffer size
      */
-    Modbus(const char *iname, int bufsz);
-    ~Modbus();
+    RTU(const char *iname, int bufsz);
+    ~RTU();
     bool protocol_input();
     bool protocol_timeout();
     bool tm_sync();
@@ -105,18 +105,18 @@ class Serial::Modbus : public DAS_IO::Serial {
     class modbus_device {
       public:
         /**
-         * @param MB Pointer to the DAS_IO::Serial::Modbus object
+         * @param MB Pointer to the DAS_IO::Modbus::RTU object
          * @param dev_name a short descriptor for this device
          * @param devID The device's Modbus RTU address
          */
-        modbus_device(Modbus *MB, const char * dev_name, uint8_t devID);
+        modbus_device(RTU *MB, const char * dev_name, uint8_t devID);
         virtual ~modbus_device();
 
         inline uint8_t get_devID() { return devID; }
         inline const char *get_iname() { return MB ? MB->get_iname() : "unknown"; }
         inline const char *get_dev_name() { return dev_name; }
         /**
-         * Called during Modbus::add_device().
+         * Called during RTU::add_device().
          */
         virtual void enqueue_polls() = 0;
         virtual void process_pdu(modbus_req *req, uint16_t address) = 0;
@@ -126,7 +126,7 @@ class Serial::Modbus : public DAS_IO::Serial {
          * devices on this Modbus.
          */
         uint8_t devID;
-        Modbus *MB;
+        RTU *MB;
         const char *dev_name;
     };
 
