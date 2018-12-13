@@ -63,10 +63,13 @@ class Interface {
      * is saved and handled transparently. The caller is
      * responsible for allocating the output buffer(s) and ensuring
      * they are not overrun.
+     * 
+     * If an error occurs during writing, iwrite_error(errno) is called,
+     * and it's return value is returned.
      * @param str Pointer to the output buffer
      * @param nc The total number of bytes in the output buffer
      * @param cp The starting offset within the output buffer
-     * @return true if a fatal error occurs
+     * @return true if event loop should terminate.
      */
     bool iwrite(const char *str, unsigned int nc, unsigned int cp = 0);
     /**
@@ -75,7 +78,7 @@ class Interface {
      * string is not transmitted immediately. The string argument must
      * remain unmodified until entirely transmitted.
      * @param s The string to output
-     * @return true if write ran to completion
+     * @return true if event loop should terminate.
      */
     bool iwrite(const std::string &s);
     /**
@@ -83,7 +86,7 @@ class Interface {
      * The string must remain unmodified until the data has been entirely
      * transmitted.
      * @param str The string to output
-     * @return true if a fatal error occurs
+     * @return true if event loop should terminate.
      */
     bool iwrite(const char *str);
     /**
