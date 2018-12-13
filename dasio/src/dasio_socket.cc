@@ -30,6 +30,20 @@ Socket::Socket(const char *iname, int bufsz, const char *service, bool server) :
   common_init();
   connect();
 }
+
+Socket::Socket(Socket *S, const char *iname, int fd) :
+  Interface(iname, S->bufsize),
+  service(S->service),
+  hostname(0),
+  is_server(false),
+  socket_state(Socket_connected),
+  socket_type(S->socket_type)
+{
+  common_init();
+  this->fd = fd;
+  is_server_client = true;
+}
+
     /**
      * Called by server when creating client interfaces after accept().
      * @param iname The interface name
@@ -204,8 +218,9 @@ bool Socket::ProcessData(int flag) {
             nl_error(3, "fcntl() failure in DAS_IO::Socket(%s): %s", iname,
               std::strerror(errno));
           }
-          Socket *client = new_client("clientcon", bufsize, new_fd, socket_type, service);
-          ELoop->add_child(client);
+          // Socket *client = new_client("clientcon", bufsize, new_fd, socket_type, service);
+          // ELoop->add_child(client);
+          Socket *client = new_client("clientcon", new_fd);
           // create a new Socket and add it to the Loop
           // probably mark it as negotiating
           return client->connected();
@@ -326,8 +341,23 @@ bool Socket::connected() { return false; }
 
 bool Socket::connect_failed() { return false; }
 
-Socket *Socket::new_client(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname) {
-  return new Socket(iname, bufsz, fd, stype, service, hostname);
+Socket *Socket::new_client(const char *iname, int bufsz, int fd,
+      socket_type_t stype, const char *service, const char *hostname) {
+  Socket *rv = new Socket(iname, bufsz, fd, stype, service, hostname);
+  if (ELoop) ELoop->add_child(rv);
+  return rv;
+}
+
+Socket *Socket::new_client(const char *iname, int fd) {
+  Socket *rv = new Socket(this, iname, fd);
+  if (ELoop) ELoop->add_child(rv);
+  return rv;
+}
+
+Socket *Socket::new_client() {
+  Socket *rv = new_client(this->iname, this->fd);
+  // if (ELoop) ELoop->delete_child(this);
+  return rv;
 }
 
 bool Socket::readSockError(int *sock_err) {

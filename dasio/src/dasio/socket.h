@@ -32,7 +32,13 @@ class Socket : public Interface {
      * @param hostname When Socket_TCP, the client's address
      * @fd The socket
      */
-    Socket(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname = 0);
+    Socket(const char *iname, int bufsz, int fd, socket_type_t stype,
+           const char *service, const char *hostname = 0);
+    /**
+     * Initializes this Socket to match the original, making sure to
+     * set is_server to false and propagating the is_server_client value.
+     */
+    Socket(Socket *original, const char *iname, int fd);
     virtual ~Socket();
     /**
      * The flags bits consist of Fl_Read, Fl_Write, Fl_Except, Fl_Timeout and the gflag() values.
@@ -216,7 +222,21 @@ class Socket : public Interface {
      * @param hostname When Socket_TCP, the client's address
      * @fd The socket
      */
-    virtual Socket *new_client(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname = 0);
+    virtual Socket *new_client(const char *iname, int bufsz, int fd,
+              socket_type_t stype, const char *service, const char *hostname = 0);
+    /**
+     * Copy all parameters from this Socket except iname and fd,
+     * set is_server false and set is_server_client true.
+     * Adds the new client to ELoop if defined.
+     */
+    virtual Socket *new_client(const char *iname, int fd);
+    
+    /**
+     * Invokes new_client(fd) to clone this object into one of a different
+     * class after negotiation has completed. Will remove this socket
+     * from ELoop if defined and possible preserve the object for reuse.
+     */
+    virtual Socket *new_client();
 
     unix_name_t *unix_name;
     const char *hostname;
