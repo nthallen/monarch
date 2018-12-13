@@ -2,7 +2,7 @@
 #ifndef DASIO_SOCKET_H_INCLUDED
 #define DASIO_SOCKET_H_INCLUDED
 
-#include "dasio/interface.h"
+#include "interface.h"
 
 namespace DAS_IO {
   

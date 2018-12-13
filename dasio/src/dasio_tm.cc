@@ -1,5 +1,6 @@
 /** @file dasio_tm.cc */
-#include "dasio/client.h"
+#include "dasio/tm.h"
+#include "dasio/loop.h"
 
 namespace DAS_IO {
   

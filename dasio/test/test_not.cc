@@ -1,6 +1,6 @@
 /** @file test_not.cc */
 #include <stdlib.h>
-#include "dasio.h"
+#include "dasio/interface.h"
 #include "nl.h"
 #include "msg.h"
 #include "gtest/gtest.h"

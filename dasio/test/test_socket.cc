@@ -3,16 +3,17 @@
 #include <string.h>
 #include <sys/select.h>
 #include <process.h>
-#include "dasio.h"
 #include "nl.h"
-#include "dasio_socket.h"
+#include "dasio/socket.h"
+#include "dasio/timeout.h"
+#include "dasio/loop.h"
 #include "gtest/gtest.h"
 
 int select_once(DAS_IO::Interface *P) {
   fd_set readfds, writefds, exceptfds;
   int width = 0;
   // Timeout TO;
-  TimeoutAccumulator TA;
+  DAS_IO::TimeoutAccumulator TA;
   // TO.Set(0,100);
   TA.Set(0);
   FD_ZERO(&readfds);

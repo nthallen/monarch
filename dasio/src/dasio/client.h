@@ -2,7 +2,7 @@
 #ifndef DASIO_CLIENT_H_INCLUDED
 #define DASIO_CLIENT_H_INCLUDED
 
-#include "dasio/socket.h"
+#include "socket.h"
 
 namespace DAS_IO {
   
@@ -36,12 +36,12 @@ namespace DAS_IO {
       bool protocol_input();
       void close();
       bool connected();
-      inline bool is_negotiated() { return neg_state == Clt_negotiated; }
+      inline bool is_negotiated() { return clt_state == Clt_negotiated; }
       inline void set_subservice(const char *subs) { sub_service = subs; }
     private:
       static const int obufsize = 128;
       char obuf[obufsize];
-      clt_state_t neg_state;
+      clt_state_t clt_state;
       const char *sub_service;
   };
   

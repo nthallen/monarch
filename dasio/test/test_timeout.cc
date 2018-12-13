@@ -1,6 +1,6 @@
 /* dasio_test.cc */
 #include <unistd.h>
-#include "Timeout.h"
+#include "dasio/timeout.h"
 #include "gtest/gtest.h"
 
 class TO_test : public ::testing::Test {
@@ -9,8 +9,8 @@ class TO_test : public ::testing::Test {
       TO.Clear();
 	  // socket = new socket(/*no clue*/);
     }
-    Timeout TO;
-	TimeoutAccumulator TA;
+    DAS_IO::Timeout TO;
+    DAS_IO::TimeoutAccumulator TA;
 	// Socket socket;
 };
 

@@ -1,5 +1,6 @@
 #include "nl.h"
-#include "dasio_socket.h"
+#include "dasio/socket.h"
+#include "dasio/loop.h"
 
 class echosrvr : public DAS_IO::Socket {
   public:

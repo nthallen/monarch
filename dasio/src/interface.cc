@@ -8,6 +8,7 @@
 #include "dasio/interface.h"
 #include "msg.h"
 #include "nl_assert.h"
+#include "dasio/ascii_escape.h"
 
 namespace DAS_IO {
 

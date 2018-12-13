@@ -5,7 +5,7 @@
 #ifndef DAS_IO_INTERFACE_H_INCLUDED
 #define DAS_IO_INTERFACE_H_INCLUDED
 #include <string>
-#include "dasio/timeout.h"
+#include "timeout.h"
 
 namespace DAS_IO {
   

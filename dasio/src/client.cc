@@ -8,7 +8,7 @@ namespace DAS_IO {
   Client::Client(const char *iname, int bufsz, const char *service,
         const char *sub_service)
     : DAS_IO::Socket(iname, bufsz, service), sub_service(sub_service) {
-    neg_state = Neg_connecting;
+    clt_state = Clt_connecting;
   }
   
   Client::~Client() {}
@@ -20,14 +20,14 @@ namespace DAS_IO {
       consume(nc);
       return true;
     }
-    neg_state = Neg_negotiated;
+    clt_state = Clt_negotiated;
     report_ok(nc);
     return app_connected();
   }
   
   void Client::close() {
     DAS_IO::Socket::close();
-    neg_state = Neg_connecting;
+    clt_state = Clt_connecting;
   }
   
   bool Client::connected() {
@@ -44,7 +44,7 @@ namespace DAS_IO {
       req_len = snprintf(obuf, obufsize, "AuthLE %s %s\n", Exp, service);
     }
     if (iwrite(obuf, req_len)) return true; // don't write the terminating NUL, duh
-    neg_state = Neg_negotiating;
+    clt_state = Clt_negotiating;
     return false;
   }
   

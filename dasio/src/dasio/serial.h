@@ -3,7 +3,7 @@
 #define DASIO_SERIAL_H_INCLUDED
 
 #include <termios.h>
-#include "dasio/interface.h"
+#include "interface.h"
 
 namespace DAS_IO {
   

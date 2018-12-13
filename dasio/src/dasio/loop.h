@@ -7,8 +7,8 @@
 #include <string>
 #include <list>
 #include <atomic>
-#include "dasio/interface.h"
-#include "dasio/timeout.h"
+#include "interface.h"
+#include "timeout.h"
 
 namespace DAS_IO {
 

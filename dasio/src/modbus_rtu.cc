@@ -5,16 +5,16 @@
 
 namespace DAS_IO::Modbus {
   
-  RTU::Modbus(const char *iname, int bufsz, const char *path, int open_flags)
+  RTU::RTU(const char *iname, int bufsz, const char *path, int open_flags)
       : DAS_IO::Serial(iname, bufsz, path, open_flags) {
     
   }
   
-  RTU::Modbus(const char *iname, int bufsz) : DAS_IO::Serial(iname, bufsz) {
+  RTU::RTU(const char *iname, int bufsz) : DAS_IO::Serial(iname, bufsz) {
     
   }
   
-  RTU::~Modbus() {}
+  RTU::~RTU() {}
   
   /**
    * Parses the incoming response

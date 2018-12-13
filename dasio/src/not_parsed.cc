@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <regex.h>
 #include "dasio/interface.h"
+#include "dasio/ascii_escape.h"
 #include "nl.h"
 #include "msg.h"
 #include "nl_assert.h"

@@ -3,7 +3,7 @@
 #define DASIO_MODBUS_RTU_H_INCLUDED
 
 #include <deque>
-#include "dasio/serial.h"
+#include "serial.h"
 
 namespace DAS_IO::Modbus {
 

@@ -1,6 +1,6 @@
 /** @file test_unix_name.cc */
 #include <stdlib.h>
-#include "dasio_socket.h"
+#include "dasio/socket.h"
 #include "gtest/gtest.h"
 
 const char *opt_string = "vo:mV";
