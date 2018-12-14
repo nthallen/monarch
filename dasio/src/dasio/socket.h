@@ -16,18 +16,27 @@ class Socket : public Interface {
 
                          // Socket(const char *iname, int bufsz);
     /**
-     * Connect to a Unix Domain socket using the service name
+     * Create to a Unix Domain socket client using the service name
      */
-    Socket(const char *iname, int bufsz, const char *service, bool server = false);
+    Socket(const char *iname, int bufsz, const char *service);
+    
     /**
-     * Create a TCP connection to the specified hostname and service/port.
+     * Create a socket server
+     */
+    Socket(const char *iname, int bufsz, const char *service,
+        socket_type_t socket_type);
+    
+    /**
+     * Create a TCP client connection to the specified hostname and service/port.
      */
     Socket(const char *iname, int bufsz, const char *hostname, const char *service);
+    
     /**
      * Initializes this Socket to match the original, making sure to
      * set is_server to false and propagating the is_server_client value.
      */
     Socket(Socket *original, const char *iname, int fd);
+    
     virtual ~Socket();
     /**
      * The flags bits consist of Fl_Read, Fl_Write, Fl_Except, Fl_Timeout and the gflag() values.

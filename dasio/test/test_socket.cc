@@ -50,7 +50,9 @@ int select_once(DAS_IO::Interface *P) {
 
 class echosrvr : public DAS_IO::Socket {
   public:
-    echosrvr(const char *iname, int bufsz, const char *service, bool server=false);
+    echosrvr(const char *iname, int bufsz, const char *service);
+    echosrvr(const char *iname, int bufsz, const char *service,
+      DAS_IO::Socket::socket_type_t);
     echosrvr(Socket *orig, const char *iname, int fd);
     ~echosrvr();
     DAS_IO::Socket *new_client(const char *iname, int fd);
@@ -59,7 +61,12 @@ class echosrvr : public DAS_IO::Socket {
 };
 
 echosrvr::echosrvr(const char *iname, int bufsz, const char *service,
-  bool server) : DAS_IO::Socket(iname, bufsz, service, server) {
+        DAS_IO::Socket::socket_type_t socket_type)
+    : DAS_IO::Socket(iname, bufsz, service, socket_type) {
+}
+
+echosrvr::echosrvr(const char *iname, int bufsz, const char *service)
+    : DAS_IO::Socket(iname, bufsz, service) {
 }
 
 echosrvr::echosrvr(DAS_IO::Socket *orig, const char *iname, int fd)
@@ -126,7 +133,7 @@ const char *opt_string = "vo:mV";
 
 class clientsocket : public DAS_IO::Socket {
   public:
-    inline clientsocket() : DAS_IO::Socket("IPCclient", 512, "cmd", false) {}
+    inline clientsocket() : DAS_IO::Socket("IPCclient", 512, "cmd") {}
     ~clientsocket();
     void transmit(const char *cmd);
     bool protocol_input();
@@ -212,7 +219,7 @@ TEST(SocketTest,ConnClosedOnWrite) {
 }
 
 void child_process() {
-  echosrvr server("IPCserver", 512, "cmd", true);
+  echosrvr server("IPCserver", 512, "cmd", DAS_IO::Socket::Socket_Unix);
   DAS_IO::Loop ELoop;
   ELoop.add_child(&server);
   ELoop.event_loop();

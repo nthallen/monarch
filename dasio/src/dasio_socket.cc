@@ -19,13 +19,26 @@
 
 namespace DAS_IO {
 
-Socket::Socket(const char *iname, int bufsz, const char *service, bool server) :
+Socket::Socket(const char *iname, int bufsz, const char *service) :
     Interface(iname, bufsz),
     service(service),
     hostname(0),
-    is_server(server),
+    is_server(false),
     socket_state(Socket_disconnected),
     socket_type(Socket_Unix)  
+{
+  common_init();
+  connect();
+}
+
+Socket::Socket(const char *iname, int bufsz, const char *service,
+        socket_type_t socket_type) :
+    Interface(iname, bufsz),
+    service(service),
+    hostname(0),
+    is_server(true),
+    socket_state(Socket_disconnected),
+    socket_type(socket_type)  
 {
   common_init();
   connect();

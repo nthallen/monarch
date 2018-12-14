@@ -2,20 +2,25 @@
 #ifndef DASIO_SERVER_H_INCLUDED
 #define DASIO_SERVER_H_INCLUDED
 
-#include <list>
+#include <map>
 #include "socket.h"
 
 namespace DAS_IO {
 
   class Authenticator;
   
-  typedef Socket *(*)(Authenticator *) socket_clone_t;
+  typedef Socket *(* socket_clone_t)(Authenticator *);
   
   class SubServices {
     public:
       SubServices();
       ~SubServices();
-      void add_subservice(const char *subservice, socket_clone_t func);
+      /**
+       * @return true if the subservice was added successfully, false if
+       * it was already defined.
+       */
+      bool add_subservice(const char *subservice, socket_clone_t func);
+      socket_clone_t find_subservice(const char *subservice);
     private:
       std::map<std::string,socket_clone_t> subs;
   };
@@ -37,7 +42,7 @@ namespace DAS_IO {
       ~Server();
       class Authenticator : public Socket {
         public:
-          Authenticator(Server *);
+          Authenticator(Server *orig, const char *iname, int fd);
           ~Authenticator();
           bool protocol_input();
       };
