@@ -4,6 +4,7 @@
 #include "dasio/server.h"
 #include "dasio/loop.h"
 #include "dasio/appid.h"
+#include "nl.h"
 
 namespace DAS_IO {
 
@@ -28,24 +29,20 @@ namespace DAS_IO {
   }
 
   Server::Server(const char *iname, int bufsz, const char *service,
-        Socket::socket_type_t socket_type)
-      : Socket(iname, bufsz, service, socket_type) {}
+        Socket::socket_type_t socket_type, SubServices *Subsp)
+      : Socket(iname, bufsz, service, socket_type), Subsp(Subsp) {}
 
   Server::~Server() {}
   
   Socket *Server::new_client(const char *iname, int fd) {
-    Authenticator *rv = new Authenticator(this, iname, fd, &Subs);
+    Authenticator *rv = new Authenticator(this, iname, fd, Subsp);
     if (ELoop) ELoop->add_child(rv);
     return rv;
   }
   
-  bool Server::add_subservice(SubService *def) {
-    return Subs.add_subservice(def);
-  }
-  
   Authenticator::Authenticator(Server *orig, const char *iname,
             int fd, SubServices *SS)
-        : Socket(orig, iname, fd), Subsp(SS) {}
+        : Socket(orig, iname, fd), Subsp(SS), client_app(0) {}
   Authenticator::~Authenticator() {}
   
   bool Authenticator::protocol_input() {
@@ -71,14 +68,23 @@ namespace DAS_IO {
         return false;
       }
       report_ok(nc);
+      char *clt_app_tmp = (char *)new_memory(clt_app_len+1);
+      strncpy(clt_app_tmp, clt_app, clt_app_len);
+      clt_app_tmp[clt_app_len] = '\0';
+      client_app = (const char *)clt_app_tmp;
       Socket *clone = ssvc->func(this, ssvc);
-      if (clone == 0) return true; // bad craziness
+      if (clone == 0) {
+        close();
+        if (ELoop)
+          ELoop->delete_child(this);
+        return false;
+      }
       this->fd = -1;
       if (ELoop) {
         ELoop->delete_child(this);
         ELoop->add_child(clone);
       }
-      return clone->connected();
+      return clone->iwrite("OK\n") || clone->connected();
     }
   }
 

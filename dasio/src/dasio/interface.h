@@ -10,10 +10,12 @@
 namespace DAS_IO {
   
 class Loop;
+class Authenticator;
 
 /**
  */
 class Interface {
+  friend class Authenticator;
   public:
     Interface(const char *name, int bufsz);
     virtual ~Interface();

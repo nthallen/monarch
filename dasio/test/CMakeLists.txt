@@ -35,3 +35,9 @@ target_include_directories(echosrvr PUBLIC
   ../src
   ${CMAKE_SOURCE_DIR}/nl/src)
 target_link_libraries(echosrvr dasio nl tm)
+
+add_executable(tmsrvr tmsrvr.cc)
+target_include_directories(tmsrvr PUBLIC
+  ${CMAKE_SOURCE_DIR}/dasio/src
+  ${CMAKE_SOURCE_DIR}/nl/src)
+target_link_libraries(tmsrvr dasio nl tm)

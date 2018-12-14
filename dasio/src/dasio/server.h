@@ -11,6 +11,14 @@ namespace DAS_IO {
   class SubService;
   class Authenticator;
   
+  /**
+   * Defines a function type for switching interface classes after
+   * negotiation. The function can return zero if the connection is
+   * refused for reasons beyond the authentication. For example, the
+   * TM_server class will refuse a new connection if the specified
+   * datum is already being written to by another process.
+   * @return Pointer to a Socket subclass or zero if an error occurs.
+   */
   typedef Socket *(* socket_clone_t)(Authenticator *, SubService *);
   
   class SubService {
@@ -49,12 +57,11 @@ namespace DAS_IO {
   class Server : public Socket {
     public:
       Server(const char *iname, int bufsz, const char *service,
-        Socket::socket_type_t socket_type = Socket_Unix);
+        Socket::socket_type_t socket_type, SubServices *Subsp);
       ~Server();
       Socket *new_client(const char *iname, int fd);
-      bool add_subservice(SubService *);
     protected:
-      SubServices Subs;
+      SubServices *Subsp;
   };
 
   class Authenticator : public Socket {
@@ -67,10 +74,12 @@ namespace DAS_IO {
        * @return true if the server's event loop should terminate
        */
       bool protocol_input();
+      inline const char *get_client_app() { return client_app; }
     protected:
       bool not_word(const char *&w, int len);
       bool not_svc(const char *&svc, int len);
       SubServices *Subsp;
+      const char *client_app;
   };
 
 }
