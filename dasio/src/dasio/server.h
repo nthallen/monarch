@@ -3,13 +3,24 @@
 #define DASIO_SERVER_H_INCLUDED
 
 #include <map>
+#include <string>
 #include "socket.h"
 
 namespace DAS_IO {
 
+  class SubService;
   class Authenticator;
   
-  typedef Socket *(* socket_clone_t)(Authenticator *);
+  typedef Socket *(* socket_clone_t)(Authenticator *, SubService *);
+  
+  class SubService {
+    public:
+      SubService(std::string name, socket_clone_t func, void *svc_data);
+      ~SubService();
+      std::string name;
+      socket_clone_t func;
+      void *svc_data;
+  };
   
   class SubServices {
     public:
@@ -19,10 +30,10 @@ namespace DAS_IO {
        * @return true if the subservice was added successfully, false if
        * it was already defined.
        */
-      bool add_subservice(const char *subservice, socket_clone_t func);
-      socket_clone_t find_subservice(const char *subservice);
+      bool add_subservice(SubService *def);
+      SubService *find_subservice(std::string subservice);
     private:
-      std::map<std::string,socket_clone_t> subs;
+      std::map<std::string,SubService *> subs;
   };
   
   /**
@@ -40,15 +51,26 @@ namespace DAS_IO {
       Server(const char *iname, int bufsz, const char *service,
         Socket::socket_type_t socket_type = Socket_Unix);
       ~Server();
-      class Authenticator : public Socket {
-        public:
-          Authenticator(Server *orig, const char *iname, int fd);
-          ~Authenticator();
-          bool protocol_input();
-      };
-      bool add_subservice(const char *subservice, socket_clone_t);
+      Socket *new_client(const char *iname, int fd);
+      bool add_subservice(SubService *);
     protected:
       SubServices Subs;
+  };
+
+  class Authenticator : public Socket {
+    public:
+      Authenticator(Server *orig, const char *iname, int fd, SubServices *SS);
+      ~Authenticator();
+      /**
+       * Currently processes a single line of input, and either accepts
+       * or rejects.
+       * @return true if the server's event loop should terminate
+       */
+      bool protocol_input();
+    protected:
+      bool not_word(const char *&w, int len);
+      bool not_svc(const char *&svc, int len);
+      SubServices *Subsp;
   };
 
 }

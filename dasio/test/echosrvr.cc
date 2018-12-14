@@ -1,6 +1,9 @@
 #include "nl.h"
 #include "dasio/socket.h"
 #include "dasio/loop.h"
+#include "dasio/appid.h"
+
+DAS_IO::AppID_t DAS_IO::AppID("echosrvr", "A demo server", "V1.1");
 
 class echosrvr : public DAS_IO::Socket {
   public:

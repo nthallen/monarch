@@ -1,7 +1,10 @@
 /** @file test_unix_name.cc */
 #include <stdlib.h>
 #include "dasio/socket.h"
+#include "dasio/appid.h"
 #include "gtest/gtest.h"
+
+DAS_IO::AppID_t DAS_IO::AppID("test_unix_name", "Tests of unix name functions", "V1.1");
 
 const char *opt_string = "vo:mV";
 
@@ -26,18 +29,18 @@ TEST(NameTest,UnixNameGoodService) {
 /* This method tests functionality of the unix_name constructor, and whether I know how to invoke it */
 TEST(NameTest,ExpNameSetup) {
   DAS_IO::Socket::unix_name_t unix_name;
-  putenv((char*)"Experiment=A bad experiment");
+  DAS_IO::AppID.Experiment = "A bad experiment";
   EXPECT_FALSE(unix_name.set_service("cmd"));
-  putenv((char*)"Experiment=Also/bad/experiment");
+  DAS_IO::AppID.Experiment = "Also/bad/experiment";
   EXPECT_FALSE(unix_name.set_service("cmd"));
-  putenv((char*)"Experiment=SCoPEx");
+  DAS_IO::AppID.Experiment = "SCoPEx";
   EXPECT_TRUE(unix_name.set_service("cmd"));
 }
 
 /* This method tests functionality of the lock function */
 TEST(NameTest,UnixNameLockSetup) {
   DAS_IO::Socket::unix_name_t unix_name;
-  putenv((char*)"Experiment=Locker"); // /var/run/Locker.lock
+  DAS_IO::AppID.Experiment = "Locker"; // /var/run/Locker.lock
   EXPECT_TRUE(unix_name.set_service("cmd"));
   EXPECT_TRUE(unix_name.lock());
   EXPECT_TRUE(unix_name.is_locked());
@@ -49,7 +52,8 @@ TEST(NameTest,UnixNameLockSetup) {
 /* This method tests functionality of the lock function */
 TEST(NameTest,LockChecks) {
   DAS_IO::Socket::unix_name_t unix_name1, unix_name2;
-  putenv((char*)"Experiment=Locker"); // /var/run/Locker.lock
+  DAS_IO::AppID.Experiment = "Locker"; // /var/run/Locker.lock
+  // putenv((char*)"Experiment=Locker"); // /var/run/Locker.lock
   EXPECT_TRUE(unix_name1.set_service("cmd"));
   EXPECT_TRUE(unix_name2.set_service("cmd"));
   EXPECT_TRUE(unix_name1.lock());
@@ -63,7 +67,8 @@ TEST(NameTest,LockChecks) {
 /* This method tests functionality of the claim_server function */
 TEST(NameTest,ClaimServer) {
   DAS_IO::Socket::unix_name_t unix_name;
-  putenv((char*)"Experiment=Locker"); // /var/run/Locker.lock
+  DAS_IO::AppID.Experiment = "Locker"; // /var/run/Locker.lock
+  // putenv((char*)"Experiment=Locker"); // /var/run/Locker.lock
   EXPECT_FALSE(unix_name.is_server());
   EXPECT_TRUE(unix_name.set_service("cmd"));
   EXPECT_FALSE(unix_name.is_locked());
@@ -89,7 +94,8 @@ TEST(NameTest,ClaimServer) {
 /* Test ClaimServer Failure */
 TEST(NameTest,ClaimServerConflict) {
   DAS_IO::Socket::unix_name_t unix_name1, unix_name2;
-  putenv((char*)"Experiment=Locker"); // /var/run/Locker.lock
+  DAS_IO::AppID.Experiment = "Locker"; // /var/run/Locker.lock
+  // putenv((char*)"Experiment=Locker"); // /var/run/Locker.lock
   EXPECT_FALSE(unix_name1.is_server());
   EXPECT_TRUE(unix_name1.set_service("cmd"));
   EXPECT_FALSE(unix_name1.is_locked());

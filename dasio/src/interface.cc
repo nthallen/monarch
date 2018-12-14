@@ -5,6 +5,7 @@
 #include <string>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 #include "dasio/interface.h"
 #include "msg.h"
 #include "nl_assert.h"

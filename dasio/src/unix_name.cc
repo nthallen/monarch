@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <ctype.h>
 #include "dasio/socket.h"
+#include "dasio/appid.h"
 #include "nl.h"
 
 #ifndef UNIX_PATH_MAX
@@ -66,11 +67,12 @@ bool Socket::unix_name_t::set_service(const char *service) {
     return false;
   }
   // Verify that company, Experiment and service are all valid words
-  const char *Exp = std::getenv("Experiment");
+  const char *Exp = AppID.Experiment;
   if (Exp == 0) {
     Exp = "none";
   }
-  if (!is_word(company, "company") || !is_word(Exp, "Experiment") || !is_word(service, "service"))
+  if (!is_word(company, "company") || !is_word(Exp, "Experiment")
+      || !is_word(service, "service"))
     return false;
   int exp_len = snprintf(0, 0, "/var/run/%s/%s", company, Exp)+1;
   char *new_exp_name = (char *)new_memory(exp_len);

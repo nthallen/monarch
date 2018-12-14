@@ -198,11 +198,7 @@ bool Socket::ProcessData(int flag) {
             nl_error(3, "fcntl() failure in DAS_IO::Socket(%s): %s", iname,
               std::strerror(errno));
           }
-          // Socket *client = new_client("clientcon", bufsize, new_fd, socket_type, service);
-          // ELoop->add_child(client);
           Socket *client = new_client("clientcon", new_fd);
-          // create a new Socket and add it to the Loop
-          // probably mark it as negotiating
           return client->connected();
         }
       } else {
@@ -329,7 +325,6 @@ Socket *Socket::new_client(const char *iname, int fd) {
 
 Socket *Socket::new_client() {
   Socket *rv = new_client(this->iname, this->fd);
-  // if (ELoop) ELoop->delete_child(this);
   return rv;
 }
 

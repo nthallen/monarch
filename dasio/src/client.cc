@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "dasio/client.h"
+#include "dasio/appid.h"
 
 namespace DAS_IO {
 
@@ -33,15 +34,13 @@ namespace DAS_IO {
   bool Client::connected() {
     // Issue the negotiation string
     int req_len;
-    const char *Exp = getenv("Experiment");
-    if (Exp == 0) {
-      Exp = "none";
-    }
+    const char *Exp = AppID.Experiment;
     if (sub_service && sub_service[0]) {
-      req_len = snprintf(obuf, obufsize, "AuthLE %s %s/%s\n", Exp, service,
-        sub_service);
+      req_len = snprintf(obuf, obufsize, "AuthLE %s %s %s/%s\n", Exp,
+        AppID.name, service, sub_service);
     } else {
-      req_len = snprintf(obuf, obufsize, "AuthLE %s %s\n", Exp, service);
+      req_len = snprintf(obuf, obufsize, "AuthLE %s %s %s\n", Exp,
+        AppID.name, service);
     }
     if (iwrite(obuf, req_len)) return true; // don't write the terminating NUL, duh
     clt_state = Clt_negotiating;

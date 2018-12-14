@@ -5,8 +5,11 @@
 #include "interface.h"
 
 namespace DAS_IO {
+
+class Authenticator;
   
 class Socket : public Interface {
+  friend class Authenticator;
   public:
     typedef enum { Socket_disconnected, Socket_locking, Socket_connecting,
                               Socket_listening, Socket_connected }

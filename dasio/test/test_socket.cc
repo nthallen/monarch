@@ -7,7 +7,10 @@
 #include "dasio/socket.h"
 #include "dasio/timeout.h"
 #include "dasio/loop.h"
+#include "dasio/appid.h"
 #include "gtest/gtest.h"
+
+DAS_IO::AppID_t DAS_IO::AppID("test_socket", "Tests of socket functions", "V1.1");
 
 int select_once(DAS_IO::Interface *P) {
   fd_set readfds, writefds, exceptfds;
