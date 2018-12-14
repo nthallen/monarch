@@ -5,9 +5,9 @@
 class echosrvr : public DAS_IO::Socket {
   public:
     echosrvr(const char *iname, int bufsz, const char *service, bool server=false);
-    echosrvr(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname = 0);
+    echosrvr(DAS_IO::Socket *orig, const char *iname, int fd);
     ~echosrvr();
-    DAS_IO::Socket *new_client(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname=0);
+    DAS_IO::Socket *new_client(const char *iname, int fd);
     bool protocol_input();
     bool connected();
 };
@@ -16,19 +16,26 @@ echosrvr::echosrvr(const char *iname, int bufsz, const char *service,
   bool server) : DAS_IO::Socket(iname, bufsz, service, server) {
 }
 
-echosrvr::echosrvr(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname)
-    : DAS_IO::Socket(iname, bufsz, fd, stype, service, hostname) {
-}
+echosrvr::echosrvr(DAS_IO::Socket *orig, const char *iname, int fd)
+  : DAS_IO::Socket(orig, iname, fd) {}
+
 echosrvr::~echosrvr() {}
 
 bool echosrvr::connected() {
   nl_error(0, "%s: connected. flags = %d", iname, flags);
+  return false;
 }
 
-DAS_IO::Socket *echosrvr::new_client(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname) {
-  nl_error(0, "%s: New client connection created. %s fd = %d", this->iname, iname, fd);
-  echosrvr *clt = new echosrvr(iname, bufsz, fd, stype, service, hostname);
-  return clt;
+// DAS_IO::Socket *echosrvr::new_client(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname) {
+  // nl_error(0, "%s: New client connection created. %s fd = %d", this->iname, iname, fd);
+  // echosrvr *clt = new echosrvr(iname, bufsz, fd, stype, service, hostname);
+  // return clt;
+// }
+
+DAS_IO::Socket *echosrvr::new_client(const char *iname, int fd) {
+  Socket *rv = new echosrvr(this, iname, fd);
+  if (ELoop) ELoop->add_child(rv);
+  return rv;
 }
 
 bool echosrvr::protocol_input() {

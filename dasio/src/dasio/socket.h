@@ -24,17 +24,6 @@ class Socket : public Interface {
      */
     Socket(const char *iname, int bufsz, const char *hostname, const char *service);
     /**
-     * Called by server when creating client interfaces after accept().
-     * @param iname The interface name
-     * @param bufsz Size of the input buffer
-     * @param stype The socket type (Socket_TCP or Socket_Unix)
-     * @param service The service of the server
-     * @param hostname When Socket_TCP, the client's address
-     * @fd The socket
-     */
-    Socket(const char *iname, int bufsz, int fd, socket_type_t stype,
-           const char *service, const char *hostname = 0);
-    /**
      * Initializes this Socket to match the original, making sure to
      * set is_server to false and propagating the is_server_client value.
      */
@@ -213,17 +202,6 @@ class Socket : public Interface {
      */
     virtual bool connect_failed();
     
-    /**
-     * Called by server when creating client interfaces after accept().
-     * @param iname The interface name
-     * @param bufsz Size of the input buffer
-     * @param stype The socket type (Socket_TCP or Socket_Unix)
-     * @param service The service of the server
-     * @param hostname When Socket_TCP, the client's address
-     * @fd The socket
-     */
-    virtual Socket *new_client(const char *iname, int bufsz, int fd,
-              socket_type_t stype, const char *service, const char *hostname = 0);
     /**
      * Copy all parameters from this Socket except iname and fd,
      * set is_server false and set is_server_client true.

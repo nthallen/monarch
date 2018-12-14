@@ -51,10 +51,8 @@ int select_once(DAS_IO::Interface *P) {
 class echosrvr : public DAS_IO::Socket {
   public:
     echosrvr(const char *iname, int bufsz, const char *service, bool server=false);
-    // echosrvr(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname = 0);
     echosrvr(Socket *orig, const char *iname, int fd);
     ~echosrvr();
-    //DAS_IO::Socket *new_client(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname=0);
     DAS_IO::Socket *new_client(const char *iname, int fd);
     bool protocol_input();
     bool connected();
@@ -64,13 +62,8 @@ echosrvr::echosrvr(const char *iname, int bufsz, const char *service,
   bool server) : DAS_IO::Socket(iname, bufsz, service, server) {
 }
 
-// echosrvr::echosrvr(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname)
-    // : DAS_IO::Socket(iname, bufsz, fd, stype, service, hostname) {
-// }
-
 echosrvr::echosrvr(DAS_IO::Socket *orig, const char *iname, int fd)
-  : DAS_IO::Socket(orig, iname, fd) {
-}  
+  : DAS_IO::Socket(orig, iname, fd) {}  
 
 echosrvr::~echosrvr() {
   nl_error(-2, "echosrvr shutting down");
@@ -91,7 +84,7 @@ bool echosrvr::connected() {
 DAS_IO::Socket *echosrvr::new_client(const char *iname, int fd) {
   nl_error(-2, "%s: New client connection created. %s fd = %d", this->iname, iname, fd);
   echosrvr *clt = new echosrvr(this, iname, fd);
-  // iname, bufsz, fd, stype, service, hostname);
+  if (ELoop) ELoop->add_child(clt);
   return clt;
 }
 
@@ -164,7 +157,7 @@ TEST(SocketTest,ClientSetup) {
   EXPECT_FALSE(client.ProcessData(flags));
   ASSERT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_connected);
   client.transmit("EHello");
-  // nl_error(0, "Transmitted EHello. flags = %d", client.flags);
+  nl_error(0, "Transmitted EHello. flags = %d", client.flags);
   flags = select_once(&client);
   exp_flags = client.Fl_Read;
   EXPECT_EQ(flags, exp_flags);

@@ -42,39 +42,6 @@ Socket::Socket(Socket *S, const char *iname, int fd) :
   common_init();
   this->fd = fd;
   is_server_client = true;
-}
-
-    /**
-     * Called by server when creating client interfaces after accept().
-     * @param iname The interface name
-     * @param bufsz Size of the input buffer
-     * @param stype The socket type (Socket_TCP or Socket_Unix)
-     * @param service The service of the server
-     * @param hostname When Socket_TCP, the client's address
-     * @fd The socket
-     */
-Socket::Socket(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname) :
-  Interface(iname, bufsz),
-  service(service),
-  hostname(hostname),
-  is_server(false),
-  socket_type(stype),
-  socket_state(Socket_connected)
-{
-  common_init();
-  is_server_client = true;
-  this->fd = fd;
-  switch(socket_type) {
-    case Socket_Unix:
-      unix_name = new unix_name_t();
-      if (!unix_name->set_service(service)) {
-        nl_error(3, "%s: Invalid service name", iname);
-      }
-      break;
-    case Socket_TCP:
-      // probably something required here
-      break;
-  }
   flags = Fl_Except | Fl_Read;
 }
 
@@ -340,13 +307,6 @@ bool Socket::closed() {
 bool Socket::connected() { return false; }
 
 bool Socket::connect_failed() { return false; }
-
-Socket *Socket::new_client(const char *iname, int bufsz, int fd,
-      socket_type_t stype, const char *service, const char *hostname) {
-  Socket *rv = new Socket(iname, bufsz, fd, stype, service, hostname);
-  if (ELoop) ELoop->add_child(rv);
-  return rv;
-}
 
 Socket *Socket::new_client(const char *iname, int fd) {
   Socket *rv = new Socket(this, iname, fd);
