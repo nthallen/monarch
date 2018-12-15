@@ -76,8 +76,8 @@ namespace DAS_IO {
       bool protocol_input();
       inline const char *get_client_app() { return client_app; }
     protected:
-      bool not_word(const char *&w, int len);
-      bool not_svc(const char *&svc, int len);
+      bool not_word(const char *&w, int &len);
+      bool not_svc(const char *&svc, int &len);
       SubServices *Subsp;
       const char *client_app;
   };

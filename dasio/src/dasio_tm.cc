@@ -1,6 +1,7 @@
 /** @file dasio_tm.cc */
 #include "dasio/tm.h"
 #include "dasio/loop.h"
+#include "nl.h"
 
 namespace DAS_IO {
   
@@ -28,6 +29,7 @@ bool TM::app_input() {
 }
 
 bool TM::app_connected() {
+  nl_error(0, "TM::app_connected()");
   if (ELoop) ELoop->set_gflag(0);
   return false;
 }

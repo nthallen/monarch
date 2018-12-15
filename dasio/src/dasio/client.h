@@ -14,7 +14,7 @@ namespace DAS_IO {
       Client(const char *iname, int bufsz, const char *hostname, const char *service,
                     const char *sub_service);
       virtual ~Client();
-      bool ProcessData(int flag);
+      //bool ProcessData(int flag);
     
       /**
        * Called via ProcessData() when new data is available to Clients at the application level.

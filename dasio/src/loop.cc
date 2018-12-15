@@ -100,9 +100,9 @@ void Loop::event_loop() {
         if (P->flags & P->Fl_Read) FD_SET(P->fd, &readfds);
         if (P->flags & P->Fl_Write) FD_SET(P->fd, &writefds);
         if (P->flags & P->Fl_Except) FD_SET(P->fd, &exceptfds);
-        if (P->flags & P->Fl_Timeout) TA.Set_Min( P->GetTimeout() );
         if (width <= P->fd) width = P->fd+1;
       }
+      if (P->flags & P->Fl_Timeout) TA.Set_Min( P->GetTimeout() );
     }
     rc = select(width, &readfds, &writefds, &exceptfds, TA.timeout_val());
     if ( rc == 0 ) {

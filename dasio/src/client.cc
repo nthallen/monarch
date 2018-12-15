@@ -46,5 +46,8 @@ namespace DAS_IO {
     clt_state = Clt_negotiating;
     return false;
   }
+
+  bool Client::app_input() { return false; }
+  bool Client::app_connected() { return false; }
   
 }

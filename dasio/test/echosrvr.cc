@@ -86,6 +86,7 @@ const char *opt_string = "vo:mV";
 
 int main(int argc, char **argv) {
   echosrvr server("IPCserver", 512, "cmd", DAS_IO::Socket::Socket_Unix);
+  server.connect();
   DAS_IO::Loop ELoop;
   ELoop.add_child(&server);
   ELoop.event_loop();

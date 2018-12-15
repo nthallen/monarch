@@ -28,7 +28,7 @@ Socket::Socket(const char *iname, int bufsz, const char *service) :
     socket_type(Socket_Unix)  
 {
   common_init();
-  connect();
+  // connect();
 }
 
 Socket::Socket(const char *iname, int bufsz, const char *service,
@@ -41,7 +41,7 @@ Socket::Socket(const char *iname, int bufsz, const char *service,
     socket_type(socket_type)  
 {
   common_init();
-  connect();
+  // connect();
 }
 
 Socket::Socket(Socket *S, const char *iname, int fd) :
@@ -78,9 +78,6 @@ void Socket::common_init() {
 }
 
 void Socket::connect() {
-  reconn_seconds = reconn_seconds_min;
-  reconn_retries = 0;
-  
   switch (socket_type) {
     case Socket_Unix:
       if (unix_name == 0) {
@@ -173,6 +170,7 @@ bool Socket::ProcessData(int flag) {
         TO.Clear();
         flags &= ~(Fl_Write|Fl_Timeout);
         flags |= Fl_Read;
+        reconn_seconds = reconn_seconds_min;
         reconn_retries = 0;
         conn_fail_reported = false;
         return connected();
@@ -184,31 +182,37 @@ bool Socket::ProcessData(int flag) {
             nl_error(2, "%s: connect error %d: %s", iname, sock_err,
               strerror(sock_err));
           }
+          conn_fail_reported = true;
         }
         return( reset() || connect_failed());
       }
     case Socket_listening:
-      if (ELoop && flag & Fl_Read) {
-        int new_fd = accept(fd, 0, 0);
-        if (new_fd < 0) {
-          nl_error(2, "%s: Error from accept(): %s", iname, strerror(errno));
-          return false;
-        } else {
-          if (fcntl(new_fd, F_SETFL, fcntl(new_fd, F_GETFL, 0) | O_NONBLOCK) == -1) {
-            nl_error(3, "fcntl() failure in DAS_IO::Socket(%s): %s", iname,
-              std::strerror(errno));
+      if (flag & Fl_Read) {
+        if (ELoop) {
+          int new_fd = accept(fd, 0, 0);
+          if (new_fd < 0) {
+            nl_error(2, "%s: Error from accept(): %s", iname, strerror(errno));
+            return false;
+          } else {
+            if (fcntl(new_fd, F_SETFL, fcntl(new_fd, F_GETFL, 0) | O_NONBLOCK) == -1) {
+              nl_error(3, "fcntl() failure in DAS_IO::Socket(%s): %s", iname,
+                std::strerror(errno));
+            }
+            Socket *client = new_client("clientcon", new_fd);
+            return client->connected();
           }
-          Socket *client = new_client("clientcon", new_fd);
-          return client->connected();
+        } else {
+          nl_error(1, "Socket_listening: connection sensed, but no Loop");
         }
-      } else {
-        nl_error(1, "Socket_listening: connection sensed, but no Loop");
+      }
+      if (TO.Expired()) {
+        return protocol_timeout();
       }
       break;
     case Socket_disconnected:
       // Handle timeout (i.e. attempt reconnection)
       if (TO.Expired()) {
-        nl_error(0, "%s: reconnecting after timeout", iname);
+        // nl_error(0, "%s: reconnecting after timeout", iname);
         TO.Clear();
         connect();
       }

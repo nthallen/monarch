@@ -160,6 +160,8 @@ TEST(SocketTest,ClientSetup) {
   
   clientsocket client; // ("IPCclient", 512, "cmd", false);
   client.set_retries(2, 1, 5);
+  EXPECT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_disconnected);
+  client.connect();
   EXPECT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_connecting);
   flags = select_once(&client) & client.Fl_Write;
   exp_flags = client.Fl_Write;
@@ -186,6 +188,8 @@ TEST(SocketTest,ConnClosedOnWrite) {
   
   clientsocket client; // ("IPCclient", 512, "cmd", false);
   client.set_retries(2, 1, 5);
+  EXPECT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_disconnected);
+  client.connect();
   ASSERT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_connecting);
   flags = select_once(&client) & client.Fl_Write;
   exp_flags = client.Fl_Write;
@@ -223,6 +227,7 @@ TEST(SocketTest,ConnClosedOnWrite) {
 
 void child_process() {
   echosrvr server("IPCserver", 512, "cmd", DAS_IO::Socket::Socket_Unix);
+  server.connect();
   DAS_IO::Loop ELoop;
   ELoop.add_child(&server);
   ELoop.event_loop();

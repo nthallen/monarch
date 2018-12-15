@@ -41,3 +41,9 @@ target_include_directories(tmsrvr PUBLIC
   ${CMAKE_SOURCE_DIR}/dasio/src
   ${CMAKE_SOURCE_DIR}/nl/src)
 target_link_libraries(tmsrvr dasio nl tm)
+
+add_executable(tmclt tmclt.cc)
+target_include_directories(tmclt PUBLIC
+  ${CMAKE_SOURCE_DIR}/dasio/src
+  ${CMAKE_SOURCE_DIR}/nl/src)
+target_link_libraries(tmclt dasio nl tm)

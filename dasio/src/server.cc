@@ -50,6 +50,7 @@ namespace DAS_IO {
     int clt_app_len, svc_len;
     if (not_str("AuthLE ") ||
         not_str(AppID.Experiment) ||
+        not_str(" ") ||
         not_word(clt_app, clt_app_len) ||
         not_str(" ") ||
         not_svc(svc, svc_len)) { // Can also check for CRC
@@ -58,6 +59,7 @@ namespace DAS_IO {
         ELoop->delete_child(this);
       return false;
     } else {
+      nl_error(0, "%s: svc_len = %d", iname, svc_len);
       std::string subservice(svc, svc_len);
       SubService *ssvc = Subsp->find_subservice(subservice);
       if (ssvc == 0) {
@@ -88,7 +90,7 @@ namespace DAS_IO {
     }
   }
 
-  bool Authenticator::not_word(const char *&w, int len) {
+  bool Authenticator::not_word(const char *&w, int &len) {
     len = 0;
     w = (const char *)&buf[cp];
     if (cp < nc && isalpha(buf[cp])) {
@@ -106,7 +108,7 @@ namespace DAS_IO {
     return true;
   }
   
-  bool Authenticator::not_svc(const char *&svc, int len) {
+  bool Authenticator::not_svc(const char *&svc, int &len) {
     if (not_word(svc, len)) return true;
     while (cp < nc && buf[cp] == '/') {
       const char *node;

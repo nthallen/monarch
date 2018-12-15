@@ -29,7 +29,7 @@ namespace DAS_IO {
         const char *data, uint16_t size);
       virtual ~TM();
       bool app_input(); // read nl, write data and set gflag(0)
-      bool app_connected();
+      virtual bool app_connected();
     private:
       static const int subsvc_len = 40;
       char sub_service[subsvc_len];
