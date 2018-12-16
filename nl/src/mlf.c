@@ -19,7 +19,7 @@
 #include <ctype.h>
 #include <sys/stat.h>
 #include "mlf.h"
-#include "nortlib.h"
+#include "nl.h"
 
 static char *mlf_strtok( char *buf, char *delset, char *delp ) {
   static char *bufp;

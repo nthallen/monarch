@@ -22,12 +22,12 @@ AC_CHECK_PROG(HAVE_USEMSG,usemsg,[true])
 AM_CONDITIONAL([USE_USEMSG],[test x$HAVE_USEMSG = xtrue ])
 
 # Checks for libraries.
-AC_SEARCH_LIBS(compile_init_options,[nort nortlib],[],[AC_MSG_ERROR(nortlib is required)])
+AC_SEARCH_LIBS(compile_init_options,[nort nl],[],[AC_MSG_ERROR(nl is required)])
 
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h stdlib.h string.h unistd.h])
-AC_CHECK_HEADERS([compiler.h nortlib.h],[],[AC_MSG_ERROR([cannot locate required header])])
+AC_CHECK_HEADERS([compiler.h nl.h],[],[AC_MSG_ERROR([cannot locate required header])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_PID_T

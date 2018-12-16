@@ -10,13 +10,13 @@ cmdgen_SOURCES = cmdgen.c dstructs.c prompts.c rules.c \
 AM_YFLAGS=-d -t -l
 AM_LFLAGS=-i
 
-CVSCLEANFILES=Makefile.in aclocal.m4 autom4te.cache \
+GITCLEANFILES=Makefile.in aclocal.m4 autom4te.cache \
   config.h config.log config.status stamp-h1 \
   INSTALL depcomp install-sh missing ylwrap configure
 
-.PHONY: cvsclean
-cvsclean : maintainer-clean
-	rm -f $(CVSCLEANFILES)
+.PHONY: gitclean
+gitclean : maintainer-clean
+	rm -f $(GITCLEANFILES)
  
 if USE_USEMSG
 all-local : cmdgen
