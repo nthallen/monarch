@@ -23,10 +23,6 @@
 #include <assert.h>
 #include "cmdgen.h"
 #include "compiler.h"
-#pragma off (unreferenced)
-  static char rcsid[] =
-	"$Id$";
-#pragma on (unreferenced)
 
 struct nt_t *non_terms = NULL;
 struct sub_t **rules = NULL;

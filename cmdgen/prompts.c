@@ -30,11 +30,7 @@
 #include <string.h>
 #include "cmdgen.h"
 #include "compiler.h"
-#include "nortlib.h"
-#pragma off (unreferenced)
-  static char rcsid[] =
-	"$Id$";
-#pragma on (unreferenced)
+#include "nl.h"
 
 #define PROMPT_ATTR 7
 

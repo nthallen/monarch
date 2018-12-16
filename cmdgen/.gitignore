@@ -8,6 +8,7 @@ rdtest
 wrtest
 setup.dbg
 cmdgen
+cmdgen.exe
 Makefile.in
 aclocal.m4
 autom4te.cache
@@ -15,6 +16,7 @@ configure
 yyparse.h
 Makefile
 config.h
+config.h.in~
 config.log
 config.status
 stamp-h1
@@ -28,3 +30,4 @@ x86
 .deps
 *.tar.gz
 FullBuild.*
+compile

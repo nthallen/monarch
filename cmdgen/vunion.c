@@ -25,11 +25,7 @@
 #include <assert.h>
 #include "cmdgen.h"
 #include "compiler.h"
-#include "nortlib.h"
-#pragma off (unreferenced)
-  static char rcsid[] =
-	"$Id$";
-#pragma on (unreferenced)
+#include "nl.h"
 
 static struct vtyp *vtypes = NULL;
 static unsigned n_members = 0;

@@ -22,7 +22,7 @@ AC_CHECK_PROG(HAVE_USEMSG,usemsg,[true])
 AM_CONDITIONAL([USE_USEMSG],[test x$HAVE_USEMSG = xtrue ])
 
 # Checks for libraries.
-AC_SEARCH_LIBS(compile_init_options,[nort nl],[],[AC_MSG_ERROR(nl is required)])
+AC_SEARCH_LIBS(compile_error,[nort nl],[],[AC_MSG_ERROR(nl is required)])
 
 # Checks for header files.
 AC_HEADER_STDC

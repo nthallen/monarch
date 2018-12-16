@@ -2,6 +2,7 @@
 #include <string.h>
 #include "cmdgen.h"
 #include "compiler.h"
+#include "nl.h"
 
 typedef struct if_list_s {
   struct if_list_s *next;

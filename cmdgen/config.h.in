@@ -1,4 +1,4 @@
-/* config.h.in.  Generated from configure.in by autoheader.  */
+/* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define to 1 if you have the <compiler.h> header file. */
 #undef HAVE_COMPILER_H
@@ -16,8 +16,8 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
-/* Define to 1 if you have the <nortlib.h> header file. */
-#undef HAVE_NORTLIB_H
+/* Define to 1 if you have the <nl.h> header file. */
+#undef HAVE_NL_H
 
 /* Define to 1 if your system has a GNU libc compatible `realloc' function,
    and to 0 otherwise. */

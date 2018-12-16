@@ -23,11 +23,7 @@
 #include <unistd.h>
 #include "cmdgen.h"
 #include "compiler.h"
-#include "nortlib.h"
-#pragma off (unreferenced)
-  static char rcsid[] =
-	"$Id$";
-#pragma on (unreferenced)
+#include "nl.h"
 
 int (*nl_error)(int level, const char *s, ...) = compile_error;
 static int verbose = 0;

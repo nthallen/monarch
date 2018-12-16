@@ -49,10 +49,6 @@
 #include <assert.h>
 #include "cmdgen.h"
 #include "compiler.h"
-#pragma off (unreferenced)
-  static char rcsid[] =
-	"$Id$";
-#pragma on (unreferenced)
 
 #define IND_NOT_SET 10000
 #define ELT_HAS_VAL 1

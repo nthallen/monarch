@@ -34,11 +34,7 @@
    #include "cmdgen.h"
    #include "yyparse.h"
    #include "compiler.h"
-   #include "nortlib.h"
-   #pragma off (unreferenced)
-	 static char rcsid[] =
-	   "$Id$";
-   #pragma on (unreferenced)
+   #include "nl.h"
 
    #ifdef yywrap
 	 #undef yywrap
