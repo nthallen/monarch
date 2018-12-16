@@ -13,3 +13,5 @@ install(TARGETS dasio
   ARCHIVE
   DESTINATION lib
 )
+add_subdirectory("${CMAKE_SOURCE_DIR}/dasio/src/dasio"
+                 "${CMAKE_BINARY_DIR}/dasio/src/dasio")
