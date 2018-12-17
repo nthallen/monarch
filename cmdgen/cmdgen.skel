@@ -1,28 +1,25 @@
 /* cmdgen.skel skeleton file */
 #include <stdlib.h>
+#include <stdio.h>
 #include <ctype.h>
 #include <unistd.h>
 #include "cmdalgo.h"
-#include "nortlib.h" /* Included for cis_init. prototype(), nl_error() */
+#include "nl.h"
 #include "nl_assert.h"
-                     /* <stdio.h>   Included by nortlib.h */
 #include "oui.h"
-
-static char cg_rcsid[] =
-      "$Id$";
 
 /* iomode defines determine the mode of input.
    IO_BACKSPACE indicates that backspace should backup
    to the last non-trivial input character.
    IO_SPACE auto-advances when a space or newline is entered
    IO_ALWAYS advances within words whenever the following
-	 letters are unambiguous.
+         letters are unambiguous.
    IO_WORD only advances within words when the rest of the current
-	 word is unambiguous (e.g. prevents advancing 'O' for On/Off)
+         word is unambiguous (e.g. prevents advancing 'O' for On/Off)
    IO_WORDSKIP Controls advancing at the beginning of a word. If
      not specified, no advancement will take place at the
-	 beginning of a word without further input. If specified,
-	 entire words may be skipped if they are unambiguous.
+         beginning of a word without further input. If specified,
+         entire words may be skipped if they are unambiguous.
 */
 static short iomode;
 #define IO_BACKSPACE 1
@@ -60,27 +57,27 @@ static short ioflags;
    CMD_INTERACT_MODE generates cmd_interact()
      (INTERACT is default, but usually controlled by interface option)
 
-	 These are set by the Interface option, although it is still 
-	 possible to specify them individually if necessary.
+         These are set by the Interface option, although it is still 
+         possible to specify them individually if necessary.
 
-	 I expect keyboard (CLIENT) programs to usually define just 
-	 CMD_INTERACT_MODE (although history would require BATCH also) 
-	 and SERVERs to define just CMD_BATCH_MODE. Note that if only 
-	 CMD_BATCH_MODE is defined, NO_PROMPTS is assumed.
+         I expect keyboard (CLIENT) programs to usually define just 
+         CMD_INTERACT_MODE (although history would require BATCH also) 
+         and SERVERs to define just CMD_BATCH_MODE. Note that if only 
+         CMD_BATCH_MODE is defined, NO_PROMPTS is assumed.
 
  I/O options:
-   QNX_CONS      uses nortlib nl_cons.h stuff (default on QNX4)
+   QNX_CONS      uses nl nl_cons.h stuff (default on QNX4)
    SNAFU_CURSES  specific to snafu. Implies SELF_SERVE
    PHOTON_INTERFACE uses Photon (default on QNX6)
    NCT_INTERFACE uses the nctable library for ncurses
    LL_INTERFACE  allows for external definition each
-		 interface element, but defaults to a
-		 "Low Level" interface.
+                 interface element, but defaults to a
+                 "Low Level" interface.
 
  Prompt options:
    NO_PROMPTS      suppresses all prompting code and data
                    default when CMD_INTERACT_MODE is not
-		   defined (i.e. when SERVER is defined)
+                   defined (i.e. when SERVER is defined)
    MACHINE_PROMPTS used by QNX_CONS to generate faster prompts.
                    Irrelevant if NO_PROMPTS is defined.
 
@@ -115,8 +112,10 @@ static short ioflags;
   #if ! (defined QNX_CONS || defined SNAFU_CURSES || defined PHOTON_INTERFACE || defined LL_INTERFACE || defined NCT_INTERFACE)
     #if __QNXNTO__
       #define PHOTON_INTERFACE 1
-    #else
+    #elif defined( __QNX__ )
       #define QNX_CONS
+    #else
+      #define NCT_INTERFACE
     #endif
   #endif
 #endif
@@ -147,7 +146,7 @@ static char ibuf[CG_IBUF_SIZE];
 
 #define STORE_CHAR(x) do {\
   if (ibufidx==CG_IBUF_SIZE)\
-	{ CMD_ERROR("Input buffer overflow"); }\
+        { CMD_ERROR("Input buffer overflow"); }\
   ibuf[ibufidx++] = x;\
 } while (0)
 #define UNSTORE_CHAR { assert(ibufidx > 0); ibufidx--; }
@@ -157,8 +156,8 @@ static char ibuf[CG_IBUF_SIZE];
   #define DISPLAY_CHAR(c) con_dispc(c)
   #define UNDISPLAY_CHAR con_undispc()
   #define CLEAR_DISPLAY_LINE do { con_col = con_low = 1;\
-				  con_nchars = 0;\
-				  ioflags |= IOF_UPDATE; } while (0)
+                                  con_nchars = 0;\
+                                  ioflags |= IOF_UPDATE; } while (0)
   #define DISPLAY_PROMPT(x) con_prompt(prmt_text+x)
   #define UPDATE_OUTPUT con_update()
 #endif
@@ -167,35 +166,35 @@ static char ibuf[CG_IBUF_SIZE];
   #define SPECIAL_CHAR_FUNC(x) REJECT_CHAR
   #define CMD_ERROR(x) cmderr(x); exit(1)
   #define DISPLAY_CHAR(x) do { waddch(cmdwin.w, (x)?(x):' ');\
-			       ioflags |= IOF_UPDATE; } while (0)
+                               ioflags |= IOF_UPDATE; } while (0)
   #define UNDISPLAY_CHAR do { waddstr(cmdwin.w, "\b \b");\
-			      ioflags |= IOF_UPDATE; } while (0)
+                              ioflags |= IOF_UPDATE; } while (0)
   #define CLEAR_DISPLAY_LINE do { wclear(cmdwin.w);\
-				  wmove(cmdwin.w, 0, 0);\
-				  swrefresh(cmdwin.h); } while (0)
+                                  wmove(cmdwin.w, 0, 0);\
+                                  swrefresh(cmdwin.h); } while (0)
   #define DISPLAY_PROMPT(x) disp_prompt(prmt_text[x])
   #define GETCH() snfgetch()
   #define UPDATE_OUTPUT curses_update()
 
   static int snfgetch() {
-	int c;
-	
-	for (;;) {
-	  c = sgetch();
-	  if (c == '@') {
-		c = sgetch();
-		if (c == '@') break;
-		else snafu_scan_code(c);
-	  } else break;
-	}
-	return(c);
+        int c;
+        
+        for (;;) {
+          c = sgetch();
+          if (c == '@') {
+                c = sgetch();
+                if (c == '@') break;
+                else snafu_scan_code(c);
+          } else break;
+        }
+        return(c);
   }
 
   static void curses_update(void) {
-	if (ioflags & IOF_UPDATE) {
-	  swrefresh(cmdwin.h);
-	  ioflags &= ~IOF_UPDATE;
-	}
+        if (ioflags & IOF_UPDATE) {
+          swrefresh(cmdwin.h);
+          ioflags &= ~IOF_UPDATE;
+        }
   }
 #endif
 #ifdef PHOTON_INTERFACE
@@ -236,7 +235,7 @@ static char ibuf[CG_IBUF_SIZE];
 
 /* CMD_ERROR is for fatal internal errors
     it can safely include multiple statements since its use is
-	quite limited.
+        quite limited.
 */
 #ifndef CMD_ERROR
   #define CMD_ERROR(x) nl_error(4,x)
@@ -290,8 +289,8 @@ static char ibuf[CG_IBUF_SIZE];
 /* DISPLAY_PROMPT displays a prompt. Not referenced if NO_PROMPTS */
 #ifndef DISPLAY_PROMPT
   #define DISPLAY_PROMPT(x) { int i; printf("\n%s", prmt_text[x]);\
-	  CLEAR_DISPLAY_LINE; DISPLAY_INPUT_PROMPT \
-	  for (i = 0; i < ibufidx; i++) DISPLAY_CHAR(ibuf[i]); }
+          CLEAR_DISPLAY_LINE; DISPLAY_INPUT_PROMPT \
+          for (i = 0; i < ibufidx; i++) DISPLAY_CHAR(ibuf[i]); }
 #endif
 
 /* GETCH is low-level get character routine for interactive input.
@@ -356,17 +355,17 @@ typedef struct {
   unsigned short nterm_offset; /* offset in non_terminals[] */
 } state_type;
 /* If flag == STFL_REDUCE
-	  offset is the rule number
-	  prompt is unused (-1)
-	  nterm_offset is offset in non_terminals[]
+          offset is the rule number
+          prompt is unused (-1)
+          nterm_offset is offset in non_terminals[]
    If flag == STFL_VARIABLE
-	  offset is variable type
-	  prompt is offset in prompts[]
-	  nterm_offset is offset in non_terminals[]
+          offset is variable type
+          prompt is offset in prompts[]
+          nterm_offset is offset in non_terminals[]
    If flag == STFL_WORD
-	  offset is offset in trie[]
-	  prompt is offset in prompts[]
-	  nterm_offset is offset in non_terminals[]
+          offset is offset in trie[]
+          prompt is offset in prompts[]
+          nterm_offset is offset in non_terminals[]
    Variables should be treated as some sort of non-terminal
 */
 
@@ -506,18 +505,18 @@ con_puts(char *buf, int row_offset, int char_offset, int n_chars) {
     if (nlcon_ctrl(i, &cc)) {
       nl_con_def *nlcd = &nl_cons[i];
       if ( char_offset < nlcd->columns ) {
-	int crow, ccol, out_offset;
-	int nc;
+        int crow, ccol, out_offset;
+        int nc;
 
-	if ( char_offset + n_chars > nlcd->columns )
-	  nc = nlcd->columns - char_offset;
-	else nc = n_chars;
-	crow = nlcd->rows-2;
-	ccol = con_col;
-	out_offset =
-	  (nlcd->rows - 2 + row_offset) * nlcd->columns * 2 + char_offset*2;
-	console_write(cc, 0, out_offset, buf, nc*2,
-			  &crow, &ccol, NULL);
+        if ( char_offset + n_chars > nlcd->columns )
+          nc = nlcd->columns - char_offset;
+        else nc = n_chars;
+        crow = nlcd->rows-2;
+        ccol = con_col;
+        out_offset =
+          (nlcd->rows - 2 + row_offset) * nlcd->columns * 2 + char_offset*2;
+        console_write(cc, 0, out_offset, buf, nc*2,
+                          &crow, &ccol, NULL);
       }
     }
   }
@@ -525,8 +524,8 @@ con_puts(char *buf, int row_offset, int char_offset, int n_chars) {
 
 static void con_update(void) {
   #ifndef NO_PROMPTS
-	if (con_cur_prmt != con_new_prmt && (ioflags & IOF_INTERACTIVE))
-	  con_puts(con_cur_prmt = con_new_prmt, 1, 0, 80);
+        if (con_cur_prmt != con_new_prmt && (ioflags & IOF_INTERACTIVE))
+          con_puts(con_cur_prmt = con_new_prmt, 1, 0, 80);
   #endif
   if (ioflags & IOF_UPDATE) {
     if (con_col == 79)
@@ -535,14 +534,14 @@ static void con_update(void) {
       con_puts(con_clr, 0, 0, 80);
     else {
       if (con_low < con_col) {
-	int nchars;
-	nchars = (con_col - con_low);
-	con_puts(con_buf+con_nchars-(nchars*2), 0, con_low, nchars);
+        int nchars;
+        nchars = (con_col - con_low);
+        con_puts(con_buf+con_nchars-(nchars*2), 0, con_low, nchars);
       }
       if (con_col < con_high) {
-	int nchars;
-	nchars = (con_high - con_col);
-	con_puts(con_clr+2, 0, con_col, nchars);
+        int nchars;
+        nchars = (con_high - con_col);
+        con_puts(con_clr+2, 0, con_col, nchars);
       }
     }
     con_low = con_high = con_col;
@@ -566,7 +565,7 @@ static void con_dispc(char c) {
 static void con_undispc(void) {
   con_nchars -= 2;
   if (con_nchars < 78*2 && --con_col < con_low)
-	con_low = con_col;
+        con_low = con_col;
   ioflags |= IOF_UPDATE;
 }
 
@@ -620,8 +619,8 @@ static void con_cleanup( void ) {
   #endif
   static void nlph_update(void) {
     if ( (ioflags & IOF_UPDATE)
-	 || (nlph_cur_prmt != nlph_new_prmt &&
-	     (ioflags & IOF_INTERACTIVE)) ) {
+         || (nlph_cur_prmt != nlph_new_prmt &&
+             (ioflags & IOF_INTERACTIVE)) ) {
       nlph_update_cmdtext( nlph_buf, nlph_new_prmt );
       ioflags &= ~IOF_UPDATE;
     }
@@ -660,8 +659,8 @@ static void con_cleanup( void ) {
   static void new_prompt(short pn) {
     if (pn >= 0 && pn != cur_prompt) {
       if (cur_prompt < 0
-	  || prompts[pn].txt_idx != prompts[cur_prompt].txt_idx)
-	DISPLAY_PROMPT(prompts[pn].txt_idx);
+          || prompts[pn].txt_idx != prompts[cur_prompt].txt_idx)
+        DISPLAY_PROMPT(prompts[pn].txt_idx);
       cur_prompt = pn;
     }
   }
@@ -702,10 +701,10 @@ static unsigned short input(void) {
       else if (cmd_input != NULL) {
     #else
       else {
-	assert(cmd_input != NULL);
+        assert(cmd_input != NULL);
     #endif
-	rv = *cmd_input;
-	if (rv) cmd_input++;
+        rv = *cmd_input;
+        if (rv) cmd_input++;
       }
   #endif
   #ifdef CMD_INTERACT_MODE
@@ -799,160 +798,160 @@ static int read_variable(short vartype, unsigned short n_chars) {
     n_chars--;
   }
   do {
-	c = input();
-	switch (c) {
-	  case 0:
-		unshift_value = n_chars;
-		return(0);
-	  case KG_RUBOUT:
-	  case KG_DEL:
-		#ifdef CMD_BATCH_MODE
-		  #ifdef CMD_INTERACT_MODE
-			if (~(ioflags & IOF_INTERACTIVE))
-		  #endif
-			  return(1);
-		#endif
-		#ifdef CMD_INTERACT_MODE
-		  if (n_chars > 0) {
-			RUBOUT;
-			n_chars--;
-		  } else if (unshift()) return(0);
-		  else REJECT_CHAR;
-		  continue;
-		#endif
-	  case KG_TAB:
-		next_prompt();
-		continue;
-	  case KG_ESCAPE:
-		CANCEL_LINE;
-	  case '\n':
-	  case '\r':
-		UNPUTNL;
-		c = 0;
-		break;
-	  case ' ':
-		if (getword) c = 0;
-		break;
-	  default:
-		if (isprint(c) || c == 0) break;
-		SPECIAL_CHAR_FUNC(c);
-		continue;
-	}
-	
-	/* We should only get here when we want to display a char. */
-	ACCEPT_CHAR(c);
-	n_chars++;
-	
-	if (c == 0) {
-	  text = ibuf + ibufidx - n_chars;
+        c = input();
+        switch (c) {
+          case 0:
+                unshift_value = n_chars;
+                return(0);
+          case KG_RUBOUT:
+          case KG_DEL:
+                #ifdef CMD_BATCH_MODE
+                  #ifdef CMD_INTERACT_MODE
+                        if (~(ioflags & IOF_INTERACTIVE))
+                  #endif
+                          return(1);
+                #endif
+                #ifdef CMD_INTERACT_MODE
+                  if (n_chars > 0) {
+                        RUBOUT;
+                        n_chars--;
+                  } else if (unshift()) return(0);
+                  else REJECT_CHAR;
+                  continue;
+                #endif
+          case KG_TAB:
+                next_prompt();
+                continue;
+          case KG_ESCAPE:
+                CANCEL_LINE;
+          case '\n':
+          case '\r':
+                UNPUTNL;
+                c = 0;
+                break;
+          case ' ':
+                if (getword) c = 0;
+                break;
+          default:
+                if (isprint(c) || c == 0) break;
+                SPECIAL_CHAR_FUNC(c);
+                continue;
+        }
+        
+        /* We should only get here when we want to display a char. */
+        ACCEPT_CHAR(c);
+        n_chars++;
+        
+        if (c == 0) {
+          text = ibuf + ibufidx - n_chars;
 
-	  #ifdef VAR_both
-		switch (vartype) {
-		  #ifdef VAR_w
-			case VAR_w:
-		  #endif
-		  #ifdef VAR_s
-			case VAR_s:
-		  #endif
-	  #endif /* VAR_both */
-		  #ifdef VAR_strings
-			vstack[vsp].VTP_STR = text;
-		  #endif
-	  #ifdef VAR_both
-			continue;
-		  default:
-	  #endif
-	  #ifdef VAR_numerics
-			if (n_chars == 1) {
-			  #if defined CMD_BATCH_MODE && defined CMD_INTERACT_MODES
-				if (!(ioflags & IOF_INTERACTIVE))
-			  #endif
-			  #ifdef CMD_BATCH_MODE
-				  return(1);
-			  #endif
-			  #ifdef CMD_INTERACT_MODE
-				REJECT_CHAR;
-				RUBOUT;
-				ioflags &= ~IOF_UNGOTNL;
-				n_chars--;
-				c = '\b';
-				continue;
-			  #endif
-			}
-	  #endif
-	  #ifdef VAR_both
-		}
-	  #endif /* VAR_both */
-	  
-	  #ifdef VAR_numerics
-	  { char *ep; /* numeric vartypes: strings CONTINUE beyond here */
-	  
-		ep = ibuf + ibufidx - 1;
-		switch (vartype) {
-		  #ifdef VAR_d
-			case VAR_d:
-			  vstack[vsp].VTP_SHRT = (short) strtol(text, &ep, 0);
-			  break;
-		  #endif
-		  #ifdef VAR_ld
-			case VAR_ld:
-			  vstack[vsp].VTP_LONG = strtol(text, &ep, 0);
-			  break;
-		  #endif
-		  #ifdef VAR_x
-			case VAR_x:
-			  vstack[vsp].VTP_SHRT = (short) strtol(text, &ep, 16);
-			  break;
-		  #endif
-		  #ifdef VAR_lx
-			case VAR_lx:
-			  vstack[vsp].VTP_LONG = strtol(text, &ep, 16);
-			  break;
-		  #endif
-		  #ifdef VAR_o
-			case VAR_o:
-			  vstack[vsp].VTP_SHRT = (short) strtol(text, &ep, 8);
-			  break;
-		  #endif
-		  #ifdef VAR_lo
-			case VAR_lo:
-			  vstack[vsp].VTP_LONG = strtol(text, &ep, 8);
-			  break;
-		  #endif
-		  #ifdef VAR_f
-			case VAR_f:
-			  vstack[vsp].VTP_FLT = (float) strtod(text, &ep);
-			  break;
-		  #endif
-		  #ifdef VAR_lf
-			case VAR_lf:
-			  vstack[vsp].VTP_DBL = strtod(text, &ep);
-			  break;
-		  #endif
-		  default: CMD_ERROR("Unexpected vartype in read_variable");
-		}
-		assert(text <= ep && ep <= ibuf+ibufidx-1);
-		if (*ep != '\0') {
-		  #if defined CMD_BATCH_MODE && defined CMD_INTERACT_MODES
-			if (!(ioflags & IOF_INTERACTIVE))
-		  #endif
-		  #ifdef CMD_BATCH_MODE
-			return(1);
-		  #endif
-		  #ifdef CMD_INTERACT_MODE
-			REJECT_CHAR;
-			ioflags &= ~IOF_UNGOTNL;
-			do {
-			  RUBOUT;
-			  n_chars--;
-			} while (n_chars > 0 && ep < ibuf + ibufidx);
-			c = '\b';
-			continue;
-		  #endif
-		}
-	  } /* numeric vartypes block */
-	  #endif /* VAR_numerics */
-	} /* (c==0) */
+          #ifdef VAR_both
+                switch (vartype) {
+                  #ifdef VAR_w
+                        case VAR_w:
+                  #endif
+                  #ifdef VAR_s
+                        case VAR_s:
+                  #endif
+          #endif /* VAR_both */
+                  #ifdef VAR_strings
+                        vstack[vsp].VTP_STR = text;
+                  #endif
+          #ifdef VAR_both
+                        continue;
+                  default:
+          #endif
+          #ifdef VAR_numerics
+                        if (n_chars == 1) {
+                          #if defined CMD_BATCH_MODE && defined CMD_INTERACT_MODES
+                                if (!(ioflags & IOF_INTERACTIVE))
+                          #endif
+                          #ifdef CMD_BATCH_MODE
+                                  return(1);
+                          #endif
+                          #ifdef CMD_INTERACT_MODE
+                                REJECT_CHAR;
+                                RUBOUT;
+                                ioflags &= ~IOF_UNGOTNL;
+                                n_chars--;
+                                c = '\b';
+                                continue;
+                          #endif
+                        }
+          #endif
+          #ifdef VAR_both
+                }
+          #endif /* VAR_both */
+          
+          #ifdef VAR_numerics
+          { char *ep; /* numeric vartypes: strings CONTINUE beyond here */
+          
+                ep = ibuf + ibufidx - 1;
+                switch (vartype) {
+                  #ifdef VAR_d
+                        case VAR_d:
+                          vstack[vsp].VTP_SHRT = (short) strtol(text, &ep, 0);
+                          break;
+                  #endif
+                  #ifdef VAR_ld
+                        case VAR_ld:
+                          vstack[vsp].VTP_LONG = strtol(text, &ep, 0);
+                          break;
+                  #endif
+                  #ifdef VAR_x
+                        case VAR_x:
+                          vstack[vsp].VTP_SHRT = (short) strtol(text, &ep, 16);
+                          break;
+                  #endif
+                  #ifdef VAR_lx
+                        case VAR_lx:
+                          vstack[vsp].VTP_LONG = strtol(text, &ep, 16);
+                          break;
+                  #endif
+                  #ifdef VAR_o
+                        case VAR_o:
+                          vstack[vsp].VTP_SHRT = (short) strtol(text, &ep, 8);
+                          break;
+                  #endif
+                  #ifdef VAR_lo
+                        case VAR_lo:
+                          vstack[vsp].VTP_LONG = strtol(text, &ep, 8);
+                          break;
+                  #endif
+                  #ifdef VAR_f
+                        case VAR_f:
+                          vstack[vsp].VTP_FLT = (float) strtod(text, &ep);
+                          break;
+                  #endif
+                  #ifdef VAR_lf
+                        case VAR_lf:
+                          vstack[vsp].VTP_DBL = strtod(text, &ep);
+                          break;
+                  #endif
+                  default: CMD_ERROR("Unexpected vartype in read_variable");
+                }
+                assert(text <= ep && ep <= ibuf+ibufidx-1);
+                if (*ep != '\0') {
+                  #if defined CMD_BATCH_MODE && defined CMD_INTERACT_MODES
+                        if (!(ioflags & IOF_INTERACTIVE))
+                  #endif
+                  #ifdef CMD_BATCH_MODE
+                        return(1);
+                  #endif
+                  #ifdef CMD_INTERACT_MODE
+                        REJECT_CHAR;
+                        ioflags &= ~IOF_UNGOTNL;
+                        do {
+                          RUBOUT;
+                          n_chars--;
+                        } while (n_chars > 0 && ep < ibuf + ibufidx);
+                        c = '\b';
+                        continue;
+                  #endif
+                }
+          } /* numeric vartypes block */
+          #endif /* VAR_numerics */
+        } /* (c==0) */
   } while (c != 0);
   vsp++;
   nterm_shift(0, n_chars, -1);
@@ -966,40 +965,40 @@ static int read_variable(short vartype, unsigned short n_chars) {
    advancing was actually done.
    for (;;) {
      if current char is EOW break;
-	 if next is unambiguous and not newline {
-	   display it
-	   store it
-	 } else break;
+         if next is unambiguous and not newline {
+           display it
+           store it
+         } else break;
    }
 */
 static int advance(unsigned short *triepos) {
   unsigned short ntp;
   
   if (iomode & IO_WORD) {
-	ntp = *triepos;
-	for (;;) {
-	  if ((trie[ntp].code & 0x7F) == 0) break;
-	  ntp += trie[ntp].next;
-	  if ((trie[ntp].code & 0x80) == 0
-		  || (trie[ntp].code & 0x7F) == '\n') break;
-	}
-	if (trie[ntp].code != 0x80) return(0);
+        ntp = *triepos;
+        for (;;) {
+          if ((trie[ntp].code & 0x7F) == 0) break;
+          ntp += trie[ntp].next;
+          if ((trie[ntp].code & 0x80) == 0
+                  || (trie[ntp].code & 0x7F) == '\n') break;
+        }
+        if (trie[ntp].code != 0x80) return(0);
   }
   ntp = *triepos;
   for (;;) {
-	if ((trie[ntp].code & 0x7F) == 0) break;
-	ntp += trie[ntp].next;
-	if ((trie[ntp].code & 0x80) == 0
-		|| (trie[ntp].code & 0x7F) == '\n') {
-	  ntp -= trie[ntp].prev;
-	  break;
-	}
-	ACCEPT_CHAR(trie[ntp].code & 0x7F); /* Could be 0 */
-	ioflags &= ~IOF_NO_ADV;
+        if ((trie[ntp].code & 0x7F) == 0) break;
+        ntp += trie[ntp].next;
+        if ((trie[ntp].code & 0x80) == 0
+                || (trie[ntp].code & 0x7F) == '\n') {
+          ntp -= trie[ntp].prev;
+          break;
+        }
+        ACCEPT_CHAR(trie[ntp].code & 0x7F); /* Could be 0 */
+        ioflags &= ~IOF_NO_ADV;
   }
   if (ntp != *triepos) {
-	*triepos = ntp;
-	return(1);
+        *triepos = ntp;
+        return(1);
   } else return(0);
 }
 
@@ -1010,16 +1009,16 @@ static int retreat(unsigned short *triepos) {
   
   ioflags |= IOF_NO_ADV;
   do {
-	if (trie[*triepos].code == T_ROOT) {
-	  if (unshift()) return(1);
-	  else if (!once) REJECT_CHAR;
-	  return(0);
-	}
-	once = 1;
-	RUBOUT;
-	*triepos -= trie[*triepos].prev;
+        if (trie[*triepos].code == T_ROOT) {
+          if (unshift()) return(1);
+          else if (!once) REJECT_CHAR;
+          return(0);
+        }
+        once = 1;
+        RUBOUT;
+        *triepos -= trie[*triepos].prev;
   } while ((iomode & IO_BACKSPACE)
-		   && (trie[*triepos+trie[*triepos].next].code & 0x80));
+                   && (trie[*triepos+trie[*triepos].next].code & 0x80));
   return(0);
 }
 #endif
@@ -1034,93 +1033,93 @@ static int read_words(unsigned short trieroot, unsigned short trie_offset) {
   triepos = trieroot + trie_offset;
 
   #ifdef CMD_INTERACT_MODE
-	if ((ioflags & IOF_INTERACTIVE)
-		&& trie[triepos].code != T_ROOT && retreat(&triepos))
-	  return(0);
+        if ((ioflags & IOF_INTERACTIVE)
+                && trie[triepos].code != T_ROOT && retreat(&triepos))
+          return(0);
   #endif
 
   /* Now triepos points to the previous node. We must
      advance to next to find the first matching character.
-	 First advance at the beginning if specified.
+         First advance at the beginning if specified.
   */
   if (!(ioflags & IOF_NO_ADV)
-	  && (iomode & IO_WORDSKIP)) advance(&triepos);
+          && (iomode & IO_WORDSKIP)) advance(&triepos);
 
   for (;;) {
     /* When should we advance?
-	    ALWAYS
-	      while there is an unambiguous character not '\n'
-	      0 translates to space
-	    SPACE not now
-	    ALWAYS | WORD
-	      if unambiguous to EOW
+            ALWAYS
+              while there is an unambiguous character not '\n'
+              0 translates to space
+            SPACE not now
+            ALWAYS | WORD
+              if unambiguous to EOW
     */
     if (!(ioflags & IOF_NO_ADV)
-	    && (iomode & IO_ALWAYS)) advance(&triepos);
+            && (iomode & IO_ALWAYS)) advance(&triepos);
     if ((trie[triepos].code & 0x7F) == 0) break;
     c = input();
     switch (c) {
       case 0:
-	    unshift_value = triepos - trieroot;
-	    return(0);
+            unshift_value = triepos - trieroot;
+            return(0);
       case KG_RUBOUT:
       case KG_DEL:
-	    #ifdef CMD_BATCH_MODE
-	      #ifdef CMD_INTERACT_MODE
-		    if (~(ioflags & IOF_INTERACTIVE))
-	      #endif
-		      return(1);
-	    #endif
-	    #ifdef CMD_INTERACT_MODE
-	      if (retreat(&triepos)) return(0);
-	      continue;
-	    #endif
+            #ifdef CMD_BATCH_MODE
+              #ifdef CMD_INTERACT_MODE
+                    if (~(ioflags & IOF_INTERACTIVE))
+              #endif
+                      return(1);
+            #endif
+            #ifdef CMD_INTERACT_MODE
+              if (retreat(&triepos)) return(0);
+              continue;
+            #endif
       case ' ':
-	    if ((iomode & IO_SPACE) && advance(&triepos)) continue;
-	    c = 0;
-	    break;
+            if ((iomode & IO_SPACE) && advance(&triepos)) continue;
+            c = 0;
+            break;
       case '\n':
       case '\r':
-	    if ((iomode & IO_SPACE) && advance(&triepos)) {
-	      UNPUTNL;
-	      continue;
-	    }
-	    /* newlines are only OK at the root of a trie. Otherwise
-	       we need to advance through EOW */
-	    if (trie[triepos].code != T_ROOT) {
-	      UNPUTNL;
-	      c = 0;
-	    } else c = '\n';
-	    break;
+            if ((iomode & IO_SPACE) && advance(&triepos)) {
+              UNPUTNL;
+              continue;
+            }
+            /* newlines are only OK at the root of a trie. Otherwise
+               we need to advance through EOW */
+            if (trie[triepos].code != T_ROOT) {
+              UNPUTNL;
+              c = 0;
+            } else c = '\n';
+            break;
       case KG_TAB:
-	    next_prompt();
-	    continue;
+            next_prompt();
+            continue;
       case KG_ESCAPE:
-	    CANCEL_LINE;
+            CANCEL_LINE;
       default:
-	if (isprint(c)) break;
-	SPECIAL_CHAR_FUNC(c);
-	continue;
+        if (isprint(c)) break;
+        SPECIAL_CHAR_FUNC(c);
+        continue;
     }
     cl = tolower(c);
     ntp = triepos + trie[triepos].next;
     do {
       if (tolower(T_CHAR(ntp)) == cl) {
-	triepos = ntp;
-	ntp = 0;
-	break;
+        triepos = ntp;
+        ntp = 0;
+        break;
       }
     } while ((trie[ntp++].code & 0x80) == 0);
     if (ntp) {
       #ifdef CMD_BATCH_MODE
-	#ifdef CMD_INTERACT_MODE
-	  if (!(ioflags & IOF_INTERACTIVE))
-	#endif
-	return(1);
+        #ifdef CMD_INTERACT_MODE
+          if (!(ioflags & IOF_INTERACTIVE))
+        #endif
+        return(1);
       #endif
       #ifdef CMD_INTERACT_MODE
-	REJECT_CHAR;
-	ioflags &= ~IOF_UNGOTNL;
+        REJECT_CHAR;
+        ioflags &= ~IOF_UNGOTNL;
       #endif
     } else if (c == '\n') {
       triepos += trie[triepos].next;
@@ -1141,7 +1140,7 @@ static int reduce_rule(unsigned short rule) {
   unsigned short ntsp;
   
   /* rule_action is generated in output_rules().
-	 It returns the non-zero if the root non-terminal is reduced.
+         It returns the non-zero if the root non-terminal is reduced.
   */
   { int oldresp, action_result;
     oldresp = set_response( 1 );
@@ -1155,13 +1154,13 @@ static int reduce_rule(unsigned short rule) {
     assert(ntsp <= tsp);
     if (ntsp < tsp) {
       #ifdef NEED_VALUES
-	if (tstack[ntsp-1].valpos < tstack[tsp-1].valpos) {
-	  if (vsp > tstack[tsp-1].valpos) {
-		vsp = tstack[ntsp-1].valpos;
-		vstack[vsp] = vstack[tstack[tsp-1].valpos];
-		tstack[tsp].valpos = ++vsp;
-	  } else tstack[tsp].valpos = vsp = tstack[ntsp].valpos;
-	}
+        if (tstack[ntsp-1].valpos < tstack[tsp-1].valpos) {
+          if (vsp > tstack[tsp-1].valpos) {
+                vsp = tstack[ntsp-1].valpos;
+                vstack[vsp] = vstack[tstack[tsp-1].valpos];
+                tstack[tsp].valpos = ++vsp;
+          } else tstack[tsp].valpos = vsp = tstack[ntsp].valpos;
+        }
       #endif
       tstack[ntsp] = tstack[tsp];
       tsp = ntsp;
@@ -1196,42 +1195,42 @@ static int cmd_exec(void) {
     st = &states[cur_state];
     if (st->flag == STFL_REDUCE) {
       if (reduce_rule(st->offset)) {
-	#ifdef CLIENT
-	  cic_transmit(ibuf, ibufidx, saw_server_action);
-	  saw_server_action = 0;
-	#endif
-	break;
+        #ifdef CLIENT
+          cic_transmit(ibuf, ibufidx, saw_server_action);
+          saw_server_action = 0;
+        #endif
+        break;
       }
     } else {
       if (full_reduce) {
-	#ifdef CLIENT
-	  cic_transmit(ibuf, ibufidx, saw_server_action);
-	  saw_server_action = 0;
-	#endif
-	CLEAR_DISPLAY_LINE;
-	DISPLAY_INPUT_PROMPT
-	ibufidx = 0;
-	full_reduce = 0;
+        #ifdef CLIENT
+          cic_transmit(ibuf, ibufidx, saw_server_action);
+          saw_server_action = 0;
+        #endif
+        CLEAR_DISPLAY_LINE;
+        DISPLAY_INPUT_PROMPT
+        ibufidx = 0;
+        full_reduce = 0;
       }
       #ifdef CMD_BATCH_MODE
-	if (!(ioflags & (IOF_INTERACTIVE|IOF_UNGOTNL))
-		&& *cmd_input == '\0') {
-	  UPDATE_OUTPUT;
-	  return(0);
-	}
+        if (!(ioflags & (IOF_INTERACTIVE|IOF_UNGOTNL))
+                && *cmd_input == '\0') {
+          UPDATE_OUTPUT;
+          return(0);
+        }
       #endif
       assert(st->prompt >= 0);
       new_prompt(st->prompt);
       #ifdef VAR_some
-	if (st->flag == STFL_VARIABLE) {
-	  if (read_variable(st->offset, unshift_value))
-	    return(CMDREP_SYNERR);
-	} else
+        if (st->flag == STFL_VARIABLE) {
+          if (read_variable(st->offset, unshift_value))
+            return(CMDREP_SYNERR);
+        } else
       #else
-	assert(st->flag != STFL_VARIABLE);
+        assert(st->flag != STFL_VARIABLE);
       #endif
-	if (read_words(st->offset, unshift_value))
-	  return(CMDREP_SYNERR);
+        if (read_words(st->offset, unshift_value))
+          return(CMDREP_SYNERR);
     }
   }
   CLEAR_DISPLAY_LINE;
@@ -1243,10 +1242,10 @@ static int cmd_exec(void) {
   /* Parses the specified command, executing if test == 0.
      Returns non-zero if an error occurred. Possible errors:
        CMDREP_QUIT Command execution resulted in termination
-		(not exactly an error: more a status indication)
+                (not exactly an error: more a status indication)
        CMDREP_SYNERR - (CMDREP_EXECERR-1)
-		    Syntax error. Error value minus 1000 is the
-		    character position where the error occurred.
+                    Syntax error. Error value minus 1000 is the
+                    character position where the error occurred.
        >=CMDREP_EXECERR Execution error. Error code + CMDREP_EXECERR
   */
   int cmd_batch(char *cmd, int test) {
@@ -1290,14 +1289,15 @@ void cmd_report(cmd_state *s) {
  */
 int cmd_check(cmd_state *s) {
   return(s->state != tstack[tsp].state
-	  || s->value != unshift_value);
+          || s->value != unshift_value);
 }
 
 #if defined( SERVER_ACTIONS )
   #if defined( SERVER_INIT )
+    // This section is apparently obsolete. Perhaps it applied to snafu?
     #include <string.h>
-    #ifndef _NORTLIB_H_INCLUDED
-      #error Must include nortlib.h
+    #ifndef _NL_H_INCLUDED
+      #error Must include nl.h
     #endif
     /* solp_init() returns a non-zero value only if there is a
        parsing error.
@@ -1308,41 +1308,44 @@ int cmd_check(cmd_state *s) {
       cmd_init();
       rv = cmd_batch(cmd, 1);
       if (rv != 0) switch (CMDREP_TYPE(rv)) {
-	case CMDREP_TYPE(CMDREP_QUIT):
-	  nl_error(2, "Termination Command Illegal in a proxy");
-	  nl_error(2, "%s", cmd);
-	  break;
-	case CMDREP_TYPE(CMDREP_SYNERR):
-	  nl_error(2, "Syntax Error in Proxy");
-	  nl_error(2, "%s", cmd);
-	  nl_error(2, "%*s", rv - CMDREP_SYNERR, "^");
-	  break;
-	case CMDREP_TYPE(CMDREP_EXECERR):
-	default:
-	  nl_error(2, "Error %d parsing proxy command:");
-	  nl_error(2, "%s", cmd);
-	  break;
+        case CMDREP_TYPE(CMDREP_QUIT):
+          nl_error(2, "Termination Command Illegal in a proxy");
+          nl_error(2, "%s", cmd);
+          break;
+        case CMDREP_TYPE(CMDREP_SYNERR):
+          nl_error(2, "Syntax Error in Proxy");
+          nl_error(2, "%s", cmd);
+          nl_error(2, "%*s", rv - CMDREP_SYNERR, "^");
+          break;
+        case CMDREP_TYPE(CMDREP_EXECERR):
+        default:
+          nl_error(2, "Error %d parsing proxy command:");
+          nl_error(2, "%s", cmd);
+          break;
       }
       if (rv == 0) {
-	ci_msg mymsg;
-	int size;
+        ci_msg mymsg;
+        int size;
 
-	mymsg.msg_type = CMDINTERP_SEND_QUIET;
-	strcpy(mymsg.prefix, "Proxy");
-	size = strlen(cmd);
-	if (size >= CMD_INTERP_MAX)
-	  return(CMDREP_SYNERR + CMD_INTERP_MAX);
-	strcpy(mymsg.command, cmd);
-	/* add 1 for msg_type, and 1 for '\0' */
-	size += CMD_PREFIX_MAX + 1 + 1;
-	rv = set_response(1);
-	Soldrv_set_proxy(selector, ID, &mymsg, size);
-	set_response(rv);
-	rv = 0;
+        mymsg.msg_type = CMDINTERP_SEND_QUIET;
+        strcpy(mymsg.prefix, "Proxy");
+        size = strlen(cmd);
+        if (size >= CMD_INTERP_MAX)
+          return(CMDREP_SYNERR + CMD_INTERP_MAX);
+        strcpy(mymsg.command, cmd);
+        /* add 1 for msg_type, and 1 for '\0' */
+        size += CMD_PREFIX_MAX + 1 + 1;
+        rv = set_response(1);
+        Soldrv_set_proxy(selector, ID, &mymsg, size);
+        set_response(rv);
+        rv = 0;
       }
       return(rv);
     }
   #else
+    // The fact that these two functions are generated here means that they
+    // cannot actually be defined elsewhere to do something useful on
+    // startup or shutdown.
     void cis_initialize(void) {}
     void cis_terminate(void) {}
   #endif
@@ -1386,9 +1389,9 @@ int cmd_check(cmd_state *s) {
         nlph_cmdclt_init( &nlph_interact );
         return 0;
       #else
-	#ifdef NCT_INTERFACE
-	  nct_win = nct_cmdclt_init();
-	#endif
+        #ifdef NCT_INTERFACE
+          nct_win = nct_cmdclt_init();
+        #endif
         do cmd_interact(); while ( cgc_forwarding != 0 );
         return cgc_exit_code;
       #endif

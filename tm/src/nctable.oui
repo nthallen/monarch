@@ -1,0 +1,15 @@
+<package> nctable
+<include> "nctable.h"
+
+<opts> "a"
+
+<init>
+  nct_init_options(argc, argv);
+
+<synopsis>
+%C [options] term ...
+
+<sort>
+	-a Use ASCII graphics characters
+<unsort>
+	term tty on which to display the first screen

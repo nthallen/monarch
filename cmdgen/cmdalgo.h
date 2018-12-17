@@ -11,17 +11,17 @@
 extern "C" {
 #endif
 
-void cmd_init(void);
-void cmd_interact(void);
-int cmd_batch(char *cmd, int test);
+void cmd_init(void); // cmdgen.skel
+void cmd_interact(void); // cmdgen.skel if CMD_INTERACT_MODE
+int cmd_batch(char *cmd, int test); // cmdgen.skel if !CMD_CLIENT
 typedef struct {
   unsigned short state;
   unsigned short value;
 } cmd_state;
-void cmd_report(cmd_state *s);
-int cmd_check(cmd_state *s);
-void cis_initialize(void); /* in cmdgen.skel or .cmd */
-void cis_terminate(void);  /* in cmdgen.skel of .cmd */
+void cmd_report(cmd_state *s); // cmdgen.skel
+int cmd_check(cmd_state *s); // cmdgen.skel
+void cis_initialize(void); // cmdgen.skel
+void cis_terminate(void); // cmdgen.skel
 void cis_interfaces(void); /* generated */
 void cis_interfaces_close(void); /* generated */
 #define CMDREP_QUIT 1000

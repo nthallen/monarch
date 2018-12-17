@@ -7,7 +7,7 @@
 
 static FILE *skfp = NULL;
 #define MAX_LABEL 40
-#define DEF_DIR "/usr/local/share/huarp"
+#define DEF_DIR "/usr/local/share/linkeng"
 
 /**
  * Skel_open opens the specified skeleton file, looking in appropriate
