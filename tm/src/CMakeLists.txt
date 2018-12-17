@@ -1,4 +1,5 @@
-add_library(tm msg.c nctable.c cic.c cicf.c cictrans.c)
+add_library(tm msg.c nctable.c)
+# cic.c cicf.c cictrans.c
 install(TARGETS tm
   ARCHIVE
   DESTINATION lib
