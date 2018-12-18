@@ -68,9 +68,19 @@ TEST(NotTest, NotTesterTest) {
   const char *wrong_string = "FarFarFarTooBig";
   const char *right_string = "Correct";
   EXPECT_FALSE(nt.seed_buf(wrong_string));
-  EXPECT_TRUE(nt.get_cp() <= nt.get_nc());
+  EXPECT_TRUE(nt.get_nc() == 0);
+  /* printf(" >>str is %d\n", strlen(wrong_string));
+  printf(" >> nc is %d\n", nt.get_nc());
+  printf(" >> cp is %d\n", nt.get_cp());
+  printf("\n"); */
+  //EXPECT_TRUE(nt.get_cp() <= nt.get_nc());
   EXPECT_TRUE(nt.seed_buf(right_string));
-  EXPECT_TRUE(nt.get_cp() <= strlen(right_string));
+  EXPECT_TRUE(nt.get_nc() == strlen(right_string));
+  //EXPECT_TRUE(nt.get_cp() <= strlen(right_string));
+  /* printf(" >>str is %d\n", strlen(right_string));
+  printf(" >> nc is %d\n", nt.get_nc());
+  printf(" >> cp is %d\n", nt.get_cp());
+  printf("\n"); */
 }
 
 /* This method tests functionality of not_float() */
