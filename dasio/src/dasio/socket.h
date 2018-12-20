@@ -171,6 +171,7 @@ class Socket : public Interface {
          * called claim_server().
          */
         void release_server();
+        static const char *run_dir;
       private:
         /**
          * Accepts [-\._a-zA-Z0-9]

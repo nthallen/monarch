@@ -3,7 +3,7 @@
 #include "dasio/modbus_rtu.h"
 #include "nl.h"
 
-namespace DAS_IO::Modbus {
+namespace DAS_IO { namespace Modbus {
   
   RTU::RTU(const char *iname, int bufsz, const char *path, int open_flags)
       : DAS_IO::Serial(iname, bufsz, path, open_flags) {
@@ -382,4 +382,5 @@ namespace DAS_IO::Modbus {
   }
 
   RTU::modbus_device::~modbus_device() { }
-}
+
+} } // Close out Modbu and DAS_IO namespaces

@@ -5,7 +5,7 @@
 #include <deque>
 #include "serial.h"
 
-namespace DAS_IO::Modbus {
+namespace DAS_IO { namespace Modbus {
 
 class RTU : public DAS_IO::Serial {
   public:
@@ -168,6 +168,6 @@ class RTU : public DAS_IO::Serial {
     std::deque<modbus_device *> devices;
 };
 
-}
+} } // Closeout Modbus and DAS_IO namespaces
 
 #endif

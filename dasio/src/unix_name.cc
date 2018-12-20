@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <sys/un.h>
 #include <sys/file.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <signal.h>
 #include <ctype.h>
@@ -141,7 +142,7 @@ bool Socket::unix_name_t::claim_server() {
     nl_error(2, "Must lock() before claim_server()");
     return false;
   }
-  if (mkdir(exp_name, 0660) && errno != EEXIST) {
+  if (mkdir(exp_name, 0770) && errno != EEXIST) {
     nl_error(2, "Unable to create %s dir: %s", exp_name, strerror(errno));
     return false;
     // if (errno == EEXIST) ==> not really an error
