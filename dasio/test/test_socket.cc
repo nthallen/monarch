@@ -2,7 +2,6 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/select.h>
-#include <process.h>
 #include "nl.h"
 #include "dasio/socket.h"
 #include "dasio/timeout.h"
