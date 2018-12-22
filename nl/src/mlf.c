@@ -292,7 +292,7 @@ int mlf_compare( mlf_def_t *mlf, mlf_ntup_t *mlfn ) {
   return diff;
 }
 
-static next_file( mlf_def_t *mlf, int level ) {
+static int next_file( mlf_def_t *mlf, int level ) {
   if ( mlf->flags & MLF_INC_FIRST ) {
     int lvlidx;
     if ( level == mlf->n_levels ) mlf->index++;

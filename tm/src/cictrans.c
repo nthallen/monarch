@@ -42,31 +42,31 @@ void cic_transmit(char *buf, int n_chars, int transmit) {
   cmd_level *cl, *cl_save;
 
   for (; n_chars > 0; n_chars--) {
-	c = *buf++;
-	if (c == 0) {
-	  if (n_chars == 1) c = '\n';
-	  else c = ' ';
-	}
-	cmdbuf[curpos++] = c;
-	if (curpos > CMD_INTERP_MAX)
-	  nl_error(3, "Maximum transmissable command length exceeded");
+    c = *buf++;
+    if (c == 0) {
+      if (n_chars == 1) c = '\n';
+      else c = ' ';
+    }
+    cmdbuf[curpos++] = c;
+    if (curpos > CMD_INTERP_MAX)
+      nl_error(3, "Maximum transmissable command length exceeded");
   }
   if (transmit) {
     cmdbuf[curpos] = '\0';
-	ci_sendcmd(cmdbuf, 0);
+    ci_sendcmd(cmdbuf, 0);
   }
   for (cl = cur; cl != NULL && cmd_check(&cl->state); cl = cl->prev);
   if (cl == NULL) {
-	cl = malloc(sizeof(cmd_level));
-	if (cl == NULL) nl_error(4, "No memory in cic_transmit");
-	cl->prev = cur;
-	cl->pos = curpos;
-	cmd_report(&cl->state);
-	cur = cl;
+    cl = malloc(sizeof(cmd_level));
+    if (cl == NULL) nl_error(4, "No memory in cic_transmit");
+    cl->prev = cur;
+    cl->pos = curpos;
+    cmd_report(&cl->state);
+    cur = cl;
   } else while (cur != cl) {
-	cl_save = cur;
-	cur = cur->prev;
-	free(cl_save);
+    cl_save = cur;
+    cur = cur->prev;
+    free(cl_save);
   }
   curpos = cur->pos;
 }

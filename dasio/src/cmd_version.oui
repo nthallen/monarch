@@ -1,0 +1,11 @@
+<package> cmd_version
+<preceed> msg
+
+<include> "dasio/cmd_version.h"
+<opts> "R"
+<sort>
+	-R Report command set version string to stdout and quit
+
+<switch>
+  case 'R':
+    ci_report_version();

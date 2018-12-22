@@ -3,15 +3,21 @@
 #project(dasio_proj VERSION 2.0.0)
 add_library(dasio interface.cc ascii_escape.cc not_parsed.cc serial.cc
   timeout.cc loop.cc socket.cc unix_name.cc modbus_rtu.cc
-  client.cc server.cc appid.cc tm_client.cc tm_server.cc)
+  client.cc server.cc appid.cc tm_client.cc tm_server.cc
+  cmd_writer.cc cmd_version.cc cmd_version_def.cc
+  cic_transmit.cc )
 target_include_directories(dasio PUBLIC
   $(CMAKE_SOURCE_DIR)/dasio/src
   ${CMAKE_SOURCE_DIR}/tm/src
   ${CMAKE_SOURCE_DIR}/nl/src
+  ${CMAKE_SOURCE_DIR}/cmdgen
 )
 install(TARGETS dasio
   ARCHIVE
   DESTINATION lib
+)
+install(FILES cmd_version.oui cmd_writer.oui
+  DESTINATION share/oui
 )
 add_subdirectory("${CMAKE_SOURCE_DIR}/dasio/src/dasio"
                  "${CMAKE_BINARY_DIR}/dasio/src/dasio")

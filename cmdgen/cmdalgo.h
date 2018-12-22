@@ -6,20 +6,25 @@
 
 #ifdef __cplusplus
 
-#include "collect.h"
+#ifdef __QNXNTO__
+#include "collect.h" required for cmdif_dgdata
+#else
+  // the le-dasng version
+#endif
 
 extern "C" {
 #endif
 
-void cmd_init(void); // cmdgen.skel
-void cmd_interact(void); // cmdgen.skel if CMD_INTERACT_MODE
-int cmd_batch(char *cmd, int test); // cmdgen.skel if !CMD_CLIENT
+void cmd_init(void); // cmdgen.skel, called from library
+void cmd_interact(void); // cmdgen.skel if CMD_INTERACT_MODE. called from library
+int cmd_batch(char *cmd, int test); // cmdgen.skel if !CMD_CLIENT. called from library
 typedef struct {
   unsigned short state;
   unsigned short value;
 } cmd_state;
-void cmd_report(cmd_state *s); // cmdgen.skel
-int cmd_check(cmd_state *s); // cmdgen.skel
+void cmd_report(cmd_state *s); // cmdgen.skel called from cic_transmit()
+int cmd_check(cmd_state *s); // cmdgen.skel called from cic_transmit()
+
 void cis_initialize(void); // cmdgen.skel
 void cis_terminate(void); // cmdgen.skel
 void cis_interfaces(void); /* generated */
@@ -29,10 +34,12 @@ void cis_interfaces_close(void); /* generated */
 #define CMDREP_EXECERR 3000
 #define CMDREP_TYPE(x) ((x)/1000)
 
-struct ioattr_s;
-#define IOFUNC_ATTR_T struct ioattr_s
-extern IOFUNC_ATTR_T *cis_setup_rdr( char *node );
-extern void cis_turf( IOFUNC_ATTR_T *handle, char *format, ... );
+#ifdef __QNXNTO__
+  struct ioattr_s;
+  #define IOFUNC_ATTR_T struct ioattr_s
+  extern IOFUNC_ATTR_T *cis_setup_rdr( char *node );
+  extern void cis_turf( IOFUNC_ATTR_T *handle, char *format, ... );
+#endif
 void ci_server(void); /* in tmlib/cis.c */
 #define CMDSRVR_NAME "cmd/server"
 #define CMD_INTERP_MAX 256
@@ -49,7 +56,7 @@ class cmdif_rd {
     void Shutdown();
   private:
     const char *name;
-    IOFUNC_ATTR_T *handle;
+    // IOFUNC_ATTR_T *handle;
 };
 
 class cmdif_wr {
@@ -74,7 +81,7 @@ class cmdif_dgdata {
     const char *name;
     void *data;
     int dsize;
-    send_id id;
+    // send_id id;
 };
 
 #endif
