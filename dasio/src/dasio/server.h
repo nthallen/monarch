@@ -23,6 +23,11 @@ namespace DAS_IO {
   
   class SubService {
     public:
+      /**
+       * @param svcs The service/subservice string
+       * @param func Factory function to the appropriate Socket subclass
+       * @param svc_data subservice-specific data reference
+       */
       SubService(std::string name, socket_clone_t func, void *svc_data);
       ~SubService();
       std::string name;
@@ -39,6 +44,12 @@ namespace DAS_IO {
        * it was already defined.
        */
       bool add_subservice(SubService *def);
+      /**
+       * @param subservice The service/subservice string
+       * @return true if the subservice was removed successfully, false if
+       * it was not defined.
+       */
+      bool rm_subservice(std::string subservice);
       SubService *find_subservice(std::string subservice);
     private:
       std::map<std::string,SubService *> subs;

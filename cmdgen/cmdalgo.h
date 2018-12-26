@@ -7,13 +7,14 @@
 #ifdef __cplusplus
 
 #ifdef __QNXNTO__
-#include "collect.h" required for cmdif_dgdata
+  // required for cmdif_dgdata
+  #include "collect.h"
 #else
   // the le-dasng version
 #endif
 
 extern "C" {
-#endif
+#endif // __cplusplus
 
 void cmd_init(void); // cmdgen.skel, called from library
 void cmd_interact(void); // cmdgen.skel if CMD_INTERACT_MODE. called from library
@@ -39,14 +40,16 @@ void cis_interfaces_close(void); /* generated */
   #define IOFUNC_ATTR_T struct ioattr_s
   extern IOFUNC_ATTR_T *cis_setup_rdr( char *node );
   extern void cis_turf( IOFUNC_ATTR_T *handle, char *format, ... );
+  void ci_server(void); /* in tmpplib/cis.cc */
 #endif
-void ci_server(void); /* in tmlib/cis.c */
 #define CMDSRVR_NAME "cmd/server"
 #define CMD_INTERP_MAX 256
 #define CMD_VERSION_MAX 80
 
 #ifdef __cplusplus
 };
+
+#ifdef __QNXNTO__
 
 class cmdif_rd {
   public:
@@ -56,7 +59,7 @@ class cmdif_rd {
     void Shutdown();
   private:
     const char *name;
-    // IOFUNC_ATTR_T *handle;
+    IOFUNC_ATTR_T *handle;
 };
 
 class cmdif_wr {
@@ -81,8 +84,10 @@ class cmdif_dgdata {
     const char *name;
     void *data;
     int dsize;
-    // send_id id;
+    send_id id;
 };
+
+#endif // __QNXNTO__
 
 #endif
 

@@ -18,7 +18,22 @@ namespace DAS_IO {
   bool SubServices::add_subservice(SubService *def) {
     std::pair<std::map<std::string,SubService *>::iterator,bool> ret;
     ret = subs.insert( std::pair<std::string,SubService *>(def->name, def));
+    if (!ret.second) {
+      nl_error(2, "SubService %s already defined", def->name);
+    }
     return ret.second;
+  }
+  
+  bool SubServices::rm_subservice(std::string subservice) {
+    std::map<std::string,SubService *>::iterator pos;
+    
+    pos = subs.find(subservice);
+    if (pos == subs.end()) {
+      return false;
+    } else {
+      subs.erase(pos);
+      return true;
+    }
   }
   
   SubService *SubServices::find_subservice(std::string subservice) {

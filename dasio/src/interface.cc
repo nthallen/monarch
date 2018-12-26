@@ -92,6 +92,7 @@ bool Interface::ProcessData(int flag) {
  */
 bool Interface::iwrite(const char *str, unsigned int nc, unsigned int cp) {
   nl_assert(fd >= 0);
+  nl_assert(ocp >= onc);
   obuf = (unsigned char *)str;
   onc = nc;
   ocp = cp;
