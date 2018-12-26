@@ -1,11 +1,11 @@
 /* src/config.h.  Generated from config.h.in by configure.  */
-/* src/config.h.in.  Generated from configure.in by autoheader.  */
+/* src/config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
 
-/* Define to 1 if you have the `nort' library (-lnort). */
-#define HAVE_LIBNORT 1
+/* Define to 1 if you have the `nl' library (-lnl). */
+#define HAVE_LIBNL 1
 
 /* Define to 1 if you have the <limits.h> header file. */
 #define HAVE_LIMITS_H 1
@@ -16,8 +16,8 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
 
-/* Define to 1 if you have the <nortlib.h> header file. */
-#define HAVE_NORTLIB_H 1
+/* Define to 1 if you have the <nl.h> header file. */
+#define HAVE_NL_H 1
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
@@ -29,7 +29,7 @@
 #define HAVE_STRCASECMP 1
 
 /* Define to 1 if you have the `stricmp' function. */
-#define HAVE_STRICMP 1
+/* #undef HAVE_STRICMP */
 
 /* Define to 1 if you have the <strings.h> header file. */
 #define HAVE_STRINGS_H 1

@@ -8,7 +8,7 @@ char *opt_string = "uqkwvo:";
 #include "oui.h"
 #include "ouidefs.h"
 #include <unistd.h>
-#include "nortlib.h"
+#include "nl.h"
 #include <stdio.h>
 #include "compiler.h"
   int (*nl_error)(int level, const char *s, ...) = compile_error;

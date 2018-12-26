@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#include "nortlib.h"
+#include "nl.h"
 #include "compiler.h"
 
 /* Use strrchr to find last /

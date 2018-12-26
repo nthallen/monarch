@@ -2,15 +2,11 @@
  * $Log$
  */
 #include <string.h>
-#include "nortlib.h"
+#include "nl.h"
 #include "compiler.h"
 #include "ouidefs.h"
-#pragma off (unreferenced)
-  static char rcsid[] =
-	"$Id$";
-#pragma on (unreferenced)
 
-void llopkg_enq(ll_of_pkg *llp, const package *pkg) {
+void llopkg_enq(ll_of_pkg *llp, package *pkg) {
   llpkgleaf *lf;
 
   if (llp != 0) {

@@ -51,7 +51,7 @@ typedef struct pkg {
 #define PKGFLG_DEFINED 1
 #define PKGFLG_VISITED 2
 
-void llopkg_enq(ll_of_pkg *llp, const package *pkg);
+void llopkg_enq(ll_of_pkg *llp, package *pkg);
 package *find_package(const char *pkgname);
 
 typedef struct {

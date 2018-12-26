@@ -4,13 +4,9 @@
  * Initial revision
  *
    */
-  #include "nortlib.h"
+  #include "nl.h"
   #include "compiler.h"
   #include "ouidefs.h"
-  #pragma off (unreferenced)
-	static char rcsid[] =
-	  "$Id$";
-  #pragma on (unreferenced)
 
   #define yyerror(x) compile_error(2, x)
 %}

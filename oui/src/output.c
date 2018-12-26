@@ -24,13 +24,9 @@
 #include <ctype.h>
 #include <assert.h>
 #include <string.h>
-#include "nortlib.h"
+#include "nl.h"
 #include "compiler.h"
 #include "ouidefs.h"
-#pragma off (unreferenced)
-  static char rcsid[] =
-	"$Id$";
-#pragma on (unreferenced)
 
 void output_comments(void) {
   llpkgleaf *p;
@@ -57,7 +53,7 @@ void output_opt_string(void) {
   fprintf(ofile, "\";\n");
 }
 
-static dump_llos( ll_of_str *ll, char *prefix ) {
+static void dump_llos( ll_of_str *ll, char *prefix ) {
   char *s;
 
   while ( s = llos_deq( ll ) ) {

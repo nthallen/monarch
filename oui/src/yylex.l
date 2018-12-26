@@ -12,14 +12,10 @@
  * Initial revision
  *
    */
-  #include "nortlib.h"
+  #include "nl.h"
   #include "compiler.h"
   #include "ouidefs.h"
   #include "ouigrmr.h"
-  #pragma off (unreferenced)
-	static char rcsid[] =
-	  "$Id$";
-  #pragma on (unreferenced)
   /* Strategy:
      I want most things to be handled by the line case, but
 	 after reading one of the keywords which takes arguments,

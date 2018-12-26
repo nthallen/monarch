@@ -2,7 +2,7 @@
  * $Log$
  */
 #include <assert.h>
-#include "nortlib.h"
+#include "nl.h"
 #include "ouidefs.h"
 
 static int report_cycle(package *pkg) {

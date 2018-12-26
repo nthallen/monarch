@@ -13,12 +13,12 @@ AC_CHECK_PROG(USEMSG, usemsg, usemsg, :)
 AM_CONDITIONAL([USE_USEMSG],[test x$HAVE_USEMSG = xtrue ])
 
 dnl Checks for libraries.
-AC_CHECK_LIB(nort, nl_error, , AC_MSG_ERROR(Library nort is required))
+AC_CHECK_LIB(nl, nl_error, , AC_MSG_ERROR(Library nl is required))
 
 dnl Checks for header files.
 AC_HEADER_STDC
 missing=''
-AC_CHECK_HEADERS(limits.h malloc.h unistd.h nortlib.h,,[missing="$missing $ac_hdr"])
+AC_CHECK_HEADERS(limits.h malloc.h unistd.h nl.h,,[missing="$missing $ac_hdr"])
 if test -n "$missing"; then
   AC_MSG_ERROR(Missing headers: $missing)
 fi

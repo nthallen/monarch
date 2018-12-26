@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include "nortlib.h"
+#include "nl.h"
 #include "compiler.h"
 #include "ouidefs.h"
 #include "oui.h"
@@ -174,7 +174,7 @@ void oui_c_include(char *str) {
 static void need_switch(void) {
   if (!switch_needed) {
 	llos_enq( &global_defs.crnt_pkg->c_inc, "<unistd.h>");
-	llos_enq( &global_defs.crnt_pkg->c_inc, "\"nortlib.h\"");
+	llos_enq( &global_defs.crnt_pkg->c_inc, "\"nl.h\"");
 	switch_needed = 1;
   }
 }

@@ -1,9 +1,12 @@
 .deps
 Makefile
 Makefile.in
+config.h.in~
 oui
+oui.exe
 ouiraw
 ouigrmr.c
 ouigrmr.h
 yylex.c
 stamp-h1
+*.o
