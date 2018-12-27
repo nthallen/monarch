@@ -104,7 +104,11 @@ static short ioflags;
 #endif
 
 #if defined CLIENT || defined SERVER
-  #include "tm.h" /* for ci* library functions */
+  #ifdef __QNXNTO__
+    #include "tm.h" /* for ci* library functions */
+  #else
+    #include "dasio/cmd_server.h"
+  #endif
 #endif
 
 #if ! (defined CMD_INTERACT_MODE || defined CMD_BATCH_MODE)

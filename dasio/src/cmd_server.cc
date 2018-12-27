@@ -424,6 +424,8 @@ cmdif_wr_clt::cmdif_wr_clt(const char *iname, const char *service,
       : DAS_IO::Client(iname, 80, service, subservice) {
 }
 
+std::list<cmdif_rd *> cmdif_rd::rdrs;
+
 cmdif_wr_clt::~cmdif_wr_clt() {}
 
 void cmdif_wr_clt::Turf(const char *cmd, int cmdlen) {

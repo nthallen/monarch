@@ -7,3 +7,6 @@ install(TARGETS nl
 install(FILES nl.h nl_assert.h compiler.h mlf.h ll_of_str.h
   DESTINATION include
 )
+install (FILES compiler.oui
+  DESTINATION share/oui
+)

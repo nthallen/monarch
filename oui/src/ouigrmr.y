@@ -1,9 +1,5 @@
 %{
-  /* $Log$
- * Revision 1.1  1994/09/15  19:45:23  nort
- * Initial revision
- *
-   */
+  /** @file ouigrmr.y */
   #include "nl.h"
   #include "compiler.h"
   #include "ouidefs.h"
@@ -31,79 +27,79 @@
 %type <pkgval> package
 %%
 starter : program
-	;
+    ;
 program :
-	| program package_def
-	;
+    | program package_def
+    ;
 package_def : KW_PACKAGE package { oui_defpkg($2); }
-	| package_def statement
-	;
+    | package_def statement
+    ;
 statement : mi_statement
-	| comment
-	| defs
-	| vars
-	| inits
-	| unsort
-	| sort
-	| switch
-	| arg
-	| KW_SYNOPSIS TK_LINE { oui_synopsis($2); }
-	;
+    | comment
+    | defs
+    | vars
+    | inits
+    | unsort
+    | sort
+    | switch
+    | arg
+    | KW_SYNOPSIS TK_LINE { oui_synopsis($2); }
+    ;
 mi_statement : KW_OPTS TK_STRING { oui_opts($2); }
-	| include
-	| preceed
-	| follow
-	;
+    | include
+    | preceed
+    | follow
+    ;
 comment : KW_COMMENT
-	| comment TK_LINE { free_memory($2); }
-	;
+    | comment TK_LINE { free_memory($2); }
+    ;
 defs : KW_DEF
-	| defs mi_statement
-	| defs TK_LINE { oui_defs($2); }
-	;
+    | defs mi_statement
+    | defs TK_LINE { oui_defs($2); }
+    ;
 vars : KW_VAR
-	| vars mi_statement
-	| vars TK_LINE { oui_vars($2); }
-	;
+    | vars mi_statement
+    | vars TK_LINE { oui_vars($2); }
+    ;
 inits : KW_INIT
-	| inits mi_statement
-	| inits TK_LINE { oui_inits($2); }
-	;
+    | inits mi_statement
+    | inits TK_LINE { oui_inits($2); }
+    ;
 unsort : KW_UNSORT
-	| unsort mi_statement
-	| unsort TK_LINE { oui_unsort($2); }
-	;
+    | unsort mi_statement
+    | unsort TK_LINE { oui_unsort($2); }
+    ;
 sort : KW_SORT
-	| sort mi_statement
-	| sort TK_LINE { oui_sort($2); }
-	;
+    | sort mi_statement
+    | sort TK_LINE { oui_sort($2); }
+    ;
 switch : KW_SWITCH
-	| switch mi_statement
-	| switch TK_LINE { oui_switch($2); }
-	;
+    | switch mi_statement
+    | switch TK_LINE { oui_switch($2); }
+    ;
 arg : KW_ARG
-	| arg mi_statement
-	| arg TK_LINE { oui_arg($2); }
-	;
+    | arg mi_statement
+    | arg TK_LINE { oui_arg($2); }
+    ;
 
 include : KW_INCLUDE inc_file
-	| include inc_file
-	;
+    | include inc_file
+    ;
 inc_file : TK_PACKAGE { oui_include($1); }
-	| TK_INC_FILE { oui_c_include($1); }
-	;
+    | TK_INC_FILE { oui_c_include($1); }
+    ;
 
 preceed : KW_PRECEED pre_package
-	| preceed pre_package
-	;
+    | preceed pre_package
+    ;
 pre_package : package { oui_prepkg($1); }
-	;
+    ;
 
 follow : KW_FOLLOW fol_package
-	| follow fol_package
-	;
+    | follow fol_package
+    ;
 fol_package : package { oui_folpkg($1); }
-	;
-	
+    ;
+    
 package : TK_PACKAGE { $$ = find_package($1); free_memory($1); }
-	;
+    ;

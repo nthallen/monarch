@@ -40,15 +40,15 @@ FILE *open_input_file(char *filename) {
   if (bn == 0) bn = partname;
   dot = strrchr(bn, '.');
   if (dot == 0) {
-	i = strlen(partname);
-	strncpy(partname+i, ".oui", PATH_MAX-i);
-	partname[PATH_MAX-1] = '\0';
+    i = strlen(partname);
+    strncpy(partname+i, ".oui", PATH_MAX-i);
+    partname[PATH_MAX-1] = '\0';
   }
   fp = fopen( partname, "r" );
   if ( fp != NULL ) return fp;
   if ( partname[0] != '/' ) {
-	snprintf( fullname, PATH_MAX, "%s/%s",
-			  PKGDATADIR, partname );
+    snprintf( fullname, PATH_MAX, "%s/%s",
+              PKGDATADIR, partname );
     fp = fopen( fullname, "r" );
     if ( fp != NULL ) return fp;
   }

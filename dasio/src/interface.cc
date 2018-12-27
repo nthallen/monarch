@@ -243,10 +243,10 @@ void Interface::report_err( const char *fmt, ... ) {
     msgv( 2, fmt, args );
     va_end(args);
     if (nc)
-      msg(2, "%s: Input was: '%s'", iname, ascii_escape((char*)buf, nc) );
+      nl_error(2, "%s: Input was: '%s'", iname, ascii_escape((char*)buf, nc) );
   } else {
     if ( !n_suppressed )
-      msg(2, "%s: Error threshold reached: suppressing errors", iname);
+      nl_error(2, "%s: Error threshold reached: suppressing errors", iname);
     ++n_suppressed;
     ++total_suppressed;
   }
@@ -260,7 +260,7 @@ void Interface::report_err( const char *fmt, ... ) {
 void Interface::report_ok(int nchars) {
   if ( n_errors > 0 ) {
     if ( --n_errors <= 0 && n_suppressed ) {
-      msg( 0, "Error recovery: %d error messages suppressed", n_suppressed );
+      nl_error( 0, "Error recovery: %d error messages suppressed", n_suppressed );
       n_suppressed = 0;
     }
   }

@@ -33,7 +33,7 @@ void output_comments(void) {
 
   fprintf(ofile, "/* OUI output from the following packages:\n");  
   for (p = global_defs.packages.first; p != NULL; p = p->next) {
-	fprintf(ofile, "   %s\n", p->pkg->name);
+    fprintf(ofile, "   %s\n", p->pkg->name);
   }
   fprintf(ofile, "*/\n");
 }
@@ -42,13 +42,13 @@ void output_opt_string(void) {
   llpkgleaf *p;
   char *s;
 
-  fprintf(ofile, "char *opt_string = \"");  
+    fprintf(ofile, "const char *opt_string = \"");  
   for (p = global_defs.packages.first; p != NULL; p = p->next) {
-	s = p->pkg->opt_string;
-	if (s != 0) {
-	  while (isspace(*s)) s++;
-	  fprintf(ofile, "%s", s);
-	}
+    s = p->pkg->opt_string;
+    if (s != 0) {
+      while (isspace(*s)) s++;
+      fprintf(ofile, "%s", s);
+    }
   }
   fprintf(ofile, "\";\n");
 }
@@ -57,8 +57,8 @@ static void dump_llos( ll_of_str *ll, char *prefix ) {
   char *s;
 
   while ( s = llos_deq( ll ) ) {
-	fprintf(ofile, "%s%s\n", prefix, s);
-	free_memory(s);
+    fprintf(ofile, "%s%s\n", prefix, s);
+    free_memory(s);
   }
 }
 
@@ -66,8 +66,8 @@ void output_defs(void) {
   llpkgleaf *p;
   
   for (p = global_defs.packages.first; p != NULL; p = p->next) {
-	assert(p->pkg != 0);
-	dump_llos( &p->pkg->defs, "" );
+    assert(p->pkg != 0);
+    dump_llos( &p->pkg->defs, "" );
   }
 }
 
@@ -75,38 +75,38 @@ static void output_switch(void) {
   llpkgleaf *p;
 
   fprintf(ofile, "%s", "\n"
-	"  { int optltr;\n\n"
-	"\toptind = OPTIND_RESET;\n"
-	"\topterr = 0;\n"
-	"\twhile ((optltr = getopt(argc, argv, opt_string)) != -1) {\n"
-	"\t  switch (optltr) {\n");
+    "  { int optltr;\n\n"
+    "    optind = OPTIND_RESET;\n"
+    "    opterr = 0;\n"
+    "    while ((optltr = getopt(argc, argv, opt_string)) != -1) {\n"
+    "      switch (optltr) {\n");
 
   /* Dump the switch args */
   for (p = global_defs.packages.first; p != NULL; p = p->next)
-	dump_llos( &p->pkg->switches, "\t\t" );
+    dump_llos( &p->pkg->switches, "      " );
 
   fflush(ofile);
 
   fprintf(ofile, "%s",
-	"\t\t  case '?':\n"
-	"\t\t\tnl_error(3, \"Unrecognized Option -%c\", optopt);\n"
-	"\t\t  default:\n"
-	"\t\t\tbreak;\n"
-	"\t  }\n"
-	"\t}\n");
+    "        case '?':\n"
+    "          nl_error(3, \"Unrecognized Option -%c\", optopt);\n"
+    "        default:\n"
+    "          break;\n"
+    "      }\n"
+    "    }\n");
 
   fflush(ofile);
 
   if (arg_needed) {
-	fprintf(ofile, "%s",
-	  "\tfor (; optind < argc; optind++) {\n"
-	  "\t  optarg = argv[optind];\n");
+    fprintf(ofile, "%s",
+      "    for (; optind < argc; optind++) {\n"
+      "      optarg = argv[optind];\n");
 
-	/* Now the arg args */
-	for (p = global_defs.packages.first; p != NULL; p = p->next)
-	  dump_llos( &p->pkg->arg, "\t" );
+    /* Now the arg args */
+    for (p = global_defs.packages.first; p != NULL; p = p->next)
+      dump_llos( &p->pkg->arg, "    " );
 
-	fprintf(ofile, "\t}\n");
+    fprintf(ofile, "    }\n");
   }
   fprintf(ofile, "  }\n");
 }
@@ -118,13 +118,13 @@ void output_inits(void) {
 
   /* Vars */
   for (p = global_defs.packages.first; p != NULL; p = p->next)
-	dump_llos( &p->pkg->vars, "" );
+    dump_llos( &p->pkg->vars, "" );
 
   if (switch_needed) output_switch();
 
   /* Inits */
   for (p = global_defs.packages.first; p != NULL; p = p->next)
-	dump_llos( &p->pkg->inits, "" );
+    dump_llos( &p->pkg->inits, "" );
 
   fprintf(ofile, "}\n");
 }
@@ -133,7 +133,7 @@ static void one_include(ll_of_str *ll, const char *s) {
   struct llosleaf *lll;
   
   for (lll = ll->first; lll != NULL; lll = lll->next)
-	if (strcmp(lll->text, s) == 0) return;
+    if (strcmp(lll->text, s) == 0) return;
   llos_enq(ll, s);
 }
 
@@ -145,10 +145,10 @@ void output_includes(void) {
   prtd.first = prtd.last = NULL;
   one_include(&prtd, "\"oui.h\"");
   for (p = global_defs.packages.first; p != NULL; p = p->next) {
-	while (s = llos_deq(&p->pkg->c_inc)) {
-	  one_include(&prtd, s);
-	  free_memory(s);
-	}
+    while (s = llos_deq(&p->pkg->c_inc)) {
+      one_include(&prtd, s);
+      free_memory(s);
+    }
   }
   dump_llos( &prtd, "#include " );
 }
@@ -163,20 +163,20 @@ static void output_sorted(void) {
   int n_strs, i;
   
   if (sort_output) {
-	n_strs = 0;
-	for (lf = global_defs.sorted.first; lf != NULL; lf = lf->next)
-	  n_strs++;
-	if (n_strs > 0) {
-	  sorter = new_memory(n_strs * sizeof(char *));
-	  for (i = 0; i < n_strs; i++)
-		sorter[i] = llos_deq(&global_defs.sorted);
-	  qsort(sorter, n_strs, sizeof(char *), compar);
-	  for (i = 0; i < n_strs; i++) {
-		fprintf(ofile, "%s\n", sorter[i]);
-		free_memory(sorter[i]);
-	  }
-	  free_memory(sorter);
-	}
+    n_strs = 0;
+    for (lf = global_defs.sorted.first; lf != NULL; lf = lf->next)
+      n_strs++;
+    if (n_strs > 0) {
+      sorter = new_memory(n_strs * sizeof(char *));
+      for (i = 0; i < n_strs; i++)
+        sorter[i] = llos_deq(&global_defs.sorted);
+      qsort(sorter, n_strs, sizeof(char *), compar);
+      for (i = 0; i < n_strs; i++) {
+        fprintf(ofile, "%s\n", sorter[i]);
+        free_memory(sorter[i]);
+      }
+      free_memory(sorter);
+    }
   } else dump_llos( &global_defs.sorted, "" );
 }
 
@@ -187,16 +187,16 @@ void output_usage(void) {
   
   /* Output the synopsis */
   if ( global_defs.synopsis == 0 )
-	fprintf( ofile, "%%C\t[options]\n");
+    fprintf( ofile, "%%C    [options]\n");
   else
-	fprintf( ofile, "%s\n", global_defs.synopsis );
+    fprintf( ofile, "%s\n", global_defs.synopsis );
 
   /* Output the sorted options */
   output_sorted();
   
   /* and output the unsorted help */
   for (p = global_defs.packages.first; p != NULL; p = p->next)
-	dump_llos( &p->pkg->unsort, "" );
+    dump_llos( &p->pkg->unsort, "" );
 
   fprintf( ofile, "#endif\n");
 }

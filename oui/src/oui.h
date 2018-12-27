@@ -1,5 +1,5 @@
 /* oui.h provides the prototype for oui_init_options()
- * $Log$
+ *
  * Revision 1.2  1995/05/26 14:44:45  nort
  * Added opt_string definition!
  *
@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 void oui_init_options(int argc, char **argv);
-extern char *opt_string;
+extern const char *opt_string;
 
 #ifdef __cplusplus
 };

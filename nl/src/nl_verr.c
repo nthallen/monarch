@@ -28,22 +28,22 @@ int nl_verror(FILE *ef, int level, const char *fmt, va_list args) {
 
   if (level < -1 && nl_debug_level > level) return(level);
   switch (level) {
-	case -1: lvlmsg = ""; break;
+    case -1: lvlmsg = ""; break;
     case 0: lvlmsg = ""; break;
-	case 1: lvlmsg = "Warning: "; break;
-	case 2: lvlmsg = "Error: "; break;
-	case 3: lvlmsg = "Fatal: "; break;
-	default:
-	  if (level <= -2) lvlmsg = "Debug: ";
-	  else lvlmsg = "Internal: ";
-	  break;
+    case 1: lvlmsg = "Warning: "; break;
+    case 2: lvlmsg = "Error: "; break;
+    case 3: lvlmsg = "Fatal: "; break;
+    default:
+      if (level <= -2) lvlmsg = "Debug: ";
+      else lvlmsg = "Internal: ";
+      break;
   }
   fprintf(ef, "%s", lvlmsg);
   vfprintf(ef, fmt, args);
   fputc('\n', ef);
   if (level > 3 ) {
-	fflush( ef );
-	abort();
+    fflush( ef );
+    abort();
   }
   if (level > 2 || level == -1) exit(level > 0 ? level : 0);
   return(level);

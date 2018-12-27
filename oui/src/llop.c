@@ -10,18 +10,18 @@ void llopkg_enq(ll_of_pkg *llp, package *pkg) {
   llpkgleaf *lf;
 
   if (llp != 0) {
-	{ int resp = set_response(3);
-	  lf = new_memory( sizeof( llpkgleaf ) );
-	  set_response(resp);
-	}
-	lf->pkg = pkg;
-	lf->next = 0;
-	if (llp->last == 0)
-	  llp->first = llp->last = lf;
-	else {
-	  llp->last->next = lf;
-	  llp->last = lf;
-	}
+    { int resp = set_response(3);
+      lf = new_memory( sizeof( llpkgleaf ) );
+      set_response(resp);
+    }
+    lf->pkg = pkg;
+    lf->next = 0;
+    if (llp->last == 0)
+      llp->first = llp->last = lf;
+    else {
+      llp->last->next = lf;
+      llp->last = lf;
+    }
   }
 }
 
@@ -31,10 +31,10 @@ package *find_package(const char *pkgname) {
   static int n_packages = 0;
 
   if (pkgname == 0 || pkgname[0] == '\0')
-	compile_error(4, "Back pkgname in find_package");
+    compile_error(4, "Back pkgname in find_package");
   for (lf = global_defs.packages.first; lf != 0; lf = lf->next) {
-	if (stricmp(pkgname, lf->pkg->name) == 0)
-	  return lf->pkg;
+    if (stricmp(pkgname, lf->pkg->name) == 0)
+      return lf->pkg;
   }
   pkg = new_memory(sizeof(package));
   pkg->package_id = n_packages++;

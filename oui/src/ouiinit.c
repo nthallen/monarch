@@ -4,7 +4,7 @@
    compiler
    nl_error_init
 */
-char *opt_string = "uqkwvo:";
+const char *opt_string = "uqkwvo:";
 #include "oui.h"
 #include "ouidefs.h"
 #include <unistd.h>
@@ -18,17 +18,17 @@ void oui_init_options(int argc, char **argv) {
 
   { int optltr;
 
-	optind = OPTIND_RESET;
-	opterr = 0;
-	while ((optltr = getopt(argc, argv, opt_string)) != -1) {
-	  switch (optltr) {
-		  case 'u': sort_output = 0; break;
-		  case '?':
-			nl_error(3, "Unrecognized Option -%c", optopt);
-		  default:
-			break;
-	  }
-	}
+    optind = OPTIND_RESET;
+    opterr = 0;
+    while ((optltr = getopt(argc, argv, opt_string)) != -1) {
+      switch (optltr) {
+        case 'u': sort_output = 0; break;
+        case '?':
+          nl_error(3, "Unrecognized Option -%c", optopt);
+        default:
+          break;
+      }
+    }
   }
   output_extension = ".c";
   compile_init_options(argc, argv, output_extension);

@@ -30,7 +30,7 @@
   It can be overridden by creating another nl_error_init package
   -------------------------------------------------------------
 <package> nl_error_init
-<include> "nortlib.h"
+<include> "nl.h"
 <defs>
   int (*nl_error)(int level, const char *s, ...) = compile_error;
 
