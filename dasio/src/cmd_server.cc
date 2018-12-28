@@ -10,19 +10,6 @@
 
 static bool quit_received = false;
 
-static int all_closed() {
-  return cmdif_rd::all_closed();
-}
-
-static void process_quit() {
-  nl_error( -2, "Processing Quit" );
-  cis_interfaces_close();
-  if (DAS_IO::Cmd_server::CmdServer)
-    DAS_IO::Cmd_server::CmdServer->Shutdown();
-  all_closed();
-  quit_received = true;
-}
-
 namespace DAS_IO {
   
   Cmd_server *Cmd_server::CmdServer;
@@ -30,30 +17,39 @@ namespace DAS_IO {
   Cmd_server::Cmd_server() {
     nl_assert(CmdServer == 0);
     CmdServer = this;
-    // Don't add to ELoop here, do it in ci_server (or equiv)
-    // after defining the interfaces and before starting the loop
+    SU = new Server("cmd", CMD_MAX_COMMAND_IN,
+      "cmd", Socket::Socket_Unix, &Subs);
+    ELoop.add_child(SU);
+    TU = 0;
+    // TU = new Server("cmd", CMD_MAX_COMMAND_IN,
+      // "cmd", Socket::Socket_TCP, &Subs);
+    // ELoop.add_child(TU);
   }
   
   Cmd_server::~Cmd_server() {
     CmdServer = 0;
   }
 
-  void Cmd_server::StartServer() {  
-    server = new Server("cmd", CMD_MAX_COMMAND_IN,
-      "cmd", Socket::Socket_Unix, &Subs);
-    ELoop.add_child(server);
+  void Cmd_server::StartServer() {
+    SU->connect();
+    // TU->connect();
   }
 
   
   void Cmd_server::Shutdown() {
-    if (server) {
-      ELoop.delete_child(server);
-      server = 0;
+    if (SU) {
+      ELoop.delete_child(SU);
+      SU = 0;
+    }
+    if (TU) {
+      ELoop.delete_child(TU);
+      TU = 0;
     }
   }
   
   Cmd_receiver::Cmd_receiver(Authenticator *auth, const char *iname)
       : Socket(auth, iname, auth->fd) {
+    quit_recd = false;
   }
   
   Cmd_receiver::~Cmd_receiver() {}
@@ -95,7 +91,7 @@ namespace DAS_IO {
         if ( !isgraph(*s) ) {
            report_err("%s: Invalid mnemonic string", iname);
           consume(nc);
-          return iwrite("Invalid mnemonic string\n");
+          return iwrite("E0: Invalid mnemonic string\n");
         }
         if ( *s == ':' ) {
           int end_of_opts = 0;
@@ -114,22 +110,22 @@ namespace DAS_IO {
                 if ( *s == '\0' ) {
                   report_err("%s: Unterminated version string", iname);
                   consume(nc);
-                  return iwrite("Unterminated version string\n");
+                  return iwrite("E1: Unterminated version string\n");
                 }
                 *s = '\0';
                 if ( strcmp( (const char *)ver, ci_version ) == 0 ) {
                   report_ok(nc);
-                  return iwrite("OK\n");
+                  return iwrite("K\n");
                 } else {
                   report_err("%s: Command Versions don't match", iname);
                   consume(nc);
-                  return iwrite("Command Versions don't match\n");
+                  return iwrite("E2: Command Versions don't match\n");
                 }
               case ']': end_of_opts = 1; break;
               default:
                 report_err("%s: Invalid option", iname);
                 consume(nc);
-                return iwrite("Invalid option\n");
+                return iwrite("E3: Invalid option\n");
             }
           }
         }
@@ -147,7 +143,7 @@ namespace DAS_IO {
           if ( ! isprint(*s) && *s != '\n' ) {
             report_err("%s: Invalid character in command", iname);
             consume(nc);
-            return iwrite("Invalid character in command\n");
+            return iwrite("E4: Invalid character in command\n");
           }
           len++;
           s++;
@@ -157,10 +153,14 @@ namespace DAS_IO {
           mnemonic, len, len, cmd );
         cmd_init();
         rv = cmd_batch( (char *)cmd, testing );
+        cp = s - &buf[0];
         switch ( CMDREP_TYPE(rv) ) {
-          case 0: return iwrite("OK\n");
+          case 0:
+            report_ok(cp);
+            return iwrite("K\n");
           case 1:
-            if (testing) return iwrite("OK\n");
+            report_ok(cp);
+            if (testing) return iwrite("K\n");
             process_quit();
             return true;
           case 2: /* Report Syntax Error */
@@ -169,15 +169,26 @@ namespace DAS_IO {
               nl_error( 2, "%*.*s", len, len, cmd);
               nl_error( 2, "%*s", rv - CMDREP_SYNERR, "^");
             }
-            len = snprintf(obuf, OBUF_SIZE, "Syntax Error at column %d\n",
-              rv - CMDREP_SYNERR);
+            len = snprintf(obuf, OBUF_SIZE, "S%d: Syntax Error at column %d\n",
+              rv - CMDREP_SYNERR, rv - CMDREP_SYNERR);
+            // report_err("%s: %s", iname, obuf);
+            consume(cp);
             return iwrite(obuf, len);
           default:
-            len = snprintf(obuf, OBUF_SIZE, "I/O error %d\n",
+            len = snprintf(obuf, OBUF_SIZE, "E5: I/O error %d\n",
               rv - CMDREP_EXECERR);
+            report_err("%s: %s", iname, obuf);
+            consume(cp);
             return iwrite(obuf, len);
         }
       }
+    }
+  }
+
+  void Cmd_receiver::iwritten(int nb) {
+    if (obuf_empty() && quit_recd &&
+          DAS_IO::Cmd_server::CmdServer) {
+      DAS_IO::Cmd_server::CmdServer->Shutdown();
     }
   }
   
@@ -185,6 +196,14 @@ namespace DAS_IO {
       SubService *ss) {
     Cmd_receiver *cr = new Cmd_receiver(auth, auth->get_client_app());
     ss = ss; // We don't have and subservice info
+  }
+
+  void Cmd_receiver::process_quit() {
+    nl_error( -2, "Processing Quit" );
+    quit_received = quit_recd = true;
+    iwrite("Q\n");
+    cis_interfaces_close();
+    cmdif_rd::all_closed();
   }
   
   Cmd_turf::Cmd_turf(Authenticator *auth, const char *iname, cmdif_rd *ss)
@@ -224,7 +243,7 @@ namespace DAS_IO {
       if (next_command->next) {
         if (next_command->cmdlen) {
           iwrite((const char *)next_command->command, next_command->cmdlen);
-        } else {
+        } else if (ELoop) {
           ELoop->delete_child(this);
         }
         written = true;
@@ -273,7 +292,7 @@ void ci_server(void) {
   // Call the cmdgen-generated initialization routine
   cis_interfaces();
   cs->StartServer();
-  while (!(quit_received && all_closed())) {
+  while (!(quit_received && cmdif_rd::all_closed())) {
     cs->ELoop.event_loop();
   }
 }
@@ -286,8 +305,8 @@ cmdif_rd::cmdif_rd(const char *name)
 }
 
 /**
- * Called from all_closed(). Needs to remove SubService
- * from CmdServer and also from the rdrs list (or all_closed()
+ * Called from cmdif_rd::all_closed(). Needs to remove SubService
+ * from CmdServer and also from the rdrs list (or cmdif_rd::all_closed()
  * could handle that, since it already has the position)
  */
 cmdif_rd::~cmdif_rd() {
@@ -324,7 +343,7 @@ void cmdif_rd::Turf(const char *format, ...) {
   int nb;
 
   nl_assert(DAS_IO::Cmd_server::CmdServer &&
-    DAS_IO::Cmd_server::CmdServer->server != NULL );
+    DAS_IO::Cmd_server::CmdServer->SU != NULL );
   cmd = last_cmd;
   va_start( arglist, format );
   nb = vsnprintf( cmd->command, CMD_MAX_COMMAND_OUT, format, arglist );
@@ -474,7 +493,7 @@ void cmdif_wr::Setup() {
 
 void cmdif_wr::Turf(const char *format, ...) {
   va_list arglist;
-  int nb, nbw;
+  int nb;
 
   if (client == 0 || client->fd < 0) {
     nl_error(2, "%s: Cannot forward command while disconnected",
@@ -490,8 +509,9 @@ void cmdif_wr::Turf(const char *format, ...) {
   va_end( arglist );
   if ( nb >= CMD_MAX_COMMAND_OUT ) {
     nl_error( 2, "%s: Output buffer overflow", client->get_iname());
-  } else if (nbw == 0) {
-    client->ELoop->delete_child(client);
+  } else if (nb == 0) {
+    if (client->ELoop)
+      client->ELoop->delete_child(client);
     client = 0;
   } else {
     client->Turf(obuf, nb);
@@ -500,7 +520,8 @@ void cmdif_wr::Turf(const char *format, ...) {
 
 void cmdif_wr::Shutdown() {
   if (client) {
-    client->ELoop->delete_child(client);
+    if (client->ELoop)
+      client->ELoop->delete_child(client);
     client = 0;
   }
 }
@@ -518,7 +539,8 @@ void cmdif_dgdata::Turf() {
 }
 
 void cmdif_dgdata::Shutdown() {
-  ELoop->delete_child(this);
+  if (ELoop)
+    ELoop->delete_child(this);
 }
 
 /*

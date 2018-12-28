@@ -273,7 +273,8 @@ bool Socket::read_error(int my_errno) {
     return true;
   } else if (is_server_client) {
     close();
-    ELoop->delete_child(this);
+    if (ELoop)
+      ELoop->delete_child(this);
     return false;
   } else {
     return reset();
@@ -289,7 +290,8 @@ bool Socket::iwrite_error(int my_errno) {
     return true;
   } else if (is_server_client) {
     close();
-    ELoop->delete_child(this);
+    if (ELoop)
+      ELoop->delete_child(this);
     return false;
   } else {
     return reset();
@@ -309,7 +311,8 @@ bool Socket::closed() {
     return true;
   } else if (is_server_client) {
     close();
-    ELoop->delete_child(this);
+    if (ELoop)
+      ELoop->delete_child(this);
     return false;
   } else {
     close();

@@ -33,8 +33,9 @@ class Loop {
     /**
      * @param P the Interface to be removed.
      * Removes the specified Interface from the list of active interfaces.
+     * @return true if the specified interface was removed.
      */
-    void remove_child(Interface *P);
+    bool remove_child(Interface *P);
     
     /**
      * @param P the Interface to be deleted.

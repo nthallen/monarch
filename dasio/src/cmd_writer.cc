@@ -4,6 +4,7 @@
 #include "dasio/cmd_writer.h"
 #include "dasio/appid.h"
 #include "dasio/cmd_version.h"
+#include "dasio/ascii_escape.h"
 #include "nl.h"
 #include "nl_assert.h"
 #include "cmdalgo.h"
@@ -22,7 +23,7 @@ Cmd_writer::Cmd_writer(const char *iname)
   }
   PvtLoop.add_child(this);
   version_verified = false;
-  sent_quit = false;
+  sent_quit = recd_quit = false;
   ci_time = 0;
 }
 
@@ -35,8 +36,57 @@ Cmd_writer::~Cmd_writer() {
 }
 
 bool Cmd_writer::app_input() {
-  if (not_str("OK\n")) {
-    nl_error(2, "%s: %s", iname, buf);
+  uint16_t code;
+  switch (buf[cp]) {
+    case 'Q':
+      if (not_str("Q\n")) {
+        if (cp >= nc) return false;
+        consume(nc);
+        return true;
+      }
+      recd_quit = true;
+      ret_code = CMDREP_QUIT;
+      break;
+    case 'K':
+      if (not_str("K\n")) {
+        if (cp >= nc) return false;
+        consume(nc);
+        return true;
+      } else {
+        ret_code = CMDREP_OK;
+      }
+      break;
+    case 'S':
+      if (not_str("S") ||
+          not_uint16(code) ||
+          not_str(": ")) {
+        if (cp >= nc) return false;
+        consume(nc);
+        return true;
+        // leave ret_code as NOREPLY
+      } else {
+        nl_error(2, "%s: Syntax error at column %d", iname, code);
+        ret_code = CMDREP_SYNERR+code;
+      }
+      break;
+    case 'E':
+      if (not_str("S") ||
+          not_uint16(code) ||
+          not_str(": ")) {
+        if (cp >= nc) return false;
+        consume(nc);
+        return true;
+        // leave ret_code as NOREPLY
+      } else {
+        nl_error(2, "%s: %s", iname, buf+cp);
+        ret_code = CMDREP_EXECERR+code;
+      }
+      break;
+    default:
+      report_err("%s: Invalid response from server: '%s'",
+        iname, ascii_escape((const char *)buf, nc));
+      consume(nc);
+      break;
   }
   report_ok(nc);
   return true;
@@ -52,22 +102,24 @@ bool Cmd_writer::app_connected() {
       AppID.name, ci_version );
     if (iwrite(vcheck, nb)) return true;
     nl_assert(obuf_empty());
-    return false;
+    return true;
   }
   return true;
 }
 
-bool Cmd_writer::sendcmd(Cmd_Mode mode, const char *cmdtext) {
+int Cmd_writer::sendcmd(Cmd_Mode mode, const char *cmdtext) {
   const char *cmdopts = "";
   int clen, rv;
   char buf[CMD_MAX_COMMAND_IN+1];
   
   if (sent_quit) return(1);
   // if (!playback && cis_fd < 0 && cic_init() != 0) return(1);
+  ret_code = CMDREP_NOREPLY;
   if (cmdtext == NULL) {
     cmdopts = ":X";
     cmdtext = "";
     nl_error(-3, "Sending Quit to Server");
+    sent_quit = true;
   } else {
     switch (mode) {
       case 1: cmdopts = ":T"; break;
@@ -91,7 +143,8 @@ bool Cmd_writer::sendcmd(Cmd_Mode mode, const char *cmdtext) {
     return true;
   }
   iwrite(buf, clen);
-  return false;
+  wait();
+  return ret_code;
 }
 
 void Cmd_writer::wait() {
@@ -126,17 +179,17 @@ bool cic_init() {
   DAS_IO::Cmd_writer *cmd = new DAS_IO::Cmd_writer("Cmd");
   cmd->connect();
   cmd->wait();
-  return false;
+  return ! cmd->is_negotiated();
 }
 
-bool ci_sendcmd(DAS_IO::Cmd_Mode mode, const char *cmdtext) {
+int ci_sendcmd(DAS_IO::Cmd_Mode mode, const char *cmdtext) {
   if (DAS_IO::Cmd_writer::Cmd == 0) {
     if (cic_init()) return true;
   }
   return DAS_IO::Cmd_writer::Cmd->sendcmd(mode, cmdtext);
 }
 
-bool ci_sendfcmd(DAS_IO::Cmd_Mode mode, const char *fmt, ...) {
+int ci_sendfcmd(DAS_IO::Cmd_Mode mode, const char *fmt, ...) {
   va_list arg;
   char cmdbuf[CMD_INTERP_MAX];
 

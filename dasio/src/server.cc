@@ -98,8 +98,9 @@ namespace DAS_IO {
       }
       this->fd = -1;
       if (ELoop) {
+        Loop *elp = ELoop;
         ELoop->delete_child(this);
-        ELoop->add_child(clone);
+        elp->add_child(clone);
       }
       return clone->iwrite("OK\n") || clone->connected();
     }

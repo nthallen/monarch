@@ -29,20 +29,25 @@ void Loop::add_child(Interface *P) {
   }
 }
 
-void Loop::remove_child(Interface *P) {
+bool Loop::remove_child(Interface *P) {
   for (InterfaceList::iterator pos = S.begin(); pos != S.end(); ++pos ) {
     if (P == *pos) {
       S.erase(pos);
       children_changed = true;
-      return;
+      P->ELoop = 0;
+      return true;
     }
   }
-  nl_error(1, "remove_child Interface(%s,%d) not found", P->get_iname(), P->fd);
+  if (P->ELoop)
+    nl_error(2, "remove_child(%s,%d) failed, but ELoop != 0", P->get_iname(), P->fd);
+  else
+    nl_error(1, "remove_child Interface(%s,%d) not found", P->get_iname(), P->fd);
+  return false;
 }
 
 void Loop::delete_child(Interface *P) {
-  remove_child(P);
-  PendingDeletion.push_back(P);
+  if (remove_child(P))
+    PendingDeletion.push_back(P);
 }
 
 InterfaceList::iterator Loop::find_child_by_fd(int fd) {

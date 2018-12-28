@@ -41,6 +41,7 @@ int nl_verror(FILE *ef, int level, const char *fmt, va_list args) {
   fprintf(ef, "%s", lvlmsg);
   vfprintf(ef, fmt, args);
   fputc('\n', ef);
+  fflush(ef); // for testing
   if (level > 3 ) {
     fflush( ef );
     abort();

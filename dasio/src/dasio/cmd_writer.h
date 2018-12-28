@@ -4,6 +4,7 @@
 
 #include "client.h"
 #include "loop.h"
+#include "cmdalgo.h"
 
 namespace DAS_IO {
 
@@ -24,12 +25,26 @@ class Cmd_writer : public Client {
     
     /**
      * @brief Sends a command to the command server.
+     *
+     * Returns zero on success. If the command server cannot be
+     * located (and =nl_response= is set below 3) returns 1.
+     * Otherwise, the return value is the sum of a type code and a
+     * value. The possible types are CMDREP_QUIT, CMDREP_SYNERR and
+     * CMDREP_EXECERR. CMDREP_QUIT indicates that the command you sent
+     * was a quit request, which probably means the client should shut
+     * down also. CMDREP_SYNERR indicates there was a syntax error in
+     * the command you sent. The value portion of the return code is
+     * the offset within the command where the error occurred.
+     * CMDREP_EXECERR indicates that an error occurred when the server
+     * was executing the instructions associated with the command. The
+     * value portion of the return code is the error code.
+     *
      * @param mode Indicates how command is to be processed
      * @param cmdtext The ASCIIZ text of the command, including
      * any required terminating newline character
-     * @return true on error
+     * @return CMDREP_* error codes
      */
-    bool sendcmd(Cmd_Mode mode, const char *cmdtext);
+    int sendcmd(Cmd_Mode mode, const char *cmdtext);
     
     /**
      * @return A string which is appropriate for
@@ -58,6 +73,8 @@ class Cmd_writer : public Client {
   protected:
     bool version_verified;
     bool sent_quit;
+    bool recd_quit;
+    int ret_code;
     int32_t ci_time;
     Loop PvtLoop;
 };
@@ -82,18 +99,18 @@ bool cic_init();
  * @param mode Indicates how command is to be processed
  * @param cmdtext The ASCIIZ text of the command, including
  * any required terminating newline character
- * @return true on error
+ * @return CMDREP_* error codes
  */
-bool ci_sendcmd(DAS_IO::Cmd_Mode mode, const char *cmdtext);
+int ci_sendcmd(DAS_IO::Cmd_Mode mode, const char *cmdtext);
 
 /**
  * @brief Application-level method to send a formatted command
  * to the command server
  * @param mode Indicates how command is to be processed
  * @param fmt Format for printf-style command.
- * @return true on error
+ * @return CMDREP_* error codes
  */
-bool ci_sendfcmd(DAS_IO::Cmd_Mode mode, const char *fmt, ...);
+int ci_sendfcmd(DAS_IO::Cmd_Mode mode, const char *fmt, ...);
 
 /** cic_transmit receives commands from the interactive command
    parser and transmits them as required to the command server

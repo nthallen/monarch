@@ -30,9 +30,11 @@ void cis_initialize(void); // cmdgen.skel
 void cis_terminate(void); // cmdgen.skel
 void cis_interfaces(void); /* generated */
 void cis_interfaces_close(void); /* generated */
+#define CMDREP_OK 0
 #define CMDREP_QUIT 1000
 #define CMDREP_SYNERR 2000
 #define CMDREP_EXECERR 3000
+#define CMDREP_NOREPLY 4000
 #define CMDREP_TYPE(x) ((x)/1000)
 
 #ifdef __QNXNTO__
@@ -41,10 +43,10 @@ void cis_interfaces_close(void); /* generated */
   extern IOFUNC_ATTR_T *cis_setup_rdr( char *node );
   extern void cis_turf( IOFUNC_ATTR_T *handle, char *format, ... );
   void ci_server(void); /* in tmpplib/cis.cc */
+  #define CMD_VERSION_MAX 80
 #endif
 #define CMDSRVR_NAME "cmd/server"
 #define CMD_INTERP_MAX 256
-#define CMD_VERSION_MAX 80
 
 #ifdef __cplusplus
 };

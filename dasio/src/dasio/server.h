@@ -64,6 +64,10 @@ namespace DAS_IO {
    *
    * A server application then needs to provide socket_clone_t
    * function(s) that do what is necessary.
+   *
+   * Subsp is a pointer here because we expect the list of SubServices
+   * to be shared between two server sockets (Unix & TCP) in many
+   * cases.
    */
   class Server : public Socket {
     public:

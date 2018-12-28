@@ -33,7 +33,8 @@ namespace DAS_IO {
        */
       void Shutdown();
       Loop ELoop;
-      Server *server; // ?
+      Server *SU; // Unix Domain Server
+      Server *TU; // TCP Domain Server
       static Cmd_server *CmdServer;
     protected:
       SubServices Subs;
@@ -49,9 +50,12 @@ namespace DAS_IO {
       Cmd_receiver(Authenticator *auth, const char *iname);
       ~Cmd_receiver();
       bool protocol_input();
+      void iwritten(int nb);
       static Cmd_receiver *new_cmd_receiver(Authenticator *auth,
         SubService *ss);
     protected:
+      void process_quit();
+      bool quit_recd;
       static const int OBUF_SIZE = 120;
       char obuf[OBUF_SIZE];
   };
