@@ -12,21 +12,21 @@ class not_tester : public DAS_IO::Interface {
   public:
     not_tester(const char *str, int buf_size);
     ~not_tester();
-	int get_cp();
-	int get_nc();
+    int get_cp();
+    int get_nc();
     bool seed_buf(const char *str);
-	inline bool not_float(float &val) {
-	  return DAS_IO::Interface::not_float(val);
-	}
-	inline bool not_found(unsigned char c) {
-	  return DAS_IO::Interface::not_found(c);
-	}
-	inline bool not_hex(uint16_t &hexval) {
-	  return DAS_IO::Interface::not_hex(hexval);
-	}
-	inline bool not_int(int &val) {
-	  return DAS_IO::Interface::not_int(val);
-	}
+    inline bool not_float(float &val) {
+      return DAS_IO::Interface::not_float(val);
+    }
+    inline bool not_found(unsigned char c) {
+      return DAS_IO::Interface::not_found(c);
+    }
+    inline bool not_hex(uint16_t &hexval) {
+      return DAS_IO::Interface::not_hex(hexval);
+    }
+    inline bool not_int32(int &val) {
+      return DAS_IO::Interface::not_int32(val);
+    }
 };
 
 /* Constructor method */
@@ -54,8 +54,8 @@ bool not_tester::seed_buf(const char *str) {
   int length = strlen(str);
   if (length < DAS_IO::Interface::bufsize) {
     strncpy((char *)DAS_IO::Interface::buf, str, length);
-	cp = 0;
-	nc = length;
+    cp = 0;
+    nc = length;
     return true;
   } else {
     return false;
@@ -115,14 +115,14 @@ TEST(NotTest, NotHexTest) {
   EXPECT_TRUE(nt.not_hex(hexval));
 }
 
-/* This method tests functionality of not_int() */
+/* This method tests functionality of not_int32() */
 TEST(NotTest, NotIntTest) {
   not_tester nt = not_tester("NotTesterInstance",15);
   nt.seed_buf("233");
   int true_int;
-  EXPECT_FALSE(nt.not_int(true_int));
+  EXPECT_FALSE(nt.not_int32(true_int));
   nt.seed_buf("NotInt");
-  EXPECT_TRUE(nt.not_int(true_int));
+  EXPECT_TRUE(nt.not_int32(true_int));
 }
 
 /* Main method */

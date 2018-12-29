@@ -212,6 +212,8 @@ class Interface {
      */
     void report_ok(int nchars = 0);
     /**
+     * @brief Searches buf for framing character.
+     *
      * Parsing utility function that searches forward in the buffer for the
      * specified framing character. On success, cp is updated to point just
      * past the location of the framing character and the function returns
@@ -226,6 +228,8 @@ class Interface {
      */
     bool not_found(unsigned char c);
     /**
+     * @brief Matches a string of hex digits
+     *
      * Parsing utility function to read in a hex integer starting
      * at the current position. Integer may be proceeded by optional
      * whitespace.
@@ -275,8 +279,10 @@ class Interface {
      * @return false if a hexadecimal integer was found and converted,
      * true if the current char is not a digit.
      */
-    bool not_hex(unsigned short &hexval);
+    bool not_hex(uint16_t &hexval);
     /**
+     * @brief Matches string representing a signed integer
+     *
      * Parsing utility function to read in a decimal integer starting
      * at the current position. Integer may be proceeded by optional
      * whitespace and an optional sign.
@@ -285,10 +291,154 @@ class Interface {
      * functions.
      *
      * @param[out] val The integer value
-     * @return zero if an integer was converted, non-zero if the current char is not a digit.
+     * @return false if an integer was converted, true if the current
+     * char is not a digit.
      */
-    bool not_int(int &val );
+    bool not_int32(int32_t &val );
     /**
+     * @brief Matches an unsigned 16-bit integer
+     * @param[out] val The converted value
+     *
+     * This method expects and unsigned value, but will tolerate
+     * a leading minus sign, truncating the converted value to 0
+     * and issuing an error message.
+     *
+     * From Zeno_Ser.cc
+     * 
+     * @return false on a successful match
+     */
+    bool not_uint16(uint16_t &val);
+    /**
+     * @brief Matches an integer between 0 and 255
+     * @param[out] val The converted value
+     *
+     * from UserPkts2.cc
+     * 
+     * @return false on a successful match
+     */
+    bool not_uint8(uint8_t &val);
+    /**
+     * @brief Accepts a fixed point integer value
+     * @param fix The number of digits after the decimal point
+     * @param val The converted value
+     * 
+     * Accepts an input string of digits with the specified number
+     * of digits after the decimal point. The resulting number is
+     * converted to an integer by multiplying by 10^fix, which
+     * is to say that the fixed point value can be obtained by
+     * dividing the returned value by 10^fix.
+     *
+     * The input string may be preceeded by optional white space
+     * and may have a leading negative sign.
+     *
+     * If no decimal point is observed, or fewer digits after the
+     * decimal point than specified are observed, the converted
+     * value is scaled correctly.
+     *
+     * From coelostat.cc
+     * 
+     * @return false on successful match.
+     */
+    bool not_fix(int fix, int16_t &val);
+    /**
+     * @brief Matches a string of binary digits
+     * @param word The converted value
+     * @param nbits The number of bits to match
+     *
+     * Accepts optional whitespace followed by the specified number
+     * of binary digits. It will fail (returning true) if the
+     * specified number of digits are not observed.
+     *
+     * As written, this routine can successfully match binary strings
+     * longer than 16 digits, but the converted value will obviously
+     * overflow the word variable.
+     *
+     * From UPS_parsers.cc
+     * 
+     * @return false if the specified number of bits are matched
+     */
+    bool not_bin(int n_bits, uint16_t &word);
+    /**
+     * @brief Matches a specific number of decimal digits
+     * @param n_bits The number of digits
+     * @param[out] value The converted value
+     *
+     * From Zeno_Ser.cc
+     * 
+     * @return false on a successful match
+     */
+    bool not_ndigits(int n, int &value);
+    /**
+     * @brief Check for ISO8601 timestamp
+     * 
+     * When w_hyphens is false, matches the pattern:
+     *  - YYYY MM DDThh:mm:ss.sss
+     *
+     * When w_hyphens is true, matches the pattern:
+     *  - YYYY-MM-DDThh:mm:ss.sss
+     *
+     * On success, value is assigned the timestamp value converted to
+     * unix time (seconds since the epoch 1970-01-01T00:00:00).
+     * 
+     * Originally from IWG1.cc and UserPkts2.cc.
+     *
+     * @return false on successful match
+     */
+    bool not_ISO8601(double &Time, bool w_hyphens = true);
+    /**
+     * @brief Accepts a string representing a floating point number
+     * without converting it.
+     *
+     * This is used internally by not_float() and not_double() to
+     * correctly recognize partial matches at the end of input.
+     *
+     * @return false if a floating point string is matched.
+     */
+    bool not_fptext();
+    /**
+     * @brief Accepts a floating point string and converts it to a float value.
+     *
+     * Parsing utility function to convert a string in the input
+     * buffer to a float value. Updates cp to point just after the
+     * converted string on success.
+     *
+     * See not_hex() for a more detailed description of these parsing
+     * functions.
+     *
+     * @param val[out] The converted float value
+     * @return false if the conversion succeeded.
+     */
+    bool not_float( float &val );
+    /**
+     * @brief Accepts a floating point string and converts it to a double value.
+     *
+     * Parsing utility function to convert a string in the input
+     * buffer to a double value. Updates cp to point just after the
+     * converted string on success.
+     *
+     * See not_hex() for a more detailed description of these parsing
+     * functions.
+     *
+     * @param val[out] The converted double value
+     * @return false if the conversion succeeded.
+     */
+    bool not_double( double &value );
+    /**
+     * @brief Match a float or NaN
+     *
+     * From IWG1.cc and UserPkts2.cc
+     * 
+     * Accepts a float or an explicit 'NaN' (case insensitive).
+     * In the case of NaN, the specified NaNval is used. The
+     * NaNval is also used for missing values, as indicated
+     * if the next character is a comma or CR.
+     *
+     * @return false on a successful match
+     */
+    bool not_nfloat(float *value, float NaNval = 99999.);
+    /**
+     * @brief Matches a literal string
+     *
      * Parsing utility function to check that the specified string matches the
      * input at the current position. On success, advances cp to just
      * after the matched string. On failure, cp points to the first
@@ -307,6 +457,8 @@ class Interface {
      */
     bool not_str(const char *str, unsigned int len);
     /**
+     * @brief Matches a literal string
+     *
      * Parsing utility function to check that the specified string matches the
      * input at the current position. On success, advances cp to just
      * after the matched string. On failure, cp points to the first
@@ -321,6 +473,8 @@ class Interface {
      */
     bool not_str(const std::string &s);
     /**
+     * @brief Matches a literal string
+     *
      * Parsing utility function to check that the specified string matches the
      * input at the current position. On success, advances cp to just
      * after the matched string. On failure, cp points to the first
@@ -335,123 +489,52 @@ class Interface {
      */
     bool not_str(const char *str);
     /**
-     * Parsing utility function to convert a string in the input
-     * buffer to a float value. Updates cp to point just after the
-     * converted string on success.
+     * @brief Match one of two alternative strings
+     * @param alt1 First alternative string
+     * @param alt2 Second alternative string
+     * @param[out] matched 1 if alt1 matches, 2 if alt2 matches, 0 otherwise
+     * @param context A string to specify the input context in error messages
      *
-     * See not_hex() for a more detailed description of these parsing
-     * functions.
+     * Originally from SunRoof.cc.
      *
-     * @param val[out] The converted value
-     * @return false if the conversion succeeded.
+     * @return false if alt1 or alt2 matches the input.
      */
-    bool not_float( float &val );
-	/**
-	 * From coelostat.cc
-	 * Parsing function to check if the value is missing a decimal point?
-	 * 
-	 * @return false if it is?
-	 */
-	bool not_fix(int fix, int16_t &val);
-	/**
-	 * From coelostat.cc
-	 *
-	 * @return false if ?
-	 */
-	bool not_alternate(int &is_first, const char *first, const char *second);
-	/**
-	 * From SunRoof.cc
-	 *
-	 * @return false if ?
-	 */
-	bool not_alt(const char *alt1, const char *alt0, int &is_alt1, const char *context);
-	/**
-	 * From sq_cmd.cc
-	 * 
-	 * Checks the next character and advances if it
-     * matches any of the characters in alternatives.
-	 * 
+    bool not_alt(const char *alt1, const char *alt2, int &matched,
+                 const char *context);
+    /**
+     * @brief Matches a single character from a string of alternatives
+     * @param alternatives The string of allowed characters
+     *
+     * Checks the next character and advances if it
+     * matches any of the characters in the string of alternatives.
+     * 
+     * From sq_cmd.cc
+     * 
      * @return true if a match was found.
-	 */
-	bool not_any(const char *alternatives);
-	/**
-	 * From UPS_parsers.cc
-	 * 
-	 * Check if binary?
-	 * 
-     * @return true if ?
-	 */
-	bool not_bin(uint16_t &word, int nbits);
-	/**
-	 * From Zeno_Ser.cc
-	 * 
-	 * Check if @param value is not length n digits?
-	 * 
-     * @return false on failure
-	 */
-	bool not_ndigits(int n, int &value);
-	/**
-	 * From Zeno_Ser.cc
-	 * 
-	 * Check if @param val is not type ushort
-	 * 
-     * @return true on failure
-	 */
-	bool not_uint16(uint16_t &val);
-	/**
-	 * From IWG1.cc
-	 * 
-	 * Check if ?
-	 * 
-     * @return false?
-	 */
-	bool not_ISO8601(double *Time);
-	/**
-	 * from IWG1.cc
-	 * 
-	 * accept a float or return a NaN (99999.)
-     * if the next char is a comma or CR
      */
-	bool not_nfloat(float *value);
-	/**
-	 * from UserPkts2.cc
-	 * 
-	 * ?
-	 * 
-	 * @return false ?
+    bool not_any(const char *alternatives);
+    /**
+     * @brief Matches a word delimited by comma
+     * @param KWbuf holds the matched keyword
+     *
+     * From UserPkts2.cc
+     *
+     * This is a fairly application-specific test. It accepts:
+     *  - optional leading spaces
+     *  - up to 30 characters that are not space or comma
+     *  - requires a trailing comma
+     * 
+     * On success, the matched string is copied into KWbuf.
+     *
+     * To be more broadly useful, this could accept a list of
+     * possible delimiters, or simply return the keyword on
+     * any character no considered part of a word. It would
+     * also make sense to be more specific on what characters
+     * are allowed in a word.
+     * 
+     * @return false on a successful match
      */
-	bool not_double( double *value );
-	/**
-	 * from UserPkts2.cc
-	 * 
-	 * ?
-	 * 
-	 * @return false ?
-     */
-	bool not_ISO8601(double *Time, bool w_hyphens);
-	/**
-	 * from UserPkts2.cc
-	 * 
-	 * accept a float or return a NaN (99999.)
-     * if the next char is a comma or CR
-     */
-	bool not_nfloat(float *value, float NaNval);
-	/**
-	 * from UserPkts2.cc
-	 * 
-	 * Checks if @param val is unsigned char
-	 * 
-	 * @return false if it is
-     */
-	bool not_uchar(unsigned char &val);
-	/**
-	 * from UserPkts2.cc
-	 * 
-	 * ?
-	 * 
-	 * @return false ?
-     */
-	bool not_KW(char *KWbuf);
+    bool not_KW(char *KWbuf);
     /** The name of this interface. Used in diagnostic messages. */
     const char *iname;
     /** The number of characters in buf */
@@ -473,6 +556,14 @@ class Interface {
     /** Timeout object */
     Timeout TO;
   private:
+    /**
+     * @brief Look ahead in buf
+     * @param str String to match
+     * @return 1 if str is matched, 0 if str is partially matched
+     * up to the end of input, -1 if characters not matching str
+     * are observed.
+     */
+    int match(const char *str);
     /** The qualified protocol error threshold */
     int qerr_threshold;
     /** Number of qualified protocol errors. Decremented by report_ok() */
@@ -482,7 +573,6 @@ class Interface {
     /** Total number of errors found. */
     int total_errors;
     int total_suppressed;
-	int match(const char *str);
 };
 
 }
