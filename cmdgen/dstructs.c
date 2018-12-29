@@ -45,7 +45,7 @@ struct nt_t *non_terminal(char *name) {
   int c;
   
   for (ntp = NULL, nt = non_terms; nt != NULL; ntp = nt, nt = nt->next)
-	if ((c = stricmp(name, nt->name)) <= 0) break;
+    if ((c = stricmp(name, nt->name)) <= 0) break;
   if (nt != NULL && c == 0) return(nt);
   ntn = new_memory(sizeof(struct nt_t));
   ntn->next = nt;
@@ -56,13 +56,13 @@ struct nt_t *non_terminal(char *name) {
   if (ntp == NULL) non_terms = ntn;
   else ntp->next = ntn;
   if (n_nonterms++ == 0) { /* create start rule */
-	struct sub_t *sub;
-	struct sub_item_t *si;
-	
-	sub = new_sub();
-	assert(sub->rule_number == 0);
-	si = sub->items.first = sub->items.last = new_sub_item(SI_NT);
-	si->u.nt = ntn;
+    struct sub_t *sub;
+    struct sub_item_t *si;
+    
+    sub = new_sub();
+    assert(sub->rule_number == 0);
+    si = sub->items.first = sub->items.last = new_sub_item(SI_NT);
+    si->u.nt = ntn;
   }
   return(ntn);
 }
@@ -88,7 +88,7 @@ void dmy_non_term(struct sub_t *sub) {
   nsi = new_sub_item(SI_NT);
   nsi->u.nt = nt;
   if (sub->items.last == NULL)
-	sub->items.first = sub->items.last = nsi;
+    sub->items.first = sub->items.last = nsi;
   else sub->items.last = sub->items.last->next = nsi;
 }
 
@@ -96,10 +96,10 @@ struct sub_t *new_sub(void) {
   struct sub_t *ns;
 
   if (n_rules == max_rules) {
-	max_rules += RULE_INCREMENT;
-	if (n_rules) rules = realloc(rules, max_rules * sizeof(struct sub_t *));
-	else rules = malloc(max_rules * sizeof(struct sub_t *));
-	if (rules == NULL) compile_error(3, "Rule List Allocation Failure");
+    max_rules += RULE_INCREMENT;
+    if (n_rules) rules = realloc(rules, max_rules * sizeof(struct sub_t *));
+    else rules = malloc(max_rules * sizeof(struct sub_t *));
+    if (rules == NULL) compile_error(3, "Rule List Allocation Failure");
   }
   ns = new_memory(sizeof(struct sub_t));
   ns->next = NULL;

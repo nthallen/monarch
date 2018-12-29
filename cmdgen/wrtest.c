@@ -16,11 +16,11 @@ void main() {
   buf = calloc(80*25, 2);
   console_read(cc, 0, 0, buf, 80*25*2, &row, &col, &type);
   console_write(cc, 0, 2*(row*80 + col),
-		"H\007e\007l\007l\007o\007!\007", 2*6, NULL, NULL, NULL);
+        "H\007e\007l\007l\007o\007!\007", 2*6, NULL, NULL, NULL);
   console_write(cc, 2, 2*(row*80 + col),
-		"H\007e\007l\007l\007o\007!\007", 2*6, NULL, NULL, NULL);
+        "H\007e\007l\007l\007o\007!\007", 2*6, NULL, NULL, NULL);
   console_write(cc, 3, 2*(row*80 + col),
-		"H\007e\007l\007l\007o\007!\007", 2*6, NULL, NULL, NULL);
+        "H\007e\007l\007l\007o\007!\007", 2*6, NULL, NULL, NULL);
   getch();
   console_write(cc, 0, 0, buf, 80*25*2, &row, &col, &type);
   console_close(cc);

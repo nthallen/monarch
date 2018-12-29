@@ -35,7 +35,7 @@ struct vtyp *get_vtype(char *type) {
   char buf[10];
   
   for (vt = vtypes; vt != NULL; vt = vt->next)
-	if (strcmp(vt->type, type) == 0) return(vt);
+    if (strcmp(vt->type, type) == 0) return(vt);
   vt = new_memory(sizeof(struct vtyp));
   vt->next = vtypes;
   vtypes = vt;
@@ -98,18 +98,18 @@ void get_vsymbol(struct sub_item_t *si, char *fmt, char *prompt) {
   int i, j;
   
   for (i = 0; i < N_VARFMTS; i++)
-	if (stricmp(fmt, varfmts[i].fmt) == 0) break;
+    if (stricmp(fmt, varfmts[i].fmt) == 0) break;
   if (i >= N_VARFMTS) compile_error(3, "Illegal Variable Format %s", fmt);
   else {
-	varfmts[i].used = 1;
-	j = varfmts[i].vtype;
-	if (vartypes[j].used == NULL)
-	  vartypes[j].used = get_vtype(vartypes[j].type);
-	if (prompt == NULL) prompt = varfmts[i].def_prompt;
-	si->u.vspc.format = fmt;
-	si->u.vspc.symbol = varfmts[i].symbol;
-	si->u.vspc.member = vartypes[j].used->member;
-	si->u.vspc.prompt = prompt;
+    varfmts[i].used = 1;
+    j = varfmts[i].vtype;
+    if (vartypes[j].used == NULL)
+      vartypes[j].used = get_vtype(vartypes[j].type);
+    if (prompt == NULL) prompt = varfmts[i].def_prompt;
+    si->u.vspc.format = fmt;
+    si->u.vspc.symbol = varfmts[i].symbol;
+    si->u.vspc.member = vartypes[j].used->member;
+    si->u.vspc.prompt = prompt;
   }
 }
 
@@ -119,25 +119,25 @@ void output_vdefs(void) {
   
   /* Output VTP_ #defines */
   for (i = 0; i < N_VARTYPES; i++) {
-	if (vartypes[i].used != NULL)
-	  fprintf(ofile, "#define %s %s\n", vartypes[i].symbol,
-					  vartypes[i].used->member);
+    if (vartypes[i].used != NULL)
+      fprintf(ofile, "#define %s %s\n", vartypes[i].symbol,
+                      vartypes[i].used->member);
   }
   
   /* Output VAR_ #defines */
   for (i = 0, j = 0; i < N_VARFMTS; i++) {
-	if (varfmts[i].used)
-	  fprintf(ofile, "#define %s %d\n", varfmts[i].symbol, j++);
+    if (varfmts[i].used)
+      fprintf(ofile, "#define %s %d\n", varfmts[i].symbol, j++);
   }
   
   /* Define value stack union vstack_type */
   if (vtypes != NULL) {
-	struct vtyp *vt;
-	
-	fprintf(ofile, "typedef union {\n");
-	for (vt = vtypes; vt != NULL; vt = vt->next)
-	  fprintf(ofile, "  %s %s;\n", vt->type, vt->member);
-	fprintf(ofile, "} vstack_type;\n");
+    struct vtyp *vt;
+    
+    fprintf(ofile, "typedef union {\n");
+    for (vt = vtypes; vt != NULL; vt = vt->next)
+      fprintf(ofile, "  %s %s;\n", vt->type, vt->member);
+    fprintf(ofile, "} vstack_type;\n");
   }
   Skel_copy(ofile, "vstack", vtypes != NULL);
 }
