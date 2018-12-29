@@ -7,6 +7,12 @@
 
 namespace DAS_IO { namespace Modbus {
 
+/**
+ * @brief Class for Modbus RTU communication over RS485
+ *
+ * This class should not need to be subclassed. It should only be necessary to
+ * subclass new modbus_devices, but we'll see how that goes.
+ */
 class RTU : public DAS_IO::Serial {
   public:
     /**
