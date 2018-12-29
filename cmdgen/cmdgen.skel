@@ -594,7 +594,7 @@ static void con_cleanup( void ) {
 
 #define FINAL_CLEANUP con_cleanup();
 
-#endif	/* QNX_CONS */
+#endif  /* QNX_CONS */
 
 #if PHOTON_INTERFACE
   static char nlph_buf[CG_IBUF_SIZE+1];
