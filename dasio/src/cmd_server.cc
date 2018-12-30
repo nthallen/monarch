@@ -17,11 +17,11 @@ namespace DAS_IO {
   Cmd_server::Cmd_server() {
     nl_assert(CmdServer == 0);
     CmdServer = this;
-    SU = new Server("cmd", CMD_MAX_COMMAND_IN,
+    SU = new Server_socket("cmd", CMD_MAX_COMMAND_IN,
       "cmd", Socket::Socket_Unix, &Subs);
     ELoop.add_child(SU);
     TU = 0;
-    // TU = new Server("cmd", CMD_MAX_COMMAND_IN,
+    // TU = new Server_socket("cmd", CMD_MAX_COMMAND_IN,
       // "cmd", Socket::Socket_TCP, &Subs);
     // ELoop.add_child(TU);
   }
@@ -544,8 +544,8 @@ void cmdif_dgdata::Shutdown() {
 }
 
 /*
-=Name ci_server(): Command Server main loop
-=Subject Command Server and Client
+=Name ci_server(): Command server main loop
+=Subject Command server and Client
 
 =Synopsis
 
@@ -567,14 +567,14 @@ be added to Receive other messages.
 Nothing.
 
 =SeeAlso
-=Command Server and Client= functions.
+=Command server and Client= functions.
 
 =End
 
 =Name cmd_batch(): Parse a command in batch mode
-=Subject Command Server and Client
+=Subject Command server and Client
 =Name cmd_init(): Initialize command parser
-=Subject Command Server and Client
+=Subject Command server and Client
 =Synopsis
 
 #include "cmdalgo.h"
@@ -603,7 +603,7 @@ void cis_interfaces(void);
 
 =SeeAlso
 
-  =Command Server and Client= functions.
+  =Command server and Client= functions.
 
 =End
 

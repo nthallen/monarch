@@ -33,8 +33,8 @@ namespace DAS_IO {
        */
       void Shutdown();
       Loop ELoop;
-      Server *SU; // Unix Domain Server
-      Server *TU; // TCP Domain Server
+      Server_socket *SU; // Unix Domain Server_socket
+      Server_socket *TU; // TCP Domain Server_socket
       static Cmd_server *CmdServer;
     protected:
       SubServices Subs;

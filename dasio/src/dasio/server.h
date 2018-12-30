@@ -56,7 +56,7 @@ namespace DAS_IO {
   };
   
   /**
-   * A Server object sets up a listener of the designated socket_type_t.
+   * A Server_socket object sets up a listener of the designated socket_type_t.
    * When a connection is accepted, it creates and Authenticator
    * object to handle the negotiation. The Authenticator uses
    * subservice information from the negotiation to decide what type
@@ -69,11 +69,11 @@ namespace DAS_IO {
    * to be shared between two server sockets (Unix & TCP) in many
    * cases.
    */
-  class Server : public Socket {
+  class Server_socket : public Socket {
     public:
-      Server(const char *iname, int bufsz, const char *service,
+      Server_socket(const char *iname, int bufsz, const char *service,
         Socket::socket_type_t socket_type, SubServices *Subsp);
-      ~Server();
+      ~Server_socket();
       Socket *new_client(const char *iname, int fd);
     protected:
       SubServices *Subsp;
@@ -81,7 +81,7 @@ namespace DAS_IO {
 
   class Authenticator : public Socket {
     public:
-      Authenticator(Server *orig, const char *iname, int fd, SubServices *SS);
+      Authenticator(Server_socket *orig, const char *iname, int fd, SubServices *SS);
       ~Authenticator();
       /**
        * Currently processes a single line of input, and either accepts

@@ -14,7 +14,7 @@ const char *opt_string = "vo:mV";
 
 AppID_t DAS_IO::AppID("tmsrvr", "Demo TM Server", "V1.0");
 
-class myserver : public Server {
+class myserver : public Server_socket {
   public:
     myserver(const char *iname, int bufsz, const char *service,
         Socket::socket_type_t socket_type, SubServices *Subsp);
@@ -25,13 +25,13 @@ class myserver : public Server {
 
 myserver::myserver(const char *iname, int bufsz, const char *service,
         Socket::socket_type_t socket_type, SubServices *Subsp)
-        : Server(iname, bufsz, service, socket_type, Subsp) {}
+        : Server_socket(iname, bufsz, service, socket_type, Subsp) {}
 
 myserver::~myserver() {}
         
 void myserver::connect() {
   nl_error(0, "%s: In connect()", iname);
-  Server::connect();
+  Server_socket::connect();
   if (socket_state == Socket::Socket_listening) {
     TO.Set(1, 0);
   } else {

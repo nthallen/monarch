@@ -43,19 +43,19 @@ namespace DAS_IO {
     return (pos == subs.end()) ? 0 : pos->second;
   }
 
-  Server::Server(const char *iname, int bufsz, const char *service,
+  Server_socket::Server_socket(const char *iname, int bufsz, const char *service,
         Socket::socket_type_t socket_type, SubServices *Subsp)
       : Socket(iname, bufsz, service, socket_type), Subsp(Subsp) {}
 
-  Server::~Server() {}
+  Server_socket::~Server_socket() {}
   
-  Socket *Server::new_client(const char *iname, int fd) {
+  Socket *Server_socket::new_client(const char *iname, int fd) {
     Authenticator *rv = new Authenticator(this, iname, fd, Subsp);
     if (ELoop) ELoop->add_child(rv);
     return rv;
   }
   
-  Authenticator::Authenticator(Server *orig, const char *iname,
+  Authenticator::Authenticator(Server_socket *orig, const char *iname,
             int fd, SubServices *SS)
         : Socket(orig, iname, fd), Subsp(SS), client_app(0) {}
   Authenticator::~Authenticator() {}
