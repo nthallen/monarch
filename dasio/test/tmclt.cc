@@ -1,5 +1,5 @@
 /** @file tmclt.cc */
-#include "dasio/tm_client.h"
+#include "dasio/tm_data_sndr.h"
 #include "dasio/appid.h"
 #include "dasio/loop.h"
 #include "TMtest.h"
@@ -13,10 +13,10 @@ AppID_t DAS_IO::AppID("tmclient", "Demo TM Client", "V1.0");
 
 const char *opt_string = "vo:mV";
 
-class myTMclt : public TM_client {
+class myTMclt : public TM_data_sndr {
   public:
     inline myTMclt(const char *iname, const char *datum, const char *data, uint16_t size)
-      : TM_client(iname, datum, data, size) {}
+      : TM_data_sndr(iname, datum, data, size) {}
     inline ~myTMclt() {}
     bool app_connected() override;
     bool tm_sync() override;
@@ -24,7 +24,7 @@ class myTMclt : public TM_client {
 
 bool myTMclt::app_connected() {
   nl_error(0, "myTMclt::app_connected()");
-  TM_client::app_connected();
+  TM_data_sndr::app_connected();
   flags |= gflag(0);
   return false;
 }

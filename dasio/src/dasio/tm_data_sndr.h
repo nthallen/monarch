@@ -1,12 +1,12 @@
-/** @file dasio/tm_client.h */
-#ifndef DASIO_TM_CLIENT_H_INCLUDED
-#define DASIO_TM_CLIENT_H_INCLUDED
+/** @file dasio/tm_data_sndr.h */
+#ifndef DASIO_TM_DATA_SNDR_H_INCLUDED
+#define DASIO_TM_DATA_SNDR_H_INCLUDED
 
 #include "client.h"
 
 namespace DAS_IO {
 
-  class TM_client : public Client {
+  class TM_data_sndr : public Client {
     public:
       /**
        * Connects to the DG service, subservice data/<datum>
@@ -15,7 +15,7 @@ namespace DAS_IO {
        * @param data Pointer to the data structure
        * @param size The size of the data structure
        */
-      TM_client(const char *iname, const char *datum, const char *data, uint16_t size);
+      TM_data_sndr(const char *iname, const char *datum, const char *data, uint16_t size);
       /**
        * Connects to the DG service on the specified host, subservice
        * data/<datum>
@@ -25,9 +25,9 @@ namespace DAS_IO {
        * @param data Pointer to the data structure
        * @param size The size of the data structure
        */
-      TM_client(const char *iname, const char *hostname, const char *datum,
+      TM_data_sndr(const char *iname, const char *hostname, const char *datum,
         const char *data, uint16_t size);
-      virtual ~TM_client();
+      virtual ~TM_data_sndr();
       bool app_input(); // read nl, write data and set gflag(0)
       virtual bool app_connected();
     private:

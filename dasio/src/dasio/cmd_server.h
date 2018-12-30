@@ -4,7 +4,7 @@
 #include <list>
 #include "server.h"
 #include "client.h"
-#include "tm_client.h"
+#include "tm_data_sndr.h"
 #include "loop.h"
 
 #define CMD_MAX_COMMAND_OUT 160 // Maximum command message output length
@@ -170,9 +170,9 @@ class cmdif_wr {
  * on the cmdgen syntax '%INTERFACE <datum:DG/data>'.
  * In le-dasng terminology, the service is DG and the
  * subservice is "data/datum", but this is handled by
- * the TM_client class.
+ * the TM_data_sndr class.
  */
-class cmdif_dgdata : public DAS_IO::TM_client {
+class cmdif_dgdata : public DAS_IO::TM_data_sndr {
   public:
     cmdif_dgdata(const char *name, void *data, int dsize);
     void Turf();

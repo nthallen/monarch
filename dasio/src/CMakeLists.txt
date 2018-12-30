@@ -3,7 +3,7 @@
 #project(dasio_proj VERSION 2.0.0)
 add_library(dasio interface.cc ascii_escape.cc not_parsed.cc serial.cc
   timeout.cc loop.cc socket.cc unix_name.cc modbus_rtu.cc
-  client.cc server.cc appid.cc tm_client.cc tm_server.cc
+  client.cc server.cc appid.cc tm_data_sndr.cc tm_server.cc
   cmd_writer.cc cmd_version.cc cmd_version_def.cc
   cic_transmit.cc cmd_server.cc)
 target_include_directories(dasio PUBLIC

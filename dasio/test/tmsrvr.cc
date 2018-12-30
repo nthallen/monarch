@@ -8,7 +8,7 @@
 using namespace DAS_IO;
 
 TMtest_t TMtest;
-TM_server_def TMtest_def("TMtest", &TMtest, sizeof(TMtest));
+TM_data_rcvr_def TMtest_def("TMtest", &TMtest, sizeof(TMtest));
 
 const char *opt_string = "vo:mV";
 
@@ -42,7 +42,7 @@ void myserver::connect() {
 }
 
 bool myserver::protocol_timeout() {
-  TMtest_def.sync();
+  TMtest_def.synch();
   TO.Set(1,0);
   nl_error(0, "%s: Count: %d Stale: %d", iname, TMtest.count, TMtest_def.Stale(31));
   return false;
@@ -54,9 +54,9 @@ int main(int argc, char **argv) {
   Subs.add_subservice(
     new SubService(
       "DG/data/TMtest",
-      (socket_clone_t)TM_server::new_tm_server,
+      (socket_clone_t)TM_data_rcvr::new_tm_data_rcvr,
       &TMtest_def
-      // new TM_server_def("TMtest", &TMtest, sizeof(TMtest))
+      // new TM_data_rcvr_def("TMtest", &TMtest, sizeof(TMtest))
     )
   );
   myserver S("listen", 128, "DG", Socket::Socket_Unix, &Subs);
