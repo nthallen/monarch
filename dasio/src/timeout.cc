@@ -80,6 +80,13 @@ void TimeoutAccumulator::Set_Min( Timeout *to ) {
 }
 
 /**
+ * @return true if a timeout value is set.
+ */
+bool TimeoutAccumulator::Set() {
+  return (when.tv_sec != 0 || when.tv_nsec != 0);
+}
+
+/**
  * \returns struct timeval pointer appropriate for select().
  * If no timeout is specified, returns NULL. If the timeout has passed,
  * timeout is set at zero.

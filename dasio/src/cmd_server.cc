@@ -195,13 +195,14 @@ namespace DAS_IO {
   Cmd_receiver *Cmd_receiver::new_cmd_receiver(Authenticator *auth,
       SubService *ss) {
     Cmd_receiver *cr = new Cmd_receiver(auth, auth->get_client_app());
-    ss = ss; // We don't have and subservice info
+    ss = ss; // We don't have any subservice info
   }
 
   void Cmd_receiver::process_quit() {
     nl_error( -2, "Processing Quit" );
     quit_received = quit_recd = true;
     iwrite("Q\n");
+    ELoop->delete_child(this);
     cis_interfaces_close();
     cmdif_rd::all_closed();
   }
@@ -215,12 +216,10 @@ namespace DAS_IO {
   }
   
   Cmd_turf::~Cmd_turf() {
-    // Should:
-    // - remove/del subservice from SubServices (need a method for that)
-    // - close any open client connections
-    // - free all commands in first_ccmd/last_cmd
-    // - can't free free_commands without a ref count
-    //   or a list of cmdif_rd interfaces.
+    if (ss) {
+      ss->rm_reader(this);
+      ss = 0;
+    }
   }
  
   /*
@@ -247,7 +246,7 @@ namespace DAS_IO {
           ELoop->delete_child(this);
         }
         written = true;
-      }
+      } else break;
     }
   }
   
@@ -264,7 +263,7 @@ namespace DAS_IO {
    * fine.
    */
   Socket *Cmd_turf::new_cmd_turf(Authenticator *auth, SubService *ss) {
-    return new Cmd_turf(auth, auth->get_client_app(), (cmdif_rd*)ss);
+    return new Cmd_turf(auth, auth->get_client_app(), (cmdif_rd*)(ss->svc_data));
   }
   
 }
@@ -342,8 +341,9 @@ void cmdif_rd::Turf(const char *format, ...) {
   command_out_t *cmd;
   int nb;
 
-  nl_assert(DAS_IO::Cmd_server::CmdServer &&
-    DAS_IO::Cmd_server::CmdServer->SU != NULL );
+  // I think this assertion is wrong
+  // nl_assert(DAS_IO::Cmd_server::CmdServer &&
+  //  DAS_IO::Cmd_server::CmdServer->SU != NULL );
   cmd = last_cmd;
   va_start( arglist, format );
   nb = vsnprintf( cmd->command, CMD_MAX_COMMAND_OUT, format, arglist );
@@ -375,6 +375,10 @@ void cmdif_rd::add_reader(DAS_IO::Cmd_turf *rdr) {
   turfs.push_back(rdr);
 }
 
+void cmdif_rd::rm_reader(DAS_IO::Cmd_turf *rdr) {
+  turfs.remove(rdr);
+}
+
 // Go through rdrs list of cmdif_rd. If turfs.empty(),
 // we can shutdown the subservice. This involves
 // - removing subservice from CmdServer->Subs
@@ -385,12 +389,14 @@ void cmdif_rd::add_reader(DAS_IO::Cmd_turf *rdr) {
 bool cmdif_rd::all_closed() {
   std::list<cmdif_rd *>::iterator rp, crp;
   rp = rdrs.begin();
+  // nl_error(0, "all_closed: %d rdrs", rdrs.size());
   while (rp != rdrs.end()) {
     crp = rp;
-    cmdif_rd *cur_rdr = *rp++;
+    cmdif_rd *cur_rdr = *crp;
+    rp++;
     if ( cur_rdr->turfs.empty() ) {
       rdrs.erase(crp);
-      delete(cur_rdr); // cur_rdr->Shutdown();
+      // delete(cur_rdr); // don't delete! These are statically allocated
     }
   }
   if (rdrs.empty()) {

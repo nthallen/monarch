@@ -124,6 +124,7 @@ class cmdif_rd {
     void Turf(const char *fmt, ...);
     void Shutdown();
     void add_reader(DAS_IO::Cmd_turf *rdr);
+    void rm_reader(DAS_IO::Cmd_turf *rdr);
     static bool all_closed();
     command_out_t *new_command();
     command_out_t *free_command(command_out_t *cmd);

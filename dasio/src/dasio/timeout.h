@@ -29,6 +29,7 @@ class Timeout {
 class TimeoutAccumulator {
   public:
     TimeoutAccumulator();
+    bool Set();
     void Set( Timeout * );
     void Set_Min( Timeout * );
     struct timeval *timeout_val();

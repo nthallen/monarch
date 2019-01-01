@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include "socket.h"
+#include "loop.h"
 
 namespace DAS_IO {
 
@@ -95,6 +96,22 @@ namespace DAS_IO {
       bool not_svc(const char *&svc, int &len);
       SubServices *Subsp;
       const char *client_app;
+  };
+  
+  class Server {
+    public:
+      Server(const char *service, int bufsz); // bufsz to be phased out
+      ~Server();
+      typedef enum { Srv_Unix = 1, Srv_TCP = 2, Srv_Both = 3 } Srv_type;
+      void Start(Srv_type which);
+      SubServices Subs;
+      Server_socket *Unix;
+      Server_socket *TCP;
+      Loop ELoop;
+      inline const char *get_service() { return service; }
+    protected:
+      const char *service;
+      int bufsz; // going away
   };
 
 }

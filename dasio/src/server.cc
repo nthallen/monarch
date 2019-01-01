@@ -136,4 +136,27 @@ namespace DAS_IO {
     return false;
   }
 
+  Server::Server(const char *service, int bufsz) :
+      service(service),
+      bufsz(bufsz),
+      Unix(0),
+      TCP(0) { }
+
+  Server::~Server() {}
+
+  void Server::Start(Server::Srv_type which) {
+    if (which & Srv_Unix) {
+      Unix = new Server_socket("Unix", bufsz, service, Socket::Socket_Unix, &Subs);
+      Unix->connect();
+      ELoop.add_child(Unix);
+    }
+    if (which & Srv_TCP) {
+      TCP = new Server_socket("TCP", bufsz, service, Socket::Socket_TCP, &Subs);
+      TCP->connect();
+      ELoop.add_child(TCP);
+    }
+    nl_error(0, "%s %s Starting", AppID.fullname, AppID.rev);
+    ELoop.event_loop();
+    nl_error(0, "Terminating");
+  }
 }

@@ -304,7 +304,7 @@ bool Socket::protocol_except() {
 }
 
 bool Socket::closed() {
-  nl_error(2, "%s: Socket closed", iname);
+  // nl_error(2, "%s: Socket closed", iname);
   
   if (is_server) {
     nl_error(2, "%s: Should not have been reading from listening socket", iname);

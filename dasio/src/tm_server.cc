@@ -6,6 +6,8 @@
 
 namespace DAS_IO {
   
+  Server TM_server("DG", 128);
+  
   TM_data_rcvr::TM_data_rcvr(Authenticator *auth, const char *iname, TM_data_rcvr_def *def)
         : Socket(auth, iname, auth->fd), def(def) {
     def->interface = this;
@@ -29,6 +31,7 @@ namespace DAS_IO {
   }
   
   bool TM_data_rcvr::protocol_input() {
+    // protocol_input() can be called when there is no input
     if (nc < def->size) return false;
     if (nc > def->size) {
       report_err("%s: Excess input", iname);
@@ -61,5 +64,18 @@ namespace DAS_IO {
   
   void TM_data_rcvr_def::close() {
     interface = 0;
+  }
+  
+  TM_data_rcvr_def *TM_receive(const char *name, void *data, int data_size, int synch) {
+    int svclen = snprintf(0, 0, "%s/data/%s", TM_server.get_service(), name);
+    char *subservice = (char *)new_memory(svclen+1);
+    snprintf(subservice, svclen+1, "%s/data/%s", TM_server.get_service(), name);
+    TM_server.Subs.add_subservice(
+      new SubService(
+        subservice,
+        (socket_clone_t)TM_data_rcvr::new_tm_data_rcvr,
+        new TM_data_rcvr_def(name, data, data_size)
+      )
+    );
   }
 }

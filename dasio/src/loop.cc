@@ -91,6 +91,7 @@ void Loop::event_loop() {
     FD_ZERO(&exceptfds);
     TA.Set(GetTimeout());
     children_changed = false;
+    if (S.empty() && ! TA.Set()) break;
     for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
       Interface *P = *Sp;
       int flag = gflags.fetch_and(~P->flags) & P->flags;

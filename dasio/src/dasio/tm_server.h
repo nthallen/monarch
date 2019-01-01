@@ -51,6 +51,10 @@ namespace DAS_IO {
       static TM_cmd *new_tm_cmd(Authenticator *auth, SubService *ss);
     protected:
   };
+
+  extern Server TM_server;
+
+  TM_data_rcvr_def *TM_receive(const char *name, void *data, int data_size, int synch);
 }
 
 #endif

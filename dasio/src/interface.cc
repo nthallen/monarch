@@ -74,6 +74,11 @@ bool Interface::ProcessData(int flag) {
     return true;
   if ((flags & flag & Fl_Timeout) && TO.Expired() && protocol_timeout())
     return true;
+  if (TO.Set()) {
+    flags |= Fl_Timeout;
+  } else {
+    flags &= ~Fl_Timeout;
+  }
   return false;
 }
 
