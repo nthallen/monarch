@@ -1,12 +1,14 @@
 /** @file modbus_rtu.cc */
 #include <string.h>
+#include <fcntl.h>
 #include "dasio/modbus_rtu.h"
 #include "nl.h"
+#include "dasio/ascii_escape.h" // Until I rewrite ascii_escape() here
 
 namespace DAS_IO { namespace Modbus {
   
-  RTU::RTU(const char *iname, int bufsz, const char *path, int open_flags)
-      : DAS_IO::Serial(iname, bufsz, path, open_flags) {
+  RTU::RTU(const char *iname, int bufsz, const char *path)
+      : DAS_IO::Serial(iname, bufsz, path, O_RDWR|O_NONBLOCK) {
     
   }
   
@@ -63,12 +65,6 @@ namespace DAS_IO { namespace Modbus {
     process_requests();
     return false;
   }
-
-  void RTU::process_pdu() {
-    if (pending) {
-      pending->process_pdu();
-    }
-  }
   
   /**
    * Terminates the current request/response and advances
@@ -98,6 +94,11 @@ namespace DAS_IO { namespace Modbus {
     return process_requests();
   }
 
+  void RTU::add_device(modbus_device *dev) {
+    devices.push_back(dev);
+    dev->set_MB(this);
+  }
+  
   bool RTU::crc_ok(uint8_t *rep, unsigned nb) {
     if (pending) {
       unsigned short crc_rep = (rep[nb-1]<<8) + rep[nb-2];
@@ -126,6 +127,21 @@ namespace DAS_IO { namespace Modbus {
       }
     }
     return false;
+  }
+
+  void RTU::process_pdu() {
+    if (pending) {
+      pending->process_pdu();
+    }
+  }
+  
+  void RTU::dispose_pending() {
+    if (pending) {
+      if (!pending->persistent) {
+        req_free.push_back(pending);
+      }
+      pending = 0;
+    }
   }
   
   RTU::modbus_req *RTU::new_modbus_req() {
@@ -277,6 +293,10 @@ namespace DAS_IO { namespace Modbus {
     return;
   }
   
+  const char *RTU::modbus_req::ascii_escape() {
+    return ::ascii_escape((const char *)req_buf, (int)req_sz);
+  }
+  
   /**
    * Requires no arguments because this is only called on the
    * request, and the buffer and size are stored in the object.
@@ -373,14 +393,15 @@ namespace DAS_IO { namespace Modbus {
     dest[0] = src[1];
   }
 
-  RTU::modbus_device::modbus_device(RTU *MB,
+  RTU::modbus_device::modbus_device(
       const char *dev_name, uint8_t dev_addr)
-      : MB(MB), dev_name(dev_name), devID(devID) {
-    if (!MB || !dev_name) {
+      : dev_name(dev_name), devID(devID) {
+    if (!dev_name) {
       nl_error(3, "Invalid modbus_device construction");
     }
+    MB = 0;
   }
 
   RTU::modbus_device::~modbus_device() { }
 
-} } // Close out Modbu and DAS_IO namespaces
+} } // Close out Modbus and DAS_IO namespaces

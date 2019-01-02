@@ -22,7 +22,7 @@ class RTU : public DAS_IO::Serial {
      * @param path Path to the device
      * @param open_flags Flags passed to ::open()
      */
-    RTU(const char *iname, int bufsz, const char *path, int open_flags);
+    RTU(const char *iname, int bufsz, const char *path);
     /**
      * Initializes interface without opening device.
      * @param iname Interface name for messages
@@ -33,6 +33,18 @@ class RTU : public DAS_IO::Serial {
     bool protocol_input();
     bool protocol_timeout();
     bool tm_sync();
+
+    /**
+     * Iterates through devices calling enqueue_polls()
+     */
+    void enqueue_polls();
+    class modbus_device;
+    /**
+     * Called from within the modbus_device constructor. add_device() cannot
+     * access any methods or attributes of dev during this call.
+     * @param dev Pointer to a modbus_device.
+     */
+    void add_device(modbus_device *dev);
     
     /**
      * @param rep pointer to buffer
@@ -41,7 +53,6 @@ class RTU : public DAS_IO::Serial {
      */
     bool crc_ok(uint8_t *rep, unsigned nb);
 
-    class modbus_device;
     class modbus_req {
       public:
         typedef enum { Req_unconfigured, Req_addressed, Req_pre_crc, Req_ready }
@@ -49,6 +60,14 @@ class RTU : public DAS_IO::Serial {
 
         modbus_req();
         ~modbus_req();
+        /**
+         * @brief Performs initial setup of a modbus_req object
+         * @param device The modbus_device this request pertains to
+         * @param function_code The Modbus function code
+         * @param address The Modbus address
+         * @param count the relevant count describing the transfer
+         * The interpretation of count may be function_code dependent.
+         */
         void setup(modbus_device *device, uint8_t function_code, uint16_t address,
           uint16_t count);
         /**
@@ -85,6 +104,7 @@ class RTU : public DAS_IO::Serial {
         uint16_t address;
         uint16_t count;
         uint8_t devID;
+        bool persistent; //* true for polls, false for cmds
       protected:
         /**
          * Sets the CRC bytes in the request. The request must
@@ -111,16 +131,20 @@ class RTU : public DAS_IO::Serial {
     class modbus_device {
       public:
         /**
-         * @param MB Pointer to the DAS_IO::Modbus::RTU object
          * @param dev_name a short descriptor for this device
          * @param devID The device's Modbus RTU address
          */
-        modbus_device(RTU *MB, const char * dev_name, uint8_t devID);
+        modbus_device(const char *dev_name, uint8_t devID);
         virtual ~modbus_device();
 
         inline uint8_t get_devID() { return devID; }
         inline const char *get_iname() { return MB ? MB->get_iname() : "unknown"; }
         inline const char *get_dev_name() { return dev_name; }
+        /**
+         * Called during RTU::add_device().
+         * @param MB Pointer to the Modbus::RTU object
+         */
+        inline void set_MB(RTU *MB) { this->MB = MB; }
         /**
          * Called during RTU::add_device().
          */
@@ -135,17 +159,6 @@ class RTU : public DAS_IO::Serial {
         RTU *MB;
         const char *dev_name;
     };
-
-    /**
-     * Iterates through devices calling enqueue_polls()
-     */
-    void enqueue_polls();
-    /**
-     * Called from within the modbus_device constructor. add_device() cannot
-     * access any methods or attributes of dev during this call.
-     * @param dev Pointer to a modbus_device.
-     */
-    void add_device(modbus_device *dev);
     
   protected:
     /**
