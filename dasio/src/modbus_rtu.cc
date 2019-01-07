@@ -4,6 +4,7 @@
 #include "dasio/modbus_rtu.h"
 #include "nl.h"
 #include "dasio/ascii_escape.h" // Until I rewrite ascii_escape() here
+#include "nl_assert.h"
 
 namespace DAS_IO { namespace Modbus {
   
@@ -18,10 +19,6 @@ namespace DAS_IO { namespace Modbus {
   
   RTU::~RTU() {}
   
-  /**
-   * Parses the incoming response
-   * @return true if the event loop should terminate
-   */
   bool RTU::protocol_input() {
     if (!pending) {
       report_err("%s: Unexpected input", iname);
@@ -52,7 +49,7 @@ namespace DAS_IO { namespace Modbus {
         consume(nc);
       } else {
         cp = pending->rep_sz;
-        process_pdu();
+        pending->process_pdu();
         if (nc > cp) {
           report_err("%s: Extra chars after reply", iname);
           consume(nc);
@@ -97,8 +94,16 @@ namespace DAS_IO { namespace Modbus {
   void RTU::add_device(modbus_device *dev) {
     devices.push_back(dev);
     dev->set_MB(this);
+    dev->enqueue_polls();
   }
-  
+
+  void RTU::enqueue_poll(modbus_req *req) {
+    if (req->get_req_state() == RTU::modbus_req::Req_ready) {
+      polls.push_back(req);
+      req->persistent = true;
+    }
+  }
+
   bool RTU::crc_ok(uint8_t *rep, unsigned nb) {
     if (pending) {
       unsigned short crc_rep = (rep[nb-1]<<8) + rep[nb-2];
@@ -106,6 +111,24 @@ namespace DAS_IO { namespace Modbus {
       return crc_rep == crc_calc;
     } else {
       return false;
+    }
+  }
+  
+  void RTU::read_pdu(uint32_t *dest, int offset, int count) {
+    for (int i = offset; count > 0; ++i, --count) {
+      RTU::modbus_req::float_swap((uint8_t*)dest, (uint8_t*)&buf[4+4*i]);
+    }
+  }
+  
+  void RTU::read_pdu(uint16_t *dest, int offset, int count) {
+    for (int i = offset; count > 0; ++i, --count) {
+      RTU::modbus_req::word_swap((uint8_t*)dest, (uint8_t*)&buf[4+2*i]);
+    }
+  }
+  
+  void RTU::read_pdu(uint8_t *dest, int offset, int count) {
+    for (int i = offset; count > 0; ++i, --count) {
+      dest[i] = buf[4+i];
     }
   }
   
@@ -128,12 +151,6 @@ namespace DAS_IO { namespace Modbus {
     }
     return false;
   }
-
-  void RTU::process_pdu() {
-    if (pending) {
-      pending->process_pdu();
-    }
-  }
   
   void RTU::dispose_pending() {
     if (pending) {
@@ -145,13 +162,15 @@ namespace DAS_IO { namespace Modbus {
   }
   
   RTU::modbus_req *RTU::new_modbus_req() {
+    RTU::modbus_req *req;
     if (req_free.empty()) {
-      return new RTU::modbus_req;
+      req = new RTU::modbus_req;
     } else {
-      RTU::modbus_req *req = req_free.front();
+      req = req_free.front();
       req_free.pop_front();
-      return req;
     }
+    req->set_MB(this);
+    return req;
   }
   
   RTU::modbus_req::modbus_req() {
@@ -161,49 +180,117 @@ namespace DAS_IO { namespace Modbus {
     rep_sz = req_sz = 0;
     count = 0;
     devID = 0;
+    persistent = false;
+    MB = 0;
   }
   
   void RTU::modbus_req::setup(RTU::modbus_device *device,
-          uint8_t function_code, uint16_t address, uint16_t count) {
+          uint8_t function_code, uint16_t address, uint16_t count,
+          void *dest, rep_type_t rep_type) {
     uint8_t byte_count;
     this->device = device;
     this->devID = device->get_devID();
     this->count = count;
+    this->function_code = function_code;
     this->address = address;
+    this->dest = dest;
     req_buf[0] = devID;
     req_buf[1] = function_code;
     word_swap(&req_buf[2], (uint8_t*)&address);
     switch (function_code) {
-      case 1:
-      case 2:
+      case 1: // Read Coils
+      case 2: // Read Discrete Inputs
         word_swap(&req_buf[4], (uint8_t*)&count);
         req_sz = 8;
         byte_count = (count+7)/8;
         rep_sz = 5+byte_count;
         req_state = Req_pre_crc;
         crc_set();
+        nl_assert(rep_type == Rep_uint8 || rep_type == Rep_auto);
+        this->rep_type = Rep_uint8;
+        rep_count = byte_count;
         return;
-      case 3:
-      case 4:
+      case 3: // Read Holding Registers
+      case 4: // Read Input Registers
         word_swap(&req_buf[4], (uint8_t*)&count);
         req_sz = 8;
         rep_sz = 5+2*count;
         req_state = Req_pre_crc;
         crc_set();
+        this->rep_type = rep_type;
+        switch (rep_type) {
+          case Rep_uint16:
+            rep_count = count;
+            break;
+          case Rep_uint32:
+            if (count%2) {
+              nl_error(3, "%s: Rep_uint32 with odd count %d",
+                device->get_iname(), count);
+            }
+            rep_count = count/2;
+            break;
+          default:
+            nl_error(3, "%s: Invalid rep_type %d for func_code %d",
+              device->get_iname(), rep_type, function_code);
+            break;
+        }
         return;
-      case 5:
-      case 6:
+      case 5: // Write Single Coil
+      case 6: // Write Single Register
         req_sz = 8;
-        req_sz = 8;
+        rep_sz = 8;
+        if (count != 1) {
+          nl_error(1, "%s: Invalid count %d for function code %d: must be 1",
+            device->get_iname(), count, function_code);
+          this->count = 1;
+        }
+        if (rep_type != Rep_ignore && rep_type != Rep_auto)
+          nl_error(3, "%s: Invalid rep_type %d for function code %d",
+            device->get_iname(), rep_type, function_code);
+        this->rep_type = Rep_ignore;
+        rep_count = 0;
         break;
-      case 15:
+      case 8: // Serial line diagnostics
+        req_sz = 6+2*count;
+        rep_sz = 6+2*count;
+        switch (address) {
+          case 0: 
+          case 10:
+          case 12:
+          case 13:
+          case 14:
+            if ((address == 0 && count == 0) ||
+                (address != 0 && count != 1)) {
+              nl_error(2, "%s: Invalid count/data for Func/Sub 8/%d",
+                device->get_iname(), address);
+              req_state = Req_invalid;
+              return;
+            }
+            break;
+          default:
+            nl_error(2, "%s: Invalid subfunction code %d for function 8",
+              device->get_iname(), address);
+            req_state = Req_invalid;
+            return;
+        }
+        if (rep_type != Rep_uint16 && rep_type != Rep_auto) {
+          nl_error(3, "%s: Invalid rep_type %d for function code %d",
+            device->get_iname(), rep_type, function_code);
+        }
+        this->rep_type = Rep_uint16;
+        rep_count = 1;
+        break;
+      case 15: // Write Multiple Coils
         word_swap(&req_buf[4], (uint8_t*)&count);
         byte_count = (count+7)/8;
         req_buf[6] = byte_count;
         req_sz = 9 + byte_count;
         rep_sz = 8;
+        nl_assert(rep_type == Rep_ignore || rep_type == Rep_auto);
+        this->rep_type = Rep_ignore;
+        rep_count = 0;
         break;
-      case 16:
+      case 16: // Write Multiple Registers
         word_swap(&req_buf[4], (uint8_t*)&count);
         byte_count = 2*count;
         req_buf[6] = byte_count;
@@ -220,6 +307,7 @@ namespace DAS_IO { namespace Modbus {
   }
 
   void RTU::modbus_req::setup_data(uint8_t *data) {
+    if (req_state == Req_invalid) return;
     if (req_state != Req_addressed) {
       nl_error(2, "%s: setup_data(): Invalid input state %d", device->get_iname(), req_state);
     } else {
@@ -234,15 +322,18 @@ namespace DAS_IO { namespace Modbus {
           break;
         case 5:
         case 6:
+        case 8:
         case 16:
           nl_error(2,
             "%s: setup_data(uint8_t) incorrect data type for function_code %d",
             device->get_iname(), function_code);
+          req_state = Req_invalid;
           break;
         case 15:
           byte_count = req_buf[6];
           memcpy(&req_buf[7], data, byte_count);
           req_state = Req_pre_crc;
+          crc_set();
           return;
         default:
           nl_error(2, "%s: setup_data() Invalid function %d",
@@ -255,12 +346,14 @@ namespace DAS_IO { namespace Modbus {
   }
 
   void RTU::modbus_req::setup_data(uint16_t *data) {
+    if (req_state == Req_invalid) return;
     if (req_state != Req_addressed) {
       nl_error(2, "%s/%s: setup_data(): Invalid input state %d",
           device->get_iname(), device->get_dev_name(), req_state);
     } else {
       uint8_t function_code = req_buf[1];
       uint8_t word_count;
+      uint16_t subfunc;
       switch (function_code) {
         case 1:
         case 2:
@@ -268,7 +361,8 @@ namespace DAS_IO { namespace Modbus {
         case 4:
           nl_error(2, "%s/%s: setup_data() invalid for read functions",
             device->get_iname(), device->get_dev_name());
-          break;
+          req_state = Req_invalid;
+          return;
         case 5:
         case 6:
         case 16:
@@ -277,6 +371,14 @@ namespace DAS_IO { namespace Modbus {
             word_swap(&req_buf[7+2*i], (uint8_t*)&data[i]);
           }
           req_state = Req_pre_crc;
+          crc_set();
+          return;
+        case 8:
+          for (int i = 0; i <= count; ++i) {
+            word_swap(&req_buf[2+2*i], (uint8_t*)&data[i]);
+          }
+          req_state = Req_pre_crc;
+          crc_set();
           return;
         case 15:
           nl_error(2,
@@ -293,8 +395,30 @@ namespace DAS_IO { namespace Modbus {
     return;
   }
   
+  const char *RTU::modbus_req::byte_escape(uint8_t byte) {
+    static char obuf[4];
+    snprintf(obuf, 4, " %02X", byte);
+    return (const char*)obuf;
+  }
+  
   const char *RTU::modbus_req::ascii_escape() {
-    return ::ascii_escape((const char *)req_buf, (int)req_sz);
+    static std::string s;
+    char snbuf[8];
+    int i = 0;
+    s.clear();
+    s.append("Dev:"); s.append(byte_escape(req_buf[0]));
+    s.append(" Func:"); s.append(byte_escape(req_buf[1]));
+    s.append(" Addr:");
+      s.append(byte_escape(req_buf[2]));
+      s.append(byte_escape(req_buf[3]));
+    s.append(" Data:");
+    for (i = 4; i < req_sz-2; ++i) {
+      s.append(byte_escape(req_buf[i]));
+    }
+    s.append(" CRC:");
+      s.append(byte_escape(req_buf[req_sz-2]));
+      s.append(byte_escape(req_buf[req_sz-1]));
+    return s.c_str();
   }
   
   /**
@@ -307,7 +431,7 @@ namespace DAS_IO { namespace Modbus {
       req_buf[req_sz-2] = crc_calc & 0xFF;
       req_buf[req_sz-1] = (crc_calc>>8) & 0xFF;
       req_state = Req_ready;
-    } else {
+    } else if (req_state != Req_invalid) {
       nl_error(2, "%s: Incomplete request in crc_set(): %d", device->get_iname(),
         req_state);
       req_state = Req_unconfigured;
@@ -372,8 +496,22 @@ namespace DAS_IO { namespace Modbus {
   }
 
   void RTU::modbus_req::process_pdu() {
-    if (device) {
-      device->process_pdu(this, address);
+    switch (rep_type) {
+      case Rep_ignore: break;
+      case Rep_uint8:
+        MB->read_pdu((uint8_t*)dest, 0, rep_count);
+        break;
+      case Rep_uint16:
+        MB->read_pdu((uint16_t*)dest, 0, rep_count);
+        break;
+      case Rep_uint32:
+        MB->read_pdu((uint32_t*)dest, 0, rep_count);
+        break;
+      default:
+      case Rep_auto:
+        nl_error(3, "%s: Invalid rep_type %d in process_pdu",
+          device->get_iname(), rep_type);
+        break;
     }
   }
   
