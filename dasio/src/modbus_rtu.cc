@@ -10,14 +10,21 @@ namespace DAS_IO { namespace Modbus {
   
   RTU::RTU(const char *iname, int bufsz, const char *path)
       : DAS_IO::Serial(iname, bufsz, path, O_RDWR|O_NONBLOCK) {
-    
   }
   
   RTU::RTU(const char *iname, int bufsz) : DAS_IO::Serial(iname, bufsz) {
-    
   }
   
   RTU::~RTU() {}
+  
+  bool RTU::ProcessData(int flag) {
+    if (DAS_IO::Interface::ProcessData(flag))
+      return true;
+    if (pending) {
+      update_tc_vmin(pending->rep_sz - nc);
+    }
+    return false;
+  }
   
   bool RTU::protocol_input() {
     if (!pending) {
@@ -186,7 +193,7 @@ namespace DAS_IO { namespace Modbus {
   
   void RTU::modbus_req::setup(RTU::modbus_device *device,
           uint8_t function_code, uint16_t address, uint16_t count,
-          void *dest, rep_type_t rep_type) {
+          void *dest, RepHandler handler) {
     uint8_t byte_count;
     this->device = device;
     this->devID = device->get_devID();
@@ -206,8 +213,7 @@ namespace DAS_IO { namespace Modbus {
         rep_sz = 5+byte_count;
         req_state = Req_pre_crc;
         crc_set();
-        nl_assert(rep_type == Rep_uint8 || rep_type == Rep_auto);
-        this->rep_type = Rep_uint8;
+        this->handler = handler ? handler : RTU::modbus_device::RH_uint8;
         rep_count = byte_count;
         return;
       case 3: // Read Holding Registers
@@ -217,23 +223,8 @@ namespace DAS_IO { namespace Modbus {
         rep_sz = 5+2*count;
         req_state = Req_pre_crc;
         crc_set();
-        this->rep_type = rep_type;
-        switch (rep_type) {
-          case Rep_uint16:
-            rep_count = count;
-            break;
-          case Rep_uint32:
-            if (count%2) {
-              nl_error(3, "%s: Rep_uint32 with odd count %d",
-                device->get_iname(), count);
-            }
-            rep_count = count/2;
-            break;
-          default:
-            nl_error(3, "%s: Invalid rep_type %d for func_code %d",
-              device->get_iname(), rep_type, function_code);
-            break;
-        }
+        this->handler = handler ? handler : RTU::modbus_device::RH_uint16;
+        rep_count = count;
         return;
       case 5: // Write Single Coil
       case 6: // Write Single Register
@@ -244,10 +235,7 @@ namespace DAS_IO { namespace Modbus {
             device->get_iname(), count, function_code);
           this->count = 1;
         }
-        if (rep_type != Rep_ignore && rep_type != Rep_auto)
-          nl_error(3, "%s: Invalid rep_type %d for function code %d",
-            device->get_iname(), rep_type, function_code);
-        this->rep_type = Rep_ignore;
+        this->handler = handler ? handler : RTU::modbus_device::RH_null;
         rep_count = 0;
         break;
       case 8: // Serial line diagnostics
@@ -273,11 +261,7 @@ namespace DAS_IO { namespace Modbus {
             req_state = Req_invalid;
             return;
         }
-        if (rep_type != Rep_uint16 && rep_type != Rep_auto) {
-          nl_error(3, "%s: Invalid rep_type %d for function code %d",
-            device->get_iname(), rep_type, function_code);
-        }
-        this->rep_type = Rep_uint16;
+        this->handler = handler ? handler : RTU::modbus_device::RH_uint16;
         rep_count = 1;
         break;
       case 15: // Write Multiple Coils
@@ -286,8 +270,7 @@ namespace DAS_IO { namespace Modbus {
         req_buf[6] = byte_count;
         req_sz = 9 + byte_count;
         rep_sz = 8;
-        nl_assert(rep_type == Rep_ignore || rep_type == Rep_auto);
-        this->rep_type = Rep_ignore;
+        this->handler = handler ? handler : RTU::modbus_device::RH_null;
         rep_count = 0;
         break;
       case 16: // Write Multiple Registers
@@ -296,6 +279,8 @@ namespace DAS_IO { namespace Modbus {
         req_buf[6] = byte_count;
         req_sz = 9 + byte_count;
         rep_sz = 8;
+        this->handler = handler ? handler : RTU::modbus_device::RH_null;
+        rep_count = 0;
         break;
       default:
         nl_error(2, "%s: modbus_req::setup: Unsupported function code: %d", function_code);
@@ -421,6 +406,10 @@ namespace DAS_IO { namespace Modbus {
     return s.c_str();
   }
   
+  void RTU::modbus_req::process_pdu() {
+    INVOKE_HANDLER(device,handler,this);
+  }
+  
   /**
    * Requires no arguments because this is only called on the
    * request, and the buffer and size are stored in the object.
@@ -494,26 +483,6 @@ namespace DAS_IO { namespace Modbus {
     }
     return (uchCRCHi << 8 | uchCRCLo) ;
   }
-
-  void RTU::modbus_req::process_pdu() {
-    switch (rep_type) {
-      case Rep_ignore: break;
-      case Rep_uint8:
-        MB->read_pdu((uint8_t*)dest, 0, rep_count);
-        break;
-      case Rep_uint16:
-        MB->read_pdu((uint16_t*)dest, 0, rep_count);
-        break;
-      case Rep_uint32:
-        MB->read_pdu((uint32_t*)dest, 0, rep_count);
-        break;
-      default:
-      case Rep_auto:
-        nl_error(3, "%s: Invalid rep_type %d in process_pdu",
-          device->get_iname(), rep_type);
-        break;
-    }
-  }
   
   /* This byte order comes from the Watlow driver, for which the documentation was very
    * sketchy. Modbus is supposed to use BigEndian, and it appears to do so on the
@@ -541,5 +510,15 @@ namespace DAS_IO { namespace Modbus {
   }
 
   RTU::modbus_device::~modbus_device() { }
+  
+  void RTU::modbus_device::RH_null(RTU::modbus_req *req) {}
+
+  void RTU::modbus_device::RH_uint8(RTU::modbus_req *req) {
+    MB->read_pdu((uint8_t*)(req->dest), 0, req->rep_count);
+  }
+
+  void RTU::modbus_device::RH_uint16(RTU::modbus_req *req) {
+    MB->read_pdu((uint16_t*)(req->dest), 0, req->rep_count);
+  }
 
 } } // Close out Modbus and DAS_IO namespaces

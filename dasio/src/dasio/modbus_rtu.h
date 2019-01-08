@@ -17,6 +17,9 @@ class RTU : public DAS_IO::Serial {
   public:
     class modbus_device;
     class modbus_req;
+    typedef void (modbus_device::*RepHandler)(modbus_req *req);
+    #define INVOKE_HANDLER(obj,method,req) ((obj)->*(method))(req)
+    
     /**
      * Initializes interface and opens the device.
      * @param iname Interface name for messages
@@ -32,6 +35,11 @@ class RTU : public DAS_IO::Serial {
      */
     RTU(const char *iname, int bufsz);
     ~RTU();
+        
+    /**
+     * @brief Thin wrapper on Interface::ProcessData() to handle update_tc_vmin()
+     */
+    bool ProcessData(int flag);
     /**
      * Parses the incoming response, checking that the incoming
      * address and function code match the pending request.
@@ -143,10 +151,10 @@ class RTU : public DAS_IO::Serial {
       public:
         typedef enum { Req_unconfigured, Req_addressed, Req_pre_crc,
           Req_ready, Req_invalid } req_state_t;
-        typedef enum { Rep_ignore, Rep_auto, Rep_uint8, Rep_uint16, Rep_uint32 } rep_type_t;
 
         modbus_req();
         ~modbus_req();
+        
         /**
          * @brief Performs initial setup of a modbus_req object
          * @param device The modbus_device this request pertains to
@@ -154,26 +162,34 @@ class RTU : public DAS_IO::Serial {
          * @param address The Modbus address
          * @param count the relevant count describing the transfer.
          * The interpretation of count is function_code dependent.
+         * @param dest A pointer to where data from the reply should be recorded
+         * @param handler Method used to extract data from the reply.
+         *
+         * If the handler is omitted, a likely default method will be
+         * selected.
          *
          * For function codes 1, 2 and 15 count is the number of single-bit
          * values to read or write. The number of bytes of data returned will
-         * be ceil(count/8).
+         * be ceil(count/8). The default handler is RH_uint8()
          *
          * For function codes 3 and 4, count is the number of 16-bit
-         * words to read.
+         * words to read. The default handler is RH_uint16()
          *
-         * For function codes 5 and 6, count must be 1.
+         * For function codes 5 and 6, count must be 1. The default
+         * handler is RH_null();
          *
          * For function code 8, count is the number of uint16_t in
          * the data portion of the request and reply. The address is the
          * subfunction code. For subfunction code 0, the data array
          * must be count words long. For subfunctions 10, 12, 13 and 14,
-         * count must be 1, and data[0] must be zero.
+         * count must be 1, and data[0] must be zero. The default
+         * handler is RH_uint16()
          *
          * For function code 16, count is the 16-bit words to write.
+         * The default handler is RH_null()
          */
         void setup(modbus_device *device, uint8_t function_code, uint16_t address,
-          uint16_t count, void *dest = 0, rep_type_t rep_type = Rep_auto);
+          uint16_t count, void *dest = 0, RepHandler handler = 0);
         /**
          * Fills in all the data for the specified request in byte order.
          * Request must be in state Req_addressed, and data must point to
@@ -224,7 +240,8 @@ class RTU : public DAS_IO::Serial {
         uint8_t devID;
         bool persistent; //* true for polls, false for cmds
         uint16_t rep_count;
-        rep_type_t rep_type;
+        // rep_type_t rep_type;
+        RepHandler handler;
         void *dest;
       protected:
         /**
@@ -249,6 +266,36 @@ class RTU : public DAS_IO::Serial {
          */
         modbus_device(const char *dev_name, uint8_t devID);
         virtual ~modbus_device();
+        
+        /**
+         * @brief Null Reply handler
+         * @param req The current request.
+         * 
+         * This handler is useful for commands that do not
+         * require any direct data record--say because the
+         * status of the device is already being reported.
+         */
+        void RH_null(modbus_req *req);
+        /**
+         * @brief Reply handler for simple byte-oriented data
+         * @param req The current request.
+         * 
+         * The request must be set up with an appropriate
+         * dest and rep_count. rep_count indicates the number
+         * of bytes to transfer to the destination.
+         */
+        void RH_uint8(modbus_req *req);
+        /**
+         * @brief Reply handler for simple 16 bit word-oriented data
+         * @param req The current request.
+         * 
+         * The request must be set up with an appropriate
+         * dest and rep_count. rep_count indicates the number
+         * of 16 bit words to transfer to the destination,
+         * swapping the bytes to match Modbus ordering.
+         */
+        void RH_uint16(modbus_req *req);
+        
 
         inline uint8_t get_devID() { return devID; }
         inline const char *get_iname() { return MB ? MB->get_iname() : "unknown"; }
