@@ -48,6 +48,9 @@ class not_tester : public DAS_IO::Interface {
 	inline bool not_str( const char *str_in, unsigned int len ) {
 		return DAS_IO::Interface::not_str(str_in, len);
 	}
+	inline bool not_bin(int nbits, uint16_t &word) {
+		return DAS_IO::Interface::not_bin(nbits, word);
+	}
 };
 
 /* Constructor method */
@@ -144,6 +147,9 @@ TEST(NotTest, NotIntTest) {
   EXPECT_FALSE(nt.not_int32(true_int));
   nt.seed_buf("NotInt");
   EXPECT_TRUE(nt.not_int32(true_int));
+  /* Haven't added the part yet where we build the number into an int64_t */
+  //nt.seed_buf("4294967296");
+  //EXPECT_TRUE(nt.not_int32(true_int));
 }
 
 /* This method tests functionality of not_ISO8601() */
@@ -238,6 +244,17 @@ TEST(NotTest, NotStrTest) {
   nt.seed_buf("March");
   EXPECT_TRUE(nt.not_str(comparison, len));
   EXPECT_EQ(nt.get_cp(),2);
+}
+
+/* Tests functionality of not_bin() */
+TEST(NotTest, NotBinTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  int nbits = 4;
+  uint16_t word = 0;
+  uint16_t answer = 15;
+  nt.seed_buf("1111");
+  EXPECT_FALSE(nt.not_bin(nbits,word));
+  EXPECT_EQ(word, answer);
 }
 
 /* Main method */
