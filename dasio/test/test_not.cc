@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <math.h>
 #include "dasio/interface.h"
 #include "nl.h"
 #include "msg.h"
@@ -32,6 +33,9 @@ class not_tester : public DAS_IO::Interface {
 	inline bool not_ISO8601(double &Time, bool w_hyphens) {
       return DAS_IO::Interface::not_ISO8601(Time, w_hyphens);
     }
+	inline bool not_nfloat(float *value, float NaNval) {
+		return DAS_IO::Interface::not_nfloat(value, NaNval);
+	}
 };
 
 /* Constructor method */
@@ -133,25 +137,43 @@ TEST(NotTest, NotIntTest) {
 /* This method tests functionality of not_ISO8601() */
 TEST(NotTest, NotISO8601Test) {
   not_tester nt = not_tester("NotTesterInstance",45);
-  nt.seed_buf("2019-01-07T:13:57:00.000");
+  nt.seed_buf("2019-01-07T13:57:00.000");
   bool w_hyphens = true;
   double time;
   double new_time;
   
   EXPECT_FALSE(nt.not_ISO8601(time, w_hyphens));
-  printf("\n>test output:\n");
   time_t proper_time = (int32_t) time;
-  printf(" >>time           is %d\n",time);
+  
+  /* printf("\n>test output:\n");
+  printf(" >>time           is %lf\n",time);
   printf(" >>(int32_t) time is %d\n",(int32_t) time);
-  printf(" >>proper_time    is %d\n",proper_time);
+  printf(" >>proper_time    is %d\n",proper_time); */
   
   struct tm * fixed_time = gmtime(&proper_time);
   char ptr[45];
-  strftime(ptr, 45, "%FT:%T.000", fixed_time);
-  printf(" >>fixed_time     is %s\n\n",ptr);
+  strftime(ptr, 45, "%FT%T.000", fixed_time);
+  //printf(" >>fixed_time     is %s\n\n",ptr);
   nt.seed_buf(ptr);
   
   EXPECT_FALSE(nt.not_ISO8601(new_time, w_hyphens));
+}
+
+/* This method tests functionality of not_nfloat() */
+TEST(NotTest, NotNFloatTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  float *test_float;
+  float NaNval = 99999;
+  float *NaNval_2 = (float*) 99999;
+  nt.seed_buf(",");
+  EXPECT_FALSE(nt.not_nfloat(test_float, NaNval));
+  nt.seed_buf("NaN");
+  EXPECT_FALSE(nt.not_nfloat(test_float, NaNval));
+  nt.seed_buf("45.45");
+  EXPECT_FALSE(nt.not_nfloat(test_float, NaNval));
+  nt.seed_buf("4545");
+  EXPECT_TRUE(nt.not_nfloat(test_float, NaNval));
+  EXPECT_FLOAT_EQ(*NaNval_2, *test_float);
 }
 
 /* Main method */
