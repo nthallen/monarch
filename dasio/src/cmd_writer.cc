@@ -84,7 +84,7 @@ bool Cmd_writer::app_input() {
       break;
     default:
       report_err("%s: Invalid response from server: '%s'",
-        iname, ascii_escape((const char *)buf, nc));
+        iname, ::ascii_escape((const char *)buf, nc));
       consume(nc);
       break;
   }

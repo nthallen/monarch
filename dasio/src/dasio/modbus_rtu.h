@@ -41,6 +41,10 @@ class RTU : public DAS_IO::Serial {
      */
     bool ProcessData(int flag);
     /**
+     * Provide hex output instead of ASCII
+     */
+    const char *ascii_escape();
+    /**
      * Parses the incoming response, checking that the incoming
      * address and function code match the pending request.
      *

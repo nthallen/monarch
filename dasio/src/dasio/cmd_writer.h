@@ -68,7 +68,6 @@ class Cmd_writer : public Client {
     static bool playback;
     static const int CMD_PREFIX_MAX = 10;
     static const int CMD_VERSION_MAX = 80;
-    static const int CMD_MAX_COMMAND_IN = 300;
     
   protected:
     bool version_verified;

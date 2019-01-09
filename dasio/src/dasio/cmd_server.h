@@ -7,9 +7,6 @@
 #include "tm_data_sndr.h"
 #include "loop.h"
 
-#define CMD_MAX_COMMAND_OUT 160 // Maximum command message output length
-#define CMD_MAX_COMMAND_IN 300  // Maximum command message input length
-
 class command_out_t;
 class cmdif_rd;
 

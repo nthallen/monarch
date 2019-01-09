@@ -10,9 +10,15 @@ namespace DAS_IO { namespace Modbus {
   
   RTU::RTU(const char *iname, int bufsz, const char *path)
       : DAS_IO::Serial(iname, bufsz, path, O_RDWR|O_NONBLOCK) {
+    flags |= gflag(0);
+    pending = 0;
+    cur_poll = polls.begin();
   }
   
   RTU::RTU(const char *iname, int bufsz) : DAS_IO::Serial(iname, bufsz) {
+    flags |= gflag(0);
+    pending = 0;
+    cur_poll = polls.begin();
   }
   
   RTU::~RTU() {}
@@ -21,7 +27,8 @@ namespace DAS_IO { namespace Modbus {
     if (DAS_IO::Interface::ProcessData(flag))
       return true;
     if (pending) {
-      update_tc_vmin(pending->rep_sz - nc);
+      // Temporarily disable, since it isn't working
+      // update_tc_vmin(pending->rep_sz - nc);
     }
     return false;
   }
@@ -47,7 +54,8 @@ namespace DAS_IO { namespace Modbus {
         } else {
           report_err("%s: CRC error on Modbus error message", iname);
         }
-        nl_error(0, "%s: Request was: %s", iname, pending->ascii_escape());
+        if (not_suppressing())
+          nl_error(0, "%s: Request was: %s", iname, pending->ascii_escape());
         consume(nc);
       } else if (!crc_ok(buf, pending->rep_sz)) {
         nl_error(2, "%s: %s on reply", iname,
@@ -70,6 +78,30 @@ namespace DAS_IO { namespace Modbus {
     return false;
   }
   
+  const char *RTU::ascii_escape() {
+    static std::string s;
+    char snbuf[8];
+    int i = 0;
+    s.clear();
+    if (nc > 0) {
+      s.append("Dev:");
+        s.append(RTU::modbus_req::byte_escape(buf[0]));
+      if (nc > 1) {
+        s.append(" Func:"); s.append(RTU::modbus_req::byte_escape(buf[1]));
+        if (nc > 3) {
+          s.append(" Addr:");
+            s.append(RTU::modbus_req::byte_escape(buf[2]));
+            s.append(RTU::modbus_req::byte_escape(buf[3]));
+          s.append(" Data:");
+          for (i = 4; i < nc; ++i) {
+            s.append(RTU::modbus_req::byte_escape(buf[i]));
+          }
+        }
+      }
+    }
+    return s.c_str();
+  }
+  
   /**
    * Terminates the current request/response and advances
    * to the next request.
@@ -78,11 +110,11 @@ namespace DAS_IO { namespace Modbus {
   bool RTU::protocol_timeout() {
     if (pending) {
       report_err("%s: Timeout awaiting reply", iname);
-      nl_error(0, "%s: Request was: %s", iname, pending->ascii_escape());
+      if (not_suppressing())
+        nl_error(0, "%s: Request was: %s", iname, pending->ascii_escape());
       consume(nc);
       dispose_pending();
     }
-    TO.Clear();
     process_requests();
     return false;
   }
@@ -150,10 +182,16 @@ namespace DAS_IO { namespace Modbus {
       }
       if (pending) {
         if (pending->get_req_state() == RTU::modbus_req::Req_ready) {
-          return iwrite((const char *)&pending->req_buf[0], pending->req_sz);
+          bool rv = iwrite((const char *)&pending->req_buf[0], pending->req_sz);
+          if (rv) TO.Clear();
+          else TO.Set(0, 500);
+          return rv;
         } else {
           dispose_pending();
         }
+      } else {
+        TO.Clear();
+        break;
       }
     }
     return false;
@@ -501,7 +539,7 @@ namespace DAS_IO { namespace Modbus {
   }
 
   RTU::modbus_device::modbus_device(
-      const char *dev_name, uint8_t dev_addr)
+      const char *dev_name, uint8_t devID)
       : dev_name(dev_name), devID(devID) {
     if (!dev_name) {
       nl_error(3, "Invalid modbus_device construction");

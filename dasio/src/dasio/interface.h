@@ -116,6 +116,12 @@ class Interface {
      * @return true if the error is fatal, false if it has been handled
      */
     virtual bool read_error(int my_errno);
+    /**
+     * Convert the entire input buffer to printable ASCII, providing
+     * appropriate escapes for non-printing characters. Subclasses where
+     * ASCII is not relevant can override with appropriate alternatives.
+     */
+    virtual const char *ascii_escape();
     
     /**
      * Called by ProcessData() when new data is available to the protocol level.
@@ -196,6 +202,10 @@ class Interface {
      * @param nchars number of characters to remove from front of buffer
      */
     void consume(int nchars);
+    /**
+     * @return true if we are displaying errors.
+     */
+    bool not_suppressing();
     /**
      * Reports a protocol error message, provided the qualified error count
      * is not above the limit. report_ok() will decrement the qualified

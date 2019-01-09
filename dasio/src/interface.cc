@@ -235,26 +235,34 @@ void Interface::consume(int nchars) {
   }
 }
 
+bool Interface::not_suppressing() {
+  return n_suppressed == 0 && ( qerr_threshold < 0 || n_errors < qerr_threshold );
+}
+
 void Interface::report_err( const char *fmt, ... ) {
   ++total_errors;
   // Here we're counting up only if there is a threshold and we're still under it
   if ( qerr_threshold >= 0 && n_errors < qerr_threshold )
     ++n_errors;
   // Here we display if there is no threshold or we're under the threshold
-  if ( n_suppressed == 0 && ( qerr_threshold < 0 || n_errors < qerr_threshold )) {
+  if ( not_suppressing() ) {
     va_list args;
 
     va_start(args, fmt);
     msgv( 2, fmt, args );
     va_end(args);
     if (nc)
-      nl_error(2, "%s: Input was: '%s'", iname, ascii_escape((char*)buf, nc) );
+      nl_error(2, "%s: Input was: '%s'", iname, ascii_escape() );
   } else {
     if ( !n_suppressed )
       nl_error(2, "%s: Error threshold reached: suppressing errors", iname);
     ++n_suppressed;
     ++total_suppressed;
   }
+}
+
+const char *Interface::ascii_escape() {
+  return ::ascii_escape((char*)buf, nc);
 }
 
 /**
