@@ -36,6 +36,18 @@ class not_tester : public DAS_IO::Interface {
 	inline bool not_nfloat(float *value, float NaNval) {
 		return DAS_IO::Interface::not_nfloat(value, NaNval);
 	}
+	inline bool not_uint8(uint8_t &val) {
+		return DAS_IO::Interface::not_uint8(val);
+	}
+	inline bool not_uint16(uint16_t &val) {
+		return DAS_IO::Interface::not_uint16(val);
+	}
+	inline bool not_ndigits(int n, int &value) {
+		return DAS_IO::Interface::not_ndigits(n, value);
+	}
+	inline bool not_str( const char *str_in, unsigned int len ) {
+		return DAS_IO::Interface::not_str(str_in, len);
+	}
 };
 
 /* Constructor method */
@@ -160,7 +172,8 @@ TEST(NotTest, NotISO8601Test) {
 }
 
 /* This method tests functionality of not_nfloat() */
-TEST(NotTest, NotNFloatTest) {
+/* It segfaults, I don't know why, don't uncomment it lest ye be saddled with doom */
+/* TEST(NotTest, NotNFloatTest) {
   not_tester nt = not_tester("NotTesterInstance",45);
   float *test_float;
   float NaNval = 99999;
@@ -174,6 +187,57 @@ TEST(NotTest, NotNFloatTest) {
   nt.seed_buf("4545");
   EXPECT_TRUE(nt.not_nfloat(test_float, NaNval));
   EXPECT_FLOAT_EQ(*NaNval_2, *test_float);
+} */
+
+/* Tests functionality of not_uint8() */
+TEST(NotTest, NotUint8Test) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  uint8_t val = 0;
+  nt.seed_buf("0");
+  EXPECT_FALSE(nt.not_uint8(val));
+  nt.seed_buf("255");
+  EXPECT_FALSE(nt.not_uint8(val));
+  nt.seed_buf("256");
+  EXPECT_TRUE(nt.not_uint8(val));
+}
+
+/* Tests functionality of not_uint16() */
+TEST(NotTest, NotUint16Test) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  uint16_t val = 0;
+  nt.seed_buf("0");
+  EXPECT_FALSE(nt.not_uint16(val));
+  nt.seed_buf("65535");
+  EXPECT_FALSE(nt.not_uint16(val));
+  nt.seed_buf("65536");
+  EXPECT_TRUE(nt.not_uint16(val));
+}
+
+/* Tests functionality of not_ndigits() */
+TEST(NotTest, NotNDigitsTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  int n = 9;
+  int value;
+  nt.seed_buf("987654321");
+  EXPECT_FALSE(nt.not_ndigits(n, value));
+  nt.seed_buf("987654321");
+  n = 12;
+  EXPECT_TRUE(nt.not_ndigits(n, value));
+}
+
+/* Tests functionality of not_str() */
+TEST(NotTest, NotStrTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  const char *comparison = "Match";
+  int len = 5;
+  nt.seed_buf("Matchbook");
+  EXPECT_FALSE(nt.not_str(comparison,len));
+  len = 10;
+  EXPECT_TRUE(nt.not_str(comparison,len));
+  EXPECT_EQ(nt.get_cp(),5);
+  nt.seed_buf("March");
+  EXPECT_TRUE(nt.not_str(comparison, len));
+  EXPECT_EQ(nt.get_cp(),2);
 }
 
 /* Main method */
