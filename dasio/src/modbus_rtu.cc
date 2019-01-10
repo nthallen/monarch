@@ -91,7 +91,9 @@ namespace DAS_IO { namespace Modbus {
       if (nc > 1) {
         s.append(" Func:"); s.append(RTU::modbus_req::byte_escape(buf[1]));
         if (func & 0x80) {
-          s.append(" Err: %02X Exc: %02X", buf[2], buf[3]);
+          s.append(" Err:");
+            s.append(RTU::modbus_req::byte_escape(buf[2]));
+            s.append(RTU::modbus_req::byte_escape(buf[3]));
           rep_sz = 6;
         } else if (func <= 4) {
           int NB = buf[2];
