@@ -248,12 +248,15 @@ bool DAS_IO::Interface::not_alt(const char *alt1, const char *alt2,
 
 bool DAS_IO::Interface::not_any(const char *alternatives) {
   if (cp < nc) {
+	//printf("\n");
     for (const char *alt = alternatives; *alt; ++alt) {
+	  //printf(" >>%d == %d?\n",buf[cp],*alt);
       if (buf[cp] == *alt) {
         ++cp;
         return false;
       }
     }
+	//printf("\n");
     report_err("%s: No match for alternatives '%s' at column %d", iname, alternatives, cp);
   }
   return true;

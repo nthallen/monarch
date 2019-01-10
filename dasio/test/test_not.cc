@@ -34,22 +34,31 @@ class not_tester : public DAS_IO::Interface {
       return DAS_IO::Interface::not_ISO8601(Time, w_hyphens);
     }
 	inline bool not_nfloat(float *value, float NaNval) {
-		return DAS_IO::Interface::not_nfloat(value, NaNval);
+	  return DAS_IO::Interface::not_nfloat(value, NaNval);
 	}
 	inline bool not_uint8(uint8_t &val) {
-		return DAS_IO::Interface::not_uint8(val);
+	  return DAS_IO::Interface::not_uint8(val);
 	}
 	inline bool not_uint16(uint16_t &val) {
-		return DAS_IO::Interface::not_uint16(val);
+	  return DAS_IO::Interface::not_uint16(val);
 	}
 	inline bool not_ndigits(int n, int &value) {
-		return DAS_IO::Interface::not_ndigits(n, value);
+	  return DAS_IO::Interface::not_ndigits(n, value);
 	}
 	inline bool not_str( const char *str_in, unsigned int len ) {
-		return DAS_IO::Interface::not_str(str_in, len);
+	  return DAS_IO::Interface::not_str(str_in, len);
 	}
 	inline bool not_bin(int nbits, uint16_t &word) {
-		return DAS_IO::Interface::not_bin(nbits, word);
+	  return DAS_IO::Interface::not_bin(nbits, word);
+	}
+	inline bool not_any(const char *alternatives) {
+	  return DAS_IO::Interface::not_any(alternatives);
+	}
+	inline bool not_alt(const char *alt1, const char *alt2, int &matched, const char *context) {
+	  return DAS_IO::Interface::not_alt(alt1, alt2, matched, context);
+	}
+	inline bool not_KW(char *KWbuf) {
+	  return DAS_IO::Interface::not_KW(KWbuf);
 	}
 };
 
@@ -255,6 +264,49 @@ TEST(NotTest, NotBinTest) {
   nt.seed_buf("1111");
   EXPECT_FALSE(nt.not_bin(nbits,word));
   EXPECT_EQ(word, answer);
+  nbits = 4;
+  nt.seed_buf("111A");
+  EXPECT_TRUE(nt.not_bin(nbits,word));
+}
+
+/* Tests functionality of not_any() */
+TEST(NotTest, NotAnyTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  const char *alternatives = "abcdefg";
+  nt.seed_buf("qxz");
+  EXPECT_TRUE(nt.not_any(alternatives));
+  alternatives = "abqdefg";
+  nt.seed_buf("qxz");
+  EXPECT_FALSE(nt.not_any(alternatives));
+  /* Dude the description of this function doesn't make any sense */
+}
+
+/* Tests functionality of not_alt() */
+TEST(NotTest, NotAltTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  nt.seed_buf("Dablerous");
+  const char *alt1 = "Plus";
+  const char *alt2 = "Minus";
+  int matched;
+  const char *context = "eh?";
+  EXPECT_TRUE(nt.not_alt(alt1, alt2, matched, context));
+  EXPECT_EQ(matched, 0);
+  alt1 = "Dable";
+  EXPECT_FALSE(nt.not_alt(alt1, alt2, matched, context));
+  EXPECT_EQ(matched, 1);
+  alt1 = "bisque";
+  alt2 = "Dablero";
+  EXPECT_FALSE(nt.not_alt(alt1, alt2, matched, context));
+  EXPECT_EQ(matched, 2);
+}
+
+/* Tests functionality of not_KW() */
+TEST(NotTest, NotKWTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  char *KWbuf;
+  nt.seed_buf(" ten, nine");
+  EXPECT_FALSE(nt.not_KW(KWbuf));
+  EXPECT_EQ(strcmp(KWbuf,"ten"),0);
 }
 
 /* Main method */
