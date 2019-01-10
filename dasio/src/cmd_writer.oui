@@ -1,8 +1,6 @@
 <package> cmd_writer
 <include> cmd_version
 <follow> cmd_version
-<include> appid
-<follow> appid
 
 <comment>
   oui package for Cmd_writer, applications that wish to

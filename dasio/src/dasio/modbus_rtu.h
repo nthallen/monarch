@@ -17,8 +17,8 @@ class RTU : public DAS_IO::Serial {
   public:
     class modbus_device;
     class modbus_req;
-    typedef void (modbus_device::*RepHandler)(modbus_req *req);
-    #define INVOKE_HANDLER(obj,method,req) ((obj)->*(method))(req)
+    typedef void (*RepHandler)(modbus_req *req, modbus_device *device,
+      RTU *MB);
     
     /**
      * Initializes interface and opens the device.
@@ -67,6 +67,20 @@ class RTU : public DAS_IO::Serial {
     void add_device(modbus_device *dev);
     
     /**
+     * @param devID The device ID to search for
+     * @return Pointer to the modbus_device object with the matching devID
+     * or zero if none was found.
+     *
+     * Searches the list of devices for the matching devID.
+     */
+    modbus_device *find_device(uint8_t devID);
+    
+    /**
+     * Adds the specified request to the command queue.
+     */
+    void enqueue_command(modbus_req *req);
+    
+    /**
      * Adds the specified request to the polls list and marks the
      * request as persistent.
      */
@@ -81,7 +95,6 @@ class RTU : public DAS_IO::Serial {
     
     /**
      * @param dest Where the data should be written
-     * @param offset The word offset within the data portion of the PDU
      * @param count The number of uint32_t words to copy
      *
      * Copies data from the data portion of the response PDU, which
@@ -92,11 +105,13 @@ class RTU : public DAS_IO::Serial {
      * know. Using this definition allows for consistent usage between
      * 8, 16, and 32-bit versions of this method.)
      */
-    void read_pdu(uint32_t *dest, int offset, int count);
+    void read_pdu_4321(uint32_t *dest, int count);
     /**
      * @param dest Where the data should be written
-     * @param offset The word offset within the data portion of the PDU
      * @param count The number of uint16_t words to copy
+     * @param offset The byte offset of the data portion of
+     * the PDU. Defaults to 3, which is valid for all function codes
+     * except 8.
      *
      * Copies data from the data portion of the response PDU, which
      * starts with the 5th byte of the overall MODBUS SERIAL LINE PDU.
@@ -106,11 +121,13 @@ class RTU : public DAS_IO::Serial {
      * know. Using this definition allows for consistent usage between
      * 8, 16, and 32-bit versions of this method.)
      */
-    void read_pdu(uint16_t *dest, int offset, int count);
+    void read_pdu(uint16_t *dest, int count, int offset = 3);
     /**
      * @param dest Where the data should be written
-     * @param offset The word offset within the data portion of the PDU
      * @param count The number of bytes to copy
+     * @param offset The byte offset of the data portion of
+     * the PDU. Defaults to 3, which is valid for all function codes
+     * except 8.
      *
      * Copies data from the data portion of the response PDU, which
      * starts with the 5th byte of the overall MODBUS SERIAL LINE PDU.
@@ -120,7 +137,7 @@ class RTU : public DAS_IO::Serial {
      * know. Using this definition allows for consistent usage between
      * 8, 16, 32-bit versions of this method.)
      */
-    void read_pdu(uint8_t *dest, int offset, int count);
+    void read_pdu(uint8_t *dest, int count, int offset = 3);
     
     modbus_req *new_modbus_req();
     std::deque<modbus_req *> polls;
@@ -197,7 +214,8 @@ class RTU : public DAS_IO::Serial {
         /**
          * Fills in all the data for the specified request in byte order.
          * Request must be in state Req_addressed, and data must point to
-         * as much data as is required by the request.
+         * as much data as is required by the request. On success, the
+         * request state will be Req_ready.
          * @param data Pointer to data
          */
         void setup_data(uint8_t *data);
@@ -205,7 +223,8 @@ class RTU : public DAS_IO::Serial {
          * Fills in all the data for the specified request in word order,
          * i.e. with the bytes in each word swapped.
          * Request must be in state Req_addressed, and data must point to
-         * as much data as is required by the request.
+         * as much data as is required by the request. On success, the
+         * request state will be Req_ready.
          * @param data Pointer to data
          */
         void setup_data(uint16_t *data);
@@ -226,8 +245,8 @@ class RTU : public DAS_IO::Serial {
          * @return the 16-bit CRC code
          */
         uint16_t crc(uint8_t *buf, uint16_t nb);
-        static void float_swap(uint8_t *dest, uint8_t *src);
-        static void word_swap(uint8_t *dest, uint8_t *src);
+        static void swap32_4321(uint8_t *dest, uint8_t *src);
+        static void swap16(uint8_t *dest, uint8_t *src);
         /**
          * Called from RTU::modbus_device::new_modbus_req().
          * @param MB Pointer to the Modbus::RTU object
@@ -274,32 +293,53 @@ class RTU : public DAS_IO::Serial {
         /**
          * @brief Null Reply handler
          * @param req The current request.
+         * @param dev The modbus_device
+         * @param MB The Modbus::RTU interface
          * 
          * This handler is useful for commands that do not
          * require any direct data record--say because the
          * status of the device is already being reported.
          */
-        void RH_null(modbus_req *req);
+        static void RH_null(modbus_req *req, modbus_device *dev,
+          RTU *MB);
         /**
          * @brief Reply handler for simple byte-oriented data
          * @param req The current request.
+         * @param dev The modbus_device
+         * @param MB The Modbus::RTU interface
          * 
          * The request must be set up with an appropriate
          * dest and rep_count. rep_count indicates the number
          * of bytes to transfer to the destination.
          */
-        void RH_uint8(modbus_req *req);
+        static void RH_uint8(modbus_req *req, modbus_device *dev,
+          RTU *MB);
         /**
          * @brief Reply handler for simple 16 bit word-oriented data
          * @param req The current request.
+         * @param dev The modbus_device
+         * @param MB The Modbus::RTU interface
          * 
          * The request must be set up with an appropriate
          * dest and rep_count. rep_count indicates the number
          * of 16 bit words to transfer to the destination,
          * swapping the bytes to match Modbus ordering.
          */
-        void RH_uint16(modbus_req *req);
-        
+        static void RH_uint16(modbus_req *req, modbus_device *dev,
+          RTU *MB);
+        /**
+         * @brief Reply handler for 32 bit word-oriented data
+         * @param req The current request.
+         * @param dev The modbus_device
+         * @param MB The Modbus::RTU interface
+         * 
+         * The request must be set up with an appropriate
+         * dest and rep_count. rep_count indicates the number
+         * of 16 bit words to transfer to the destination,
+         * swapping the bytes to match Modbus ordering.
+         */
+        static void RH_uint32(modbus_req *req, modbus_device *dev,
+          RTU *MB);
 
         inline uint8_t get_devID() { return devID; }
         inline const char *get_iname() { return MB ? MB->get_iname() : "unknown"; }

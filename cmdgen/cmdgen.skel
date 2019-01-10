@@ -5,6 +5,7 @@
 #include <unistd.h>
 #ifndef __QNXNTO__
   #include "dasio/cmd_server.h"
+  #include "dasio/cmd_writer.h"
 #endif
 #include "cmdalgo.h"
 #include "nl.h"
@@ -634,7 +635,7 @@ static void con_cleanup( void ) {
   }
 #endif /* PHOTON_INTERFACE */
 
-#if NCT_INTERFACE
+#ifdef NCT_INTERFACE
   static int nct_win;
   static int nct_col;
 
@@ -1363,7 +1364,8 @@ int cmd_check(cmd_state *s) {
 
   #if PHOTON_INTERFACE
     static void *nlph_interact(void *arg) {
-      do cmd_interact(); while ( cgc_forwarding != 0 );
+      // do cmd_interact(); while ( cgc_forwarding != 0 );
+      cmd_interact();
       PtEnter(0);
       PtExit(0);
       return NULL;
@@ -1400,7 +1402,8 @@ int cmd_check(cmd_state *s) {
         #ifdef NCT_INTERFACE
           nct_win = nct_cmdclt_init();
         #endif
-        do cmd_interact(); while ( cgc_forwarding != 0 );
+        // do cmd_interact(); while ( cgc_forwarding != 0 );
+        cmd_interact();
         return cgc_exit_code;
       #endif
     #else
