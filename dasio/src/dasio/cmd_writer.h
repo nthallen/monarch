@@ -66,9 +66,9 @@ class Cmd_writer : public Client {
     static Cmd_writer *Cmd;
     // static Cmd_quit *Quit;
     static bool playback;
+    static const char *CmdServerNode;
     static const int CMD_PREFIX_MAX = 10;
     static const int CMD_VERSION_MAX = 80;
-    static const int CMD_MAX_COMMAND_IN = 300;
     
   protected:
     bool version_verified;
@@ -80,6 +80,11 @@ class Cmd_writer : public Client {
 };
 
 }
+
+/**
+ * Command line options parser for DAS_IO::Cmd_writer
+ */
+void cic_options(int argc, char **argv);
 
 /**
  * If not in playback mode,

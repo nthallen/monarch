@@ -4,6 +4,9 @@
 
 #include "socket.h"
 
+#define CMD_MAX_COMMAND_IN 300  // Maximum command message input length
+#define CMD_MAX_COMMAND_OUT 160 // Maximum command message output length
+
 namespace DAS_IO {
   
   class Client : public Socket {

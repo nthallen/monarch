@@ -44,14 +44,14 @@ class Serial : public Interface {
      */
     void setup( int baud, int bits, char par, int stopbits,
       int min, int time );
-    /** Buffer to hold serial parameters */
-    termios termios_p;
-    class Modbus;
-  protected:
     /**
      * Invokes fillbuf() until there is no input remaining.
      */
     void flush_input();
+    /** Buffer to hold serial parameters */
+    termios termios_p;
+    class Modbus;
+  protected:
     /**
      * Updates the VMIN parameter in tc_setattr. This can help to minimize the
      * number of context switches required before meaningful action can occur.

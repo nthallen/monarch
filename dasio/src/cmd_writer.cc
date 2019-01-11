@@ -1,6 +1,7 @@
 /** @file cmd_writer.cc */
 #include <string.h>
 #include <stdarg.h>
+#include <unistd.h>
 #include "dasio/cmd_writer.h"
 #include "dasio/appid.h"
 #include "dasio/cmd_version.h"
@@ -13,6 +14,7 @@ namespace DAS_IO {
 
 Cmd_writer *Cmd_writer::Cmd = 0;
 bool Cmd_writer::playback = false;
+const char *Cmd_writer::CmdServerNode;
 
 Cmd_writer::Cmd_writer(const char *iname)
       : Client(iname, 128, "cmd", "server") {
@@ -84,7 +86,7 @@ bool Cmd_writer::app_input() {
       break;
     default:
       report_err("%s: Invalid response from server: '%s'",
-        iname, ascii_escape((const char *)buf, nc));
+        iname, ::ascii_escape((const char *)buf, nc));
       consume(nc);
       break;
   }
@@ -173,10 +175,36 @@ void Cmd_writer::settime(int32_t time) {
 
 }
 
+void cic_options(int argcc, char **argvv) {
+  int c;
+  extern char *opt_string;
+
+  optind = OPTIND_RESET;
+  opterr = 0;
+  if (argcc > 0) do {
+    c = getopt(argcc,argvv,opt_string);
+    switch (c) {
+      case 'C':
+        DAS_IO::Cmd_writer::CmdServerNode = optarg;
+        break;
+      case 'p':
+        DAS_IO::Cmd_writer::playback = 1;
+        break;
+      case '?':
+        nl_error(3, "Unknown option -%c", optopt);
+      default:
+        break;
+    }
+  } while (c != -1);
+  opterr = 1;
+}
+
 bool cic_init() {
-  if (DAS_IO::Cmd_writer::Cmd || DAS_IO::Cmd_writer::playback)
+  if (DAS_IO::Cmd_writer::Cmd)
     return false;
   DAS_IO::Cmd_writer *cmd = new DAS_IO::Cmd_writer("Cmd");
+  if (DAS_IO::Cmd_writer::playback)
+    return false;
   cmd->connect();
   cmd->wait();
   return ! cmd->is_negotiated();
@@ -184,7 +212,7 @@ bool cic_init() {
 
 int ci_sendcmd(DAS_IO::Cmd_Mode mode, const char *cmdtext) {
   if (DAS_IO::Cmd_writer::Cmd == 0) {
-    if (cic_init()) return true;
+    if (cic_init()) return CMDREP_QUIT;
   }
   return DAS_IO::Cmd_writer::Cmd->sendcmd(mode, cmdtext);
 }
