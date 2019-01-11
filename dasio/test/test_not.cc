@@ -60,6 +60,12 @@ class not_tester : public DAS_IO::Interface {
 	inline bool not_KW(char *KWbuf) {
 	  return DAS_IO::Interface::not_KW(KWbuf);
 	}
+	inline bool not_fix(int fix, int16_t &val) {
+	  return DAS_IO::Interface::not_fix(fix, val);
+	}
+	inline bool not_double(double &val) {
+	  return DAS_IO::Interface::not_double(val);
+	}
 };
 
 /* Constructor method */
@@ -307,6 +313,26 @@ TEST(NotTest, NotKWTest) {
   nt.seed_buf(" ten, nine");
   EXPECT_FALSE(nt.not_KW(KWbuf));
   EXPECT_EQ(strcmp(KWbuf,"ten"),0);
+}
+
+/* Tests functionality of not_fix() */
+TEST(NotTest, NotFixTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  int fix = 2;
+  int16_t val;
+  nt.seed_buf("23.5");
+  EXPECT_FALSE(nt.not_fix(fix, val));
+  EXPECT_EQ(val, 235);
+}
+
+/* Tests functionality of not_double() */
+TEST(NotTest, NotDoubleTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  double val;
+  nt.seed_buf("98.8");
+  EXPECT_FALSE(nt.not_double(val));
+  nt.seed_buf("dablus");
+  EXPECT_TRUE(nt.not_double(val));
 }
 
 /* Main method */
