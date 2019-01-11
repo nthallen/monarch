@@ -155,7 +155,7 @@ TEST(NotTest, NotHexTest) {
 }
 
 /* This method tests functionality of not_int32() */
-TEST(NotTest, NotIntTest) {
+TEST(NotTest, NotInt32Test) {
   not_tester nt = not_tester("NotTesterInstance",15);
   nt.seed_buf("233");
   int true_int;
