@@ -331,8 +331,10 @@ TEST(NotTest, NotDoubleTest) {
   double val;
   nt.seed_buf("98.8");
   EXPECT_FALSE(nt.not_double(val));
+  EXPECT_EQ(nt.get_nc(),4);
   nt.seed_buf("dablus");
   EXPECT_TRUE(nt.not_double(val));
+  EXPECT_EQ(nt.get_nc(),6);
 }
 
 /* Main method */
