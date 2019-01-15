@@ -20,6 +20,7 @@
 #include <strings.h>
 #include <stdio.h>
 #include <regex.h>
+#include <stdint.h>
 #include "dasio/interface.h"
 #include "dasio/ascii_escape.h"
 #include "nl.h"
@@ -247,12 +248,15 @@ bool DAS_IO::Interface::not_alt(const char *alt1, const char *alt2,
 
 bool DAS_IO::Interface::not_any(const char *alternatives) {
   if (cp < nc) {
+	//printf("\n");
     for (const char *alt = alternatives; *alt; ++alt) {
+	  //printf(" >>%d == %d?\n",buf[cp],*alt);
       if (buf[cp] == *alt) {
         ++cp;
         return false;
       }
     }
+	//printf("\n");
     report_err("%s: No match for alternatives '%s' at column %d", iname, alternatives, cp);
   }
   return true;
@@ -292,8 +296,8 @@ bool DAS_IO::Interface::not_ndigits(int n, int &value) {
   return false;
 }
 
-bool DAS_IO::Interface::not_uint16(uint16_t &val) {
-  val = 0;
+bool DAS_IO::Interface::not_uint16(uint16_t &output_val) {
+  uint32_t val = 0;
   if (buf[cp] == '-') {
     if (isdigit(buf[++cp])) {
       while (isdigit(buf[cp])) {
@@ -316,6 +320,11 @@ bool DAS_IO::Interface::not_uint16(uint16_t &val) {
       report_err("%s: not_uint16: no digits at col %d", iname, cp);
     return true;
   }
+  if (val > 65535) {
+	report_err("%s: value exceeds uint16_t range at col %d", iname, cp--);
+	return true;
+  }
+  output_val = val;
   return false;
 }
 
@@ -368,7 +377,7 @@ bool DAS_IO::Interface::not_uint8(uint8_t &val) {
   uint16_t sval;
   if (not_uint16(sval)) return true;
   if (sval > 255) {
-    report_err("%s: uint8_t value out of range: %u", iname, sval);
+    report_err("%s: uint8_t value out of range: %u at col %d", iname, sval, cp--);
     return true;
   }
   val = sval;

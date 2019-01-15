@@ -1,5 +1,8 @@
 /** @file test_not.cc */
 #include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+#include <math.h>
 #include "dasio/interface.h"
 #include "nl.h"
 #include "msg.h"
@@ -27,6 +30,42 @@ class not_tester : public DAS_IO::Interface {
     inline bool not_int32(int &val) {
       return DAS_IO::Interface::not_int32(val);
     }
+	inline bool not_ISO8601(double &Time, bool w_hyphens) {
+      return DAS_IO::Interface::not_ISO8601(Time, w_hyphens);
+    }
+	inline bool not_nfloat(float *value, float NaNval) {
+	  return DAS_IO::Interface::not_nfloat(value, NaNval);
+	}
+	inline bool not_uint8(uint8_t &val) {
+	  return DAS_IO::Interface::not_uint8(val);
+	}
+	inline bool not_uint16(uint16_t &val) {
+	  return DAS_IO::Interface::not_uint16(val);
+	}
+	inline bool not_ndigits(int n, int &value) {
+	  return DAS_IO::Interface::not_ndigits(n, value);
+	}
+	inline bool not_str( const char *str_in, unsigned int len ) {
+	  return DAS_IO::Interface::not_str(str_in, len);
+	}
+	inline bool not_bin(int nbits, uint16_t &word) {
+	  return DAS_IO::Interface::not_bin(nbits, word);
+	}
+	inline bool not_any(const char *alternatives) {
+	  return DAS_IO::Interface::not_any(alternatives);
+	}
+	inline bool not_alt(const char *alt1, const char *alt2, int &matched, const char *context) {
+	  return DAS_IO::Interface::not_alt(alt1, alt2, matched, context);
+	}
+	inline bool not_KW(char *KWbuf) {
+	  return DAS_IO::Interface::not_KW(KWbuf);
+	}
+	inline bool not_fix(int fix, int16_t &val) {
+	  return DAS_IO::Interface::not_fix(fix, val);
+	}
+	inline bool not_double(double &val) {
+	  return DAS_IO::Interface::not_double(val);
+	}
 };
 
 /* Constructor method */
@@ -116,13 +155,186 @@ TEST(NotTest, NotHexTest) {
 }
 
 /* This method tests functionality of not_int32() */
-TEST(NotTest, NotIntTest) {
+TEST(NotTest, NotInt32Test) {
   not_tester nt = not_tester("NotTesterInstance",15);
   nt.seed_buf("233");
   int true_int;
   EXPECT_FALSE(nt.not_int32(true_int));
   nt.seed_buf("NotInt");
   EXPECT_TRUE(nt.not_int32(true_int));
+  /* Haven't added the part yet where we build the number into an int64_t */
+  //nt.seed_buf("4294967296");
+  //EXPECT_TRUE(nt.not_int32(true_int));
+}
+
+/* This method tests functionality of not_ISO8601() */
+TEST(NotTest, NotISO8601Test) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  nt.seed_buf("2019-01-07T13:57:00.000");
+  bool w_hyphens = true;
+  double time;
+  double new_time;
+  
+  EXPECT_FALSE(nt.not_ISO8601(time, w_hyphens));
+  time_t proper_time = (int32_t) time;
+  
+  /* printf("\n>test output:\n");
+  printf(" >>time           is %lf\n",time);
+  printf(" >>(int32_t) time is %d\n",(int32_t) time);
+  printf(" >>proper_time    is %d\n",proper_time); */
+  
+  struct tm * fixed_time = gmtime(&proper_time);
+  char ptr[45];
+  strftime(ptr, 45, "%FT%T.000", fixed_time);
+  //printf(" >>fixed_time     is %s\n\n",ptr);
+  nt.seed_buf(ptr);
+  
+  EXPECT_FALSE(nt.not_ISO8601(new_time, w_hyphens));
+}
+
+/* This method tests functionality of not_nfloat() */
+/* It segfaults, I don't know why, don't uncomment it lest ye be saddled with doom */
+/* TEST(NotTest, NotNFloatTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  float *test_float;
+  float NaNval = 99999;
+  float *NaNval_2 = (float*) 99999;
+  nt.seed_buf(",");
+  EXPECT_FALSE(nt.not_nfloat(test_float, NaNval));
+  nt.seed_buf("NaN");
+  EXPECT_FALSE(nt.not_nfloat(test_float, NaNval));
+  nt.seed_buf("45.45");
+  EXPECT_FALSE(nt.not_nfloat(test_float, NaNval));
+  nt.seed_buf("4545");
+  EXPECT_TRUE(nt.not_nfloat(test_float, NaNval));
+  EXPECT_FLOAT_EQ(*NaNval_2, *test_float);
+} */
+
+/* Tests functionality of not_uint8() */
+TEST(NotTest, NotUint8Test) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  uint8_t val = 0;
+  nt.seed_buf("0");
+  EXPECT_FALSE(nt.not_uint8(val));
+  nt.seed_buf("255");
+  EXPECT_FALSE(nt.not_uint8(val));
+  nt.seed_buf("256");
+  EXPECT_TRUE(nt.not_uint8(val));
+}
+
+/* Tests functionality of not_uint16() */
+TEST(NotTest, NotUint16Test) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  uint16_t val = 0;
+  nt.seed_buf("0");
+  EXPECT_FALSE(nt.not_uint16(val));
+  nt.seed_buf("65535");
+  EXPECT_FALSE(nt.not_uint16(val));
+  nt.seed_buf("65536");
+  EXPECT_TRUE(nt.not_uint16(val));
+}
+
+/* Tests functionality of not_ndigits() */
+TEST(NotTest, NotNDigitsTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  int n = 9;
+  int value;
+  nt.seed_buf("987654321");
+  EXPECT_FALSE(nt.not_ndigits(n, value));
+  nt.seed_buf("987654321");
+  n = 12;
+  EXPECT_TRUE(nt.not_ndigits(n, value));
+}
+
+/* Tests functionality of not_str() */
+TEST(NotTest, NotStrTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  const char *comparison = "Match";
+  int len = 5;
+  nt.seed_buf("Matchbook");
+  EXPECT_FALSE(nt.not_str(comparison,len));
+  len = 10;
+  EXPECT_TRUE(nt.not_str(comparison,len));
+  EXPECT_EQ(nt.get_cp(),5);
+  nt.seed_buf("March");
+  EXPECT_TRUE(nt.not_str(comparison, len));
+  EXPECT_EQ(nt.get_cp(),2);
+}
+
+/* Tests functionality of not_bin() */
+TEST(NotTest, NotBinTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  int nbits = 4;
+  uint16_t word = 0;
+  uint16_t answer = 15;
+  nt.seed_buf("1111");
+  EXPECT_FALSE(nt.not_bin(nbits,word));
+  EXPECT_EQ(word, answer);
+  nbits = 4;
+  nt.seed_buf("111A");
+  EXPECT_TRUE(nt.not_bin(nbits,word));
+}
+
+/* Tests functionality of not_any() */
+TEST(NotTest, NotAnyTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  const char *alternatives = "abcdefg";
+  nt.seed_buf("qxz");
+  EXPECT_TRUE(nt.not_any(alternatives));
+  alternatives = "abqdefg";
+  nt.seed_buf("qxz");
+  EXPECT_FALSE(nt.not_any(alternatives));
+  /* Dude the description of this function doesn't make any sense */
+}
+
+/* Tests functionality of not_alt() */
+TEST(NotTest, NotAltTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  nt.seed_buf("Dablerous");
+  const char *alt1 = "Plus";
+  const char *alt2 = "Minus";
+  int matched;
+  const char *context = "eh?";
+  EXPECT_TRUE(nt.not_alt(alt1, alt2, matched, context));
+  EXPECT_EQ(matched, 0);
+  alt1 = "Dable";
+  EXPECT_FALSE(nt.not_alt(alt1, alt2, matched, context));
+  EXPECT_EQ(matched, 1);
+  alt1 = "bisque";
+  alt2 = "Dablero";
+  EXPECT_FALSE(nt.not_alt(alt1, alt2, matched, context));
+  EXPECT_EQ(matched, 2);
+}
+
+/* Tests functionality of not_KW() */
+TEST(NotTest, NotKWTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  char *KWbuf;
+  nt.seed_buf(" ten, nine");
+  EXPECT_FALSE(nt.not_KW(KWbuf));
+  EXPECT_EQ(strcmp(KWbuf,"ten"),0);
+}
+
+/* Tests functionality of not_fix() */
+TEST(NotTest, NotFixTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  int fix = 2;
+  int16_t val;
+  nt.seed_buf("23.5");
+  EXPECT_FALSE(nt.not_fix(fix, val));
+  EXPECT_EQ(val, 235);
+}
+
+/* Tests functionality of not_double() */
+TEST(NotTest, NotDoubleTest) {
+  not_tester nt = not_tester("NotTesterInstance",45);
+  double val;
+  nt.seed_buf("98.8");
+  EXPECT_FALSE(nt.not_double(val));
+  EXPECT_EQ(nt.get_nc(),4);
+  nt.seed_buf("dablus");
+  EXPECT_TRUE(nt.not_double(val));
+  EXPECT_EQ(nt.get_nc(),6);
 }
 
 /* Main method */
