@@ -47,8 +47,8 @@ void new_interface( char *if_name ) {
       cmd_class = "cmdif_wr";
       new_if->if_type = IFT_WRITE;
     }
-  } else if ( stricmp( new_if->if_name, "subbus" ) == 0 ||
-          stricmp( new_if->if_name, "subbusd" ) == 0 ) {
+  } else if ( strcasecmp( new_if->if_name, "subbus" ) == 0 ||
+          strcasecmp( new_if->if_name, "subbusd" ) == 0 ) {
     new_if->if_type = IFT_SUBBUS;
     fprintf( ofile, "#include \"subbus.h\"\n" );
   } else {

@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 add_definitions( -D_POSIX_SOURCE=1 -D_XOPEN_SOURCE=500 )
 
+if (1)
 # Download and unpack googletest at configure time
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
 execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
@@ -31,6 +32,8 @@ if(CMAKE_VERSION VERSION_LESS 2.8.11)
                         "${gmock_SOURCE_DIR}/include")
 endif()
 
+endif(0) # google test
+
 add_subdirectory("${CMAKE_SOURCE_DIR}/dasio/src"
                  "${CMAKE_BINARY_DIR}/dasio/src")
 add_subdirectory("${CMAKE_SOURCE_DIR}/dasio/test"
@@ -39,3 +42,5 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/nl/src"
                  "${CMAKE_BINARY_DIR}/nl/src")
 add_subdirectory("${CMAKE_SOURCE_DIR}/tm/src"
                  "${CMAKE_BINARY_DIR}/tm/src")
+add_subdirectory("${CMAKE_SOURCE_DIR}/cmdgen"
+                 "${CMAKE_BINARY_DIR}/cmdgen")

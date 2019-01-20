@@ -24,14 +24,7 @@
  *
  */
 #include <stdio.h>
-#include "config.h"
 
-#if HAVE_STRCASECMP
-  #if ! HAVE_STRICMP
-    #define stricmp strcasecmp
-  #endif
-#endif
- 
 #define TABSIZE 4
 struct vtyp {
   struct vtyp *next;

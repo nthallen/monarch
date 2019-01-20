@@ -45,7 +45,7 @@ struct nt_t *non_terminal(char *name) {
   int c;
   
   for (ntp = NULL, nt = non_terms; nt != NULL; ntp = nt, nt = nt->next)
-    if ((c = stricmp(name, nt->name)) <= 0) break;
+    if ((c = strcasecmp(name, nt->name)) <= 0) break;
   if (nt != NULL && c == 0) return(nt);
   ntn = new_memory(sizeof(struct nt_t));
   ntn->next = nt;

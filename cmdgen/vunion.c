@@ -98,7 +98,7 @@ void get_vsymbol(struct sub_item_t *si, char *fmt, char *prompt) {
   int i, j;
   
   for (i = 0; i < N_VARFMTS; i++)
-    if (stricmp(fmt, varfmts[i].fmt) == 0) break;
+    if (strcasecmp(fmt, varfmts[i].fmt) == 0) break;
   if (i >= N_VARFMTS) compile_error(3, "Illegal Variable Format %s", fmt);
   else {
     varfmts[i].used = 1;

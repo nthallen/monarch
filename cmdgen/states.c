@@ -129,7 +129,7 @@ void add_rule_pos(state *st, unsigned short rnum, unsigned short pos) {
     c = 1;
     if (item_type == SI_WORD) {
       for (; tl != NULL; tlp = tl, tl = tl->next) {
-        c = stricmp(si->u.text, tl->term->u.text);
+        c = strcasecmp(si->u.text, tl->term->u.text);
         if (c <= 0) break;
       }
     } else if (tl != NULL) {
@@ -231,7 +231,7 @@ void eval_states(void) {
       for (rl = st->rules; rl != NULL; rl = rl->next) {
         if (rl->si->type == tl->term->type
             && (tl->term->type != SI_WORD
-                || stricmp(rl->si->u.text, tl->term->u.text) == 0))
+                || strcasecmp(rl->si->u.text, tl->term->u.text) == 0))
           add_rule_pos(nst, rl->rule_number, rl->position+1);
       }
       nst = reduce_state(nst);

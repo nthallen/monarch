@@ -7,7 +7,7 @@ add_library(dasio interface.cc ascii_escape.cc not_parsed.cc serial.cc
   cmd_writer.cc cmd_version.cc cmd_version_def.cc
   cic_transmit.cc cmd_server.cc quit.cc)
 target_include_directories(dasio PUBLIC
-  $(CMAKE_SOURCE_DIR)/dasio/src
+  ${CMAKE_SOURCE_DIR}/dasio/src
   ${CMAKE_SOURCE_DIR}/tm/src
   ${CMAKE_SOURCE_DIR}/nl/src
   ${CMAKE_SOURCE_DIR}/cmdgen
