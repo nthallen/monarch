@@ -154,7 +154,7 @@ void output_includes(void) {
 }
 
 static int compar(const void *a, const void *b) {
-  return(stricmp(*((const char **)a), *((const char **)b)));
+  return(strcasecmp(*((const char **)a), *((const char **)b)));
 }
 
 static void output_sorted(void) {

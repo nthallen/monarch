@@ -10,7 +10,7 @@
 #ifndef _OUI_H
 #define _OUI_H
 
-#include "config.h"
+// #include "config.h"
 
 #if HAVE_STRCASECMP
   #if ! HAVE_STRICMP

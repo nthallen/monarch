@@ -33,7 +33,7 @@ package *find_package(const char *pkgname) {
   if (pkgname == 0 || pkgname[0] == '\0')
     compile_error(4, "Back pkgname in find_package");
   for (lf = global_defs.packages.first; lf != 0; lf = lf->next) {
-    if (stricmp(pkgname, lf->pkg->name) == 0)
+    if (strcasecmp(pkgname, lf->pkg->name) == 0)
       return lf->pkg;
   }
   pkg = new_memory(sizeof(package));

@@ -44,3 +44,5 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/tm/src"
                  "${CMAKE_BINARY_DIR}/tm/src")
 add_subdirectory("${CMAKE_SOURCE_DIR}/cmdgen"
                  "${CMAKE_BINARY_DIR}/cmdgen")
+add_subdirectory("${CMAKE_SOURCE_DIR}/oui/src"
+                 "${CMAKE_BINARY_DIR}/oui/src")
