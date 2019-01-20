@@ -2,6 +2,7 @@
  * $Log$
  */
 #include <string.h>
+#include <strings.h>
 #include "nl.h"
 #include "compiler.h"
 #include "ouidefs.h"
