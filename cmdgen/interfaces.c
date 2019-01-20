@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include "cmdgen.h"
 #include "compiler.h"
 #include "nl.h"
