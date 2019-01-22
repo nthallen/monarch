@@ -135,13 +135,25 @@ static short ioflags;
 #ifdef QNX_CONS
   #include "nl_cons.h"
 #elif defined SNAFU_CURSES
-  #include <ncurses/curses.h>
+  #ifdef CURSES_HAVE_NCURSES_CURSES_H
+    #include <ncurses/curses.h>
+  #elif defined(CURSES_HAVE_NCURSES_H)
+    #include <ncurses.h>
+  #else
+    #error Unable to locate curses include files
+  #endif
   #include "scurses.h"
 #elif defined PHOTON_INTERFACE
   #include <Pt.h>
   #include "nlphcmd.h"
 #elif defined NCT_INTERFACE
-  #include <ncurses/curses.h>
+  #ifdef CURSES_HAVE_NCURSES_CURSES_H
+    #include <ncurses/curses.h>
+  #elif defined(CURSES_HAVE_NCURSES_H)
+    #include <ncurses.h>
+  #else
+    #error Unable to locate curses include files
+  #endif
   #include "nctable.h"
 #endif
 

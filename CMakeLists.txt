@@ -30,9 +30,9 @@ add_subdirectory("${CMAKE_BINARY_DIR}/googletest-src"
 if(CMAKE_VERSION VERSION_LESS 2.8.11)
     include_directories("${gtest_SOURCE_DIR}/include"
                         "${gmock_SOURCE_DIR}/include")
-endif()
+endif(CMAKE_VERSION VERSION_LESS 2.8.11)
 
-endif(0) # google test
+endif(1) # google test
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/dasio/src"
                  "${CMAKE_BINARY_DIR}/dasio/src")
