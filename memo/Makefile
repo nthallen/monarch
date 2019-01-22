@@ -1,14 +1,12 @@
 MEMO_OBJ=memo.o memooui.o
 CFLAGS=-I/usr/local/include -Wall
-LDFLAGS=-L/usr/local/lib "-Wl,-rpath /usr/local/lib"
-LIBS=-ltm -lnort
+LDFLAGS=-L/usr/local/lib
+LIBS=-ltm -lnl
 memo : $(MEMO_OBJ)
 	$(CC) $(LDFLAGS) -o memo $(MEMO_OBJ) $(LIBS)
-	usemsg memo memooui.c
-	/usr/local/sbin/promote memo
-memo.o : memo.c memo.h
-memooui.c : memo.oui
-	oui -o memooui.c memo.oui
+memo.o : memo.cc memo.h
+memooui.cc : memo.oui
+	oui -o memooui.cc memo.oui
 
 .PHONY : install clean all
 all : memo
