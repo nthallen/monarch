@@ -11,10 +11,8 @@
   #include "collect.h"
 #else
   // the le-dasng version
+  #include "dasio/config.h"
 #endif
-
-#cmakedefine CURSES_HAVE_NCURSES_H
-#cmakedefine CURSES_HAVE_NCURSES_CURSES_H
 
 extern "C" {
 #endif // __cplusplus

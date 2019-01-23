@@ -1,0 +1,9 @@
+/** dasio/config.h system configuration file
+ */
+#ifndef DASIO_CONFIG_H_INCLUDED
+#define DASIO_CONFIG_H_INCLUDED
+
+#cmakedefine CURSES_HAVE_NCURSES_H
+#cmakedefine CURSES_HAVE_NCURSES_CURSES_H
+
+#endif

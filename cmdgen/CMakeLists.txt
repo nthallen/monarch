@@ -41,10 +41,6 @@ ENDMACRO(LEX_FILE)
 YACC_FILE(yyparse.y)
 LEX_FILE(yylex.l)
 set(CURSES_NEED_NCURSES, TRUE)
-find_package(Curses)
-configure_file (
-  ${CMAKE_CURRENT_SOURCE_DIR}/cmdalgo.h.in
-  ${CMAKE_CURRENT_BINARY_DIR}/cmdalgo.h )
 
 add_executable(cmdgen cmdgen.c dstructs.c interfaces.c prompts.c
     rules.c states.c trie.c vunion.c yyparse.c yylex.c)
@@ -54,7 +50,7 @@ target_include_directories(cmdgen PRIVATE
 target_link_libraries(cmdgen nl)
 install(TARGETS cmdgen RUNTIME
         DESTINATION bin)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cmdalgo.h
+install(FILES cmdalgo.h
         DESTINATION include)
 install(FILES cmdgen.skel
         DESTINATION share/linkeng)
