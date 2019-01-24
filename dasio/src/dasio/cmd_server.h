@@ -96,7 +96,6 @@ class command_out_t {
     int ref_count;
     char command[CMD_MAX_COMMAND_OUT];
     int cmdlen;
-    static command_out_t *free_commands;
 };
 
 /**
