@@ -299,8 +299,7 @@ void ci_server(void) {
 cmdif_rd::cmdif_rd(const char *name)
     : svcsname("cmd") {
   this->name = name;
-  first_cmd = last_cmd = new_command();
-  rdrs.push_back(this);
+  first_cmd = last_cmd = 0;
 }
 
 /**
@@ -323,6 +322,8 @@ cmdif_rd::~cmdif_rd() {
 }
 
 void cmdif_rd::Setup() {
+  first_cmd = last_cmd = new_command();
+  rdrs.push_back(this);
   if (DAS_IO::Cmd_server::CmdServer == 0) {
     DAS_IO::Cmd_server *cs = new DAS_IO::Cmd_server();
   }
