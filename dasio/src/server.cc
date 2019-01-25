@@ -69,12 +69,13 @@ namespace DAS_IO {
         not_word(clt_app, clt_app_len) ||
         not_str(" ") ||
         not_svc(svc, svc_len)) { // Can also check for CRC
+      nl_error(2, "%s: Rejecting client connection at column %d", iname, cp);
+      nl_error(2, "%s: Auth string was '%s'", ascii_escape());
       close();
       if (ELoop)
         ELoop->delete_child(this);
       return false;
     } else {
-      nl_error(0, "%s: svc_len = %d", iname, svc_len);
       std::string subservice(svc, svc_len);
       SubService *ssvc = Subsp->find_subservice(subservice);
       if (ssvc == 0) {
@@ -91,11 +92,14 @@ namespace DAS_IO {
       client_app = (const char *)clt_app_tmp;
       Socket *clone = ssvc->func(this, ssvc);
       if (clone == 0) {
+        nl_error(2, "%s: clone function failed, rejecting connection from %s", iname, client_app);
         close();
         if (ELoop)
           ELoop->delete_child(this);
         return false;
       }
+      nl_error(0, "%s: Accepted connection from %s for %s", iname,
+          client_app, subservice.c_str());
       this->fd = -1;
       if (ELoop) {
         Loop *elp = ELoop;

@@ -1,0 +1,8 @@
+#! /bin/bash
+mkdir build-cross-eclipse
+mkdir workspace
+cd build-cross-eclipse
+source ~/yocto_varsomam33/SDK/environment-setup-cortexa8hf-neon-linux-gnueabi
+cmake -G"Eclipse CDT4 - Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug ..
+~/eclipse/eclipse &
+

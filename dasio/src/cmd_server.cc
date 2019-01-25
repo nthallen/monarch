@@ -196,6 +196,7 @@ namespace DAS_IO {
       SubService *ss) {
     Cmd_receiver *cr = new Cmd_receiver(auth, auth->get_client_app());
     ss = ss; // We don't have any subservice info
+    return cr;
   }
 
   void Cmd_receiver::process_quit() {

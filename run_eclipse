@@ -1,0 +1,4 @@
+#! /bin/bash
+source ~/yocto_varsomam33/SDK/environment-setup-cortexa8hf-neon-linux-gnueabi
+~/eclipse/eclipse &
+
