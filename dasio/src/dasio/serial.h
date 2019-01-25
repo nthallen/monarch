@@ -48,6 +48,10 @@ class Serial : public Interface {
      * Invokes fillbuf() until there is no input remaining.
      */
     void flush_input();
+    /**
+     * Checks baud rate for validity and returns code for termios.
+     */
+    static speed_t get_baud_code(int baud);
     /** Buffer to hold serial parameters */
     termios termios_p;
     class Modbus;

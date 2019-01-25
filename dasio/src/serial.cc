@@ -61,7 +61,8 @@ void Serial::setup( int baud, int bits, char par, int stopbits,
   termios_p.c_lflag &= ~(ECHO|ICANON|ISIG|ECHOE|ECHOK|ECHONL);
   termios_p.c_cflag = CLOCAL|CREAD;
   termios_p.c_oflag &= ~(OPOST);
-  termios_p.c_ispeed = termios_p.c_ospeed = baud;
+  cfsetispeed(&termios_p, get_baud_code(baud));
+  cfsetospeed(&termios_p, get_baud_code(baud));
   switch (bits) {
     case 5: bitsflag = CS5; break;
     case 6: bitsflag = CS6; break;
