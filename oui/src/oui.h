@@ -11,6 +11,8 @@
 extern "C" {
 #endif
 
+void print_usage();
+
 void oui_init_options(int argc, char **argv);
 extern const char *opt_string;
 

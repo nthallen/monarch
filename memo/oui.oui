@@ -1,1 +1,10 @@
 <package> oui
+
+<opts> "h"
+<sort>
+	-h Print usage message
+
+<switch>
+  case 'h':
+    print_usage();
+    exit(0);

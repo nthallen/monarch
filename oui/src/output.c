@@ -54,6 +54,28 @@ void output_opt_string(void) {
   fprintf(ofile, "\";\n");
 }
 
+static void dump_llos_usage( ll_of_str *ll, char *prefix ) {
+  char *s;
+
+  // If leading tab, replace with spaces
+  // if %C or %C\t at beginning, replace with "%s "
+  
+  
+  while ( s = llos_deq( ll ) ) {
+    if (s[0] == '%' && s[1] == 'C') {
+      s[0] = ' ';
+      s[1] = ' ';
+    }
+    for (int i = 0; i < sizeof(s); i++) {
+      if (s[i] == '\t') {
+        s[i] = ' ';
+      }
+    }
+    fprintf(ofile, "%s%s\n", prefix, s);
+    free_memory(s);
+  }
+}
+
 static void dump_llos( ll_of_str *ll, char *prefix ) {
   char *s;
 
@@ -181,6 +203,7 @@ static void output_sorted(void) {
   } else dump_llos( &global_defs.sorted, "" );
 }
 
+#ifdef QNX
 void output_usage(void) {
   llpkgleaf *p;
 
@@ -201,3 +224,28 @@ void output_usage(void) {
 
   fprintf( ofile, "#endif\n");
 }
+#else
+/* this is where we (yes, you, Miles), edit the function to print the help text */
+void output_usage(void) {
+  llpkgleaf *p;
+
+  fprintf( ofile, "\nvoid print_usage(int argc, char *argv) {\n");
+  
+  /* Output the synopsis */
+  if ( global_defs.synopsis == 0 )
+    fprintf( ofile, "  fprintf(ofile,\"%s [options]\\n\",argv[0]);\n");
+  else
+    fprintf( ofile, "  fprintf(ofile,\"  %s\\n\", argv[0]);\n", global_defs.synopsis, argv[0] );
+    // when doing synopsis add in argv[0]
+
+  /* Output the sorted options */
+  output_sorted();
+  
+  /* and output the unsorted help */
+  for (p = global_defs.packages.first; p != NULL; p = p->next) {
+    dump_llos_usage( &p->pkg->unsort, "" );
+  }
+
+  fprintf( ofile, "}\n");
+}
+#endif

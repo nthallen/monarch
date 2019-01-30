@@ -1,6 +1,8 @@
 <package> memo
-<opts> "o:V"
 <include> "memo.h"
+<include> oui
+<opts> "o:V"
+
 <sort>
 	-o <filename> Output file
 	-V Output to stdout (default)
