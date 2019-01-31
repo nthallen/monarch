@@ -196,6 +196,7 @@ namespace DAS_IO {
       SubService *ss) {
     Cmd_receiver *cr = new Cmd_receiver(auth, auth->get_client_app());
     ss = ss; // We don't have any subservice info
+    return cr;
   }
 
   void Cmd_receiver::process_quit() {
@@ -299,8 +300,7 @@ void ci_server(void) {
 cmdif_rd::cmdif_rd(const char *name)
     : svcsname("cmd") {
   this->name = name;
-  first_cmd = last_cmd = new_command();
-  rdrs.push_back(this);
+  first_cmd = last_cmd = 0;
 }
 
 /**
@@ -323,6 +323,8 @@ cmdif_rd::~cmdif_rd() {
 }
 
 void cmdif_rd::Setup() {
+  first_cmd = last_cmd = new_command();
+  rdrs.push_back(this);
   if (DAS_IO::Cmd_server::CmdServer == 0) {
     DAS_IO::Cmd_server *cs = new DAS_IO::Cmd_server();
   }

@@ -20,7 +20,7 @@ MACRO(YACC_FILE _filename)
     ADD_CUSTOM_COMMAND(
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.c
                 ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.h
-        COMMAND ${YACC_EXE} -d
+        COMMAND ${YACC_EXE} -d -t -l
                 --output=${_basename}.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
         DEPENDS ${_filename}
@@ -32,7 +32,7 @@ MACRO(LEX_FILE _filename)
     GET_FILENAME_COMPONENT(_basename ${_filename} NAME_WE)
     ADD_CUSTOM_COMMAND(
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.c
-        COMMAND ${LEX_EXE}
+        COMMAND ${LEX_EXE} -i
                 -o${_basename}.c
                 ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
         DEPENDS ${_filename} )
@@ -40,13 +40,17 @@ ENDMACRO(LEX_FILE)
 
 YACC_FILE(yyparse.y)
 LEX_FILE(yylex.l)
+set(CURSES_NEED_NCURSES, TRUE)
 
 add_executable(cmdgen cmdgen.c dstructs.c interfaces.c prompts.c
     rules.c states.c trie.c vunion.c yyparse.c yylex.c)
 target_include_directories(cmdgen PRIVATE
-  ${CMAKE_SOURCE_DIR}/cmdgen
-  ${CMAKE_SOURCE_DIR}/nl/src)
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${le_das_SOURCE_DIR}/nl/src)
 target_link_libraries(cmdgen nl)
-install(TARGETS cmdgen RUNTIME DESTINATION bin)
-install(FILES cmdalgo.h DESTINATION include)
-install(FILES cmdgen.skel DESTINATION share/linkeng)
+install(TARGETS cmdgen RUNTIME
+        DESTINATION bin)
+install(FILES cmdalgo.h
+        DESTINATION include)
+install(FILES cmdgen.skel
+        DESTINATION share/linkeng)

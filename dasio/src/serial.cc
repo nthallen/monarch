@@ -58,10 +58,9 @@ void Serial::setup( int baud, int bits, char par, int stopbits,
   }
   termios_init = true;
   termios_p.c_iflag = 0;
-  termios_p.c_lflag &= ~(ECHO|ICANON|ISIG|ECHOE|ECHOK|ECHONL);
+  termios_p.c_lflag &= ~(ECHO|ICANON|ISIG|ECHOE|ECHOK|ECHONL|IEXTEN);
   termios_p.c_cflag = CLOCAL|CREAD;
   termios_p.c_oflag &= ~(OPOST);
-  termios_p.c_ispeed = termios_p.c_ospeed = baud;
   switch (bits) {
     case 5: bitsflag = CS5; break;
     case 6: bitsflag = CS6; break;
@@ -89,6 +88,8 @@ void Serial::setup( int baud, int bits, char par, int stopbits,
     default:
       nl_error(3, "Invalid number of stop bits: %d", stopbits );
   }
+  cfsetispeed(&termios_p, get_baud_code(baud));
+  cfsetospeed(&termios_p, get_baud_code(baud));
   termios_p.c_cc[VMIN] = min;
   termios_p.c_cc[VTIME] = time;
   if ( tcsetattr(fd, TCSANOW, &termios_p) )

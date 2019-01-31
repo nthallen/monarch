@@ -11,6 +11,7 @@
   #include "collect.h"
 #else
   // the le-dasng version
+  #include "dasio/config.h"
 #endif
 
 extern "C" {

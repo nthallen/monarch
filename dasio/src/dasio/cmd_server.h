@@ -18,10 +18,10 @@ namespace DAS_IO {
       ~Cmd_server();
       
       inline bool add_subservice(SubService *ss) {
-        Subs.add_subservice(ss);
+        return Subs.add_subservice(ss);
       }
       inline bool rm_subservice(std::string svcs) {
-        Subs.rm_subservice(svcs);
+        return Subs.rm_subservice(svcs);
       }
       
       void StartServer();
@@ -96,7 +96,6 @@ class command_out_t {
     int ref_count;
     char command[CMD_MAX_COMMAND_OUT];
     int cmdlen;
-    static command_out_t *free_commands;
 };
 
 /**
