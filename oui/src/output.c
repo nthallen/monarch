@@ -56,10 +56,9 @@ void output_opt_string(void) {
 
 static void dump_llos_usage( ll_of_str *ll, char *prefix ) {
   char *s;
-
+  
   // If leading tab, replace with spaces
   // if %C or %C\t at beginning, replace with "%s "
-  
   
   while ( s = llos_deq( ll ) ) {
     if (s[0] == '%' && s[1] == 'C') {
@@ -71,7 +70,7 @@ static void dump_llos_usage( ll_of_str *ll, char *prefix ) {
         s[i] = ' ';
       }
     }
-    fprintf(ofile, "%s%s\n", prefix, s);
+    fprintf(ofile, "%sprintf(\"%%s\\n\",\"%s\");\n", prefix, s);
     free_memory(s);
   }
 }
@@ -180,6 +179,7 @@ static int compar(const void *a, const void *b) {
   return(strcasecmp(*((const char **)a), *((const char **)b)));
 }
 
+#ifdef QNX
 static void output_sorted(void) {
   char **sorter;
   struct llosleaf *lf;
@@ -203,7 +203,6 @@ static void output_sorted(void) {
   } else dump_llos( &global_defs.sorted, "" );
 }
 
-#ifdef QNX
 void output_usage(void) {
   llpkgleaf *p;
 
@@ -225,17 +224,40 @@ void output_usage(void) {
   fprintf( ofile, "#endif\n");
 }
 #else
+static void output_sorted(void) {
+  char **sorter;
+  struct llosleaf *lf;
+  int n_strs, i;
+  
+  if (sort_output) {
+    n_strs = 0;
+    for (lf = global_defs.sorted.first; lf != NULL; lf = lf->next)
+      n_strs++;
+    if (n_strs > 0) {
+      sorter = new_memory(n_strs * sizeof(char *));
+      for (i = 0; i < n_strs; i++)
+        sorter[i] = llos_deq(&global_defs.sorted);
+      qsort(sorter, n_strs, sizeof(char *), compar);
+      for (i = 0; i < n_strs; i++) {
+        fprintf(ofile, "  printf(\"%%s\\n\", \"%s\");\n", sorter[i]);
+        free_memory(sorter[i]);
+      }
+      free_memory(sorter);
+    }
+  } else dump_llos_usage( &global_defs.sorted, "" );
+}  
+
 /* this is where we (yes, you, Miles), edit the function to print the help text */
 void output_usage(void) {
   llpkgleaf *p;
 
-  fprintf( ofile, "\nvoid print_usage(int argc, char *argv) {\n");
+  fprintf( ofile, "\nvoid print_usage(int argc, char **argv) {\n");
   
   /* Output the synopsis */
   if ( global_defs.synopsis == 0 )
-    fprintf( ofile, "  fprintf(ofile,\"%s [options]\\n\",argv[0]);\n");
+    fprintf( ofile, "  printf(\"%%s [options]\\n\",argv[0]);\n");
   else
-    fprintf( ofile, "  fprintf(ofile,\"  %s\\n\", argv[0]);\n", global_defs.synopsis, argv[0] );
+    fprintf( ofile, "  printf(\"  %s\\n\", argv[0]);\n", global_defs.synopsis);
     // when doing synopsis add in argv[0]
 
   /* Output the sorted options */
@@ -243,7 +265,7 @@ void output_usage(void) {
   
   /* and output the unsorted help */
   for (p = global_defs.packages.first; p != NULL; p = p->next) {
-    dump_llos_usage( &p->pkg->unsort, "" );
+    dump_llos_usage( &p->pkg->unsort, "  " );
   }
 
   fprintf( ofile, "}\n");

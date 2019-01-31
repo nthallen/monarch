@@ -49,8 +49,8 @@ void memo_init_options( int argc, char **argv ) {
         opt_V = 1;
         break;
       case '?':
-  nl_error( 3, "Unrecognized commandline option -%c", optopt );
-  break;
+        nl_error( 3, "Unrecognized commandline option -%c", optopt );
+        break;
       default:
         break;
     }

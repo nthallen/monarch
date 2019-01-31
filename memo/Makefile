@@ -5,7 +5,7 @@ LIBS=-ltm -lnl
 memo : $(MEMO_OBJ)
 	$(CC) $(LDFLAGS) -o memo $(MEMO_OBJ) $(LIBS)
 memo.o : memo.cc memo.h
-memooui.cc : memo.oui
+memooui.cc : memo.oui oui.oui
 	oui -o memooui.cc memo.oui
 
 .PHONY : install clean all

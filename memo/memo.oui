@@ -9,3 +9,10 @@
 
 <init>
 	memo_init_options(argc, argv);
+
+<unsort>
+  This is the memo program, and it's really
+  cool because it allows us to
+  send everything to one place and
+  does other stuff
+  

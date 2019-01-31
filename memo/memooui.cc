@@ -4,6 +4,7 @@
 */
 #include "oui.h"
 #include "memo.h"
+#include <stdlib.h>
 #include <unistd.h>
 #include "nl.h"
 const char *opt_string = "o:Vh";
@@ -17,7 +18,7 @@ void oui_init_options(int argc, char **argv) {
     while ((optltr = getopt(argc, argv, opt_string)) != -1) {
       switch (optltr) {
         case 'h':
-          print_usage();
+          print_usage(argc, argv);
           exit(0);
         case '?':
           nl_error(3, "Unrecognized Option -%c", optopt);
@@ -29,9 +30,13 @@ void oui_init_options(int argc, char **argv) {
 	memo_init_options(argc, argv);
 }
 
-void print_usage(int argc, char *argv) {
-  fprintf(ofile," [options]\n",argv[0]);
-	-h Print usage message
-	-o <filename> Output file
-	-V Output to stdout (default)
+void print_usage(int argc, char **argv) {
+  printf("%s [options]\n",argv[0]);
+  printf("%s\n", "	-h Print usage message");
+  printf("%s\n", "	-o <filename> Output file");
+  printf("%s\n", "	-V Output to stdout (default)");
+  printf("%s\n","  This is the memo program, and it's really");
+  printf("%s\n","  cool because it allows us to");
+  printf("%s\n","  send everything to one place and");
+  printf("%s\n","  does other stuff");
 }
