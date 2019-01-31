@@ -5,6 +5,8 @@
 #ifdef undefined
 #include "memo.h"
 
+class MemoServer {
+  public:
   MemoServer::MemoServer(const char *service, int bufsz) :
       service(service),
       bufsz(bufsz),
@@ -28,6 +30,10 @@
     ELoop.event_loop();
     nl_error(0, "Terminating");
   }
+  protected:
+  const char *service;
+  int bufsz;
+}
 #endif
 
 static FILE *ofp, *ofp2;
@@ -59,5 +65,11 @@ void memo_init_options( int argc, char **argv ) {
 
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
+  int bufsize = 1000;
+  
+  //to be built up
+  MemoServer memoserver = new MemoServer("boerf", bufsize);
+  memoserver.Subs.add_subservice(new SubService("boerf", (socket_clone_t)new_boerf_ssclient, (void *)0));
+  memoserver.Start(Srv_Unix);
   return 0;
 }

@@ -3,7 +3,7 @@
 #include "dasio/appid.h"
 #include "oui.h"
 
-DAS_IO::AppID_t AppID("boerf", "The boerf driver for the fuermflauz", "v1.0");
+DAS_IO::AppID_t AppID("boerf", "The boerf driver for the feurmflauz", "v1.0");
 
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);

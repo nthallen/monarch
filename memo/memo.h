@@ -25,7 +25,7 @@ class MemoServer {
     protected:
       const char *service;
       int bufsz; // going away
-  };
+};
 
 /* I have group related members into structs here purely
    to help make clear which members are related.
