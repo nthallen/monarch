@@ -2,11 +2,13 @@
 #include <getopt.h>
 #include "nl.h"
 #include "oui.h"
-#ifdef undefined
 #include "memo.h"
+#include "dasio/appid.h"
+#include "dasio/loop.h"
+#include "dasio/server.h"
 
-class MemoServer {
-  public:
+DAS_IO::AppID_t DAS_IO::AppID("boerfd", "boerf server", "V1.0");
+
   MemoServer::MemoServer(const char *service, int bufsz) :
       service(service),
       bufsz(bufsz),
@@ -15,7 +17,7 @@ class MemoServer {
 
   MemoServer::~MemoServer() {}
 
-  void MemoServer::Start(Server::Srv_type which) {
+  void MemoServer::Start(MemoServer::Srv_type which) {
     if (which & Srv_Unix) {
       Unix = new Server_socket("Unix", bufsz, service, Socket::Socket_Unix, &Subs);
       Unix->connect();
@@ -30,12 +32,9 @@ class MemoServer {
     ELoop.event_loop();
     nl_error(0, "Terminating");
   }
-  protected:
-  const char *service;
-  int bufsz;
-}
-#endif
 
+  memo_socket::~memo_socket() {}
+  
 static FILE *ofp, *ofp2;
 static char *output_filename;
 static int opt_V = 0;
@@ -63,13 +62,46 @@ void memo_init_options( int argc, char **argv ) {
   }
 }
 
+memo_socket *new_memo_socket(Authenticator *Auth, SubService *SS) {
+  memo_socket *memo = new memo_socket(Auth, Auth->get_iname());
+  return memo;
+}
+
+bool memo_socket::protocol_input() {
+  //If there's a new line at the end of the buffer, don't add another
+  //else add another
+  //or just remove new line characters and then add one
+  
+  if (DAS_IO::Interface::nc > 0) {
+    if (DAS_IO::Interface::buf[nc] == 0) {
+      if (DAS_IO::Interface::buf[nc-1] != '\n') {
+        DAS_IO::Interface::buf[nc] = '\n';
+        DAS_IO::Interface::buf[nc+1] = 0;
+        // question: if the last char (buf[nc-1]) isn't a new line,
+        // and the one after it (buf[nc]) is null,
+        // should I be altering buf[nc+1] to be newline?
+      }
+    } else {
+      return true; //maybe?
+    }
+  } else {
+    //buffer is empty
+  }
+  
+  //at end, must call report_ok(nc);
+  // calls consume(), gets rid of chars in buffer, etc.
+  DAS_IO::Interface::report_ok(DAS_IO::Interface::nc);
+  return false;
+  //never returns true
+}
+
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   int bufsize = 1000;
   
   //to be built up
-  MemoServer memoserver = new MemoServer("boerf", bufsize);
-  memoserver.Subs.add_subservice(new SubService("boerf", (socket_clone_t)new_boerf_ssclient, (void *)0));
-  memoserver.Start(Srv_Unix);
+  MemoServer memoserver("boerf", bufsize);
+  memoserver.Subs.add_subservice(new SubService("memo", (socket_clone_t)new_memo_socket, (void*)0));
+  memoserver.Start(MemoServer::Srv_Unix);
   return 0;
 }

@@ -1,8 +1,6 @@
 #ifndef MEMO_H
 #define MEMO_H
 
-#ifdef undefined
-
 #define DRBFR_NPARTS_MAX 5
 #define DRBFR_MSG_MAX 16384
 
@@ -39,8 +37,9 @@ class memo_socket : public DAS_IO::Socket {
   protected:
     bool protocol_input();
 };
-#endif
 void memo_init_options( int argc, char **argv );
+
+memo_socket *new_memo_socket(Authenticator *Auth, SubService *SS);
 
 #endif
 
