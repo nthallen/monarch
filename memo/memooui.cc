@@ -35,8 +35,8 @@ void print_usage(int argc, char **argv) {
   printf("%s\n", "	-h Print usage message");
   printf("%s\n", "	-o <filename> Output file");
   printf("%s\n", "	-V Output to stdout (default)");
-  printf("%s\n","  This is the memo program, and it's really");
-  printf("%s\n","  cool because it allows us to");
-  printf("%s\n","  send everything to one place and");
-  printf("%s\n","  does other stuff");
+  printf("%s\n", "  This is the memo program, and it's really");
+  printf("%s\n", "  cool because it allows us to");
+  printf("%s\n", "  send everything to one place and");
+  printf("%s\n", "  does other stuff");
 }

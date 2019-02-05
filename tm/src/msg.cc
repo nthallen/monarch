@@ -5,12 +5,64 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <time.h>
+#include "dasio/client.h"
+#include "dasio/loop.h"
 #include "oui.h"
 #include "nl.h"
 #include "msg.h"
 // #include "tm.h" was needed for tm_dev_name
 // I hacked that out, but this needs to interface to C++ to provide proper IPC
 // with memo.
+
+class memo_client: public DAS_IO::Client {
+  public:
+    memo_client();
+    ~memo_client();
+    bool init();
+    void send(const char* msg);
+  protected:
+    bool is_negotiated();
+    bool connect_failed();
+    bool iwritten(int nb);
+  private:
+    DAS_IO::Loop ELoop;
+}
+
+  memo_client::memo_client() : DAS_IO::Client("memo", 1000, "memo", 0) {
+    //do stuff
+  }
+  
+  memo_client::~memo_client() {}
+  
+  bool memo_client::init() {
+    ELoop.add_child(this);
+    connect();
+    ELoop.event_loop();
+    return (fp >= 0);
+  }
+  
+  void memo_client::send(const char* msg) {
+    if ((msg != 0) && (msg[0] != '\0')) {
+      if (iwrite(msg)) {
+        nl_error(3, "memo failure");
+      } else {
+        ELoop.event_loop();
+      }
+    }
+  }
+  
+  bool memo_client::is_negotiated() {
+    return true;
+  }
+  
+  bool memo_client::connect_failed() {
+    return true;
+  }
+  
+  bool memo_client::iwritten(int nb) {
+    ocp += nb;
+    return (ocp >= onc);
+  }
 
 /** Handle -h option
  */
@@ -32,7 +84,8 @@ const char *msghdr_init(const char *hdr_default, int argc, char **argv) {
 #define MSG_MAX_HDR_LEN 10
 static char msg_app_hdr[MSG_MAX_HDR_LEN+1];
 static int write_to_memo = 1, write_to_stderr = 0, write_to_file = 0;
-FILE *memo_fp, *file_fp;
+FILE *file_fp;
+memo_client *memo_client_instance;
 
 void msg_set_hdr(const char *hdr) {
   strncpy( msg_app_hdr, hdr, MSG_MAX_HDR_LEN );
@@ -78,12 +131,15 @@ void msg_init_options(const char *hdr, int argc, char **argv) {
     write_to_memo = 0;
   if ( write_to_memo ) {
     // memo_fp = fopen( tm_dev_name( "memo" ), "w" );
-    memo_fp = fopen( "memo.log", "w" );
-    if ( memo_fp == NULL ) {
+    //memo_fp = fopen( "memo.log", "w" );
+    
+    memo_client *memo_client_instance = new memo_client();
+    if (!memo_client->init()) {
       fprintf( stderr, "Unable to contact memo\n" );
       write_to_stderr = 1;
       write_to_memo = 0;
     }
+    
   }
 }
 
@@ -158,8 +214,9 @@ int msgv( int level, const char *fmt, va_list args ) {
   // nb may be as big as MSG_MAX_INTERNAL+1
   // we don't need to transmit the trailing nul
 
-  if ( write_to_memo )
-    write_msg( msgbuf, nb, memo_fp ? memo_fp : stderr, "memo" );
+  if ( write_to_memo && memo_client ) {
+    memo_client->send(msgbuf);
+  }
   if ( write_to_file ) write_msg( msgbuf, nb, file_fp, "file" );
   if ( write_to_stderr ) write_msg( msgbuf, nb, stderr, "stderr" );
   if ( level >= 4 ) abort();

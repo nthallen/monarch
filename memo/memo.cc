@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <getopt.h>
 #include "nl.h"
+#include "nl_assert.h"
 #include "oui.h"
 #include "memo.h"
 #include "dasio/appid.h"
@@ -42,22 +43,35 @@ static int opt_V = 0;
 void memo_init_options( int argc, char **argv ) {
   int c;
   ofp = stdout;
-  ofp2 = NULL;
+  ofp2 = 0;
   optind = OPTIND_RESET;
   opterr = 0;
+  
   while ((c = getopt(argc, argv, opt_string)) != -1 ) {
     switch (c) {
       case 'o':
-        output_filename = optarg;
+        if (output_filename != 0) {
+          nl_error(3, "Multiple output files specified");
+        } else {
+          output_filename = optarg;
+        }
         break;
       case 'V':
         opt_V = 1;
         break;
       case '?':
-        nl_error( 3, "Unrecognized commandline option -%c", optopt );
+        nl_error(3, "Unrecognized commandline option -%c", optopt );
         break;
       default:
         break;
+    }
+  }
+  if (output_filename != 0) {
+    FILE* output = fopen(output_filename, "a");
+    if (opt_V == 1) {
+      ofp2 = output;
+    } else {
+      ofp = output;
     }
   }
 }
@@ -68,31 +82,18 @@ memo_socket *new_memo_socket(Authenticator *Auth, SubService *SS) {
 }
 
 bool memo_socket::protocol_input() {
-  //If there's a new line at the end of the buffer, don't add another
-  //else add another
-  //or just remove new line characters and then add one
+  nl_assert(DAS_IO::Interface::nc > 0);
+  nl_assert(DAS_IO::Interface::buf[nc] == '\0');
   
-  if (DAS_IO::Interface::nc > 0) {
-    if (DAS_IO::Interface::buf[nc] == 0) {
-      if (DAS_IO::Interface::buf[nc-1] != '\n') {
-        DAS_IO::Interface::buf[nc] = '\n';
-        DAS_IO::Interface::buf[nc+1] = 0;
-        // question: if the last char (buf[nc-1]) isn't a new line,
-        // and the one after it (buf[nc]) is null,
-        // should I be altering buf[nc+1] to be newline?
-      }
-    } else {
-      return true; //maybe?
-    }
-  } else {
-    //buffer is empty
+  /* If we encounter a newline character, we replace it with null. */
+  if (DAS_IO::Interface::buf[nc-1] == '\n') {
+    DAS_IO::Interface::buf[nc-1] = '\0';
   }
+  /* And then we printf() with a newline added, for cleanliness. */
+  printf("%s\n", DAS_IO::Interface::buf);
   
-  //at end, must call report_ok(nc);
-  // calls consume(), gets rid of chars in buffer, etc.
   DAS_IO::Interface::report_ok(DAS_IO::Interface::nc);
   return false;
-  //never returns true
 }
 
 int main(int argc, char **argv) {

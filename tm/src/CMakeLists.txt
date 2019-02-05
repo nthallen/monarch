@@ -1,4 +1,4 @@
-add_library(tm msg.c nctable.cc)
+add_library(tm msg.cc nctable.cc)
 # cic.c cicf.c cictrans.c
 install(TARGETS tm
   ARCHIVE
@@ -7,7 +7,7 @@ install(TARGETS tm
 install(FILES msg.h nctable.h
   DESTINATION include
 )
-install(FILES nctable.oui
+install(FILES nctable.oui msg.oui
   DESTINATION share/oui
 )
 target_include_directories(tm PUBLIC
