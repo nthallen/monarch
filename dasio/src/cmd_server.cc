@@ -185,11 +185,13 @@ namespace DAS_IO {
     }
   }
 
-  void Cmd_receiver::iwritten(int nb) {
+  bool Cmd_receiver::iwritten(int nb) {
     if (obuf_empty() && quit_recd &&
           DAS_IO::Cmd_server::CmdServer) {
       DAS_IO::Cmd_server::CmdServer->Shutdown();
+      return true;
     }
+    return false;
   }
   
   Cmd_receiver *Cmd_receiver::new_cmd_receiver(Authenticator *auth,
@@ -251,9 +253,10 @@ namespace DAS_IO {
     }
   }
   
-  void Cmd_turf::iwritten(int nb) {
+  bool Cmd_turf::iwritten(int nb) {
     if (written && ocp >= onc)
       turf_check();
+    return false;
   }
   
   /**
