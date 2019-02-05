@@ -90,18 +90,18 @@ class Interface {
      */
     bool iwrite(const char *str);
     /**
-     * Called when iwrite() returns false and enqueued data is subsequently
-     * written to the interface.
+     * @brief Called whenever enqueued data is written to the interface.
      * @param nb The number of bytes written
+     * @return true if the event loop should terminate.
      */
-    virtual void iwritten(int nb);
+    virtual bool iwritten(int nb);
     /**
      * @return true if the error is fatal, false if it has been handled
      */
     virtual bool iwrite_error(int my_errno);
     /**
      * Internal function to output data
-     * @return true if a fatal error occurs
+     * @return true if the event loop should terminate.
      */
     bool iwrite_check();
     /**

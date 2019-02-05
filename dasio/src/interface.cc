@@ -105,6 +105,7 @@ bool Interface::iwrite(const char *str, unsigned int nc, unsigned int cp) {
 }
 
 bool Interface::iwrite_check() {
+  bool rv = false;
   if (!obuf_empty()) {
     int nb = onc-ocp;
     int ntr = write(fd, obuf+ocp, nb);
@@ -114,13 +115,13 @@ bool Interface::iwrite_check() {
     }
     if (ntr > 0) {
       ocp += ntr;
-      iwritten(ntr);
+      rv = iwritten(ntr);
     }
   }
   flags = obuf_empty() ?
     flags & ~Fl_Write :
     flags | Fl_Write;
-  return false;
+  return rv;
 }
 
 bool Interface::iwrite(const std::string &s) {
@@ -134,7 +135,7 @@ bool Interface::iwrite(const char *str) {
 /**
  * The default implementation does nothing.
  */
-void Interface::iwritten(int nb) {}
+bool Interface::iwritten(int nb) {}
 
 /**
  * The default implementation returns true.

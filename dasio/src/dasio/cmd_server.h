@@ -47,7 +47,7 @@ namespace DAS_IO {
       Cmd_receiver(Authenticator *auth, const char *iname);
       ~Cmd_receiver();
       bool protocol_input();
-      void iwritten(int nb);
+      bool iwritten(int nb);
       static Cmd_receiver *new_cmd_receiver(Authenticator *auth,
         SubService *ss);
     protected:
@@ -71,7 +71,7 @@ namespace DAS_IO {
        * Checks whether next_command is ready to transmit.
        */
       void turf_check();
-      void iwritten(int nb);
+      bool iwritten(int nb);
       static Socket *new_cmd_turf(Authenticator *auth,
         SubService *ss);
     protected:
