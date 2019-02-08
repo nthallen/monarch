@@ -4,7 +4,7 @@
 add_library(dasio interface.cc ascii_escape.cc not_parsed.cc serial.cc
   timeout.cc loop.cc socket.cc unix_name.cc modbus_rtu.cc
   client.cc server.cc appid.cc tm_data_sndr.cc tm_server.cc
-  cmd_writer.cc cmd_version.cc cmd_version_def.cc
+  cmd_writer.cc cmd_version.cc cmd_version_def.cc msg.cc
   cic_transmit.cc cmd_server.cc quit.cc get_baud_code.cc)
 target_include_directories(dasio PUBLIC
   ${CMAKE_BINARY_DIR}/dasio/src
@@ -17,7 +17,7 @@ install(TARGETS dasio
   ARCHIVE
   DESTINATION lib
 )
-install(FILES cmd_version.oui cmd_writer.oui
+install(FILES cmd_version.oui cmd_writer.oui msg.oui
   DESTINATION share/oui
 )
 add_subdirectory("${CMAKE_SOURCE_DIR}/dasio/src/dasio"

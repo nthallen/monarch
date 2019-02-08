@@ -23,9 +23,10 @@ message.
 
 @return The level argument unless level dictates termination.
 */
-int nl_verror(FILE *ef, int level, const char *fmt, va_list args) {
+int nl_verr(int level, const char *fmt, va_list args) {
   char *lvlmsg;
-
+  FILE *ef = stderr;
+  
   if (level < -1 && nl_debug_level > level) return(level);
   switch (level) {
     case -1: lvlmsg = ""; break;
@@ -49,3 +50,6 @@ int nl_verror(FILE *ef, int level, const char *fmt, va_list args) {
   if (level > 2 || level == -1) exit(level > 0 ? level : 0);
   return(level);
 }
+
+/* @return for non fatal errors */
+int (*nl_verror)(int level, const char *fmt, va_list args) = nl_verr;

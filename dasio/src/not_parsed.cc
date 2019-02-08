@@ -86,6 +86,7 @@ bool DAS_IO::Interface::not_str( const char *str_in, unsigned int len ) {
   unsigned int i;
   const unsigned char *str = (const unsigned char *)str_in;
   if ( cp < 0 || cp > nc || nc < 0 || buf == 0 )
+    //nl_error changed from msg
     nl_error( 4, "DAS_IO::Interface precondition failed: "
       "cp = %d, nc = %d, buf %s",
       cp, nc, buf ? "not NULL" : "is NULL" );
@@ -112,7 +113,7 @@ bool DAS_IO::Interface::not_str(const std::string &s) {
 
 bool DAS_IO::Interface::not_fptext() {
   if ( cp < 0 || cp > nc || nc < 0 || nc >= bufsize || buf == 0 )
-    msg( 4, "Ser_Sel precondition failed: "
+    nl_error( 4, "Ser_Sel precondition failed: "
       "cp = %d, nc = %d, bufsize = %d, buf %s",
       cp, nc, bufsize, buf ? "not NULL" : "is NULL" );
 
@@ -374,6 +375,7 @@ bool DAS_IO::Interface::not_nfloat(float *value, float NaNval) {
 }
 
 bool DAS_IO::Interface::not_uint8(uint8_t &val) {
+  printf(">the entire buffer is %s.\n", buf);
   uint16_t sval;
   if (not_uint16(sval)) return true;
   if (sval > 255) {

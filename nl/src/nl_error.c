@@ -16,7 +16,7 @@ int nl_err(int level, const char *s, ...) {
   va_list arg;
 
   va_start(arg, s);
-  nl_verror(stderr, level, s, arg);
+  nl_verror(level, s, arg);
   va_end(arg);
   return(level);
 }

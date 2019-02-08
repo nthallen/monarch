@@ -250,7 +250,7 @@ void Interface::report_err( const char *fmt, ... ) {
     va_list args;
 
     va_start(args, fmt);
-    msgv( 2, fmt, args );
+    nl_verror( 2, fmt, args );
     va_end(args);
     if (nc)
       nl_error(2, "%s: Input was: '%s'", iname, ascii_escape() );

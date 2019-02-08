@@ -67,7 +67,7 @@ int compile_error(int level, const char *format, ...) {
 	  fprintf(stderr, "%s %d:", input_filename, input_linenumber);
 	else fprintf(stderr, "%d:", input_linenumber);
   }
-  nl_verror(stderr, level, format, arg);
+  nl_verror(level, format, arg);
   va_end(arg);
   return(level);
 }
