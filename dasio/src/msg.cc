@@ -51,49 +51,22 @@
     return (ocp >= onc);
   }
 
-/** Handle -h option
- */
-const char *msghdr_init(const char *hdr_default, int argc, char **argv) {
-  const char *hdr = hdr_default;
-  int c;
-
-  optind = OPTIND_RESET;
-  opterr = 0;
-  while ((c = getopt(argc, argv, opt_string)) != -1) {
-    switch (c) {
-      case 'h': hdr = optarg; break;
-      default: break; // could check for errors
-    }
-  }
-  return hdr;
-}
-
-#define MSG_MAX_HDR_LEN 10
-static char msg_app_hdr[MSG_MAX_HDR_LEN+1];
 static int write_to_memo = 1, write_to_stderr = 0, write_to_file = 0;
 FILE *file_fp;
 static memo_client *memo_client_instance;
 
-void msg_set_hdr(const char *hdr) {
-  strncpy( msg_app_hdr, hdr, MSG_MAX_HDR_LEN );
-  msg_app_hdr[MSG_MAX_HDR_LEN] = '\0';
-}
-
 /*
-<opts> "vo:mVs"
+<opts> "vo:mV"
 
 <sort>
   -v add a level of verbosity
   -o <error filename> Write to specified file
   -m write to memo [default]
   -V write to stderr
-	-s no message sounds
 */
 void msg_init_options(int argc, char **argv) {
   int c;
 
-  const char *hdr = DAS_IO::AppID.name;
-  msg_set_hdr(hdr);
   optind = OPTIND_RESET;
   opterr = 0;
   while ((c = getopt(argc, argv, opt_string)) != -1) {
@@ -195,7 +168,7 @@ int msgv( int level, const char *fmt, va_list args ) {
   strncpy(msgbuf, tbuf+11, 9); // index, length of time string
   strncpy( msgbuf+9, lvlmsg, MSG_MAX_INTERNAL-9 );
   nb = 9 + strlen(lvlmsg);
-  nb += snprintf( msgbuf+nb, MSG_MAX_INTERNAL-nb, "%s: ", msg_app_hdr );
+  nb += snprintf( msgbuf+nb, MSG_MAX_INTERNAL-nb, "%s: ", DAS_IO::AppID.name );
   // I am guaranteed that we have not yet overflowed the buffer
   nb += vsnprintf( msgbuf+nb, MSG_MAX_INTERNAL-nb, fmt, args );
   if ( nb > MSG_MAX_INTERNAL ) nb = MSG_MAX_INTERNAL;

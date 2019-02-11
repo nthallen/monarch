@@ -8,7 +8,7 @@
 #include "dasio/loop.h"
 #include "dasio/server.h"
 
-DAS_IO::AppID_t DAS_IO::AppID("boerfd", "boerf server", "V1.0");
+DAS_IO::AppID_t DAS_IO::AppID("memo", "memo server", "V1.0");
 
   MemoServer::MemoServer(const char *service, int bufsz) :
       service(service),
@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
   int bufsize = 1000;
   
   //to be built up
-  MemoServer memoserver("boerf", bufsize);
+  MemoServer memoserver("memo", bufsize);
   memoserver.Subs.add_subservice(new SubService("memo", (socket_clone_t)new_memo_socket, (void*)0));
   memoserver.Start(MemoServer::Srv_Unix);
   return 0;
