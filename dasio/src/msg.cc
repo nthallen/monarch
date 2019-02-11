@@ -99,11 +99,10 @@ void msg_init_options(int argc, char **argv) {
       fprintf( stderr, "Unable to contact memo\n" );
       write_to_stderr = 1;
       write_to_memo = 0;
-    } else {
-      nl_error = msg;
-      nl_verror = msgv;
     }
   }
+  nl_error = msg;
+  nl_verror = msgv;
 }
 
 static void write_msg( char *buf, int nb, FILE *fp, const char *dest ) {

@@ -1,4 +1,4 @@
-TEST_MSG_OBJ=test_msg.o test_msgoui.o
+TEST_MSG_OBJ=test_msg.o test_msgoui.o msg.o
 CPPFLAGS=-I/usr/local/include
 CXXFLAGS=-g -Wall
 LDFLAGS=-L ~/sw/le-dasng/build-memodev/dasio/src -L/usr/local/lib

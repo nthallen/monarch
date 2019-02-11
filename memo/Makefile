@@ -1,9 +1,9 @@
 MEMO_OBJ=memo.o memooui.o
-CFLAGS=-I/usr/local/include -Wall
+CXXFLAGS=-I/usr/local/include -g -Wall
 LDFLAGS=-L/usr/local/lib
 LIBS=-ldasio -ltm -lnl
 memo : $(MEMO_OBJ)
-	$(CXX) $(LDFLAGS) -o memo $(MEMO_OBJ) $(LIBS)
+	$(CXX) $(LDFLAGS) $(CXXFLAGS) -o memo $(MEMO_OBJ) $(LIBS)
 memo.o : memo.cc memo.h
 memooui.cc : memo.oui
 	oui -o memooui.cc memo.oui

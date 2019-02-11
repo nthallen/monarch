@@ -9,12 +9,13 @@
 #include "nl.h"
 #include "test_msg.h"
 
-DAS_IO::AppID_t DAS_IO::AppID("name","fullname","version");
+DAS_IO::AppID_t DAS_IO::AppID("memo", "memo server", "V1.0");
 
 int main(int argc, char** argv) {
   //create a test client, connect?
   
   oui_init_options(argc,argv);
-  
+  nl_error(MSG,"Hello?");
+  nl_error(MSG,"Hello again!");
   
 }
