@@ -106,7 +106,7 @@ class Socket : public Interface {
     /**
      * Shut down the connection.
      */
-    virtual void close();
+    void close();
 
     /**
      * Close and then try to reconnect after longish delay using

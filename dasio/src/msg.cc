@@ -30,9 +30,7 @@
   
   void memo_client::send(const char* msg) {
     if ((msg != 0) && (msg[0] != '\0')) {
-      if (iwrite(msg)) {
-        nl_error(3, "memo failure");
-      } else {
+      if (!iwrite(msg)) {
         ELoop.event_loop();
       }
     }

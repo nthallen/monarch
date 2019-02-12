@@ -44,8 +44,7 @@ Interface::Interface(const char *name, int bufsz) {
 
 Interface::~Interface() {
   if (fd >= 0) {
-    close(fd);
-    fd = -1;
+    close();
   }
   set_ibufsize(0);
 }
@@ -65,8 +64,8 @@ bool Interface::ProcessData(int flag) {
     return true;
   if ((flags&Fl_Read) && (flags&flag&(Fl_Read|Fl_Timeout))) {
     if (fillbuf()) return true;
-    if (protocol_input())
-      return true;
+    if (fd < 0) return false;
+    if (protocol_input()) return true;
   }
   if ((flags & flag & Fl_Write) && iwrite_check())
     return true;
@@ -135,7 +134,7 @@ bool Interface::iwrite(const char *str) {
 /**
  * The default implementation does nothing.
  */
-bool Interface::iwritten(int nb) {}
+bool Interface::iwritten(int nb) { return false; }
 
 /**
  * The default implementation returns true.
@@ -188,6 +187,13 @@ bool Interface::closed() {
   return true;
 }
 
+void Interface::close() {
+  if (fd >= 0) {
+    ::close(fd);
+    fd = -1;
+  }
+}
+
 void Interface::set_ibufsize(int bufsz) {
   if (bufsize != bufsz) {
     if (buf) free_memory(buf);
@@ -215,6 +221,7 @@ bool Interface::fillbuf(int N) {
     }
     return false;
   } else if (i == 0) {
+    close();
     return closed();
   }
   nc += i;

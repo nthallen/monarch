@@ -310,12 +310,10 @@ bool Socket::closed() {
     nl_error(2, "%s: Should not have been reading from listening socket", iname);
     return true;
   } else if (is_server_client) {
-    close();
     if (ELoop)
       ELoop->delete_child(this);
     return false;
   } else {
-    close();
     return true;
   }
 }
