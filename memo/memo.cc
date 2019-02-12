@@ -11,10 +11,10 @@
 DAS_IO::AppID_t DAS_IO::AppID("memo", "memo server", "V1.0");
 
   MemoServer::MemoServer(const char *service, int bufsz) :
-      service(service),
-      bufsz(bufsz),
       Unix(0),
-      TCP(0) { }
+      TCP(0),
+      service(service),
+      bufsz(bufsz) { }
 
   MemoServer::~MemoServer() {}
 

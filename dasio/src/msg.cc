@@ -38,7 +38,7 @@
     }
   }
   
-  bool memo_client::is_negotiated() {
+  bool memo_client::app_connected() {
     return true;
   }
   
@@ -48,7 +48,7 @@
   
   bool memo_client::iwritten(int nb) {
     ocp += nb;
-    return (ocp >= onc);
+    return (is_negotiated() && ocp >= onc);
   }
 
 static int write_to_memo = 1, write_to_stderr = 0, write_to_file = 0;

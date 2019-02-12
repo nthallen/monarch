@@ -10,7 +10,7 @@ class memo_client: public DAS_IO::Client {
     bool init();
     void send(const char* msg);
   protected:
-    bool is_negotiated();
+    bool app_connected();
     bool connect_failed();
     bool iwritten(int nb);
   private:
