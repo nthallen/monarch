@@ -9,7 +9,7 @@
 #include "nl.h"
 #include "test_msg.h"
 
-DAS_IO::AppID_t DAS_IO::AppID("memo", "memo server", "V1.0");
+DAS_IO::AppID_t DAS_IO::AppID("test_msg", "memo client", "V1.0");
 
 int main(int argc, char** argv) {
   //create a test client, connect?
