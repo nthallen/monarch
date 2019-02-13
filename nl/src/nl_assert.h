@@ -9,7 +9,7 @@
 
   #define nl_assert(e) \
     ((e) ? 0 : \
-    nl_error( 4, "%s:%d - Assert Failed: '%s'", __FILE__, __LINE__, #e ))
+    msg( 4, "%s:%d - Assert Failed: '%s'", __FILE__, __LINE__, #e ))
 #endif
 
 #ifndef assert

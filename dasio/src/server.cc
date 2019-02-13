@@ -5,6 +5,7 @@
 #include "dasio/loop.h"
 #include "dasio/appid.h"
 #include "nl.h"
+#include "dasio/msg.h"
 
 namespace DAS_IO {
 
@@ -19,7 +20,7 @@ namespace DAS_IO {
     std::pair<std::map<std::string,SubService *>::iterator,bool> ret;
     ret = subs.insert( std::pair<std::string,SubService *>(def->name, def));
     if (!ret.second) {
-      nl_error(2, "SubService %s already defined", def->name.c_str());
+      msg(2, "SubService %s already defined", def->name.c_str());
     }
     return ret.second;
   }
@@ -69,8 +70,8 @@ namespace DAS_IO {
         not_word(clt_app, clt_app_len) ||
         not_str(" ") ||
         not_svc(svc, svc_len)) { // Can also check for CRC
-      nl_error(2, "%s: Rejecting client connection at column %d", iname, cp);
-      nl_error(2, "%s: Auth string was '%s'", ascii_escape());
+      msg(2, "%s: Rejecting client connection at column %d", iname, cp);
+      msg(2, "%s: Auth string was '%s'", ascii_escape());
       close();
       if (ELoop)
         ELoop->delete_child(this);
@@ -92,13 +93,13 @@ namespace DAS_IO {
       client_app = (const char *)clt_app_tmp;
       Socket *clone = ssvc->func(this, ssvc);
       if (clone == 0) {
-        nl_error(2, "%s: clone function failed, rejecting connection from %s", iname, client_app);
+        msg(2, "%s: clone function failed, rejecting connection from %s", iname, client_app);
         close();
         if (ELoop)
           ELoop->delete_child(this);
         return false;
       }
-      nl_error(0, "%s: Accepted connection from %s for %s", iname,
+      msg(0, "%s: Accepted connection from %s for %s", iname,
           client_app, subservice.c_str());
       this->fd = -1;
       if (ELoop) {
@@ -159,8 +160,8 @@ namespace DAS_IO {
       TCP->connect();
       ELoop.add_child(TCP);
     }
-    nl_error(0, "%s %s Starting", AppID.fullname, AppID.rev);
+    msg(0, "%s %s Starting", AppID.fullname, AppID.rev);
     ELoop.event_loop();
-    nl_error(0, "Terminating");
+    msg(0, "Terminating");
   }
 }

@@ -52,4 +52,4 @@ int nl_verr(int level, const char *fmt, va_list args) {
 }
 
 /* @return for non fatal errors */
-int (*nl_verror)(int level, const char *fmt, va_list args) = nl_verr;
+int (*msgv)(int level, const char *fmt, va_list args) = nl_verr;

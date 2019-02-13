@@ -73,4 +73,4 @@ application they are linked into.
   
 @return For non-fatal errors, returns the error level code.
 */
-int (*nl_error)(int level, const char *s, ...) = nl_err;
+int (*msg)(int level, const char *s, ...) = nl_err;
