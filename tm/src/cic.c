@@ -47,7 +47,7 @@ void cic_options(int argcc, char **argvv, const char *def_prefix) {
         playback = 1;
         break;
       case '?':
-        nl_error(3, "Unknown option -%c", optopt);
+        msg(3, "Unknown option -%c", optopt);
       default:
         break;
     }
@@ -83,19 +83,19 @@ int cic_init(void) {
     int nb = snprintf( vcheck, CMD_VERSION_MAX, "[%s:V%s]\n",
       cic_header, ci_version );
     if ( nb >= CMD_VERSION_MAX )
-      nl_error( nl_response, "Version string too long" );
+      msg( nl_response, "Version string too long" );
     else {
       int rb = write( cis_fd, vcheck, nb+1 );
       if ( rb == -1 ) {
         if (errno == EINVAL ) {
           if (nl_response)
-            nl_error(nl_response, "Incorrect Command Server Version");
-        } else nl_error(nl_response,
+            msg(nl_response, "Incorrect Command Server Version");
+        } else msg(nl_response,
            "Error %d querying command server version", errno );
         return(1);
       }
       if ( rb < nb+1 )
-        nl_error( 1, "Vcheck rb = %d instead of %d", rb, nb+1 );
+        msg( 1, "Vcheck rb = %d instead of %d", rb, nb+1 );
     }
   }
 
@@ -155,7 +155,7 @@ int ci_sendcmd(const char *cmdtext, int mode) {
   if (cmdtext == NULL) {
     cmdopts = ":X";
     cmdtext = "";
-    nl_error(-3, "Sending Quit to Server");
+    msg(-3, "Sending Quit to Server");
   } else {
     switch (mode) {
       case 1: cmdopts = ":T"; break;
@@ -167,7 +167,7 @@ int ci_sendcmd(const char *cmdtext, int mode) {
       const char *ts = ci_time_str();
 
       if (len > 0 && cmdtext[len-1]=='\n') len--;
-      nl_error( mode == 2 ? -4 : -3,
+      msg( mode == 2 ? -4 : -3,
           "%s%*.*s", ts, len, len, cmdtext);
     }
   }
@@ -175,7 +175,7 @@ int ci_sendcmd(const char *cmdtext, int mode) {
   clen = snprintf( buf, CMD_MAX_COMMAND_IN+1, "[%s%s]%s",
     cic_header, cmdopts, cmdtext );
   if ( clen > CMD_MAX_COMMAND_IN ) {
-    nl_error( 2, "Command too long" );
+    msg( 2, "Command too long" );
     return CMDREP_SYNERR;
   }
   rv = write( cis_fd, buf, clen );
@@ -187,17 +187,17 @@ int ci_sendcmd(const char *cmdtext, int mode) {
         sent_quit = 1;
         return CMDREP_QUIT;
       case E2BIG:
-        nl_error( 4, "Unexpected E2BIG from cis" );
+        msg( 4, "Unexpected E2BIG from cis" );
       case EINVAL:
     if ( nl_response )
-      nl_error( 2, "Syntax error from cis" );
+      msg( 2, "Syntax error from cis" );
         return CMDREP_SYNERR;
       case EIO:
         if ( nl_response )
-      nl_error( 2, "Execution error from cis" );
+      msg( 2, "Execution error from cis" );
         return CMDREP_EXECERR;
       default:
-        nl_error( 3, "Unhandled error %d from cis", errno );
+        msg( 3, "Unhandled error %d from cis", errno );
     }
     return(1);
   }
