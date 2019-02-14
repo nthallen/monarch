@@ -22,7 +22,7 @@ TM_data_sndr::TM_data_sndr(const char *iname, const char *datum, const char *dat
 TM_data_sndr::~TM_data_sndr() {}
 
 bool TM_data_sndr::app_input() {
-  // nl_error(0, "%s: TM_data_sndr::app_input(%d)", iname, nc);
+  // msg(0, "%s: TM_data_sndr::app_input(%d)", iname, nc);
   report_ok(nc);
   if (iwrite(data, data_len)) return true;
   if (ELoop) ELoop->set_gflag(0);
@@ -30,7 +30,7 @@ bool TM_data_sndr::app_input() {
 }
 
 bool TM_data_sndr::app_connected() {
-  // nl_error(0, "TM_data_sndr::app_connected()");
+  // msg(0, "TM_data_sndr::app_connected()");
   if (iwrite(data, data_len)) return true;
   if (ELoop) ELoop->set_gflag(0);
   return false;

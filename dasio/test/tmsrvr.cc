@@ -2,6 +2,7 @@
 #include "dasio/tm_server.h"
 #include "dasio/loop.h"
 #include "dasio/appid.h"
+#include "dasio/msg.h"
 #include "TMtest.h"
 #include "nl.h"
 
@@ -30,12 +31,12 @@ myserver::myserver(const char *iname, int bufsz, const char *service,
 myserver::~myserver() {}
         
 void myserver::connect() {
-  nl_error(0, "%s: In connect()", iname);
+  msg(0, "%s: In connect()", iname);
   Server_socket::connect();
   if (socket_state == Socket::Socket_listening) {
     TO.Set(1, 0);
   } else {
-    nl_error(1, "%s: Timeout not initiated. socket_state = %d",
+    msg(1, "%s: Timeout not initiated. socket_state = %d",
       iname, socket_state);
   }
   flags |= Fl_Timeout;
@@ -44,7 +45,7 @@ void myserver::connect() {
 bool myserver::protocol_timeout() {
   TMtest_def.synch();
   TO.Set(1,0);
-  nl_error(0, "%s: Count: %d Stale: %d", iname, TMtest.count, TMtest_def.Stale(31));
+  msg(0, "%s: Count: %d Stale: %d", iname, TMtest.count, TMtest_def.Stale(31));
   return false;
 }
 
@@ -61,9 +62,9 @@ int main(int argc, char **argv) {
   );
   myserver S("listen", 128, "DG", Socket::Socket_Unix, &Subs);
   ELoop.add_child(&S);
-  nl_error(0, "%s %s Starting", AppID.name, AppID.rev);
+  msg(0, "%s %s Starting", AppID.name, AppID.rev);
   S.connect();
   ELoop.event_loop();
-  nl_error(0, "Terminating");
+  msg(0, "Terminating");
   return 0;
 }

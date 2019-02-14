@@ -111,7 +111,7 @@ static void output_switch(void) {
 
   fprintf(ofile, "%s",
     "        case '?':\n"
-    "          nl_error(3, \"Unrecognized Option -%c\", optopt);\n"
+    "          msg(3, \"Unrecognized Option -%c\", optopt);\n"
     "        default:\n"
     "          break;\n"
     "      }\n"

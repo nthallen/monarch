@@ -2,6 +2,7 @@
 #include "dasio/tm_data_sndr.h"
 #include "dasio/appid.h"
 #include "dasio/loop.h"
+#include "dasio/msg.h"
 #include "TMtest.h"
 #include "nl.h"
 
@@ -23,7 +24,7 @@ class myTMclt : public TM_data_sndr {
 };
 
 bool myTMclt::app_connected() {
-  nl_error(0, "myTMclt::app_connected()");
+  msg(0, "myTMclt::app_connected()");
   TM_data_sndr::app_connected();
   flags |= gflag(0);
   return false;
@@ -39,8 +40,8 @@ int main(int argc, char **argv) {
   TMclt.connect();
   Loop ELoop;
   ELoop.add_child(&TMclt);
-  nl_error(0, "%s %s Starting", AppID.name, AppID.rev);
+  msg(0, "%s %s Starting", AppID.name, AppID.rev);
   ELoop.event_loop();
-  nl_error(0, "Terminating");
+  msg(0, "Terminating");
   return 0;
 }
