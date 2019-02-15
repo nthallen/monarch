@@ -10,10 +10,17 @@
 #include "dasio/appid.h"
 #include "oui.h"
 #include "nl.h"
+#define MSG_INTERNAL
 #include "dasio/msg.h"
 // #include "tm.h" was needed for tm_dev_name
 // I hacked that out, but this needs to interface to C++ to provide proper IPC
 // with memo.
+
+  static bool we_are_memo = false;
+  
+  void set_we_are_memo(void) {
+    we_are_memo = true;
+  }
 
   memo_client::memo_client() : DAS_IO::Client("memo", 1000, "memo", 0) {
     //do stuff
@@ -68,7 +75,7 @@
     return (is_negotiated() && ocp >= onc);
   }
 
-static int write_to_memo = 1, write_to_stderr = 0, write_to_file = 0;
+static int write_to_memo = 0, write_to_stderr = 0, write_to_file = 0;
 FILE *file_fp;
 
 /*
@@ -96,7 +103,12 @@ void msg_init_options(int argc, char **argv) {
         }
         write_to_file = 1;
         break;
-      case 'm': write_to_memo = 2; break;
+      case 'm': 
+        write_to_memo = 1;
+        if (we_are_memo) {
+          msg(3, "memo cannot write to memo!\n");
+        }
+        break;
       case 'V': write_to_stderr = 1; break;
       case '?':
         fprintf( stderr, "Unrecognized option: '-%c'\n", optopt );
@@ -104,9 +116,16 @@ void msg_init_options(int argc, char **argv) {
       default: break; // could check for errors
     }
   }
-  if ( ( write_to_file || write_to_stderr ) && write_to_memo == 1 )
-    write_to_memo = 0;
-  if ( write_to_memo ) {
+  
+  if (!write_to_stderr && !write_to_file && !write_to_memo) {
+    if (we_are_memo) {
+      write_to_stderr = 1;
+    } else {
+      write_to_memo = 1;
+    }
+  }
+  
+  if (write_to_memo) {
     // memo_fp = fopen( tm_dev_name( "memo" ), "w" );
     // memo_fp = fopen( "memo.log", "w" );
     
@@ -117,11 +136,12 @@ void msg_init_options(int argc, char **argv) {
       write_to_memo = 0;
     }
   }
+  
   msg = msg_func;
   msgv = msgv_func;
 }
 
-static void write_msg( char *buf, int nb, FILE *fp, const char *dest ) {
+static void write_msg( const char *buf, int nb, FILE *fp, const char *dest ) {
   int rv = fwrite( buf, 1, nb, fp );
   if ( rv == -1 ) {
     fprintf( stderr, "Memo: error %s writing to %s\n",
@@ -191,7 +211,10 @@ int msgv_func( int level, const char *fmt, va_list args ) {
   // msgbuf[nb] = '\0';
   // nb may be as big as MSG_MAX_INTERNAL+1
   // we don't need to transmit the trailing nul
+  return msg_internal(level, msgbuf, nb);
+}
 
+int msg_internal(int level, const char *msgbuf, int nb) {
   if ( write_to_memo && memo_client_instance ) {
     memo_client_instance->send(msgbuf);
   }

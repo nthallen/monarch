@@ -27,6 +27,11 @@ extern void msg_init_options(int argc, char **argv);
 extern int msg_func(int level, const char *s, ...);
 extern int msgv_func(int level, const char *s, va_list args);
 
+#ifdef MSG_INTERNAL
+extern int msg_internal(int level, const char *msgbuf, int nb);
+extern void set_we_are_memo(void);
+#endif
+
 };
 
 #endif
