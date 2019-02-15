@@ -183,9 +183,21 @@ int msg_func( int level, const char *fmt, ...) {
 int msgv_func( int level, const char *fmt, va_list args ) {
   const char *lvlmsg;
   char msgbuf[MSG_MAX_INTERNAL+2];
-  time_t now = time(NULL);
+  
+  //New, millisecond time!
+  clockid_t clk_id = CLOCK_REALTIME;
+  struct timespec timespec, resolution;
+  clock_getres(clk_id, &resolution);
+  clock_gettime(clk_id, &timespec);
+  
+  int milliseconds = ((timespec.tv_nsec+500000)/1000000);
+  char *tbuf = asctime(gmtime(&timespec.tv_sec));
+  
+  //Below lies second-time
+  /* time_t now = time(NULL);
   struct tm *tm = gmtime(&now);
   char *tbuf = asctime(tm);
+  */
   int nb;
 
   switch ( level ) {
@@ -200,9 +212,11 @@ int msgv_func( int level, const char *fmt, va_list args ) {
       else lvlmsg = "[DEBUG] ";
       break;
   }
-  strncpy(msgbuf, tbuf+11, 9); // index, length of time string
-  strncpy( msgbuf+9, lvlmsg, MSG_MAX_INTERNAL-9 );
-  nb = 9 + strlen(lvlmsg);
+  //Here's the part where it gets fuzzy - for Miles, at least
+  strncpy(msgbuf, tbuf+11, 8); // index, length of time string
+  snprintf(msgbuf+8, 6, ".%03d ", milliseconds);
+  strncpy( msgbuf+13, lvlmsg, MSG_MAX_INTERNAL-13 );
+  nb = 13 + strlen(lvlmsg);
   nb += snprintf( msgbuf+nb, MSG_MAX_INTERNAL-nb, "%s: ", DAS_IO::AppID.name );
   // I am guaranteed that we have not yet overflowed the buffer
   nb += vsnprintf( msgbuf+nb, MSG_MAX_INTERNAL-nb, fmt, args );
