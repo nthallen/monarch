@@ -329,9 +329,9 @@ cmdif_rd::~cmdif_rd() {
 void cmdif_rd::Setup() {
   first_cmd = last_cmd = new_command();
   rdrs.push_back(this);
-  if (DAS_IO::CmdServer == 0) {
-    DAS_IO::CmdServer = new DAS_IO::Server("cmd");
-  }
+  // cmdif_rd::Setup is called from generated code in cis_interfaces()
+  // which is called from ci_server(), which initializes CmdServer first.
+  nl_assert(DAS_IO::CmdServer);
   if (name && name[0]) {
     svcsname.append("/");
     svcsname.append(name);
