@@ -168,7 +168,7 @@ void Loop::set_loop_exit() {
   loop_exit = true;
   while (!S.empty()) {
     Interface *P = S.front();
-    // nl_error(0, "Deleting Interface %d", P->get_iname());
+    // msg(0, "Deleting Interface %d", P->get_iname());
     delete(P);
     S.pop_front();
   }

@@ -1,17 +1,17 @@
 <package> msg
 
 <comment>
-  package for msg clients
-  Application must provide default msg_hdr
-  I will include nortlib and I will always define nl_error.
-  The cost is small (one pointer) if I don't use it.
-  (not strictly true with shared libs, but nortlib is likely
-  to be widely used anyway)
-  I have changed the options. The default without options is
-  to write to memo. Specifying -o and/or -V will disable the
-  write to memo, but it can be explicitly re-enabled with -m.
+  package for memo clients
+  The default without options is to write to memo. Specifying
+  -o and/or -V will disable the write to memo, but it can be
+  explicitly re-enabled with -m.
   One can get no output at all via -o /dev/null.
   If memo is not found, output will go to stderr.
+  
+  For use internal to memo, the msgmemo package below can be
+  overridden to disable the write_to_memo option and functionality
+  while retaining all the formatting features and the other
+  output options.
   
   Timestamping will be performed by the msg() function so it
   will appear in all forms of output. memo should add a timestamp

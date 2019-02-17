@@ -151,14 +151,14 @@ static void write_msg( const char *buf, int nb, FILE *fp, const char *dest ) {
 }
 
 /**
- * msg() supports the nl_error() interface, but provides
+ * msg_func() implements the msg() interface, but provides
  * a considerable amount of additional functionality to
  * support logging of messages within an application with
- * multiple executables. Through command-line options, msg()
- * can be configured to log to stderr and/or to a log file
- * and/or to the memo application, and adds a timestamp
- * to each message. See nl_error() for definition of the
- * level options.
+ * multiple executables. Through command-line options,
+ * msg_func() allows msg() to be configured to log to
+ * stderr and/or to a log file and/or to the memo application,
+ * and adds a timestamp to each message. See msg() for definition
+ * of the level options.
  * @return the level argument.
  */
 int msg_func( int level, const char *fmt, ...) {
@@ -172,11 +172,11 @@ int msg_func( int level, const char *fmt, ...) {
 }
 
 /**
- * msgv() is a version of the msg() function that
- * takes a va_list for format arguments, allowing
- * more complex reporting functions to built on
- * top of the msg() functionality. Internally
- * msg() calls msgv().
+ * msgv_func() implements the msgv() interface,
+ * taking a va_list for format arguments, allowing
+ * more complex reporting functions to be built on
+ * top of the basic msg() functionality. Internally
+ * msg_func() calls msgv_vunc().
  * @return the level argument.
  */
 #define MSG_MAX_INTERNAL 250
