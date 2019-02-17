@@ -25,7 +25,6 @@ class RTU : public DAS_IO::Serial {
      * @param iname Interface name for messages
      * @param bufsz The input buffer size
      * @param path Path to the device
-     * @param open_flags Flags passed to ::open()
      */
     RTU(const char *iname, int bufsz, const char *path);
     /**
