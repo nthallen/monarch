@@ -6,6 +6,7 @@
 
 #include "dasio/server.h"
 #include "dasio/loop.h"
+#include "nl.h"
 
 using namespace DAS_IO;
 

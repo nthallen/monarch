@@ -6,7 +6,7 @@
 #include "dasio/interface.h"
 #include "dasio/appid.h"
 #include "nl.h"
-#include "msg.h"
+#include "dasio/msg.h"
 #include "gtest/gtest.h"
 
 DAS_IO::AppID_t DAS_IO::AppID("test_not", "Tests of not functions", "V1.1");

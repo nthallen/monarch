@@ -61,7 +61,7 @@ mlf_ntup_t *mlf_convert_fname( mlf_def_t *mlf, const char *fbase, const char *fn
   mlfn->base = mlf_strtok( cfg, "/", &del );
   for ( s = mlfn->base; *s; s++ )
     if ( ! isalnum(*s) && *s != '_' )
-      nl_error( 3,
+      msg( 3,
         "mlf_convert_fname: illegal char '%c' in base '%s'",
         *s, mlfn->base );
 
@@ -71,11 +71,11 @@ mlf_ntup_t *mlf_convert_fname( mlf_def_t *mlf, const char *fbase, const char *fn
       char *end;
 
       if ( del == '/' && level == mlf->n_levels )
-        nl_error( 3,
+        msg( 3,
           "Too many directory levels specified", level );
       mlfn->ntup[level] = strtoul( num, &end, 10 );
       if ( *end != '\0' )
-        nl_error( 3,
+        msg( 3,
           "mlf_convert_fname: Subdir '%s' at level %d not numeric",
           num, level );
     }
@@ -84,7 +84,7 @@ mlf_ntup_t *mlf_convert_fname( mlf_def_t *mlf, const char *fbase, const char *fn
     mlfn->suffix = mlf_strtok( NULL, "/", &del );
     for ( s = mlfn->suffix; *s; s++ )
       if ( ! isalnum(*s) && *s != '_' )
-        nl_error( 3, "mlf_convert_fname: Illegal char in suffix" );
+        msg( 3, "mlf_convert_fname: Illegal char in suffix" );
   }
 
   return mlfn;
@@ -113,7 +113,7 @@ static void mlf_set_ixs( mlf_def_t *mlf, int *ixs ) {
           *(mlf->flvl[i].s) = '\0';
           if ( stat( mlf->fpath, &buf ) || ! S_ISDIR(buf.st_mode) ) {
             if ( mkdir( mlf->fpath, 0775 ) != 0 )
-              nl_error( 3, "Unable to create directory %s", mlf->fpath );
+              msg( 3, "Unable to create directory %s", mlf->fpath );
           }
         }
         if ( ixs[i] < 0 ) {
@@ -129,7 +129,7 @@ static void mlf_set_ixs( mlf_def_t *mlf, int *ixs ) {
       if ( i < mlf->n_levels )
         mlf->flvl[i+1].s = mlf->flvl[i].s + end;
       if ( mlf->flvl[i].index < 0 )
-        nl_error( 4, "Assertion failed: mlf->flvl[i].index < 0"	);
+        msg( 4, "Assertion failed: mlf->flvl[i].index < 0"	);
       mlf->index =
         mlf->index * mlf->n_files + mlf->flvl[i].index;
     }
@@ -186,7 +186,7 @@ void mlf_set_index( mlf_def_t * mlf, unsigned long index ) {
  */
 void mlf_set_ntup( mlf_def_t *mlf, mlf_ntup_t *mlfn ) {
   if ( mlfn->mlf != mlf )
-    nl_error( 4, "mlf_set_ntup: Invalid n-tuple" );
+    msg( 4, "mlf_set_ntup: Invalid n-tuple" );
   if ( mlfn->suffix != NULL )
     mlf->fsuffix = mlfn->suffix;
   if ( mlfn->base != NULL ) {
@@ -202,12 +202,12 @@ mlf_def_t *mlf_init( int n_levels, int n_files, int writing,
   mlf_ntup_t *mlfn;
 
   if ( n_levels < 1 || n_levels > MLF_MAX_LEVELS ) {
-    nl_error( 3, "mlf_init: n_levels must be >= 1 and <= %d",
+    msg( 3, "mlf_init: n_levels must be >= 1 and <= %d",
         MLF_MAX_LEVELS );
     return NULL;
   }
   if ( n_files < 2 ) {
-    nl_error( 3, "mlf_init: n_files must be >= 2" );
+    msg( 3, "mlf_init: n_files must be >= 2" );
     return NULL;
   }
   n_levels--;
@@ -310,7 +310,7 @@ static int next_file( mlf_def_t *mlf, int level ) {
     n = sprintf( mlf->flvl[level].s, "/%02d", mlf->flvl[level].index );
     mlf->flvl[level+1].s = mlf->flvl[level].s + n;
     if ( mlf->flags & MLF_WRITING && mkdir( mlf->fpath, 0775 ) != 0 )
-      nl_error( 2, "Unable to create directory %s", mlf->fpath );
+      msg( 2, "Unable to create directory %s", mlf->fpath );
   } else {
     sprintf( mlf->flvl[level].s, "/%02d.%s", mlf->flvl[level].index,
         mlf->fsuffix );
@@ -323,7 +323,7 @@ FILE *mlf_next_file( mlf_def_t *mlf ) {
   next_file( mlf, mlf->n_levels );
   fp = fopen( mlf->fpath, (mlf->flags & MLF_WRITING) ? "w" : "r" );
   if ( fp == 0 && nl_response > 0 )
-    nl_error( 1, "Unable to open file '%s'", mlf->fpath );
+    msg( 1, "Unable to open file '%s'", mlf->fpath );
   return fp;
 }
 
@@ -333,7 +333,7 @@ int mlf_next_fd( mlf_def_t *mlf ) {
   fd = open( mlf->fpath, (mlf->flags & MLF_WRITING) ?
       O_WRONLY|O_CREAT : O_RDONLY, 0664 );
   if ( fd == -1 && nl_response > 0 )
-    nl_error( 1, "Unable to open file '%s'", mlf->fpath );
+    msg( 1, "Unable to open file '%s'", mlf->fpath );
   return fd;
 }
 /*
@@ -408,7 +408,7 @@ int mlf_next_dir( mlf_def_t *mlf ) {
     if ( mlf->flags & MLF_WRITING ) {
       if ( mkdir( mlf->fpath, 0775 ) == 0 ) return 1;
       if ( nl_response )
-        nl_error( 2, "Unable to create directory %s", mlf->fpath );
+        msg( 2, "Unable to create directory %s", mlf->fpath );
     }
     return 0;
   }

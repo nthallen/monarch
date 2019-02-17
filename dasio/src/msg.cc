@@ -10,22 +10,48 @@
 #include "dasio/appid.h"
 #include "oui.h"
 #include "nl.h"
+#define MSG_INTERNAL
 #include "dasio/msg.h"
 // #include "tm.h" was needed for tm_dev_name
 // I hacked that out, but this needs to interface to C++ to provide proper IPC
 // with memo.
 
+  static bool we_are_memo = false;
+  
+  void set_we_are_memo(void) {
+    we_are_memo = true;
+  }
+
   memo_client::memo_client() : DAS_IO::Client("memo", 1000, "memo", 0) {
     //do stuff
   }
   
+  static memo_client *memo_client_instance;
+
+  extern "C" {
+    static void msg_cleanup(void) {
+      if (memo_client_instance) {
+        memo_client_instance->cleanup();
+        delete(memo_client_instance);
+        memo_client_instance = 0;
+      }
+    }
+  };
+  
   memo_client::~memo_client() {}
   
   bool memo_client::init() {
+    atexit(msg_cleanup);
     ELoop.add_child(this);
     connect();
     ELoop.event_loop();
     return (fd >= 0);
+  }
+  
+  void memo_client::cleanup() {
+    ELoop.remove_child(this);
+    msg = nl_err;
+    msgv = nl_verr;
   }
   
   void memo_client::send(const char* msg) {
@@ -49,9 +75,8 @@
     return (is_negotiated() && ocp >= onc);
   }
 
-static int write_to_memo = 1, write_to_stderr = 0, write_to_file = 0;
+static int write_to_memo = 0, write_to_stderr = 0, write_to_file = 0;
 FILE *file_fp;
-static memo_client *memo_client_instance;
 
 /*
 <opts> "vo:mV"
@@ -78,7 +103,12 @@ void msg_init_options(int argc, char **argv) {
         }
         write_to_file = 1;
         break;
-      case 'm': write_to_memo = 2; break;
+      case 'm': 
+        write_to_memo = 1;
+        if (we_are_memo) {
+          msg(3, "memo cannot write to memo!\n");
+        }
+        break;
       case 'V': write_to_stderr = 1; break;
       case '?':
         fprintf( stderr, "Unrecognized option: '-%c'\n", optopt );
@@ -86,9 +116,16 @@ void msg_init_options(int argc, char **argv) {
       default: break; // could check for errors
     }
   }
-  if ( ( write_to_file || write_to_stderr ) && write_to_memo == 1 )
-    write_to_memo = 0;
-  if ( write_to_memo ) {
+  
+  if (!write_to_stderr && !write_to_file && !write_to_memo) {
+    if (we_are_memo) {
+      write_to_stderr = 1;
+    } else {
+      write_to_memo = 1;
+    }
+  }
+  
+  if (write_to_memo) {
     // memo_fp = fopen( tm_dev_name( "memo" ), "w" );
     // memo_fp = fopen( "memo.log", "w" );
     
@@ -99,11 +136,12 @@ void msg_init_options(int argc, char **argv) {
       write_to_memo = 0;
     }
   }
-  nl_error = msg;
-  nl_verror = msgv;
+  
+  msg = msg_func;
+  msgv = msgv_func;
 }
 
-static void write_msg( char *buf, int nb, FILE *fp, const char *dest ) {
+static void write_msg( const char *buf, int nb, FILE *fp, const char *dest ) {
   int rv = fwrite( buf, 1, nb, fp );
   if ( rv == -1 ) {
     fprintf( stderr, "Memo: error %s writing to %s\n",
@@ -123,7 +161,7 @@ static void write_msg( char *buf, int nb, FILE *fp, const char *dest ) {
  * level options.
  * @return the level argument.
  */
-int msg( int level, const char *fmt, ...) {
+int msg_func( int level, const char *fmt, ...) {
   va_list args;
   int rv;
 
@@ -142,12 +180,24 @@ int msg( int level, const char *fmt, ...) {
  * @return the level argument.
  */
 #define MSG_MAX_INTERNAL 250
-int msgv( int level, const char *fmt, va_list args ) {
+int msgv_func( int level, const char *fmt, va_list args ) {
   const char *lvlmsg;
   char msgbuf[MSG_MAX_INTERNAL+2];
-  time_t now = time(NULL);
+  
+  //New, millisecond time!
+  clockid_t clk_id = CLOCK_REALTIME;
+  struct timespec timespec, resolution;
+  clock_getres(clk_id, &resolution);
+  clock_gettime(clk_id, &timespec);
+  
+  int milliseconds = ((timespec.tv_nsec+500000)/1000000);
+  char *tbuf = asctime(gmtime(&timespec.tv_sec));
+  
+  //Below lies second-time
+  /* time_t now = time(NULL);
   struct tm *tm = gmtime(&now);
   char *tbuf = asctime(tm);
+  */
   int nb;
 
   switch ( level ) {
@@ -162,9 +212,11 @@ int msgv( int level, const char *fmt, va_list args ) {
       else lvlmsg = "[DEBUG] ";
       break;
   }
-  strncpy(msgbuf, tbuf+11, 9); // index, length of time string
-  strncpy( msgbuf+9, lvlmsg, MSG_MAX_INTERNAL-9 );
-  nb = 9 + strlen(lvlmsg);
+  //Here's the part where it gets fuzzy - for Miles, at least
+  strncpy(msgbuf, tbuf+11, 8); // index, length of time string
+  snprintf(msgbuf+8, 6, ".%03d ", milliseconds);
+  strncpy( msgbuf+13, lvlmsg, MSG_MAX_INTERNAL-13 );
+  nb = 13 + strlen(lvlmsg);
   nb += snprintf( msgbuf+nb, MSG_MAX_INTERNAL-nb, "%s: ", DAS_IO::AppID.name );
   // I am guaranteed that we have not yet overflowed the buffer
   nb += vsnprintf( msgbuf+nb, MSG_MAX_INTERNAL-nb, fmt, args );
@@ -173,7 +225,10 @@ int msgv( int level, const char *fmt, va_list args ) {
   // msgbuf[nb] = '\0';
   // nb may be as big as MSG_MAX_INTERNAL+1
   // we don't need to transmit the trailing nul
+  return msg_internal(level, msgbuf, nb);
+}
 
+int msg_internal(int level, const char *msgbuf, int nb) {
   if ( write_to_memo && memo_client_instance ) {
     memo_client_instance->send(msgbuf);
   }

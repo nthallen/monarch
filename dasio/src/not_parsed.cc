@@ -24,7 +24,7 @@
 #include "dasio/interface.h"
 #include "dasio/ascii_escape.h"
 #include "nl.h"
-#include "msg.h"
+#include "dasio/msg.h"
 #include "nl_assert.h"
 
 bool DAS_IO::Interface::not_found(unsigned char c) {
@@ -86,8 +86,7 @@ bool DAS_IO::Interface::not_str( const char *str_in, unsigned int len ) {
   unsigned int i;
   const unsigned char *str = (const unsigned char *)str_in;
   if ( cp < 0 || cp > nc || nc < 0 || buf == 0 )
-    //nl_error changed from msg
-    nl_error( 4, "DAS_IO::Interface precondition failed: "
+    msg( 4, "DAS_IO::Interface precondition failed: "
       "cp = %d, nc = %d, buf %s",
       cp, nc, buf ? "not NULL" : "is NULL" );
   for (i = 0; i < len; ++i) {
@@ -113,7 +112,7 @@ bool DAS_IO::Interface::not_str(const std::string &s) {
 
 bool DAS_IO::Interface::not_fptext() {
   if ( cp < 0 || cp > nc || nc < 0 || nc >= bufsize || buf == 0 )
-    nl_error( 4, "Ser_Sel precondition failed: "
+    msg( 4, "Ser_Sel precondition failed: "
       "cp = %d, nc = %d, bufsize = %d, buf %s",
       cp, nc, bufsize, buf ? "not NULL" : "is NULL" );
 

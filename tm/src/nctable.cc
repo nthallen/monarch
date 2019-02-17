@@ -49,7 +49,7 @@ static inline int is_dirty(int n) {
 
 void nct_args( char *dev_name ) {
   if ( n_devs >= MAX_DEVS )
-    nl_error( 2, "Too many devices specified" );
+    msg( 2, "Too many devices specified" );
   else nct_display[n_devs++].dev_name = dev_name;
 }
 
@@ -64,7 +64,7 @@ void nct_init_options(int argc, char **argv) {
         nct_charset(NCT_CHARS_ASCII);
         break;
       case '?':
-        nl_error(3, "Unrecognized Option -%c", optopt);
+        msg(3, "Unrecognized Option -%c", optopt);
       default:
         break;
     }
@@ -104,20 +104,20 @@ int nct_init( const char *winname, int n_rows, int n_cols ) {
   nct_display_t *d;
 
   if ( n_scrs >= n_devs )
-    nl_error( 3, "Not enough devices specified" );
+    msg( 3, "Not enough devices specified" );
   if ( ttype == NULL ) {
     ttype = getenv("TERM");
     if ( ttype == NULL )
-      nl_error(3, "Cannot determine terminal type");
+      msg(3, "Cannot determine terminal type");
   }
   d = &nct_display[n_scrs];
   dev_name = d->dev_name;
   d->ofp = ofp = fopen( dev_name, "w" );
   if (ofp == NULL)
-    nl_error( 3, "Cannot open %s for write", dev_name ); 
+    msg( 3, "Cannot open %s for write", dev_name ); 
   d->ifp = ifp = fopen( dev_name, "r" );
   if (ifp == NULL)
-    nl_error( 3, "Cannot open %s for read", dev_name );
+    msg( 3, "Cannot open %s for read", dev_name );
   d->screen = scr = newterm(ttype, ofp, ifp );
   d->dirty = 0;
   set_term(scr);
@@ -346,7 +346,7 @@ void nct_charset(int n) {
       nct_boxchars = asciichar;
       break;
     default:
-      nl_error(2, "Invalid charset code" );
+      msg(2, "Invalid charset code" );
   }
 }
 
@@ -390,7 +390,7 @@ char nct_getch(void) {
     nct_display_t *d = &nct_display[ifds_opened++];
     d->ifd = open( d->dev_name, O_RDONLY|O_NONBLOCK );
     if ( d->ifd == -1 )
-      nl_error(3, "Unable to read from %s: %d", d->dev_name, errno );
+      msg(3, "Unable to read from %s: %d", d->dev_name, errno );
     if (ifds_opened < n_scrs) {
       nct_select(ifds_opened);
       curs_set(1); // Turn on the cursor
@@ -419,7 +419,7 @@ char nct_getch(void) {
       rv = select(width, &fs, NULL, NULL, NULL);
       if ( rv == -1 ) {
         if ( errno != EINTR )
-          nl_error( 3, "Error %d from select", errno );
+          msg( 3, "Error %d from select", errno );
       } else {
         for ( i = 0; i < ifds_opened; i++ ) {
           int ifd = nct_display[i].ifd;
@@ -427,9 +427,9 @@ char nct_getch(void) {
             int nb = read( ifd, &ibuf[nc], IBUFSIZE-nc );
             if ( nb == -1 ) {
               if (errno != EAGAIN && errno != EINTR)
-                nl_error( 3, "Error %d from read()", errno );
+                msg( 3, "Error %d from read()", errno );
             } else if ( nb == 0 ) {
-              nl_error( 0, "Read 0 bytes" );
+              msg( 0, "Read 0 bytes" );
               exit(0);
             } else {
               nc += nb;

@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "dasio/interface.h"
-#include "msg.h"
+#include "dasio/msg.h"
 #include "nl_assert.h"
 #include "dasio/ascii_escape.h"
 
@@ -59,7 +59,7 @@ Timeout *Interface::GetTimeout() {
 }
 
 bool Interface::ProcessData(int flag) {
-  // nl_error(0, "%s: Interface::ProcessData(%d)", iname, flag);
+  // msg(0, "%s: Interface::ProcessData(%d)", iname, flag);
   if ((flags & flag & gflag(0)) && tm_sync())
     return true;
   if ((flags&Fl_Read) && (flags&flag&(Fl_Read|Fl_Timeout))) {
@@ -140,7 +140,7 @@ bool Interface::iwritten(int nb) { return false; }
  * The default implementation returns true.
  */
 bool Interface::iwrite_error(int my_errno) {
-  nl_error(2, "%s: write error %d: %s", iname, my_errno, strerror(my_errno));
+  msg(2, "%s: write error %d: %s", iname, my_errno, strerror(my_errno));
   return true;
 }
 
@@ -148,7 +148,7 @@ bool Interface::iwrite_error(int my_errno) {
  * The default function returns true.
  */
 bool Interface::read_error(int my_errno) {
-  nl_error(2, "%s: read error %d: %s", iname, my_errno, strerror(my_errno));
+  msg(2, "%s: read error %d: %s", iname, my_errno, strerror(my_errno));
   return true;
 }
 
@@ -206,9 +206,9 @@ void Interface::set_ibufsize(int bufsz) {
 
 bool Interface::fillbuf(int N) {
   int i;
-  if (!buf) nl_error(4, "Ser_Sel::fillbuf with no buffer");
+  if (!buf) msg(4, "Ser_Sel::fillbuf with no buffer");
   if (N > bufsize)
-    nl_error(4, "Ser_Sel::fillbuf(N) N > bufsize: %d > %d",
+    msg(4, "Ser_Sel::fillbuf(N) N > bufsize: %d > %d",
       N, bufsize);
   if (nc > N-1) return false;
   ++n_fills;
@@ -259,13 +259,13 @@ void Interface::report_err( const char *fmt, ... ) {
     va_list args;
 
     va_start(args, fmt);
-    nl_verror( 2, fmt, args );
+    msgv( 2, fmt, args );
     va_end(args);
     if (nc)
-      nl_error(2, "%s: Input was: '%s'", iname, ascii_escape() );
+      msg(2, "%s: Input was: '%s'", iname, ascii_escape() );
   } else {
     if ( !n_suppressed )
-      nl_error(2, "%s: Error threshold reached: suppressing errors", iname);
+      msg(2, "%s: Error threshold reached: suppressing errors", iname);
     ++n_suppressed;
     ++total_suppressed;
   }
@@ -283,7 +283,7 @@ const char *Interface::ascii_escape() {
 void Interface::report_ok(int nchars) {
   if ( n_errors > 0 ) {
     if ( --n_errors <= 0 && n_suppressed ) {
-      nl_error( 0, "Error recovery: %d error messages suppressed", n_suppressed );
+      msg( 0, "Error recovery: %d error messages suppressed", n_suppressed );
       n_suppressed = 0;
     }
   }

@@ -72,7 +72,7 @@ void new_interface( char *if_name ) {
       cmd_class, if_name, if_name );
     break;
       default:
-    nl_error(4,"Invalid if_type %d", new_if->if_type);
+    msg(4,"Invalid if_type %d", new_if->if_type);
     }
     fprintf( ofile, "#endif\n" );
   }
@@ -92,7 +92,7 @@ void output_interfaces(void) {
       case IFT_SUBBUS:
     break; // initialization is handled by subbus.oui
       default:
-    nl_error(4, "Unexpected interface type: %d", cur_if->if_type );
+    msg(4, "Unexpected interface type: %d", cur_if->if_type );
     }
     // fprintf( ofile, "    if_%s = cis_setup_rdr(\"%s\");\n",
     //    cur_if->if_name, cur_if->if_name );
@@ -110,7 +110,7 @@ void output_interfaces(void) {
     fprintf( ofile, "    subbus_quit();\n" );
     break;
       default:
-    nl_error(4, "Unexpected interface type: %d", cur_if->if_type );
+    msg(4, "Unexpected interface type: %d", cur_if->if_type );
     }
   }
   fprintf( ofile, "  }\n#endif\n\n" );

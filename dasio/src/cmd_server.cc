@@ -5,6 +5,7 @@
 #include <string.h>
 #include "dasio/cmd_server.h"
 #include "dasio/cmd_version.h"
+#include "dasio/msg.h"
 #include "cmdalgo.h"
 #include "nl_assert.h"
 
@@ -151,7 +152,7 @@ namespace DAS_IO {
           s++;
         }
         if ( len > 0 && cmd[len-1] == '\n' ) len--;
-        nl_error( quiet ? -2 : 0, "%s: %*.*s",
+        msg( quiet ? -2 : 0, "%s: %*.*s",
           mnemonic, len, len, cmd );
         cmd_init();
         rv = cmd_batch( (char *)cmd, testing );
@@ -167,9 +168,9 @@ namespace DAS_IO {
             return true;
           case 2: /* Report Syntax Error */
             if ( nl_response ) {
-              nl_error( 2, "%s: Syntax Error", mnemonic );
-              nl_error( 2, "%*.*s", len, len, cmd);
-              nl_error( 2, "%*s", rv - CMDREP_SYNERR, "^");
+              msg( 2, "%s: Syntax Error", mnemonic );
+              msg( 2, "%*.*s", len, len, cmd);
+              msg( 2, "%*s", rv - CMDREP_SYNERR, "^");
             }
             len = snprintf(obuf, OBUF_SIZE, "S%d: Syntax Error at column %d\n",
               rv - CMDREP_SYNERR, rv - CMDREP_SYNERR);
@@ -203,7 +204,7 @@ namespace DAS_IO {
   }
 
   void Cmd_receiver::process_quit() {
-    nl_error( -2, "Processing Quit" );
+    msg( -2, "Processing Quit" );
     quit_received = quit_recd = true;
     iwrite("Q\n");
     ELoop->delete_child(this);
@@ -313,7 +314,7 @@ cmdif_rd::cmdif_rd(const char *name)
  * could handle that, since it already has the position)
  */
 cmdif_rd::~cmdif_rd() {
-  nl_error( -2, "Shutting down reader %s", name);
+  msg( -2, "Shutting down reader %s", name);
   nl_assert(turfs.empty());
   if (DAS_IO::CmdServer)
     DAS_IO::CmdServer->rm_subservice(svcsname);
@@ -354,7 +355,7 @@ void cmdif_rd::Turf(const char *format, ...) {
   nb = vsnprintf( cmd->command, CMD_MAX_COMMAND_OUT, format, arglist );
   va_end( arglist );
   if ( nb >= CMD_MAX_COMMAND_OUT ) {
-    nl_error( 2, "%s: Output buffer overflow", svcsname.c_str());
+    msg( 2, "%s: Output buffer overflow", svcsname.c_str());
     cmd->command[0] = '\0';
   } else {
     cmd->cmdlen = nb;
@@ -394,7 +395,7 @@ void cmdif_rd::rm_reader(DAS_IO::Cmd_turf *rdr) {
 bool cmdif_rd::all_closed() {
   std::list<cmdif_rd *>::iterator rp, crp;
   rp = rdrs.begin();
-  // nl_error(0, "all_closed: %d rdrs", rdrs.size());
+  // msg(0, "all_closed: %d rdrs", rdrs.size());
   while (rp != rdrs.end()) {
     crp = rp;
     cmdif_rd *cur_rdr = *crp;
@@ -507,19 +508,19 @@ void cmdif_wr::Turf(const char *format, ...) {
   int nb;
 
   if (client == 0 || client->fd < 0) {
-    nl_error(2, "%s: Cannot forward command while disconnected",
+    msg(2, "%s: Cannot forward command while disconnected",
       client->get_iname());
     return;
   }
   // if (ocp < onc) {
-    // nl_error(2, "%s: Output buffer overflow", client->get_iname());
+    // msg(2, "%s: Output buffer overflow", client->get_iname());
     // return;
   // }
   va_start( arglist, format );
   nb = vsnprintf( obuf, CMD_MAX_COMMAND_OUT, format, arglist );
   va_end( arglist );
   if ( nb >= CMD_MAX_COMMAND_OUT ) {
-    nl_error( 2, "%s: Output buffer overflow", client->get_iname());
+    msg( 2, "%s: Output buffer overflow", client->get_iname());
   } else if (nb == 0) {
     if (client->ELoop)
       client->ELoop->delete_child(client);

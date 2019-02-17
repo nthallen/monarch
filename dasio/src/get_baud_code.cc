@@ -4,6 +4,7 @@
 #include <termios.h>
 #include "dasio/serial.h"
 #include "nl.h"
+#include "dasio/msg.h"
 
 speed_t DAS_IO::Serial::get_baud_code(int baud) {
   switch (baud) {
@@ -100,6 +101,6 @@ speed_t DAS_IO::Serial::get_baud_code(int baud) {
 #ifdef B3000000
     case 3000000: return B3000000;
 #endif
-    default: nl_error(3, "Invalid baud rate: %u", baud);
+    default: msg(3, "Invalid baud rate: %u", baud);
   }
 }

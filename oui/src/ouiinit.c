@@ -11,7 +11,8 @@ const char *opt_string = "uqkwvo:";
 #include "nl.h"
 #include <stdio.h>
 #include "compiler.h"
-  int (*nl_error)(int level, const char *s, ...) = compile_error;
+
+int (*msg)(int level, const char *s, ...) = compile_error;
 
 void oui_init_options(int argc, char **argv) {
   char *output_extension;
@@ -24,7 +25,7 @@ void oui_init_options(int argc, char **argv) {
       switch (optltr) {
         case 'u': sort_output = 0; break;
         case '?':
-          nl_error(3, "Unrecognized Option -%c", optopt);
+          msg(3, "Unrecognized Option -%c", optopt);
         default:
           break;
       }

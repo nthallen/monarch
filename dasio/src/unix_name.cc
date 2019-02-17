@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include "dasio/socket.h"
 #include "dasio/appid.h"
+#include "dasio/msg.h"
 #include "nl.h"
 
 #ifndef UNIX_PATH_MAX
@@ -50,12 +51,12 @@ Socket::unix_name_t::~unix_name_t() {
 
 bool Socket::unix_name_t::is_word(const char *w, const char *context) {
   if (w == 0 || *w == '\0') {
-    nl_error(2, "%s is empty", context);
+    msg(2, "%s is empty", context);
     return false; // empty string
   }
   for (;*w != '\0'; ++w) {
     if (!std::isalnum(*w) && *w != '-' && *w != '_' && *w != '.') {
-      nl_error(2, "%s contains invalid character(s)", context);
+      msg(2, "%s contains invalid character(s)", context);
       return false;
     }
   }
@@ -64,7 +65,7 @@ bool Socket::unix_name_t::is_word(const char *w, const char *context) {
 
 bool Socket::unix_name_t::set_service(const char *service) {
   if (exp_name) {
-    nl_error(2, "Cannot call set_service() again after previous success");
+    msg(2, "Cannot call set_service() again after previous success");
     return false;
   }
   // Verify that company, Experiment and service are all valid words
@@ -86,7 +87,7 @@ bool Socket::unix_name_t::set_service(const char *service) {
   svc_name = new_svc_name;
 
   if (svc_len > UNIX_PATH_MAX) {
-    nl_error(2, "Service path exceeds UNIX_PATH_MAX");
+    msg(2, "Service path exceeds UNIX_PATH_MAX");
     return false;
   }  
   return true;
@@ -97,7 +98,7 @@ const char *Socket::unix_name_t::get_svc_name() { return svc_name; }
 bool Socket::unix_name_t::lock() {
   if (locked) return true;
   if (svc_name == 0 || exp_name == 0) {
-    nl_error(2, "unix_name_t: Must call set_service() before lock()");
+    msg(2, "unix_name_t: Must call set_service() before lock()");
     return false;
   }
   int lock_len = ::snprintf(0, 0, "%s.lock", exp_name)+1;
@@ -111,14 +112,14 @@ bool Socket::unix_name_t::lock() {
   }
   lock_fd = ::open(lock_name, O_RDONLY);
   if (lock_fd < 0) {
-    nl_error(2, "Unable to open lock file %s: %s", lock_name, strerror(errno));
+    msg(2, "Unable to open lock file %s: %s", lock_name, strerror(errno));
     return false;
   }
   int rv = ::flock(lock_fd, LOCK_EX|LOCK_NB);
   if (rv == 0) {
     locked = true;
   } else if (errno != EWOULDBLOCK) {
-    nl_error(2, "flock error: %s", strerror(errno));
+    msg(2, "flock error: %s", strerror(errno));
   }
   return locked;
 }
@@ -129,7 +130,7 @@ void Socket::unix_name_t::unlock() {
   if (rv == 0) {
     locked = false;
   } else {
-    nl_error(2, "flock returned error on unlock: %s", strerror(errno));
+    msg(2, "flock returned error on unlock: %s", strerror(errno));
   }
   ::close(lock_fd);
   lock_fd = -1;
@@ -139,11 +140,11 @@ bool Socket::unix_name_t::is_locked() { return locked; }
 
 bool Socket::unix_name_t::claim_server() {
   if (!locked) {
-    nl_error(2, "Must lock() before claim_server()");
+    msg(2, "Must lock() before claim_server()");
     return false;
   }
   if (mkdir(exp_name, 0770) && errno != EEXIST) {
-    nl_error(2, "Unable to create %s dir: %s", exp_name, strerror(errno));
+    msg(2, "Unable to create %s dir: %s", exp_name, strerror(errno));
     return false;
     // if (errno == EEXIST) ==> not really an error
     // if (errno == EACCES) ==> don't have write permission
@@ -166,11 +167,11 @@ bool Socket::unix_name_t::claim_server() {
     if (pid > 0) {
       int rv = kill(pid, 0);
       if (rv == 0) {
-        nl_error(2, "Service %s in use by PID %d", svc_name, pid);
+        msg(2, "Service %s in use by PID %d", svc_name, pid);
         unlock();
         return false;
       } else if (errno != ESRCH) {
-        nl_error(2, "kill(pid,0) returned %s", strerror(errno));
+        msg(2, "kill(pid,0) returned %s", strerror(errno));
         unlock();
         return false;
       }
@@ -180,7 +181,7 @@ bool Socket::unix_name_t::claim_server() {
   
   FILE *pidf = fopen(pid_name, "w");
   if (pidf == 0) {
-    nl_error(2, "Unable to write to %s", pid_name);
+    msg(2, "Unable to write to %s", pid_name);
     return false;
   }
   fprintf(pidf, "%d\n", getpid());
@@ -195,10 +196,10 @@ bool Socket::unix_name_t::is_server() { return server_claimed; }
 void Socket::unix_name_t::release_server() {
   if (server_claimed) {
     if (unlink(svc_name)) {
-      nl_error(1, "Error deleting socket %s: %s", svc_name, strerror(errno));
+      msg(1, "Error deleting socket %s: %s", svc_name, strerror(errno));
     }
     if (unlink(pid_name)) {
-      nl_error(1, "Error deleting pid file %s: %s", pid_name, strerror(errno));
+      msg(1, "Error deleting pid file %s: %s", pid_name, strerror(errno));
     }
     if (rmdir(exp_name) == 0) {
       unlink(lock_name);

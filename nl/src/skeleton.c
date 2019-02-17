@@ -12,7 +12,7 @@ static FILE *skfp = NULL;
 /**
  * Skel_open opens the specified skeleton file, looking in appropriate
  * directories as necessary. Returns zero on success. On error, calls
- * the nortlib error routine nl_error, and returns nonzero. nl_error
+ * the nortlib error routine msg, and returns nonzero. msg
  * can be redirected as necessary.
  * @param name the skeleton filename
  * @return non-zero on error
@@ -23,7 +23,7 @@ int Skel_open(const char *name) {
   snprintf( filename, FILENAME_MAX, DEF_DIR "/%s", name );
   skfp = fopen(filename, "r");
   if (skfp == NULL) {
-    nl_error(2, "Unable to open skeleton file %s", name);
+    msg(2, "Unable to open skeleton file %s", name);
     return(1);
   }
   return(0);
@@ -37,7 +37,7 @@ int Skel_open(const char *name) {
  * The line containing the label is not copied. If label is
  * NULL, it means copy to the end of the file. If an unexpected
  * label (including EOF) is encountered, it is considered an
- * error. The nl_error routine is called and a non-zero result
+ * error. The msg routine is called and a non-zero result
  * is returned.
  * 
  * If copyout is non-zero, the intervening skeleton text is
@@ -69,7 +69,7 @@ int Skel_copy(FILE *ofp, const char *label, int copyout) {
         if (c == '%') { /* It was a label */
           do c = getc(skfp); while (c != EOF && c != '\n');
           if (strcmp(label, lbuf) == 0) return(0);
-          else return(nl_error(2,
+          else return(msg(2,
             "Skel: Unexpected label \"%s\" looking for %s",
             lbuf, label == NULL ? "EOF" : label));
         } else if (copyout) fprintf(ofp, "%%%s", lbuf);
@@ -85,7 +85,7 @@ int Skel_copy(FILE *ofp, const char *label, int copyout) {
   
   /* We get here only if file isn't open (EOF) */
   if (label != NULL)
-    return(nl_error(2,
+    return(msg(2,
       "Unexpected EOF in Skeleton seeking label \"%s\"", label));
   return(0);
 }

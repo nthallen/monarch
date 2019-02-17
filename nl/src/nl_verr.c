@@ -1,5 +1,5 @@
-/** @file nl_verr.c contains nl_verror() which allows easy expansion of
- * the nl_error capabilities in many cases.
+/** @file nl_verr.c contains msgv() which allows easy expansion of
+ * the msg capabilities in many cases.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,11 +12,11 @@ Invocation:
 #include "nl.h"
 ~~~~~~~~~~~~~~~~~~
 
-nl_verror() provides the same error message functionality as
+msgv() provides the same error message functionality as
 nl_err() but with stdarg.h-style arguments. (nl_err() is
-actually implemented by calling nl_verror()). This makes it
+actually implemented by calling msgv()). This makes it
 possible to create error message functions that do a little more
-work on the message and then call nl_verror() to do the final
+work on the message and then call msgv() to do the final
 processing. compile_error() is written this way in order to
 output the current input filename and line number before each
 message.
@@ -52,4 +52,4 @@ int nl_verr(int level, const char *fmt, va_list args) {
 }
 
 /* @return for non fatal errors */
-int (*nl_verror)(int level, const char *fmt, va_list args) = nl_verr;
+int (*msgv)(int level, const char *fmt, va_list args) = nl_verr;

@@ -2,6 +2,7 @@
 #include "dasio/tm_server.h"
 #include "dasio/loop.h"
 #include "dasio/appid.h"
+#include "dasio/msg.h"
 #include "TMtest.h"
 #include "nl.h"
 
