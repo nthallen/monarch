@@ -19,9 +19,9 @@ extern "C" {
 int Skel_open(const char *name);
 int Skel_copy(FILE *ofp, const char *label, int copyout);
 
-extern int (*nl_error)(int level, const char *s, ...); /* nl_error.c */
+extern int (*msg)(int level, const char *s, ...); /* nl_error.c */
 int nl_err(int level, const char *s, ...); /* nl_error.c */
-extern int (*nl_verror)(int level, const char *fmt, va_list args); /* nl_verr.c */
+extern int (*msgv)(int level, const char *fmt, va_list args); /* nl_verr.c */
 int nl_verr(int level, const char *fmt, va_list args); /* nl_verr.c */
 
 /**

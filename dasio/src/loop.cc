@@ -3,6 +3,7 @@
 #include <sys/select.h>
 #include "dasio/loop.h"
 #include "nl.h"
+#include "dasio/msg.h"
 #include "nl_assert.h"
 
 namespace DAS_IO {
@@ -25,7 +26,7 @@ void Loop::add_child(Interface *P) {
     P->ELoop = this;
     children_changed = true;
   } else {
-    nl_error( 4, "fd %d already inserted in DAS_IO::Loop::add_child", P->fd );
+    msg( 4, "fd %d already inserted in DAS_IO::Loop::add_child", P->fd );
   }
 }
 
@@ -39,9 +40,9 @@ bool Loop::remove_child(Interface *P) {
     }
   }
   if (P->ELoop)
-    nl_error(2, "remove_child(%s,%d) failed, but ELoop != 0", P->get_iname(), P->fd);
+    msg(2, "remove_child(%s,%d) failed, but ELoop != 0", P->get_iname(), P->fd);
   else
-    nl_error(1, "remove_child Interface(%s,%d) not found", P->get_iname(), P->fd);
+    msg(1, "remove_child Interface(%s,%d) not found", P->get_iname(), P->fd);
   return false;
 }
 
@@ -78,10 +79,10 @@ void Loop::event_loop() {
     TimeoutAccumulator TA;
     InterfaceList::const_iterator Sp;
 
-    // nl_error(0, "Loop: %sempty, %d children", S.empty() ? "" : "not ", S.size());
+    // msg(0, "Loop: %sempty, %d children", S.empty() ? "" : "not ", S.size());
     while (!PendingDeletion.empty()) {
       Interface *P = PendingDeletion.front();
-      // nl_error(0, "Deleting Interface %d", P->get_iname());
+      // msg(0, "Deleting Interface %d", P->get_iname());
       delete(P);
       PendingDeletion.pop_front();
     }
@@ -101,7 +102,7 @@ void Loop::event_loop() {
     }
     for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
       Interface *P = *Sp;
-      // nl_error(0, "%s fd %d flags %d", P->get_iname(), P->fd, P->flags);
+      // msg(0, "%s fd %d flags %d", P->get_iname(), P->fd, P->flags);
       if (P->fd >= 0) {
         if (P->flags & P->Fl_Read) FD_SET(P->fd, &readfds);
         if (P->flags & P->Fl_Write) FD_SET(P->fd, &writefds);
@@ -134,10 +135,10 @@ void Loop::event_loop() {
           }
         }
         if (!handled) {
-          nl_error(3, "DAS_IO::Loop::event_loop(): Unhandled EBADF or EHOSTDOWN");
+          msg(3, "DAS_IO::Loop::event_loop(): Unhandled EBADF or EHOSTDOWN");
         }
       } else {
-        nl_error(3,
+        msg(3,
           "DAS_IO::Loop::event_loop(): Unexpected error from select: %d", errno);
       }
     } else {

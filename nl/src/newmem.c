@@ -11,7 +11,7 @@ void *new_memory(size_t size) {
   
   p = malloc(size);
   if (p == 0 && nl_response)
-	nl_error(nl_response, "Memory allocation error");
+	msg(nl_response, "Memory allocation error");
   return p;
 }
 
@@ -32,13 +32,13 @@ void nl_free_memory(void *p);
 
   new_memory() is a thin cover for malloc() that guarantees
   a non-NULL return. If memory allocation fails, new_memory()
-  will terminate the program by calling =nl_error=(3).
+  will terminate the program by calling =msg=(3).
   
 =Returns
 
   Returns a newly allocated copy of the argument string.
   If memory allocation fails, the program will terminate
-  via =nl_error=(3).
+  via =msg=(3).
   
   new_memory() uses the same name as a function in the memlib
   library which provides more sophisticated memory allocation

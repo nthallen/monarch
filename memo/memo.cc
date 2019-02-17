@@ -7,6 +7,8 @@
 #include "dasio/appid.h"
 #include "dasio/loop.h"
 #include "dasio/server.h"
+#define MSG_INTERNAL
+#include "dasio/msg.h"
 
 DAS_IO::AppID_t DAS_IO::AppID("memo", "memo server", "V1.0");
 
@@ -29,51 +31,15 @@ DAS_IO::AppID_t DAS_IO::AppID("memo", "memo server", "V1.0");
       TCP->connect();
       ELoop.add_child(TCP);
     }
-    nl_error(0, "%s %s Starting", AppID.fullname, AppID.rev);
+    msg(0, "%s %s Starting", AppID.fullname, AppID.rev);
     ELoop.event_loop();
-    nl_error(0, "Terminating");
+    msg(0, "Terminating");
   }
 
   memo_socket::~memo_socket() {}
-  
-static FILE *ofp, *ofp2;
-static char *output_filename;
-static int opt_V = 0;
 
 void memo_init_options( int argc, char **argv ) {
-  int c;
-  ofp = stdout;
-  ofp2 = 0;
-  optind = OPTIND_RESET;
-  opterr = 0;
-  
-  while ((c = getopt(argc, argv, opt_string)) != -1 ) {
-    switch (c) {
-      case 'o':
-        if (output_filename != 0) {
-          nl_error(3, "Multiple output files specified");
-        } else {
-          output_filename = optarg;
-        }
-        break;
-      case 'V':
-        opt_V = 1;
-        break;
-      case '?':
-        nl_error(3, "Unrecognized commandline option -%c", optopt );
-        break;
-      default:
-        break;
-    }
-  }
-  if (output_filename != 0) {
-    FILE* output = fopen(output_filename, "a");
-    if (opt_V == 1) {
-      ofp2 = output;
-    } else {
-      ofp = output;
-    }
-  }
+  set_we_are_memo();
 }
 
 memo_socket *new_memo_socket(Authenticator *Auth, SubService *SS) {

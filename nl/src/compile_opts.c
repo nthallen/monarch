@@ -161,7 +161,7 @@ void compile_init_options(int argc, char **argv, char *extension);
   =Compiler= functions.
 =End
 
-=Name compile_error(): nl_error function for compilers
+=Name compile_error(): msg function for compilers
 =Subject Compiler
 =Synopsis
 #include <stdio.h>

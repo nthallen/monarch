@@ -1,11 +1,8 @@
 <package> memo
 <include> "memo.h"
+<follow> msgmemo
 <include> oui
-<opts> "o:V"
-
-<sort>
-	-o <filename> Output file
-	-V Output to stdout (default)
+<include> msg
 
 <init>
 	memo_init_options(argc, argv);
@@ -15,4 +12,5 @@
   cool because it allows us to
   send everything to one place and
   does other stuff
-  
+
+<package> msgmemo

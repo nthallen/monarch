@@ -49,7 +49,7 @@ void cic_transmit(char *buf, int n_chars, int transmit) {
     }
     cmdbuf[curpos++] = c;
     if (curpos > CMD_INTERP_MAX)
-      nl_error(3, "Maximum transmissable command length exceeded");
+      msg(3, "Maximum transmissable command length exceeded");
   }
   if (transmit) {
     cmdbuf[curpos] = '\0';
@@ -58,7 +58,7 @@ void cic_transmit(char *buf, int n_chars, int transmit) {
   for (cl = cur; cl != NULL && cmd_check(&cl->state); cl = cl->prev);
   if (cl == NULL) {
     cl = malloc(sizeof(cmd_level));
-    if (cl == NULL) nl_error(4, "No memory in cic_transmit");
+    if (cl == NULL) msg(4, "No memory in cic_transmit");
     cl->prev = cur;
     cl->pos = curpos;
     cmd_report(&cl->state);

@@ -21,14 +21,19 @@
   the -v variable. This allows programs to interactively update
   their verbosity level.
 
-<opts> "vo:mV"
+<opts> "a:vo:V"
 
 <sort>
-	-v add a level of verbosity
-	-o <error filename> Write to specified file
-	-m write to memo [default]
-	-V write to stderr
+  -a <AppID name> change the AppID name
+  -v add a level of verbosity
+  -o <error filename> Write to specified file
+  -V write to stderr
 
 <include> "dasio/msg.h"
 <init>
   msg_init_options(argc, argv);
+
+<package> msgmemo
+<opts> "m"
+<sort>
+  -m write to memo [default]

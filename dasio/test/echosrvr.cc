@@ -2,6 +2,7 @@
 #include "dasio/socket.h"
 #include "dasio/loop.h"
 #include "dasio/appid.h"
+#include "dasio/msg.h"
 
 DAS_IO::AppID_t DAS_IO::AppID("echosrvr", "A demo server", "V1.1");
 
@@ -32,12 +33,12 @@ echosrvr::echosrvr(DAS_IO::Socket *orig, const char *iname, int fd)
 echosrvr::~echosrvr() {}
 
 bool echosrvr::connected() {
-  nl_error(0, "%s: connected. flags = %d", iname, flags);
+  msg(0, "%s: connected. flags = %d", iname, flags);
   return false;
 }
 
 // DAS_IO::Socket *echosrvr::new_client(const char *iname, int bufsz, int fd, socket_type_t stype, const char *service, const char *hostname) {
-  // nl_error(0, "%s: New client connection created. %s fd = %d", this->iname, iname, fd);
+  // msg(0, "%s: New client connection created. %s fd = %d", this->iname, iname, fd);
   // echosrvr *clt = new echosrvr(iname, bufsz, fd, stype, service, hostname);
   // return clt;
 // }
@@ -53,22 +54,22 @@ bool echosrvr::protocol_input() {
   if (cp < nc) {
     switch (buf[cp]) {
       case 'E':
-        nl_error(0, "Received '%s'", buf);
+        msg(0, "Received '%s'", buf);
         iwrite((const char *)buf, nc, 1);
         report_ok(nc);
         return false;
       case 'Q':
-        nl_error(0, "Received Quit command");
+        msg(0, "Received Quit command");
         report_ok(nc);
         return true;
       case 'C':
-        nl_error(0, "Received Close command");
+        msg(0, "Received Close command");
         report_ok(nc);
         close();
         ELoop->delete_child(this);
         return false;
       case 'A': // Close connection after acknowledge
-        nl_error(0, "Received Acknowledge and close");
+        msg(0, "Received Acknowledge and close");
         iwrite("OK");
         report_ok(nc);
         close();

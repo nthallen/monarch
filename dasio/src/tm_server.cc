@@ -3,6 +3,7 @@
 #include "dasio/tm_server.h"
 #include "dasio/appid.h"
 #include "nl.h"
+#include "dasio/msg.h"
 
 namespace DAS_IO {
   
@@ -20,7 +21,7 @@ namespace DAS_IO {
     const char *clt_app = auth->get_client_app();
     TM_data_rcvr_def *def = (TM_data_rcvr_def *)(ss->svc_data);
     if (def->interface != 0) {
-      nl_error(2, "Datum %s already owned by %s, attempted by %s",
+      msg(2, "Datum %s already owned by %s, attempted by %s",
         def->datum, def->interface->get_iname(), clt_app);
       return 0;
     }
