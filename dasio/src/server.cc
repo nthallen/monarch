@@ -195,7 +195,7 @@ namespace DAS_IO {
   void Server::client_removed() {
     if (--active_clients == 0 &&
         passive_exit_threshold > 0 &&
-        total_clients > passive_exit_threshold) {
+        total_clients >= passive_exit_threshold) {
       Shutdown();
     }
   }

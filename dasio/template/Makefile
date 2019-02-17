@@ -4,7 +4,7 @@ LIBS=-ldasio -lnl
 
 .PHONY : all clean
 
-TARGETS = template_server1 template_server2
+TARGETS = template_server1 template_server2 template_client
 all : $(TARGETS)
 OBJ = $(TARGETS)
 
@@ -15,8 +15,13 @@ OBJ += $(TS1OBJ)
 
 TS2OBJ=template_server2.o template_serveroui.o
 template_server2 : $(TS2OBJ)
-	$(CXX) -o template_server1 $(CXXFLAGS) $(LDFLAGS) $(TS2OBJ) $(LIBS)
+	$(CXX) -o template_server2 $(CXXFLAGS) $(LDFLAGS) $(TS2OBJ) $(LIBS)
 OBJ += $(TS2OBJ)
+
+TCOBJ=template_client.o template_serveroui.o
+template_client : $(TCOBJ)
+	$(CXX) -o template_client $(CXXFLAGS) $(LDFLAGS) $(TCOBJ) $(LIBS)
+OBJ += $(TCOBJ)
 
 template_serveroui.o : template_serveroui.cc
 template_serveroui.cc : template_server.oui
@@ -24,4 +29,4 @@ template_serveroui.cc : template_server.oui
 OBJ += template_serveroui.cc
 
 clean :
-	rm $(OBJ)
+	rm -f $(OBJ)

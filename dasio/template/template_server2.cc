@@ -69,4 +69,5 @@ int main(int argc, char **argv) {
   Server S("boerf");
   add_subservices(&S);
   S.Start(Server::Srv_Unix);
+  return 0;
 }

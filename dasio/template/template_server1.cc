@@ -38,6 +38,9 @@ Serverside_client *new_boerf_ssclient(Authenticator *Auth, SubService *SS) {
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   Server S("boerf");
+  // This is for a passive server like memo:
+  S.set_passive_exit_threshold(1);
   S.add_subservice(new SubService("boerf", new_boerf_ssclient, (void *)0));
   S.Start(Server::Srv_Unix);
+  return 0;
 }
