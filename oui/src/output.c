@@ -57,14 +57,7 @@ void output_opt_string(void) {
 static void dump_llos_usage( ll_of_str *ll, char *prefix ) {
   char *s;
   
-  // If leading tab, replace with spaces
-  // if %C or %C\t at beginning, replace with "%s "
-  
   while ( s = llos_deq( ll ) ) {
-    if (s[0] == '%' && s[1] == 'C') {
-      s[0] = ' ';
-      s[1] = ' ';
-    }
     for (int i = 0; i < sizeof(s); i++) {
       if (s[i] == '\t') {
         s[i] = ' ';
@@ -175,8 +168,15 @@ void output_includes(void) {
   dump_llos( &prtd, "#include " );
 }
 
+/**
+ * Ignore leading whitespace while sorting
+ */
 static int compar(const void *a, const void *b) {
-  return(strcasecmp(*((const char **)a), *((const char **)b)));
+  const char *astr = *((const char **)a);
+  const char *bstr = *((const char **)b);
+  while (isspace(*astr)) ++astr;
+  while (isspace(*bstr)) ++bstr;
+  return(strcasecmp(astr, bstr));
 }
 
 #ifdef QNX
@@ -212,7 +212,7 @@ void output_usage(void) {
   if ( global_defs.synopsis == 0 )
     fprintf( ofile, "%%C    [options]\n");
   else
-    fprintf( ofile, "%s\n", global_defs.synopsis );
+   fprintf( ofile, "%s\n", global_defs.synopsis );
 
   /* Output the sorted options */
   output_sorted();
@@ -239,7 +239,9 @@ static void output_sorted(void) {
         sorter[i] = llos_deq(&global_defs.sorted);
       qsort(sorter, n_strs, sizeof(char *), compar);
       for (i = 0; i < n_strs; i++) {
-        fprintf(ofile, "  printf(\"%%s\\n\", \"%s\");\n", sorter[i]);
+        const char *optline = sorter[i];
+        while (isspace(*optline)) ++optline;
+        fprintf(ofile, "  printf(\"  %%s\\n\", \"%s\");\n", optline);
         free_memory(sorter[i]);
       }
       free_memory(sorter);
@@ -254,11 +256,18 @@ void output_usage(void) {
   fprintf( ofile, "\nvoid print_usage(int argc, char **argv) {\n");
   
   /* Output the synopsis */
-  if ( global_defs.synopsis == 0 )
+  if ( global_defs.synopsis == 0 ) {
     fprintf( ofile, "  printf(\"%%s [options]\\n\",argv[0]);\n");
-  else
-    fprintf( ofile, "  printf(\"  %s\\n\", argv[0]);\n", global_defs.synopsis);
-    // when doing synopsis add in argv[0]
+  } else {
+    char *s = global_defs.synopsis;
+    if (s[0] == '%' && s[1] == 'C') {
+      s += 2;
+      while (isspace(*s)) ++s;
+      fprintf( ofile, "  printf(\"%%s %%s\\n\", argv[0], \"%s\");\n", s);
+    } else {
+      fprintf( ofile, "  printf(\"%%s\\n\", \"%s\");\n", global_defs.synopsis);
+    }
+  }
 
   /* Output the sorted options */
   output_sorted();

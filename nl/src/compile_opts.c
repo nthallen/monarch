@@ -7,6 +7,7 @@
 #include <assert.h>
 #include "nl.h"
 #include "compiler.h"
+#include "oui.h"
 
 #ifdef __QNXNTO__
   #define USE_BIN "/usr/bin/use"
@@ -16,9 +17,9 @@
 
 static void compile_exit(void) {
   if (error_level > 0 && output_filename != NULL
-	  && !(compile_options & CO_KEEP_OUTPUT)) {
-	if (ofile != NULL) fclose(ofile);
-	remove(output_filename);
+      && !(compile_options & CO_KEEP_OUTPUT)) {
+    if (ofile != NULL) fclose(ofile);
+    remove(output_filename);
   }
 }
 
@@ -28,8 +29,8 @@ static char *makeofile(char *in, char *extension) {
   
   lastslash = lastdot = -1;
   for (i = 0; in[i]; i++) {
-	if (in[i] == '/') lastslash = i;
-	else if (in[i] == '.') lastdot = i;
+    if (in[i] == '/') lastslash = i;
+    else if (in[i] == '.') lastdot = i;
   }
   if (lastdot > lastslash) i = lastdot;
   i = i - lastslash - 1; /* length of basename minus extension */
@@ -48,10 +49,10 @@ int yywrap(void) {
   input_filename = llos_deq(&input_files);
   if (input_filename == 0) return(1);
   if (input_filename[0] == '-')
-	compile_error(3, "Misplaced option %s", input_filename);
+    compile_error(3, "Misplaced option %s", input_filename);
   yyin = open_input_file(input_filename);
   if (yyin == NULL)
-	compile_error(3, "Unable to open input file %s", input_filename);
+    compile_error(3, "Unable to open input file %s", input_filename);
   input_linenumber = 1;
   return(0);
 }
@@ -62,35 +63,31 @@ void compile_init_options(int argc, char **argv, char *extension) {
   opterr = 0;
   optind = OPTIND_RESET;  
   while ((c = getopt(argc, argv, opt_string)) != -1) {
-	switch (c) {
-	  case 'q':
-	    execl( USE_BIN, USE_BIN, argv[0], NULL );
-		compile_error(4, "Unable to exec use" );
-		exit(1);
-	  case 'w': compile_options &= ~CO_IGN_WARN; break;
-	  case 'k': compile_options |= CO_KEEP_OUTPUT; break;
-	  case 'v':
-		nl_debug_level--;
-		break;
-	  case 'o':
-		output_filename = optarg;
-		ofile = open_output_file(output_filename);
-		break;
-	}
+    switch (c) {
+      case 'w': compile_options &= ~CO_IGN_WARN; break;
+      case 'k': compile_options |= CO_KEEP_OUTPUT; break;
+      case 'v':
+        nl_debug_level--;
+        break;
+      case 'o':
+        output_filename = optarg;
+        ofile = open_output_file(output_filename);
+        break;
+    }
   }
   atexit(compile_exit);
 
   /* enqueue the input file names */
   for (c = optind; c < argc; c++)
-	llos_enq(&input_files, argv[c]);
+    llos_enq(&input_files, argv[c]);
 
   /* open the first input file */
   if (yywrap())
-	compile_error(3, "No input file specified");
+    compile_error(3, "No input file specified");
 
   if (ofile == NULL && input_filename != NULL) {
-	output_filename = makeofile(input_filename, extension);
-	ofile = open_output_file(output_filename);
+    output_filename = makeofile(input_filename, extension);
+    ofile = open_output_file(output_filename);
   }
 }
 /*

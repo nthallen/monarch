@@ -8,9 +8,8 @@
   this file into another .oui which is read before this one
   and modifying the extension there.
 
-<opts> "qkwvo:"
+<opts> "kwvo:"
 <sort>
-	-q Print usage message
 	-w Treat warnings as errors
 	-v Increasing level of verbosity
 	-k Keep incomplete output file on error
@@ -26,13 +25,13 @@
   compile_init_options(argc, argv, output_extension);
 
 <comment>------------------------------------------------------
-  Following is a default definition for nl_error.
-  It can be overridden by creating another nl_error_init package
+  Following is a default definition for msg.
+  It can be overridden by creating another msg_init package
   -------------------------------------------------------------
-<package> nl_error_init
+<package> msg_init
 <include> "nl.h"
 <defs>
-  int (*nl_error)(int level, const char *s, ...) = compile_error;
+  int (*msg)(int level, const char *s, ...) = compile_error;
 
 <comment>------------------------------------------------------
   Here is the definition of the output file extension.
