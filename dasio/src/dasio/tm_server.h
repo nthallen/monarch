@@ -31,11 +31,11 @@ namespace DAS_IO {
   /**
    * @brief Class for server side of TM_data_sndr socket connection
    */
-  class TM_data_rcvr : public Socket {
+  class TM_data_rcvr : public Serverside_client {
     public:
       TM_data_rcvr(Authenticator *auth, const char *iname, TM_data_rcvr_def *def);
       ~TM_data_rcvr();
-      static TM_data_rcvr *new_tm_data_rcvr(Authenticator *auth, SubService *ss);
+      static Serverside_client *new_tm_data_rcvr(Authenticator *auth, SubService *ss);
       bool protocol_input();
       void close();
       void synch();

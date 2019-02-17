@@ -55,8 +55,9 @@ namespace DAS_IO {
     return rv;
   }
   
-  Serverside_client::Serverside_client(Authenticator *auth, const char *iname)
-      : Socket(auth, iname, auth->fd), srvr(auth->srvr) {
+  Serverside_client::Serverside_client(Authenticator *auth,
+        const char *iname, int bufsize)
+      : Socket(auth, iname, bufsize, auth->fd), srvr(auth->srvr) {
     srvr->client_added();
   }
   
@@ -66,7 +67,7 @@ namespace DAS_IO {
   
   Authenticator::Authenticator(Server_socket *orig, const char *iname,
             int fd)
-        : Socket(orig, iname, fd), srvr(orig->srvr), client_app(0) {}
+        : Socket(orig, iname, 0, fd), srvr(orig->srvr), client_app(0) {}
   Authenticator::~Authenticator() {}
   
   bool Authenticator::protocol_input() {

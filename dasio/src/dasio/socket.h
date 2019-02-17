@@ -56,7 +56,7 @@ class Socket : public Interface {
      * Initializes this Socket to match the original, making sure to
      * set is_server to false and propagating the is_server_client value.
      */
-    Socket(Socket *original, const char *iname, int fd);
+    Socket(Socket *original, const char *iname, int ibufsize, int fd);
     
     virtual ~Socket();
     /**

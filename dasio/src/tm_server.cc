@@ -6,16 +6,16 @@
 
 namespace DAS_IO {
   
-  Server TM_server("DG", 128);
+  Server TM_server("DG");
   
   TM_data_rcvr::TM_data_rcvr(Authenticator *auth, const char *iname, TM_data_rcvr_def *def)
-        : Socket(auth, iname, auth->fd), def(def) {
+        : Serverside_client(auth, iname, 128), def(def) {
     def->interface = this;
   }
   
   TM_data_rcvr::~TM_data_rcvr() {}
   
-  TM_data_rcvr *TM_data_rcvr::new_tm_data_rcvr(Authenticator *auth, SubService *ss) {
+  Serverside_client *TM_data_rcvr::new_tm_data_rcvr(Authenticator *auth, SubService *ss) {
     // Set iname from client_app and datum
     const char *clt_app = auth->get_client_app();
     TM_data_rcvr_def *def = (TM_data_rcvr_def *)(ss->svc_data);
@@ -73,7 +73,7 @@ namespace DAS_IO {
     TM_server.add_subservice(
       new SubService(
         subservice,
-        (socket_clone_t)TM_data_rcvr::new_tm_data_rcvr,
+        TM_data_rcvr::new_tm_data_rcvr,
         new TM_data_rcvr_def(name, data, data_size)
       )
     );

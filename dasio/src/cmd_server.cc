@@ -50,7 +50,7 @@ namespace DAS_IO {
   Server *CmdServer;
   
   Cmd_receiver::Cmd_receiver(Authenticator *auth, const char *iname)
-      : Serverside_client(auth, iname) {
+      : Serverside_client(auth, iname, CMD_MAX_COMMAND_IN) {
     quit_recd = false;
   }
   
@@ -212,7 +212,7 @@ namespace DAS_IO {
   }
   
   Cmd_turf::Cmd_turf(Authenticator *auth, const char *iname, cmdif_rd *ss)
-      : Serverside_client(auth, iname), ss(ss) {
+      : Serverside_client(auth, iname, CMD_MAX_COMMAND_IN), ss(ss) {
     next_command = ss->first_cmd;
     ++ss->first_cmd->ref_count;
     written = false;

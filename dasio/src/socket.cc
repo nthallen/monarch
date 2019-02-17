@@ -44,8 +44,8 @@ Socket::Socket(const char *iname, const char *service,
   // connect();
 }
 
-Socket::Socket(Socket *S, const char *iname, int fd) :
-  Interface(iname, S->bufsize),
+Socket::Socket(Socket *S, const char *iname, int bufsize, int fd) :
+  Interface(iname, bufsize),
   service(S->service),
   hostname(0),
   is_server(false),
@@ -323,7 +323,7 @@ bool Socket::connected() { return false; }
 bool Socket::connect_failed() { return false; }
 
 Socket *Socket::new_client(const char *iname, int fd) {
-  Socket *rv = new Socket(this, iname, fd);
+  Socket *rv = new Socket(this, iname, this->bufsize, fd);
   if (ELoop) ELoop->add_child(rv);
   return rv;
 }

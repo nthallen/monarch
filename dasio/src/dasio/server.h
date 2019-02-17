@@ -85,8 +85,7 @@ namespace DAS_IO {
   
   class Serverside_client : public Socket {
     public:
-      Serverside_client(Authenticator *orig, const char *iname);
-      // Serverside_client(Serverside_client *orig);
+      Serverside_client(Authenticator *orig, const char *iname, int ibufsize);
       ~Serverside_client();
     private:
       Server *srvr;
