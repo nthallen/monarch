@@ -31,9 +31,9 @@ Socket::Socket(const char *iname, int bufsz, const char *service) :
   // connect();
 }
 
-Socket::Socket(const char *iname, int bufsz, const char *service,
+Socket::Socket(const char *iname, const char *service,
         socket_type_t socket_type) :
-    Interface(iname, bufsz),
+    Interface(iname, 0),
     service(service),
     hostname(0),
     is_server(true),

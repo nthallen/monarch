@@ -12,37 +12,38 @@ class cmdif_rd;
 
 namespace DAS_IO {
   
-  class Cmd_server {
-    public:
-      Cmd_server();
-      ~Cmd_server();
+  // class Cmd_server {
+    // public:
+      // Cmd_server();
+      // ~Cmd_server();
       
-      inline bool add_subservice(SubService *ss) {
-        return Subs.add_subservice(ss);
-      }
-      inline bool rm_subservice(std::string svcs) {
-        return Subs.rm_subservice(svcs);
-      }
+      // inline bool add_subservice(SubService *ss) {
+        // return Subs.add_subservice(ss);
+      // }
+      // inline bool rm_subservice(std::string svcs) {
+        // return Subs.rm_subservice(svcs);
+      // }
       
-      void StartServer();
-      /**
-       * Shuts down the listening server socket.
-       */
-      void Shutdown();
-      Loop ELoop;
-      Server_socket *SU; // Unix Domain Server_socket
-      Server_socket *TU; // TCP Domain Server_socket
-      static Cmd_server *CmdServer;
-    protected:
-      SubServices Subs;
-  };
+      // void StartServer();
+      // /**
+       // * Shuts down the listening server socket.
+       // */
+      // void Shutdown();
+      // Loop ELoop;
+      // Server_socket *SU; // Unix Domain Server_socket
+      // Server_socket *TU; // TCP Domain Server_socket
+      // static Cmd_server *CmdServer;
+    // protected:
+      // SubServices Subs;
+  // };
+  extern Server *CmdServer;
   
   /**
    * @brief Class for cmd/server server clients.
    * No special svc_data is required, since we just
    * parse incoming commands.
    */
-  class Cmd_receiver : public Socket {
+  class Cmd_receiver : public Serverside_client {
     public:
       Cmd_receiver(Authenticator *auth, const char *iname);
       ~Cmd_receiver();
@@ -63,7 +64,7 @@ namespace DAS_IO {
    * We also need to keep track of which commands this
    * interface has transmitted.
    */
-  class Cmd_turf : public Socket {
+  class Cmd_turf : public Serverside_client {
     public:
       Cmd_turf(Authenticator *auth, const char *iname, cmdif_rd *ss);
       ~Cmd_turf();
@@ -72,7 +73,7 @@ namespace DAS_IO {
        */
       void turf_check();
       bool iwritten(int nb);
-      static Socket *new_cmd_turf(Authenticator *auth,
+      static Serverside_client *new_cmd_turf(Authenticator *auth,
         SubService *ss);
     protected:
       command_out_t *next_command;

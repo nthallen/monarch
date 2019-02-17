@@ -191,6 +191,8 @@ void Interface::close() {
   if (fd >= 0) {
     ::close(fd);
     fd = -1;
+    TO.Clear();
+    flags &= ~(Fl_Write|Fl_Read|Fl_Except|Fl_Timeout);
   }
 }
 

@@ -69,6 +69,10 @@ class Loop {
      * what action is ready.
      */
     void event_loop();
+    /**
+     * Causes event_loop() to exit on each iteration
+     */
+    void set_loop_exit();
   private:
     /** The list of child interfaces */
     InterfaceList S;
@@ -96,6 +100,7 @@ class Loop {
      * @return a Timeout * indicating the requested timeout value or 0.
      */
     virtual Timeout *GetTimeout();
+    bool loop_exit;
 };
 
 }

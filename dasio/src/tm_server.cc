@@ -70,7 +70,7 @@ namespace DAS_IO {
     int svclen = snprintf(0, 0, "%s/data/%s", TM_server.get_service(), name);
     char *subservice = (char *)new_memory(svclen+1);
     snprintf(subservice, svclen+1, "%s/data/%s", TM_server.get_service(), name);
-    TM_server.Subs.add_subservice(
+    TM_server.add_subservice(
       new SubService(
         subservice,
         (socket_clone_t)TM_data_rcvr::new_tm_data_rcvr,

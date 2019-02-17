@@ -12,43 +12,45 @@ static bool quit_received = false;
 
 namespace DAS_IO {
   
-  Cmd_server *Cmd_server::CmdServer;
+  // Cmd_server *Cmd_server::CmdServer;
   
-  Cmd_server::Cmd_server() {
-    nl_assert(CmdServer == 0);
-    CmdServer = this;
-    SU = new Server_socket("cmd", CMD_MAX_COMMAND_IN,
-      "cmd", Socket::Socket_Unix, &Subs);
-    ELoop.add_child(SU);
-    TU = 0;
-    // TU = new Server_socket("cmd", CMD_MAX_COMMAND_IN,
-      // "cmd", Socket::Socket_TCP, &Subs);
-    // ELoop.add_child(TU);
-  }
+  // Cmd_server::Cmd_server() {
+    // nl_assert(CmdServer == 0);
+    // CmdServer = this;
+    // SU = new Server_socket("cmd", 
+      // "cmd", Socket::Socket_Unix, &Subs);
+    // ELoop.add_child(SU);
+    // TU = 0;
+    // // TU = new Server_socket("cmd", CMD_MAX_COMMAND_IN,
+      // // "cmd", Socket::Socket_TCP, &Subs);
+    // // ELoop.add_child(TU);
+  // }
   
-  Cmd_server::~Cmd_server() {
-    CmdServer = 0;
-  }
+  // Cmd_server::~Cmd_server() {
+    // CmdServer = 0;
+  // }
 
-  void Cmd_server::StartServer() {
-    SU->connect();
-    // TU->connect();
-  }
+  // void Cmd_server::StartServer() {
+    // SU->connect();
+    // // TU->connect();
+  // }
 
   
-  void Cmd_server::Shutdown() {
-    if (SU) {
-      ELoop.delete_child(SU);
-      SU = 0;
-    }
-    if (TU) {
-      ELoop.delete_child(TU);
-      TU = 0;
-    }
-  }
+  // void Cmd_server::Shutdown() {
+    // if (SU) {
+      // ELoop.delete_child(SU);
+      // SU = 0;
+    // }
+    // if (TU) {
+      // ELoop.delete_child(TU);
+      // TU = 0;
+    // }
+  // }
+  
+  Server *CmdServer;
   
   Cmd_receiver::Cmd_receiver(Authenticator *auth, const char *iname)
-      : Socket(auth, iname, auth->fd) {
+      : Serverside_client(auth, iname) {
     quit_recd = false;
   }
   
@@ -186,9 +188,8 @@ namespace DAS_IO {
   }
 
   bool Cmd_receiver::iwritten(int nb) {
-    if (obuf_empty() && quit_recd &&
-          DAS_IO::Cmd_server::CmdServer) {
-      DAS_IO::Cmd_server::CmdServer->Shutdown();
+    if (obuf_empty() && quit_recd && (CmdServer != 0)) {
+      CmdServer->Shutdown();
       return true;
     }
     return false;
@@ -211,7 +212,7 @@ namespace DAS_IO {
   }
   
   Cmd_turf::Cmd_turf(Authenticator *auth, const char *iname, cmdif_rd *ss)
-      : Socket(auth, iname, auth->fd), ss(ss) {
+      : Serverside_client(auth, iname), ss(ss) {
     next_command = ss->first_cmd;
     ++ss->first_cmd->ref_count;
     written = false;
@@ -266,7 +267,7 @@ namespace DAS_IO {
    * but the latter would be redundant. So maybe this is perfectly
    * fine.
    */
-  Socket *Cmd_turf::new_cmd_turf(Authenticator *auth, SubService *ss) {
+  Serverside_client *Cmd_turf::new_cmd_turf(Authenticator *auth, SubService *ss) {
     return new Cmd_turf(auth, auth->get_client_app(), (cmdif_rd*)(ss->svc_data));
   }
   
@@ -286,18 +287,18 @@ namespace DAS_IO {
 
 void ci_server(void) {
   cis_initialize(); // not actually implemented
-  nl_assert(DAS_IO::Cmd_server::CmdServer == 0);
-  DAS_IO::Cmd_server *cs = new DAS_IO::Cmd_server;
-  nl_assert(DAS_IO::Cmd_server::CmdServer != 0);
-  cs->add_subservice(new DAS_IO::SubService("cmd/server",
+  nl_assert(DAS_IO::CmdServer == 0);
+  DAS_IO::CmdServer = new DAS_IO::Server("cmd");
+  nl_assert(DAS_IO::CmdServer != 0);
+  DAS_IO::CmdServer->add_subservice(new DAS_IO::SubService("cmd/server",
     (DAS_IO::socket_clone_t)DAS_IO::Cmd_receiver::new_cmd_receiver, (void *)0));
 
   // Call the cmdgen-generated initialization routine
   cis_interfaces();
-  cs->StartServer();
-  while (!(quit_received && cmdif_rd::all_closed())) {
-    cs->ELoop.event_loop();
-  }
+  DAS_IO::CmdServer->Start(DAS_IO::Server::Srv_Unix);
+  // while (!(quit_received && cmdif_rd::all_closed())) {
+    // cs->ELoop.event_loop();
+  // }
 }
 
 cmdif_rd::cmdif_rd(const char *name)
@@ -314,8 +315,8 @@ cmdif_rd::cmdif_rd(const char *name)
 cmdif_rd::~cmdif_rd() {
   nl_error( -2, "Shutting down reader %s", name);
   nl_assert(turfs.empty());
-  if (DAS_IO::Cmd_server::CmdServer)
-    DAS_IO::Cmd_server::CmdServer->rm_subservice(svcsname);
+  if (DAS_IO::CmdServer)
+    DAS_IO::CmdServer->rm_subservice(svcsname);
   command_out_t *cmd1 = first_cmd;
   while (cmd1) {
     command_out_t *cmd2 = cmd1->next;
@@ -328,15 +329,14 @@ cmdif_rd::~cmdif_rd() {
 void cmdif_rd::Setup() {
   first_cmd = last_cmd = new_command();
   rdrs.push_back(this);
-  if (DAS_IO::Cmd_server::CmdServer == 0) {
-    DAS_IO::Cmd_server *cs = new DAS_IO::Cmd_server();
+  if (DAS_IO::CmdServer == 0) {
+    DAS_IO::CmdServer = new DAS_IO::Server("cmd");
   }
   if (name && name[0]) {
     svcsname.append("/");
     svcsname.append(name);
   }
-  nl_assert(DAS_IO::Cmd_server::CmdServer != 0);
-  DAS_IO::Cmd_server::CmdServer->add_subservice(
+  DAS_IO::CmdServer->add_subservice(
       new DAS_IO::SubService(svcsname,
         DAS_IO::Cmd_turf::new_cmd_turf, this));
 }
@@ -347,8 +347,8 @@ void cmdif_rd::Turf(const char *format, ...) {
   int nb;
 
   // I think this assertion is wrong
-  // nl_assert(DAS_IO::Cmd_server::CmdServer &&
-  //  DAS_IO::Cmd_server::CmdServer->SU != NULL );
+  // nl_assert(CmdServer &&
+  //  CmdServer->SU != NULL );
   cmd = last_cmd;
   va_start( arglist, format );
   nb = vsnprintf( cmd->command, CMD_MAX_COMMAND_OUT, format, arglist );
@@ -498,8 +498,8 @@ cmdif_wr::cmdif_wr(const char *name, const char *path) {
 cmdif_wr::~cmdif_wr() {}
 
 void cmdif_wr::Setup() {
-  nl_assert(DAS_IO::Cmd_server::CmdServer != 0);
-  DAS_IO::Cmd_server::CmdServer->ELoop.add_child(client);
+  nl_assert(DAS_IO::CmdServer != 0);
+  DAS_IO::CmdServer->ELoop.add_child(client);
 }
 
 void cmdif_wr::Turf(const char *format, ...) {
@@ -543,8 +543,8 @@ cmdif_dgdata::cmdif_dgdata(const char *name_in, void *data_in, int dsize_in)
 
 void cmdif_dgdata::Turf() {
   if (ELoop == 0) {
-    nl_assert(DAS_IO::Cmd_server::CmdServer != 0);
-    DAS_IO::Cmd_server::CmdServer->ELoop.add_child(this);
+    nl_assert(DAS_IO::CmdServer != 0);
+    DAS_IO::CmdServer->ELoop.add_child(this);
   }
   iwrite((const char *)data, dsize);
 }

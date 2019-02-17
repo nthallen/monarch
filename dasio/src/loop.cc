@@ -10,6 +10,7 @@ namespace DAS_IO {
 Loop::Loop() {
   children_changed = false;
   gflags = 0;
+  loop_exit = false;
 }
 
 /**
@@ -74,7 +75,7 @@ void Loop::event_loop() {
   int rc;
   fd_set readfds, writefds, exceptfds;
   
-  while (keep_going) {
+  do {
     TimeoutAccumulator TA;
     InterfaceList::const_iterator Sp;
 
@@ -159,6 +160,16 @@ void Loop::event_loop() {
         }
       }
     }
+  } while (!PendingDeletion.empty() || (keep_going && !loop_exit));
+}
+
+void Loop::set_loop_exit() {
+  loop_exit = true;
+  while (!S.empty()) {
+    Interface *P = S.front();
+    // nl_error(0, "Deleting Interface %d", P->get_iname());
+    delete(P);
+    S.pop_front();
   }
 }
 
