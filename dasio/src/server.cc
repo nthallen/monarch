@@ -67,7 +67,7 @@ namespace DAS_IO {
   
   Authenticator::Authenticator(Server_socket *orig, const char *iname,
             int fd)
-        : Socket(orig, iname, 0, fd), srvr(orig->srvr), client_app(0) {}
+        : Socket(orig, iname, 128, fd), srvr(orig->srvr), client_app(0) {}
   Authenticator::~Authenticator() {}
   
   bool Authenticator::protocol_input() {
@@ -197,6 +197,10 @@ namespace DAS_IO {
         total_clients > passive_exit_threshold) {
       Shutdown();
     }
+  }
+  
+  void Server::set_passive_exit_threshold(int N) {
+    passive_exit_threshold = N;
   }
 
 }

@@ -53,7 +53,7 @@ int select_once(DAS_IO::Interface *P) {
 class echosrvr : public DAS_IO::Socket {
   public:
     echosrvr(const char *iname, int bufsz, const char *service);
-    echosrvr(const char *iname, int bufsz, const char *service,
+    echosrvr(const char *iname, const char *service,
       DAS_IO::Socket::socket_type_t);
     echosrvr(Socket *orig, const char *iname, int fd);
     ~echosrvr();
@@ -62,9 +62,9 @@ class echosrvr : public DAS_IO::Socket {
     bool connected();
 };
 
-echosrvr::echosrvr(const char *iname, int bufsz, const char *service,
+echosrvr::echosrvr(const char *iname, const char *service,
         DAS_IO::Socket::socket_type_t socket_type)
-    : DAS_IO::Socket(iname, bufsz, service, socket_type) {
+    : DAS_IO::Socket(iname, service, socket_type) {
 }
 
 echosrvr::echosrvr(const char *iname, int bufsz, const char *service)
@@ -72,7 +72,7 @@ echosrvr::echosrvr(const char *iname, int bufsz, const char *service)
 }
 
 echosrvr::echosrvr(DAS_IO::Socket *orig, const char *iname, int fd)
-  : DAS_IO::Socket(orig, iname, fd) {}  
+  : DAS_IO::Socket(orig, iname, 512, fd) {}  
 
 echosrvr::~echosrvr() {
   nl_error(-2, "echosrvr shutting down");
@@ -225,7 +225,7 @@ TEST(SocketTest,ConnClosedOnWrite) {
 }
 
 void child_process() {
-  echosrvr server("IPCserver", 512, "cmd", DAS_IO::Socket::Socket_Unix);
+  echosrvr server("IPCserver", "cmd", DAS_IO::Socket::Socket_Unix);
   server.connect();
   DAS_IO::Loop ELoop;
   ELoop.add_child(&server);

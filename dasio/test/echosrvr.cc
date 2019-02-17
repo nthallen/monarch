@@ -8,7 +8,7 @@ DAS_IO::AppID_t DAS_IO::AppID("echosrvr", "A demo server", "V1.1");
 class echosrvr : public DAS_IO::Socket {
   public:
     echosrvr(const char *iname, int bufsz, const char *service);
-    echosrvr(const char *iname, int bufsz, const char *service,
+    echosrvr(const char *iname, const char *service,
       DAS_IO::Socket::socket_type_t);
     echosrvr(DAS_IO::Socket *orig, const char *iname, int fd);
     ~echosrvr();
@@ -21,13 +21,13 @@ echosrvr::echosrvr(const char *iname, int bufsz, const char *service)
     : DAS_IO::Socket(iname, bufsz, service) {
 }
 
-echosrvr::echosrvr(const char *iname, int bufsz, const char *service,
+echosrvr::echosrvr(const char *iname, const char *service,
         DAS_IO::Socket::socket_type_t socket_type)
-    : DAS_IO::Socket(iname, bufsz, service, socket_type) {
+    : DAS_IO::Socket(iname, service, socket_type) {
 }
 
 echosrvr::echosrvr(DAS_IO::Socket *orig, const char *iname, int fd)
-  : DAS_IO::Socket(orig, iname, fd) {}
+  : DAS_IO::Socket(orig, iname, 512, fd) {}
 
 echosrvr::~echosrvr() {}
 
@@ -85,7 +85,7 @@ bool echosrvr::protocol_input() {
 const char *opt_string = "vo:mV";
 
 int main(int argc, char **argv) {
-  echosrvr server("IPCserver", 512, "cmd", DAS_IO::Socket::Socket_Unix);
+  echosrvr server("IPCserver", "cmd", DAS_IO::Socket::Socket_Unix);
   server.connect();
   DAS_IO::Loop ELoop;
   ELoop.add_child(&server);
