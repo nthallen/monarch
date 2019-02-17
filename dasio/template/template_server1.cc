@@ -9,7 +9,7 @@
 
 using namespace DAS_IO;
 
-AppID_t AppID("boerfd", "boerf server", "V1.0");
+AppID_t DAS_IO::AppID("boerfd", "boerf server", "V1.0");
 
 class boerf_ssclient : public Serverside_client {
   public:
@@ -26,7 +26,7 @@ class boerf_ssclient : public Serverside_client {
  * @brief the Serverside_Client socket
  */
 boerf_ssclient::boerf_ssclient(Authenticator *Auth, const char *iname)
-    : Serverside_Client(Auth, iname, boerf_ssclient_ibufsize) {}
+    : Serverside_client(Auth, iname, boerf_ssclient_ibufsize) {}
 
 boerf_ssclient::~boerf_ssclient() {}
 
@@ -39,5 +39,5 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   Server S("boerf");
   S.add_subservice(new SubService("boerf", new_boerf_ssclient, (void *)0));
-  S.Start(Srv_Unix);
+  S.Start(Server::Srv_Unix);
 }

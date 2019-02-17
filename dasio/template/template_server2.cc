@@ -9,7 +9,7 @@
 
 using namespace DAS_IO;
 
-AppID_t AppID("boerfd", "boerf server", "V1.0");
+AppID_t DAS_IO::AppID("boerfd", "boerf server", "V1.0");
 
 /**
  * @brief Subservice shared data
@@ -31,7 +31,7 @@ class boerf_info {
     const char *ident;
 };
 
-class boerf_ssclient : public Serverside_Client {
+class boerf_ssclient : public Serverside_client {
   public:
     boerf_ssclient(Authenticator *Auth, const char *iname, boerf_info *bi);
     ~boerf_ssclient();
@@ -49,7 +49,7 @@ class boerf_ssclient : public Serverside_Client {
  * here and in new_boerf_ssclient()
  */
 boerf_ssclient::boerf_ssclient(Authenticator *Auth, const char *iname, boerf_info *bi)
-    : Serverside_Client(Auth, iname, boerf_ssclient_ibufsize), bi(bi) {}
+    : Serverside_client(Auth, iname, boerf_ssclient_ibufsize), bi(bi) {}
 
 boerf_ssclient::~boerf_ssclient() {}
 
@@ -61,12 +61,12 @@ void add_subservices(Server *S) {
   S->add_subservice(new SubService("boerf/svc1", new_boerf_ssclient,
       (void *)(new boerf_info("svc1"))));
   S->add_subservice(new SubService("boerf/svc2", new_boerf_ssclient,
-      (void *)(new boerf_info("svc2))));
+      (void *)(new boerf_info("svc2"))));
 }
 
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   Server S("boerf");
   add_subservices(&S);
-  S.Start(Srv_Unix);
+  S.Start(Server::Srv_Unix);
 }
