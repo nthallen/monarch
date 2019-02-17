@@ -161,5 +161,7 @@ void output_rules(void); /* rules.c */
 void new_interface( char *int_name );
 void output_interfaces(void);
 
+extern void cmdgen_init_options(int argc, char **argv);
+
 #define vfile ofile
 #define efile stderr

@@ -24,13 +24,14 @@
 #include "cmdgen.h"
 #include "compiler.h"
 #include "nl.h"
+#include "oui.h"
 
-int (*msg)(int level, const char *s, ...) = compile_error;
+// int (*msg)(int level, const char *s, ...) = compile_error;
 static int verbose = 0;
 static char data_file[FILENAME_MAX+1] = "";
 static time_t time_of_day;
 
-const char *opt_string = OPT_COMPILER_INIT "d:V";
+// const char *opt_string = OPT_COMPILER_INIT "d:V";
 
 static void print_word(FILE *fp, struct sub_item_t *si) {
   switch (si->type) {
@@ -193,7 +194,7 @@ Input Syntax Notes:
     %s    char * Enter Word Terminated by <CR>
 #endif
 
-static void main_args(int argc, char **argv) {
+void cmdgen_init_options(int argc, char **argv) {
   int c;
 
   opterr = 0;
@@ -215,7 +216,7 @@ static void main_args(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-  main_args(argc, argv);
+  oui_init_options(argc, argv);
   Skel_open("cmdgen.skel");
   time_of_day = time(NULL);
   fprintf(ofile, "/* cmdgen output.\n * %s */\n", ctime( &time_of_day));

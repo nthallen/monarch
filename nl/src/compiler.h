@@ -23,7 +23,7 @@ extern int input_linenumber, error_level;
 extern const char *opt_string;
 extern ll_of_str input_files;
 
-#define OPT_COMPILER_INIT "qkwvo:"
+#define OPT_COMPILER_INIT "kwvo:"
 
 /* CO_IGN_WARN and CO_KEEP_OUTPUT are common. CO_CUSTOM provides
    a hook for other options. Any bits higher than CO_CUSTOM are
