@@ -158,6 +158,7 @@ void output_includes(void) {
   char *s;
 
   prtd.first = prtd.last = NULL;
+  one_include(&prtd, "<stdio.h>"); // for print_usage
   one_include(&prtd, "\"oui.h\"");
   for (p = global_defs.packages.first; p != NULL; p = p->next) {
     while (s = llos_deq(&p->pkg->c_inc)) {
