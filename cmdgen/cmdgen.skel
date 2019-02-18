@@ -258,7 +258,7 @@ static char ibuf[CG_IBUF_SIZE];
         quite limited.
 */
 #ifndef CMD_ERROR
-  #define CMD_ERROR(x) nl_error(4,x)
+  #define CMD_ERROR(x) msg(4,x)
 #endif
 
 /* DISPLAY_CHAR always referenced */
@@ -1330,18 +1330,18 @@ int cmd_check(cmd_state *s) {
       rv = cmd_batch(cmd, 1);
       if (rv != 0) switch (CMDREP_TYPE(rv)) {
         case CMDREP_TYPE(CMDREP_QUIT):
-          nl_error(2, "Termination Command Illegal in a proxy");
-          nl_error(2, "%s", cmd);
+          msg(2, "Termination Command Illegal in a proxy");
+          msg(2, "%s", cmd);
           break;
         case CMDREP_TYPE(CMDREP_SYNERR):
-          nl_error(2, "Syntax Error in Proxy");
-          nl_error(2, "%s", cmd);
-          nl_error(2, "%*s", rv - CMDREP_SYNERR, "^");
+          msg(2, "Syntax Error in Proxy");
+          msg(2, "%s", cmd);
+          msg(2, "%*s", rv - CMDREP_SYNERR, "^");
           break;
         case CMDREP_TYPE(CMDREP_EXECERR):
         default:
-          nl_error(2, "Error %d parsing proxy command:");
-          nl_error(2, "%s", cmd);
+          msg(2, "Error %d parsing proxy command:");
+          msg(2, "%s", cmd);
           break;
       }
       if (rv == 0) {
@@ -1396,7 +1396,7 @@ int cmd_check(cmd_state *s) {
     #endif
     name = getlogin();
     if (name == NULL) name = "NULL";
-    nl_error(0, "Shutdown (%s)", name);
+    msg(0, "Shutdown (%s)", name);
   }
 
   int main(int argc, char **argv) {
@@ -1404,7 +1404,7 @@ int cmd_check(cmd_state *s) {
     oui_init_options(argc, argv);
     name = getlogin();
     if (name == NULL) name = "NULL";
-    nl_error(0, "Startup (%s)", name);
+    msg(0, "Startup (%s)", name);
     atexit( cmd_exit );
     #ifdef CLIENT
       #if PHOTON_INTERFACE
