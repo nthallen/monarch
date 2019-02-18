@@ -82,6 +82,7 @@ FILE *file_fp;
 <opts> "vo:mV"
 
 <sort>
+  -n <name> Change AppID name
   -v add a level of verbosity
   -o <error filename> Write to specified file
   -m write to memo [default]
@@ -94,6 +95,9 @@ void msg_init_options(int argc, char **argv) {
   opterr = 0;
   while ((c = getopt(argc, argv, opt_string)) != -1) {
     switch (c) {
+      case 'n':
+        DAS_IO::AppID.new_name(optarg);
+        break;
       case 'v': --nl_debug_level; break;
       case 'o':
         file_fp = fopen( optarg, "a" );

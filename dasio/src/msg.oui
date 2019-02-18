@@ -21,10 +21,10 @@
   the -v variable. This allows programs to interactively update
   their verbosity level.
 
-<opts> "a:vo:V"
+<opts> "n:vo:V"
 
 <sort>
-  -a <AppID name> change the AppID name
+  -n <AppID name> change the AppID name
   -v add a level of verbosity
   -o <error filename> Write to specified file
   -V write to stderr
