@@ -13,41 +13,6 @@ static bool quit_received = false;
 
 namespace DAS_IO {
   
-  // Cmd_server *Cmd_server::CmdServer;
-  
-  // Cmd_server::Cmd_server() {
-    // nl_assert(CmdServer == 0);
-    // CmdServer = this;
-    // SU = new Server_socket("cmd", 
-      // "cmd", Socket::Socket_Unix, &Subs);
-    // ELoop.add_child(SU);
-    // TU = 0;
-    // // TU = new Server_socket("cmd", CMD_MAX_COMMAND_IN,
-      // // "cmd", Socket::Socket_TCP, &Subs);
-    // // ELoop.add_child(TU);
-  // }
-  
-  // Cmd_server::~Cmd_server() {
-    // CmdServer = 0;
-  // }
-
-  // void Cmd_server::StartServer() {
-    // SU->connect();
-    // // TU->connect();
-  // }
-
-  
-  // void Cmd_server::Shutdown() {
-    // if (SU) {
-      // ELoop.delete_child(SU);
-      // SU = 0;
-    // }
-    // if (TU) {
-      // ELoop.delete_child(TU);
-      // TU = 0;
-    // }
-  // }
-  
   Server *CmdServer;
   
   Cmd_receiver::Cmd_receiver(Authenticator *auth, const char *iname)
