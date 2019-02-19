@@ -10,7 +10,7 @@
 
 using namespace DAS_IO;
 
-class MemoServer {
+/*class MemoServer {
     public:
       MemoServer(const char *service, int bufsz); // bufsz to be phased out
       ~MemoServer();
@@ -24,16 +24,16 @@ class MemoServer {
     protected:
       const char *service;
       int bufsz; // going away
-};
+}; */
 
 /* I have group related members into structs here purely
    to help make clear which members are related.
    If you don't like this approach, let me know.
 */
 
-class memo_socket : public DAS_IO::Socket {
+class memo_socket : public DAS_IO::Serverside_client {
   public:
-    inline memo_socket(Authenticator *Auth, const char *iname) : Socket(Auth, iname, Auth->fd) {}
+    inline memo_socket(Authenticator *Auth, const char *iname) : DAS_IO::Serverside_client(Auth, iname, 1000) {}
     ~memo_socket();
   protected:
     bool protocol_input();

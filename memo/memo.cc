@@ -12,6 +12,7 @@
 
 DAS_IO::AppID_t DAS_IO::AppID("memo", "memo server", "V1.0");
 
+/*
   MemoServer::MemoServer(const char *service, int bufsz) :
       Unix(0),
       TCP(0),
@@ -35,7 +36,7 @@ DAS_IO::AppID_t DAS_IO::AppID("memo", "memo server", "V1.0");
     ELoop.event_loop();
     msg(0, "Terminating");
   }
-
+*/
   memo_socket::~memo_socket() {}
 
 void memo_init_options( int argc, char **argv ) {
@@ -64,11 +65,11 @@ bool memo_socket::protocol_input() {
 
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
-  int bufsize = 1000;
+  int threshold = 1;
   
-  //to be built up
-  MemoServer memoserver("memo", bufsize);
-  memoserver.Subs.add_subservice(new SubService("memo", (socket_clone_t)new_memo_socket, (void*)0));
-  memoserver.Start(MemoServer::Srv_Unix);
+  Server server("memo");
+  server.add_subservice(new SubService("memo", (socket_clone_t)new_memo_socket, (void*)0));
+  server.set_passive_exit_threshold(threshold);
+  server.Start(Server::Srv_Unix);
   return 0;
 }
