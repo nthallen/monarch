@@ -7,6 +7,8 @@ target_include_directories(subbuspp PUBLIC
   ${CMAKE_SOURCE_DIR}/dasio/src
 # ${CMAKE_SOURCE_DIR}/tm/src
   ${CMAKE_SOURCE_DIR}/nl/src
+  ${CMAKE_SOURCE_DIR}/drivers/subbus
+  ${CMAKE_SOURCE_DIR}/drivers/subbus/subbusd
 # ${CMAKE_SOURCE_DIR}/cmdgen
 )
 install(TARGETS subbuspp

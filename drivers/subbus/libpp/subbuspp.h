@@ -7,9 +7,9 @@
 #ifndef SUBBUSPP_H_INCLUDED
 #define SUBBUSPP_H_INCLUDED
 #include <sys/uio.h>
-#include <sys/siginfo.h>
+// #include <sys/siginfo.h>
 #include <stdint.h>
-// #include "subbus.h"
+#include "subbus.h"
 #include "subbusd.h"
 
 #define SUBBUS_VERSION 0x501 /* subbus version 5.01 QNX6 */
