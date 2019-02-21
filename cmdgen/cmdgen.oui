@@ -1,0 +1,32 @@
+<package> cmdgen
+<include> "cmdgen.h"
+<include> compiler
+<include> oui
+<synopsis>
+%C	[options] [filename]
+
+<opts> "d:V"
+<sort>
+    -V Include verbose information
+    -d filename  Write data structures to this file
+
+<unsort>
+<blank>
+Input Syntax Notes:
+  Variables can be specified using the following % escapes:
+<blank>
+  escape  type                Default Prompt
+  ---------------------------------------------------------------------
+    %d    short  Enter Integer (Decimal: 123, Hex: 0x123F, Octal: 0123)
+    %ld   long   Enter Integer (Decimal: 123, Hex: 0x123F, Octal: 0123)
+    %x    short  Enter Hexadecimal Number
+    %lx   long   Enter Hexadecimal Number
+    %o    short  Enter Octal Number
+    %lo   long   Enter Octal Number
+    %f    float  Enter Floating Point Number
+    %lf   double Enter Floating Point Number
+    %w    char * Enter Word Terminated by <space>
+    %s    char * Enter Word Terminated by <CR>
+
+<init>
+  cmdgen_init_options(argc, argv);

@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include "dasio/socket.h"
 #include "dasio/loop.h"
+#include "dasio/msg.h"
 #include "nl.h"
 #include "nl_assert.h"
 
@@ -31,9 +32,9 @@ Socket::Socket(const char *iname, int bufsz, const char *service) :
   // connect();
 }
 
-Socket::Socket(const char *iname, int bufsz, const char *service,
+Socket::Socket(const char *iname, const char *service,
         socket_type_t socket_type) :
-    Interface(iname, bufsz),
+    Interface(iname, 0),
     service(service),
     hostname(0),
     is_server(true),
@@ -44,8 +45,8 @@ Socket::Socket(const char *iname, int bufsz, const char *service,
   // connect();
 }
 
-Socket::Socket(Socket *S, const char *iname, int fd) :
-  Interface(iname, S->bufsize),
+Socket::Socket(Socket *S, const char *iname, int bufsize, int fd) :
+  Interface(iname, bufsize),
   service(S->service),
   hostname(0),
   is_server(false),
@@ -83,7 +84,7 @@ void Socket::connect() {
       if (unix_name == 0) {
         unix_name = new unix_name_t();
         if (!unix_name->set_service(service)) {
-          nl_error(3, "%s: Invalid service name", iname);
+          msg(3, "%s: Invalid service name", iname);
         }
       }
       if (is_server) {
@@ -94,7 +95,7 @@ void Socket::connect() {
           return;
         }
         if (!unix_name->claim_server()) {
-          nl_error(3, "%s: Unable to create server socket %s",
+          msg(3, "%s: Unable to create server socket %s",
             iname, unix_name->get_svc_name());
         }
       }
@@ -104,25 +105,25 @@ void Socket::connect() {
        
         fd = socket(AF_UNIX, SOCK_STREAM, 0);
         if (fd < 0)
-          nl_error(4, "socket() failure in DAS_IO::Socket(%s): %s", iname,
+          msg(4, "socket() failure in DAS_IO::Socket(%s): %s", iname,
             std::strerror(errno));
             
         local.sun_family = AF_UNIX;
         strncpy(local.sun_path, unix_name->get_svc_name(), UNIX_PATH_MAX);
         if (fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK) == -1) {
-          nl_error(3, "fcntl() failure in DAS_IO::Socket(%s): %s", iname,
+          msg(3, "fcntl() failure in DAS_IO::Socket(%s): %s", iname,
             std::strerror(errno));
         }
 
         if (is_server) {
           unlink(local.sun_path);
           if (bind(fd, (struct sockaddr *)&local, SUN_LEN(&local)) < 0) {
-            nl_error(3, "bind() failure in DAS_IO::Socket(%s,%s): %s", iname,
+            msg(3, "bind() failure in DAS_IO::Socket(%s,%s): %s", iname,
               local.sun_path, std::strerror(errno));
           }
 
           if (listen(fd, MAXPENDING) < 0) {
-            nl_error(3, "listen() failure in DAS_IO::Socket(%s): %s", iname,
+            msg(3, "listen() failure in DAS_IO::Socket(%s): %s", iname,
               std::strerror(errno));
           }
           socket_state = Socket_listening;
@@ -132,10 +133,10 @@ void Socket::connect() {
           if (::connect(fd, (struct sockaddr *)&local,
                 SUN_LEN(&local)) < 0) {
             if (errno != EINPROGRESS) {
-              nl_error(2, "connect() failure in DAS_IO::Socket(%s): %s", iname,
+              msg(2, "connect() failure in DAS_IO::Socket(%s): %s", iname,
                 std::strerror(errno));
               if (reset()) {
-                nl_error(3, "%s: Connect failure fatal after all retries", iname);
+                msg(3, "%s: Connect failure fatal after all retries", iname);
               }
               return;
             }
@@ -147,14 +148,14 @@ void Socket::connect() {
       }
       break;
     default:
-      nl_error(3, "DAS_IO_Socket::Socket::connect: not implemented for socket_type %d", socket_type);
+      msg(3, "DAS_IO_Socket::Socket::connect: not implemented for socket_type %d", socket_type);
   }
 }
 
 bool Socket::ProcessData(int flag) {
   int sock_err;
 
-  // nl_error(0, "%s: Socket::ProcessData(%d)", iname, flag);
+  // msg(0, "%s: Socket::ProcessData(%d)", iname, flag);
   switch (socket_state) {
     case Socket_locking:
       connect();
@@ -165,7 +166,7 @@ bool Socket::ProcessData(int flag) {
       }
       if ((flag & Fl_Write) &&
           (sock_err == EISCONN || sock_err == 0)) {
-        // nl_error(0, "Connected");
+        // msg(0, "Connected");
         socket_state = Socket_connected;
         TO.Clear();
         flags &= ~(Fl_Write|Fl_Timeout);
@@ -177,9 +178,9 @@ bool Socket::ProcessData(int flag) {
       } else {
         if (!conn_fail_reported) {
           if (TO.Expired()) {
-            nl_error(2, "%s: connect error: Client Timeout", iname);
+            msg(2, "%s: connect error: Client Timeout", iname);
           } else {
-            nl_error(2, "%s: connect error %d: %s", iname, sock_err,
+            msg(2, "%s: connect error %d: %s", iname, sock_err,
               strerror(sock_err));
           }
           conn_fail_reported = true;
@@ -191,18 +192,18 @@ bool Socket::ProcessData(int flag) {
         if (ELoop) {
           int new_fd = accept(fd, 0, 0);
           if (new_fd < 0) {
-            nl_error(2, "%s: Error from accept(): %s", iname, strerror(errno));
+            msg(2, "%s: Error from accept(): %s", iname, strerror(errno));
             return false;
           } else {
             if (fcntl(new_fd, F_SETFL, fcntl(new_fd, F_GETFL, 0) | O_NONBLOCK) == -1) {
-              nl_error(3, "fcntl() failure in DAS_IO::Socket(%s): %s", iname,
+              msg(3, "fcntl() failure in DAS_IO::Socket(%s): %s", iname,
                 std::strerror(errno));
             }
             Socket *client = new_client("clientcon", new_fd);
             return client->connected();
           }
         } else {
-          nl_error(1, "Socket_listening: connection sensed, but no Loop");
+          msg(1, "Socket_listening: connection sensed, but no Loop");
         }
       }
       if (TO.Expired()) {
@@ -212,7 +213,7 @@ bool Socket::ProcessData(int flag) {
     case Socket_disconnected:
       // Handle timeout (i.e. attempt reconnection)
       if (TO.Expired()) {
-        // nl_error(0, "%s: reconnecting after timeout", iname);
+        // msg(0, "%s: reconnecting after timeout", iname);
         TO.Clear();
         connect();
       }
@@ -220,7 +221,7 @@ bool Socket::ProcessData(int flag) {
     case Socket_connected:
       return Interface::ProcessData(flag);
     default:
-      nl_error(4, "DAS_IO::Socket::ProcessData: Invalid socket_state: %d", socket_state);
+      msg(4, "DAS_IO::Socket::ProcessData: Invalid socket_state: %d", socket_state);
   }
   return false;
 }
@@ -249,10 +250,10 @@ void Socket::close() {
 bool Socket::reset() {
   close();
   if (reconn_max == 0) {
-    nl_error(2, "%s: DAS_IO::Socket::reset(): No retries requested", iname);
+    msg(2, "%s: DAS_IO::Socket::reset(): No retries requested", iname);
     return true;
   } else if (reconn_max > 0 && reconn_retries++ >= reconn_max) {
-    nl_error(2, "%s: DAS_IO::Socket::reset(): Maximum connection retries exceeded", iname);
+    msg(2, "%s: DAS_IO::Socket::reset(): Maximum connection retries exceeded", iname);
     return true;
   }
   int delay_secs = reconn_seconds;
@@ -265,7 +266,7 @@ bool Socket::reset() {
 }
 
 bool Socket::read_error(int my_errno) {
-  nl_error(2, "%s: read error %d: %s", iname,
+  msg(2, "%s: read error %d: %s", iname,
     my_errno, strerror(my_errno));
   
   if (is_server) {
@@ -282,7 +283,7 @@ bool Socket::read_error(int my_errno) {
 }
 
 bool Socket::iwrite_error(int my_errno) {
-  nl_error(2, "%s: write error %d: %s", iname,
+  msg(2, "%s: write error %d: %s", iname,
     my_errno, strerror(my_errno));
   
   if (is_server) {
@@ -299,23 +300,22 @@ bool Socket::iwrite_error(int my_errno) {
 }
 
 bool Socket::protocol_except() {
-  nl_error(2, "Socket::protocol_except not implemented");
+  msg(2, "Socket::protocol_except not implemented");
   return true;
 }
 
 bool Socket::closed() {
-  // nl_error(2, "%s: Socket closed", iname);
+  // msg(2, "%s: Socket closed", iname);
   
   if (is_server) {
-    nl_error(2, "%s: Should not have been reading from listening socket", iname);
+    msg(2, "%s: Should not have been reading from listening socket", iname);
     return true;
   } else if (is_server_client) {
-    close();
+    msg(0, "%s: Client disconnected", iname);
     if (ELoop)
       ELoop->delete_child(this);
     return false;
   } else {
-    close();
     return true;
   }
 }
@@ -325,7 +325,7 @@ bool Socket::connected() { return false; }
 bool Socket::connect_failed() { return false; }
 
 Socket *Socket::new_client(const char *iname, int fd) {
-  Socket *rv = new Socket(this, iname, fd);
+  Socket *rv = new Socket(this, iname, this->bufsize, fd);
   if (ELoop) ELoop->add_child(rv);
   return rv;
 }
@@ -340,7 +340,7 @@ bool Socket::readSockError(int *sock_err) {
 
   if (getsockopt(fd, SOL_SOCKET, SO_ERROR,
         sock_err, &optlen) == -1) {
-    nl_error(2, "%s: Error from getsockopt() %d: %s", iname, errno, strerror(errno));
+    msg(2, "%s: Error from getsockopt() %d: %s", iname, errno, strerror(errno));
     return false;
   }
   return true;

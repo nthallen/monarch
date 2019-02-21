@@ -11,6 +11,8 @@ namespace DAS_IO {
 
   class SubService;
   class Authenticator;
+  class Server;
+  class Serverside_client;
   
   /**
    * Defines a function type for switching interface classes after
@@ -20,7 +22,7 @@ namespace DAS_IO {
    * datum is already being written to by another process.
    * @return Pointer to a Socket subclass or zero if an error occurs.
    */
-  typedef Socket *(* socket_clone_t)(Authenticator *, SubService *);
+  typedef Serverside_client *(* socket_clone_t)(Authenticator *, SubService *);
   
   class SubService {
     public:
@@ -71,18 +73,28 @@ namespace DAS_IO {
    * cases.
    */
   class Server_socket : public Socket {
+    friend class Authenticator;
     public:
-      Server_socket(const char *iname, int bufsz, const char *service,
-        Socket::socket_type_t socket_type, SubServices *Subsp);
+      Server_socket(const char *iname, const char *service,
+        Socket::socket_type_t socket_type, Server *srvr);
       ~Server_socket();
       Socket *new_client(const char *iname, int fd);
     protected:
-      SubServices *Subsp;
+      Server *srvr;
+  };
+  
+  class Serverside_client : public Socket {
+    public:
+      Serverside_client(Authenticator *orig, const char *iname, int ibufsize);
+      ~Serverside_client();
+    private:
+      Server *srvr;
   };
 
   class Authenticator : public Socket {
+    friend class Serverside_client;
     public:
-      Authenticator(Server_socket *orig, const char *iname, int fd, SubServices *SS);
+      Authenticator(Server_socket *orig, const char *iname, int fd);
       ~Authenticator();
       /**
        * Currently processes a single line of input, and either accepts
@@ -94,24 +106,63 @@ namespace DAS_IO {
     protected:
       bool not_word(const char *&w, int &len);
       bool not_svc(const char *&svc, int &len);
-      SubServices *Subsp;
+      Server *srvr;
       const char *client_app;
   };
   
   class Server {
+    friend class Authenticator;
     public:
-      Server(const char *service, int bufsz); // bufsz to be phased out
+      Server(const char *service, int passive_quit_threshold = 0);
       ~Server();
+      
+      inline bool add_subservice(SubService *ss) {
+        return Subs.add_subservice(ss);
+      }
+      inline bool rm_subservice(std::string svcs) {
+        return Subs.rm_subservice(svcs);
+      }
+
       typedef enum { Srv_Unix = 1, Srv_TCP = 2, Srv_Both = 3 } Srv_type;
+      /**
+       * Creates the specified server sockets, prints a startup message,
+       * runs the event loop, and then prints a termination message.
+       */
       void Start(Srv_type which);
-      SubServices Subs;
+      /**
+       * Initiates the server shutdown sequence, closing the listening
+       * sockets and signaling the Loop to close all connections.
+       */
+      void Shutdown();
+      /** Called by Serverside_client objects on creation.
+       *  Increments the client count.
+       */
+      void client_added();
+      /** Called by Serverside_client objects on deletion.
+       *  Decrements the client count and may trigger shutdown of
+       *  the server.
+       */
+      void client_removed();
+      /** Sets the passive exit threshold.
+       * @param N The new passive exit threshold value
+       * If N is positive, the server will shutdown after at
+       * least N total_clients have connected and all clients have
+       * disconnected.
+       */
+      void set_passive_exit_threshold(int N);
       Server_socket *Unix;
       Server_socket *TCP;
       Loop ELoop;
       inline const char *get_service() { return service; }
     protected:
+      /** The number of currently connected clients */
+      int active_clients;
+      /** The total number of clients that have connected */
+      int total_clients;
+      /** See set_passive_exit_threshold() */
+      int passive_exit_threshold;
+      SubServices Subs;
       const char *service;
-      int bufsz; // going away
   };
 
 }

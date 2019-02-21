@@ -4,10 +4,12 @@
 #include <time.h>
 #include <math.h>
 #include "dasio/interface.h"
+#include "dasio/appid.h"
 #include "nl.h"
-#include "msg.h"
+#include "dasio/msg.h"
 #include "gtest/gtest.h"
 
+DAS_IO::AppID_t DAS_IO::AppID("test_not", "Tests of not functions", "V1.1");
 const char *opt_string = "vo:mV";
 
 /* A class for testing of the not_ functions */
@@ -92,7 +94,7 @@ int not_tester::get_nc() {
 bool not_tester::seed_buf(const char *str) {
   int length = strlen(str);
   if (length < DAS_IO::Interface::bufsize) {
-    strncpy((char *)DAS_IO::Interface::buf, str, length);
+    strncpy((char *)DAS_IO::Interface::buf, str, length+1);
     cp = 0;
     nc = length;
     return true;
@@ -176,6 +178,10 @@ TEST(NotTest, NotISO8601Test) {
   double new_time;
   
   EXPECT_FALSE(nt.not_ISO8601(time, w_hyphens));
+  
+  printf("\n >>nc is %d\n", nt.get_nc());
+  printf(" >>cp is %d\n\n", nt.get_cp());
+  
   time_t proper_time = (int32_t) time;
   
   /* printf("\n>test output:\n");
@@ -214,9 +220,26 @@ TEST(NotTest, NotISO8601Test) {
 TEST(NotTest, NotUint8Test) {
   not_tester nt = not_tester("NotTesterInstance",45);
   uint8_t val = 0;
+  
+  printf("\n >>nc is %d\n", nt.get_nc());
+  printf(" >>cp is %d\n\n", nt.get_cp());
   nt.seed_buf("0");
+  
+  printf("\n >>nc is %d\n", nt.get_nc());
+  printf(" >>cp is %d\n\n", nt.get_cp());
   EXPECT_FALSE(nt.not_uint8(val));
-  nt.seed_buf("255");
+  
+  //what is happening is that it's calling not_uint16 within not_uint8,
+  //which is reading through every digit at the start of the buffer,
+  //which includes leftover digits from the date-parsing function tests
+  //I have solved the problem, 09:45 AM, 7 February, 2019
+  //I didn't give the proper arguments to strncpy in seed_buf();
+  
+  printf("\n >>nc is %d\n", nt.get_nc());
+  printf(" >>cp is %d\n\n", nt.get_cp());
+  nt.seed_buf("1");
+  EXPECT_FALSE(nt.not_uint8(val));
+  nt.seed_buf("2");
   EXPECT_FALSE(nt.not_uint8(val));
   nt.seed_buf("256");
   EXPECT_TRUE(nt.not_uint8(val));

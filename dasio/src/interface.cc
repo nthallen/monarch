@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "dasio/interface.h"
-#include "msg.h"
+#include "dasio/msg.h"
 #include "nl_assert.h"
 #include "dasio/ascii_escape.h"
 
@@ -44,8 +44,7 @@ Interface::Interface(const char *name, int bufsz) {
 
 Interface::~Interface() {
   if (fd >= 0) {
-    close(fd);
-    fd = -1;
+    close();
   }
   set_ibufsize(0);
 }
@@ -60,13 +59,13 @@ Timeout *Interface::GetTimeout() {
 }
 
 bool Interface::ProcessData(int flag) {
-  // nl_error(0, "%s: Interface::ProcessData(%d)", iname, flag);
+  // msg(0, "%s: Interface::ProcessData(%d)", iname, flag);
   if ((flags & flag & gflag(0)) && tm_sync())
     return true;
   if ((flags&Fl_Read) && (flags&flag&(Fl_Read|Fl_Timeout))) {
     if (fillbuf()) return true;
-    if (protocol_input())
-      return true;
+    if (fd < 0) return false;
+    if (protocol_input()) return true;
   }
   if ((flags & flag & Fl_Write) && iwrite_check())
     return true;
@@ -135,13 +134,13 @@ bool Interface::iwrite(const char *str) {
 /**
  * The default implementation does nothing.
  */
-bool Interface::iwritten(int nb) {}
+bool Interface::iwritten(int nb) { return false; }
 
 /**
  * The default implementation returns true.
  */
 bool Interface::iwrite_error(int my_errno) {
-  nl_error(2, "%s: write error %d: %s", iname, my_errno, strerror(my_errno));
+  msg(2, "%s: write error %d: %s", iname, my_errno, strerror(my_errno));
   return true;
 }
 
@@ -149,7 +148,7 @@ bool Interface::iwrite_error(int my_errno) {
  * The default function returns true.
  */
 bool Interface::read_error(int my_errno) {
-  nl_error(2, "%s: read error %d: %s", iname, my_errno, strerror(my_errno));
+  msg(2, "%s: read error %d: %s", iname, my_errno, strerror(my_errno));
   return true;
 }
 
@@ -188,6 +187,15 @@ bool Interface::closed() {
   return true;
 }
 
+void Interface::close() {
+  if (fd >= 0) {
+    ::close(fd);
+    fd = -1;
+    TO.Clear();
+    flags &= ~(Fl_Write|Fl_Read|Fl_Except|Fl_Timeout);
+  }
+}
+
 void Interface::set_ibufsize(int bufsz) {
   if (bufsize != bufsz) {
     if (buf) free_memory(buf);
@@ -198,9 +206,9 @@ void Interface::set_ibufsize(int bufsz) {
 
 bool Interface::fillbuf(int N) {
   int i;
-  if (!buf) nl_error(4, "Ser_Sel::fillbuf with no buffer");
+  if (!buf) msg(4, "Ser_Sel::fillbuf with no buffer");
   if (N > bufsize)
-    nl_error(4, "Ser_Sel::fillbuf(N) N > bufsize: %d > %d",
+    msg(4, "Ser_Sel::fillbuf(N) N > bufsize: %d > %d",
       N, bufsize);
   if (nc > N-1) return false;
   ++n_fills;
@@ -215,6 +223,7 @@ bool Interface::fillbuf(int N) {
     }
     return false;
   } else if (i == 0) {
+    close();
     return closed();
   }
   nc += i;
@@ -253,10 +262,10 @@ void Interface::report_err( const char *fmt, ... ) {
     msgv( 2, fmt, args );
     va_end(args);
     if (nc)
-      nl_error(2, "%s: Input was: '%s'", iname, ascii_escape() );
+      msg(2, "%s: Input was: '%s'", iname, ascii_escape() );
   } else {
     if ( !n_suppressed )
-      nl_error(2, "%s: Error threshold reached: suppressing errors", iname);
+      msg(2, "%s: Error threshold reached: suppressing errors", iname);
     ++n_suppressed;
     ++total_suppressed;
   }
@@ -274,7 +283,7 @@ const char *Interface::ascii_escape() {
 void Interface::report_ok(int nchars) {
   if ( n_errors > 0 ) {
     if ( --n_errors <= 0 && n_suppressed ) {
-      nl_error( 0, "Error recovery: %d error messages suppressed", n_suppressed );
+      msg( 0, "Error recovery: %d error messages suppressed", n_suppressed );
       n_suppressed = 0;
     }
   }

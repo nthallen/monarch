@@ -1,0 +1,4 @@
+<package> test_msg
+<include> "test_msg.h"
+<include> msg
+<include> oui

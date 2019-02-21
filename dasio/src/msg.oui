@@ -1,0 +1,39 @@
+<package> msg
+
+<comment>
+  package for memo clients
+  The default without options is to write to memo. Specifying
+  -o and/or -V will disable the write to memo, but it can be
+  explicitly re-enabled with -m.
+  One can get no output at all via -o /dev/null.
+  If memo is not found, output will go to stderr.
+  
+  For use internal to memo, the msgmemo package below can be
+  overridden to disable the write_to_memo option and functionality
+  while retaining all the formatting features and the other
+  output options.
+  
+  Timestamping will be performed by the msg() function so it
+  will appear in all forms of output. memo should add a timestamp
+  if none is present.
+  
+  msg() will use the nl_debug_level variable, updating it via
+  the -v variable. This allows programs to interactively update
+  their verbosity level.
+
+<opts> "n:vo:V"
+
+<sort>
+  -n <AppID name> change the AppID name
+  -v add a level of verbosity
+  -o <error filename> Write to specified file
+  -V write to stderr
+
+<include> "dasio/msg.h"
+<init>
+  msg_init_options(argc, argv);
+
+<package> msgmemo
+<opts> "m"
+<sort>
+  -m write to memo [default]

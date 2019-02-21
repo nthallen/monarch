@@ -1,17 +1,19 @@
 /* OUI output from the following packages:
-   oui
+   ouiinit
    output_ext_init
    compiler
-   nl_error_init
+   msg_init
+   oui
 */
-const char *opt_string = "uqkwvo:";
 #include "oui.h"
 #include "ouidefs.h"
 #include <unistd.h>
 #include "nl.h"
 #include <stdio.h>
 #include "compiler.h"
-  int (*nl_error)(int level, const char *s, ...) = compile_error;
+#include <stdlib.h>
+const char *opt_string = "ukwvo:h";
+  int (*msg)(int level, const char *s, ...) = compile_error;
 
 void oui_init_options(int argc, char **argv) {
   char *output_extension;
@@ -22,9 +24,12 @@ void oui_init_options(int argc, char **argv) {
     opterr = 0;
     while ((optltr = getopt(argc, argv, opt_string)) != -1) {
       switch (optltr) {
-        case 'u': sort_output = 0; break;
+      	case 'u': sort_output = 0; break;
+        case 'h':
+          print_usage(argc, argv);
+          exit(0);
         case '?':
-          nl_error(3, "Unrecognized Option -%c", optopt);
+          msg(3, "Unrecognized Option -%c", optopt);
         default:
           break;
       }
@@ -34,12 +39,12 @@ void oui_init_options(int argc, char **argv) {
   compile_init_options(argc, argv, output_extension);
 }
 
-#ifdef __USAGE
-%C	[options] file [file ...]
-	-k Keep incomplete output file on error
-	-o <filename> Specify Output Filename
-	-q Print usage message
-	-u Do not sort the "sort" strings
-	-v Increasing level of verbosity
-	-w Treat warnings as errors
-#endif
+void print_usage(int argc, char **argv) {
+  printf("%s %s\n", argv[0], "[options] file [file ...]");
+  printf("  %s\n", "-h Print usage message");
+  printf("  %s\n", "-k Keep incomplete output file on error");
+  printf("  %s\n", "-o <filename> Specify Output Filename");
+  printf("  %s\n", "-u Do not sort the 'sort' strings");
+  printf("  %s\n", "-v Increasing level of verbosity");
+  printf("  %s\n", "-w Treat warnings as errors");
+}

@@ -19,14 +19,15 @@ extern "C" {
 int Skel_open(const char *name);
 int Skel_copy(FILE *ofp, const char *label, int copyout);
 
-extern int (*nl_error)(int level, const char *s, ...); /* nl_error.c */
-int nl_err(int level, const char *s, ...); /* nl_error.c */
-int nl_verror(FILE *ef, int level, const char *fmt, va_list args); /* nl_verr.c */
+extern int (*msg)(int level, const char *s, ...);
+int nl_err(int level, const char *s, ...);
+extern int (*msgv)(int level, const char *fmt, va_list args);
+int nl_verr(int level, const char *fmt, va_list args);
 
 /**
  * \defgroup MSG_CODES msg() severity level codes
  * @{
- * The MSG_ codes are nl_error()-compatible severity level codes.
+ * The MSG_ codes are msg()-compatible severity level codes.
  */
 #define MSG_DEBUG -2
 #define MSG_EXIT -1
@@ -41,9 +42,9 @@ int nl_verror(FILE *ef, int level, const char *fmt, va_list args); /* nl_verr.c 
 #define MSG_DBG(X) (MSG_DEBUG-(X))
 /** @} */
 
-extern int nl_debug_level; /* nldbg.c */
-extern int nl_response; /* nlresp.c */
-int set_response(int newval); /* nlresp.c */
+extern int nl_debug_level;
+extern int nl_response;
+int set_response(int newval);
 #define NLRSP_DIE 3
 #define NLRSP_WARN 1
 #define NLRSP_QUIET 0

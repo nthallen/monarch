@@ -28,7 +28,7 @@ glbldef global_defs;
       case _HEAPEMPTY:
         break;
       default:
-        nl_error( 1, "Internal: Heap is corrupted" );
+        msg( 1, "Internal: Heap is corrupted" );
         break;
     }
   }
@@ -79,7 +79,7 @@ static void check_new_opts(const char *opts, char *pkgname) {
     while (op != NULL) {
       op = strpbrk(op, buf);
       if (op != NULL) {
-        nl_error(2, "Package %s option -%c conflicts with package %s",
+        msg(2, "Package %s option -%c conflicts with package %s",
           pkgname, *op, p->pkg->name);
         op++;
       }

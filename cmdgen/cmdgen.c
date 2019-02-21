@@ -24,13 +24,14 @@
 #include "cmdgen.h"
 #include "compiler.h"
 #include "nl.h"
+#include "oui.h"
 
-int (*nl_error)(int level, const char *s, ...) = compile_error;
+// int (*msg)(int level, const char *s, ...) = compile_error;
 static int verbose = 0;
 static char data_file[FILENAME_MAX+1] = "";
 static time_t time_of_day;
 
-const char *opt_string = OPT_COMPILER_INIT "d:V";
+// const char *opt_string = OPT_COMPILER_INIT "d:V";
 
 static void print_word(FILE *fp, struct sub_item_t *si) {
   switch (si->type) {
@@ -56,7 +57,7 @@ static void print_action(response *act) {
       fprintf(vfile, " reduce via rule %d\n", act->value);
       break;
     case RSP_SHIFT_REDUCE:
-      nl_error(4, "Unexpected shift/reduce!");
+      msg(4, "Unexpected shift/reduce!");
   }
 }
 
@@ -106,7 +107,7 @@ void print_state(FILE *sfile, state *st) {
       break;
     case SI_EOR: break;
     default:
-      nl_error(4, "Unexpected terminal_type %d", st->terminal_type);
+      msg(4, "Unexpected terminal_type %d", st->terminal_type);
   }
   for (ntl = st->non_terminals; ntl != NULL; ntl = ntl->next) {
     fprintf(sfile, " &%s: ", ntl->nt->name);
@@ -151,7 +152,7 @@ static void generate_output(void) {
     ofile_save = ofile;
     ofile = fopen(data_file, "w");
     if (ofile == NULL)
-      nl_error(3, "Unable to open data structure file %s", data_file);
+      msg(3, "Unable to open data structure file %s", data_file);
   }
   output_trie();
   output_prompts();
@@ -193,7 +194,7 @@ Input Syntax Notes:
     %s    char * Enter Word Terminated by <CR>
 #endif
 
-static void main_args(int argc, char **argv) {
+void cmdgen_init_options(int argc, char **argv) {
   int c;
 
   opterr = 0;
@@ -208,19 +209,19 @@ static void main_args(int argc, char **argv) {
         verbose = 1;
         break;
       case '?':
-        nl_error(3, "Unknown command option -%c", optopt);
+        msg(3, "Unknown command option -%c", optopt);
     }
   }
   compile_init_options(argc, argv, ".c");
 }
 
 int main(int argc, char **argv) {
-  main_args(argc, argv);
+  oui_init_options(argc, argv);
   Skel_open("cmdgen.skel");
   time_of_day = time(NULL);
   fprintf(ofile, "/* cmdgen output.\n * %s */\n", ctime( &time_of_day));
   Skel_copy(ofile, "headers", 1);
-  if (yyparse() != 0) nl_error(3, "Parsing failed\n");
+  if (yyparse() != 0) msg(3, "Parsing failed\n");
   if (error_level == 0) {
     if (verbose) {
       if (vfile == ofile) fprintf(ofile, "#ifdef __DEFINITIONS\n");

@@ -17,7 +17,7 @@ static int report_cycle(package *pkg) {
       pkg->flags &= ~PKGFLG_VISITED;
   }
   if (pkg->flags & PKGFLG_VISITED) {
-    nl_error(2, "Package in cycle: %s", pkg->name);
+    msg(2, "Package in cycle: %s", pkg->name);
     return 1;
   }
   return 0;

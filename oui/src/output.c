@@ -54,6 +54,20 @@ void output_opt_string(void) {
   fprintf(ofile, "\";\n");
 }
 
+static void dump_llos_usage( ll_of_str *ll, char *prefix ) {
+  char *s;
+  
+  while ( s = llos_deq( ll ) ) {
+    for (int i = 0; i < sizeof(s); i++) {
+      if (s[i] == '\t') {
+        s[i] = ' ';
+      }
+    }
+    fprintf(ofile, "%sprintf(\"%%s\\n\",\"%s\");\n", prefix, s);
+    free_memory(s);
+  }
+}
+
 static void dump_llos( ll_of_str *ll, char *prefix ) {
   char *s;
 
@@ -90,7 +104,7 @@ static void output_switch(void) {
 
   fprintf(ofile, "%s",
     "        case '?':\n"
-    "          nl_error(3, \"Unrecognized Option -%c\", optopt);\n"
+    "          msg(3, \"Unrecognized Option -%c\", optopt);\n"
     "        default:\n"
     "          break;\n"
     "      }\n"
@@ -144,6 +158,7 @@ void output_includes(void) {
   char *s;
 
   prtd.first = prtd.last = NULL;
+  one_include(&prtd, "<stdio.h>"); // for print_usage
   one_include(&prtd, "\"oui.h\"");
   for (p = global_defs.packages.first; p != NULL; p = p->next) {
     while (s = llos_deq(&p->pkg->c_inc)) {
@@ -154,10 +169,18 @@ void output_includes(void) {
   dump_llos( &prtd, "#include " );
 }
 
+/**
+ * Ignore leading whitespace while sorting
+ */
 static int compar(const void *a, const void *b) {
-  return(strcasecmp(*((const char **)a), *((const char **)b)));
+  const char *astr = *((const char **)a);
+  const char *bstr = *((const char **)b);
+  while (isspace(*astr)) ++astr;
+  while (isspace(*bstr)) ++bstr;
+  return(strcasecmp(astr, bstr));
 }
 
+#ifdef QNX
 static void output_sorted(void) {
   char **sorter;
   struct llosleaf *lf;
@@ -190,7 +213,7 @@ void output_usage(void) {
   if ( global_defs.synopsis == 0 )
     fprintf( ofile, "%%C    [options]\n");
   else
-    fprintf( ofile, "%s\n", global_defs.synopsis );
+   fprintf( ofile, "%s\n", global_defs.synopsis );
 
   /* Output the sorted options */
   output_sorted();
@@ -201,3 +224,60 @@ void output_usage(void) {
 
   fprintf( ofile, "#endif\n");
 }
+#else
+static void output_sorted(void) {
+  char **sorter;
+  struct llosleaf *lf;
+  int n_strs, i;
+  
+  if (sort_output) {
+    n_strs = 0;
+    for (lf = global_defs.sorted.first; lf != NULL; lf = lf->next)
+      n_strs++;
+    if (n_strs > 0) {
+      sorter = new_memory(n_strs * sizeof(char *));
+      for (i = 0; i < n_strs; i++)
+        sorter[i] = llos_deq(&global_defs.sorted);
+      qsort(sorter, n_strs, sizeof(char *), compar);
+      for (i = 0; i < n_strs; i++) {
+        const char *optline = sorter[i];
+        while (isspace(*optline)) ++optline;
+        fprintf(ofile, "  printf(\"  %%s\\n\", \"%s\");\n", optline);
+        free_memory(sorter[i]);
+      }
+      free_memory(sorter);
+    }
+  } else dump_llos_usage( &global_defs.sorted, "" );
+}  
+
+/* this is where we (yes, you, Miles), edit the function to print the help text */
+void output_usage(void) {
+  llpkgleaf *p;
+
+  fprintf( ofile, "\nvoid print_usage(int argc, char **argv) {\n");
+  
+  /* Output the synopsis */
+  if ( global_defs.synopsis == 0 ) {
+    fprintf( ofile, "  printf(\"%%s [options]\\n\",argv[0]);\n");
+  } else {
+    char *s = global_defs.synopsis;
+    if (s[0] == '%' && s[1] == 'C') {
+      s += 2;
+      while (isspace(*s)) ++s;
+      fprintf( ofile, "  printf(\"%%s %%s\\n\", argv[0], \"%s\");\n", s);
+    } else {
+      fprintf( ofile, "  printf(\"%%s\\n\", \"%s\");\n", global_defs.synopsis);
+    }
+  }
+
+  /* Output the sorted options */
+  output_sorted();
+  
+  /* and output the unsorted help */
+  for (p = global_defs.packages.first; p != NULL; p = p->next) {
+    dump_llos_usage( &p->pkg->unsort, "  " );
+  }
+
+  fprintf( ofile, "}\n");
+}
+#endif

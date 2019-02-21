@@ -1,0 +1,11 @@
+<package> oui
+<include> <stdlib.h>
+
+<opts> "h"
+<sort>
+  -h Print usage message
+
+<switch>
+  case 'h':
+    print_usage(argc, argv);
+    exit(0);

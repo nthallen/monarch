@@ -1,16 +1,9 @@
 cmdgen package for generating command parsers for the
 Link Engineering Data Acquisition System.
 
-From a git checkout, you should be able to build via:
+Documentation for this tool can be found at:
 
-  autoreconf -i
-  ./configure
-  make
+https://www.arp.harvard.edu/eng/das/manuals/cmdgen.html
 
-
-On QNX6, you will want to modify LDFLAGS as:
-
-  LDFLAGS='=Wl,-rpath -Wl,/usr/local/lib -L/usr/local/lib'
-
-This can be done in config.site, which is maintained in
-QNX6/utils.
+The current version builds with cmake, but were that to
+fail, manually setting up a Makefile would also work.

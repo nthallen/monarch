@@ -3,24 +3,25 @@
 #include "dasio/tm_server.h"
 #include "dasio/appid.h"
 #include "nl.h"
+#include "dasio/msg.h"
 
 namespace DAS_IO {
   
-  Server TM_server("DG", 128);
+  Server TM_server("DG");
   
   TM_data_rcvr::TM_data_rcvr(Authenticator *auth, const char *iname, TM_data_rcvr_def *def)
-        : Socket(auth, iname, auth->fd), def(def) {
+        : Serverside_client(auth, iname, 128), def(def) {
     def->interface = this;
   }
   
   TM_data_rcvr::~TM_data_rcvr() {}
   
-  TM_data_rcvr *TM_data_rcvr::new_tm_data_rcvr(Authenticator *auth, SubService *ss) {
+  Serverside_client *TM_data_rcvr::new_tm_data_rcvr(Authenticator *auth, SubService *ss) {
     // Set iname from client_app and datum
     const char *clt_app = auth->get_client_app();
     TM_data_rcvr_def *def = (TM_data_rcvr_def *)(ss->svc_data);
     if (def->interface != 0) {
-      nl_error(2, "Datum %s already owned by %s, attempted by %s",
+      msg(2, "Datum %s already owned by %s, attempted by %s",
         def->datum, def->interface->get_iname(), clt_app);
       return 0;
     }
@@ -70,10 +71,10 @@ namespace DAS_IO {
     int svclen = snprintf(0, 0, "%s/data/%s", TM_server.get_service(), name);
     char *subservice = (char *)new_memory(svclen+1);
     snprintf(subservice, svclen+1, "%s/data/%s", TM_server.get_service(), name);
-    TM_server.Subs.add_subservice(
+    TM_server.add_subservice(
       new SubService(
         subservice,
-        (socket_clone_t)TM_data_rcvr::new_tm_data_rcvr,
+        TM_data_rcvr::new_tm_data_rcvr,
         new TM_data_rcvr_def(name, data, data_size)
       )
     );

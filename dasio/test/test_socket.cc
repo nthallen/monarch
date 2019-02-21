@@ -34,7 +34,7 @@ int select_once(DAS_IO::Interface *P) {
     if (errno == EBADF || errno == EHOSTDOWN) {
       flags = P->Fl_Except;
     } else {
-      nl_error(3,
+      msg(3,
         "DAS_IO::Loop::event_loop(): Unexpected error from select: %s",
         strerror(errno));
     }
@@ -53,7 +53,7 @@ int select_once(DAS_IO::Interface *P) {
 class echosrvr : public DAS_IO::Socket {
   public:
     echosrvr(const char *iname, int bufsz, const char *service);
-    echosrvr(const char *iname, int bufsz, const char *service,
+    echosrvr(const char *iname, const char *service,
       DAS_IO::Socket::socket_type_t);
     echosrvr(Socket *orig, const char *iname, int fd);
     ~echosrvr();
@@ -62,9 +62,9 @@ class echosrvr : public DAS_IO::Socket {
     bool connected();
 };
 
-echosrvr::echosrvr(const char *iname, int bufsz, const char *service,
+echosrvr::echosrvr(const char *iname, const char *service,
         DAS_IO::Socket::socket_type_t socket_type)
-    : DAS_IO::Socket(iname, bufsz, service, socket_type) {
+    : DAS_IO::Socket(iname, service, socket_type) {
 }
 
 echosrvr::echosrvr(const char *iname, int bufsz, const char *service)
@@ -72,26 +72,26 @@ echosrvr::echosrvr(const char *iname, int bufsz, const char *service)
 }
 
 echosrvr::echosrvr(DAS_IO::Socket *orig, const char *iname, int fd)
-  : DAS_IO::Socket(orig, iname, fd) {}  
+  : DAS_IO::Socket(orig, iname, 512, fd) {}  
 
 echosrvr::~echosrvr() {
-  nl_error(-2, "echosrvr shutting down");
+  msg(-2, "echosrvr shutting down");
 }
 
 bool echosrvr::connected() {
-  nl_error(-2, "%s: connected. flags = %d", iname, flags);
+  msg(-2, "%s: connected. flags = %d", iname, flags);
   return false;
 }
 
 // DAS_IO::Socket *echosrvr::new_client(const char *iname, int bufsz, int fd,
       // socket_type_t stype, const char *service, const char *hostname) {
-  // nl_error(-2, "%s: New client connection created. %s fd = %d", this->iname, iname, fd);
+  // msg(-2, "%s: New client connection created. %s fd = %d", this->iname, iname, fd);
   // echosrvr *clt = new echosrvr(iname, bufsz, fd, stype, service, hostname);
   // return clt;
 // }
 
 DAS_IO::Socket *echosrvr::new_client(const char *iname, int fd) {
-  nl_error(-2, "%s: New client connection created. %s fd = %d", this->iname, iname, fd);
+  msg(-2, "%s: New client connection created. %s fd = %d", this->iname, iname, fd);
   echosrvr *clt = new echosrvr(this, iname, fd);
   if (ELoop) ELoop->add_child(clt);
   return clt;
@@ -102,22 +102,22 @@ bool echosrvr::protocol_input() {
   if (cp < nc) {
     switch (buf[cp]) {
       case 'E':
-        nl_error(-2, "Received '%s'", buf);
+        msg(-2, "Received '%s'", buf);
         iwrite((const char *)buf, nc, 1);
         report_ok(nc);
         return false;
       case 'Q':
-        nl_error(-2, "Received Quit command");
+        msg(-2, "Received Quit command");
         report_ok(nc);
         return true;
       case 'C':
-        nl_error(-2, "Received Close command");
+        msg(-2, "Received Close command");
         report_ok(nc);
         close();
         ELoop->delete_child(this);
         return false;
       case 'A': // Close connection after acknowledge
-        nl_error(-2, "Received Acknowledge and close");
+        msg(-2, "Received Acknowledge and close");
         iwrite("OK");
         report_ok(nc);
         close();
@@ -148,7 +148,7 @@ void clientsocket::transmit(const char *cmd) {
 bool clientsocket::protocol_input() {
   cp = 0;
   if (nc > 0) {
-    //nl_error(0, "%s: Received '%s'", iname, buf);
+    //msg(0, "%s: Received '%s'", iname, buf);
     report_ok(nc);
   }
   return false;
@@ -168,7 +168,7 @@ TEST(SocketTest,ClientSetup) {
   EXPECT_FALSE(client.ProcessData(flags));
   ASSERT_EQ(client.get_socket_state(), DAS_IO::Socket::Socket_connected);
   client.transmit("EHello");
-  nl_error(0, "Transmitted EHello. flags = %d", client.flags);
+  msg(0, "Transmitted EHello. flags = %d", client.flags);
   flags = select_once(&client);
   exp_flags = client.Fl_Read;
   EXPECT_EQ(flags, exp_flags);
@@ -225,7 +225,7 @@ TEST(SocketTest,ConnClosedOnWrite) {
 }
 
 void child_process() {
-  echosrvr server("IPCserver", 512, "cmd", DAS_IO::Socket::Socket_Unix);
+  echosrvr server("IPCserver", "cmd", DAS_IO::Socket::Socket_Unix);
   server.connect();
   DAS_IO::Loop ELoop;
   ELoop.add_child(&server);

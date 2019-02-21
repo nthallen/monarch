@@ -166,11 +166,22 @@ class Interface {
      */
     virtual bool tm_sync();
     /**
-     * Called when 0 bytes are read from the interface. The default
-     * returns true, but this is not appropriate in all situations.
+     * Callback function called when 0 bytes are read from the interface.
+     * The default returns true, but this is not appropriate in all
+     * situations. Note that closed() is not called by close(). It
+     * is specifically for addressing the case where the remote 
+     * process closes the connection. However, close() is always called
+     * before closed() is called.
+     * 
      * @return true if the event loop should terminate.
      */
     virtual bool closed();
+    
+    /**
+     * Shuts down the connection. Note that this function does not
+     * invoke closed().
+     */
+    virtual void close();
 
     /**
      * Updates the input buffer size, reallocating memory as necessary.

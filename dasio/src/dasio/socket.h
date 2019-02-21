@@ -7,7 +7,25 @@
 namespace DAS_IO {
 
 class Authenticator;
-  
+
+/**
+ * @brief Base class for TCP and Unix Domain sockets
+ *
+ * It is worth noting that currently the Socket class includes basic
+ * mechanisms for a server socket--calling listen() and accept()
+ * and creating a new Socket for the new client connection--but
+ * this is essentially useless without creating a subclass that
+ * will override new_client() to produce another subclass to
+ * handle the client connection.
+ *
+ * For our negotiated client/server connection, the former
+ * class is Server_socket, which overrides new_client to
+ * create an Authenticator socket.
+ *
+ * Perhaps Socket::new_client(iname, fd) should always return 0,
+ * since it really must be overridden to be useful. That said,
+ * it is very short, so not much code is wasted.
+ */
 class Socket : public Interface {
   friend class Authenticator;
   public:
@@ -26,7 +44,7 @@ class Socket : public Interface {
     /**
      * Create a socket server
      */
-    Socket(const char *iname, int bufsz, const char *service,
+    Socket(const char *iname, const char *service,
         socket_type_t socket_type);
     
     /**
@@ -38,7 +56,7 @@ class Socket : public Interface {
      * Initializes this Socket to match the original, making sure to
      * set is_server to false and propagating the is_server_client value.
      */
-    Socket(Socket *original, const char *iname, int fd);
+    Socket(Socket *original, const char *iname, int ibufsize, int fd);
     
     virtual ~Socket();
     /**
@@ -106,7 +124,7 @@ class Socket : public Interface {
     /**
      * Shut down the connection.
      */
-    virtual void close();
+    void close();
 
     /**
      * Close and then try to reconnect after longish delay using

@@ -4,12 +4,12 @@
  * an error can be tolerated. The nortlib routines will in general
  * support both responses based on the setting of nl_response.
  * If nl_response is NLRSP_DIE, errors result in termination
- * via nl_error(3, ...). If nl_response is NLRSP_WARN, errors
- * will result in nl_error(1, ...), but the defined error return
+ * via msg(3, ...). If nl_response is NLRSP_WARN, errors
+ * will result in msg(1, ...), but the defined error return
  * will occur. If nl_response is NLRSP_QUIET, no error message
  * will be printed, just the error return value.
  * The values chosen for NLRSP_* are arbitrarily chosen to match
- * the type codes to nl_error.
+ * the type codes to msg.
  */
 #include "nl.h"
 
@@ -37,7 +37,7 @@ int set_response(int newval);
 
   The nl_response setting determines how most all nortlib
   functions react to errors. nl_response may be set to any value
-  acceptable as a level argument to =nl_error=() or msg(). By
+  acceptable as a level argument to =msg=() or msg(). By
   default, nl_response is set to 3, which means any error in a
   nortlib function will be considered a fatal error. By changing
   the setting to 1, an error will simply be reported as a
@@ -64,7 +64,7 @@ int set_response(int newval);
   can be saved and restored.
 
 =SeeAlso
-  =nl_error=().
+  =msg=().
 
 =End
 */

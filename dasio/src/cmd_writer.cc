@@ -7,6 +7,7 @@
 #include "dasio/cmd_version.h"
 #include "dasio/ascii_escape.h"
 #include "nl.h"
+#include "dasio/msg.h"
 #include "nl_assert.h"
 #include "cmdalgo.h"
 
@@ -19,7 +20,7 @@ const char *Cmd_writer::CmdServerNode;
 Cmd_writer::Cmd_writer(const char *iname)
       : Client(iname, 128, "cmd", "server") {
   if (Cmd) {
-    nl_error(3, "%s: More than one Cmd_writer instance", iname);
+    msg(3, "%s: More than one Cmd_writer instance", iname);
   } else {
     Cmd = this;
   }
@@ -67,7 +68,7 @@ bool Cmd_writer::app_input() {
         return true;
         // leave ret_code as NOREPLY
       } else {
-        nl_error(2, "%s: Syntax error at column %d", iname, code);
+        msg(2, "%s: Syntax error at column %d", iname, code);
         ret_code = CMDREP_SYNERR+code;
       }
       break;
@@ -80,7 +81,7 @@ bool Cmd_writer::app_input() {
         return true;
         // leave ret_code as NOREPLY
       } else {
-        nl_error(2, "%s: %s", iname, buf+cp);
+        msg(2, "%s: %s", iname, buf+cp);
         ret_code = CMDREP_EXECERR+code;
       }
       break;
@@ -120,7 +121,7 @@ int Cmd_writer::sendcmd(Cmd_Mode mode, const char *cmdtext) {
   if (cmdtext == NULL) {
     cmdopts = ":X";
     cmdtext = "";
-    nl_error(-3, "Sending Quit to Server");
+    msg(-3, "Sending Quit to Server");
     sent_quit = true;
   } else {
     switch (mode) {
@@ -133,7 +134,7 @@ int Cmd_writer::sendcmd(Cmd_Mode mode, const char *cmdtext) {
       const char *ts = time_str();
 
       if (len > 0 && cmdtext[len-1]=='\n') len--;
-      nl_error( mode == 2 ? -4 : -3,
+      msg( mode == 2 ? -4 : -3,
           "%s%*.*s", ts, len, len, cmdtext);
     }
   }
@@ -141,7 +142,7 @@ int Cmd_writer::sendcmd(Cmd_Mode mode, const char *cmdtext) {
   clen = snprintf( buf, CMD_MAX_COMMAND_IN+1, "[%s%s]%s",
     AppID.name, cmdopts, cmdtext );
   if ( clen > CMD_MAX_COMMAND_IN ) {
-    nl_error( 2, "Command too long" );
+    msg( 2, "Command too long" );
     return true;
   }
   iwrite(buf, clen);
@@ -191,7 +192,7 @@ void cic_options(int argcc, char **argvv) {
         DAS_IO::Cmd_writer::playback = 1;
         break;
       case '?':
-        nl_error(3, "Unknown option -%c", optopt);
+        msg(3, "Unknown option -%c", optopt);
       default:
         break;
     }

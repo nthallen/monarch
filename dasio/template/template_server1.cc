@@ -9,12 +9,14 @@
 
 using namespace DAS_IO;
 
-AppID_t AppID("boerfd", "boerf server", "V1.0");
+AppID_t DAS_IO::AppID("boerfd", "boerf server", "V1.0");
 
-class boerf_ssclient : public Serverside_Client {
+class boerf_ssclient : public Serverside_client {
   public:
     boerf_ssclient(Authenticator *Auth, const char *iname);
     ~boerf_ssclient();
+    // Specify how big the ibuf needs to be:
+    static const int boerf_ssclient_ibufsize = 80;
     // Include whatever virtual function overrides you need here
   protected:
     // Include any local data here
@@ -24,11 +26,11 @@ class boerf_ssclient : public Serverside_Client {
  * @brief the Serverside_Client socket
  */
 boerf_ssclient::boerf_ssclient(Authenticator *Auth, const char *iname)
-    : Serverside_Client(Auth, iname) {}
+    : Serverside_client(Auth, iname, boerf_ssclient_ibufsize) {}
 
 boerf_ssclient::~boerf_ssclient() {}
 
-boerf_ssclient *new_boerf_ssclient(Authenticator *Auth, SubService *SS) {
+Serverside_client *new_boerf_ssclient(Authenticator *Auth, SubService *SS) {
   SS = SS; // No need for this
   return new boerf_ssclient(Auth, Auth->get_client_app());
 }
@@ -36,6 +38,9 @@ boerf_ssclient *new_boerf_ssclient(Authenticator *Auth, SubService *SS) {
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   Server S("boerf");
-  S.Subs.add_subservice(new SubService("boerf", (socket_clone_t)new_boerf_ssclient, (void *)0));
-  S.Start(Srv_Unix);
+  // This is for a passive server like memo:
+  S.set_passive_exit_threshold(1);
+  S.add_subservice(new SubService("boerf", new_boerf_ssclient, (void *)0));
+  S.Start(Server::Srv_Unix);
+  return 0;
 }

@@ -2,6 +2,7 @@
 #include "dasio/cmd_writer.h"
 // #include <stdlib.h>
 #include "nl.h"
+#include "dasio/msg.h"
 #include "cmdalgo.h"
 
 typedef struct cmd_lev {
@@ -26,7 +27,7 @@ void cic_transmit(char *buf, int n_chars, int transmit) {
     }
     cmdbuf[curpos++] = c;
     if (curpos > CMD_INTERP_MAX)
-      nl_error(3, "Maximum transmissable command length exceeded");
+      msg(3, "Maximum transmissable command length exceeded");
   }
   if (transmit) {
     cmdbuf[curpos] = '\0';

@@ -52,6 +52,7 @@ target_include_directories(oui PRIVATE
 target_link_libraries(oui nl)
 install(TARGETS oui RUNTIME DESTINATION bin)
 install(FILES oui.h DESTINATION include)
+install (FILES oui.oui DESTINATION share/oui)
 
 # ouiinit.c is generated via oui
 # oui -o ouiinit.c ouiinit.oui

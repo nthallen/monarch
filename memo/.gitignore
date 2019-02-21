@@ -1,4 +1,7 @@
 .settings
 memo
 memooui.c
+memooui.cc
 FullBuild.*
+*.o
+*.exe

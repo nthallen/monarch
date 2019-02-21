@@ -19,11 +19,11 @@
 	 -w treat warnings as errors
 
    Also, multiple input files are handled via yywrap
-   and error messages are handled via standard nl_error
+   and error messages are handled via standard msg
    hooks. To wit, the following initializations are
    required:
    
-   Developer must supply a definition for nl_error which
+   Developer must supply a definition for msg which
    points to the error routine.
    
    Developer must supply definintion of opt_string.
@@ -50,7 +50,7 @@ FILE *open_output_file(char *name) {
   if (*name == '-') return(stdout);
   fp = fopen(name, "w");
   if (fp == NULL)
-	nl_error(3, "Unable to open output file %s", name);
+	msg(3, "Unable to open output file %s", name);
   return(fp);
 }
 
@@ -67,7 +67,7 @@ int compile_error(int level, const char *format, ...) {
 	  fprintf(stderr, "%s %d:", input_filename, input_linenumber);
 	else fprintf(stderr, "%d:", input_linenumber);
   }
-  nl_verror(stderr, level, format, arg);
+  msgv(level, format, arg);
   va_end(arg);
   return(level);
 }
