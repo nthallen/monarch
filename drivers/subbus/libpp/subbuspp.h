@@ -30,6 +30,8 @@ class subbuspp : Client {
   public:
     subbuspp(const char *service, const char *sub_service);
     ~subbuspp();
+    bool app_connected();
+    bool app_input();
     int load();
     const char *get_subbus_name();
     int write_ack(uint16_t addr, uint16_t data);
@@ -51,7 +53,6 @@ class subbuspp : Client {
   private:
     int send_to_subbusd( uint16_t command, void *data,
       int data_size, uint16_t exp_type );
-    int MsgSendv( const struct iovec *s_iov, int sparts, const struct iovec *r_iov, int rparts );
     int send_CSF( uint16_t command, uint16_t val );
     subbus_mread_req *pack_mread( int req_len, int n_reads, const char *req_str );
     
@@ -59,10 +60,12 @@ class subbuspp : Client {
     uint16_t subbus_subfunction; // undefined until initialization
     uint16_t subbus_features; // ditto
     char local_subbus_name[SUBBUS_NAME_MAX];
-    struct iovec sb_iov[3];
+    struct iovec sb_iov[2];
+    uint16_t expected_type;
     subbusd_req_hdr_t sb_req_hdr;
-    subbusd_rep_t sb_reply;
-    Loop ELoop;
+    subbusd_rep_t *sb_reply;
+    /** Private Loop for synchronous processing */
+    Loop PELoop;
 };
 
 #endif

@@ -11,10 +11,38 @@
 // #include "tm.h"
 
 subbuspp::subbuspp(const char *service, const char *sub_service)
-    : Client(service, 512, service, sub_service) {
+    : Client(service, sizeof(subbusd_rep_t), service, sub_service) {
 }
 
 subbuspp::~subbuspp() {}
+
+bool subbuspp::app_connected() {
+  return true;
+}
+
+bool subbuspp::app_input() {
+  // have we satisfied the request?
+  if ( nc < sizeof(subbusd_rep_hdr_t) )
+    return false;
+  if ( sb_reply->hdr.status < 0 ) 
+    expected_type = SBRT_NONE;
+  if ( sb_reply->hdr.ret_type != expected_type ) {
+    return true;
+  }
+  switch ( sb_reply->hdr.ret_type ) {
+    case SBRT_NONE:
+      return ( nc >= sizeof(subbusd_rep_hdr_t));
+    case SBRT_US:
+      return ( nc >= sizeof(subbusd_rep_hdr_t) + sizeof(uint16_t));
+    case SBRT_CAP:
+      return ( nc >= sizeof(subbusd_rep_hdr_t) + sizeof(subbusd_cap_t));
+    case SBRT_MREAD:
+      return true;
+    default:
+      msg( 4, "Unknown return type: %d", sb_reply->hdr.ret_type );
+  }
+  return true;
+}
 
 /**
  @return Status reply from subbusd. Terminates if
@@ -22,43 +50,49 @@ subbuspp::~subbuspp() {}
  */
 int subbuspp::send_to_subbusd( uint16_t command, void *data,
 		int data_size, uint16_t exp_type ) {
-  int rv;
-  if ( sb_fd == -1 )
+  if (fd < 0)
     msg( 4, "Attempt to access subbusd before initialization" );
+  nl_assert(obuf_empty());
+  expected_type = exp_type;
   int n_iov = 1;
+  sb_req_hdr.sb_kw = SB_KW;
   sb_req_hdr.command = command;
+  sb_iov[0].iov_base = &sb_req_hdr;
+  sb_iov[0].iov_len = sizeof(sb_req_hdr);
   if ( data_size > 0 ) {
     sb_iov[1].iov_base = data;
     sb_iov[1].iov_len = data_size;
     ++n_iov;
   }
-  rv = MsgSendv(sb_iov, n_iov, &sb_iov[2], 1);
-  if ( rv == -1 )
-    msg( 3, "Error sending to subbusd: %s",
-      strerror(errno) );
-  nl_assert( rv >= sizeof(subbusd_rep_hdr_t) );
-  if ( sb_reply.hdr.status < 0 ) 
-    exp_type = SBRT_NONE;
-  if ( sb_reply.hdr.ret_type != exp_type ) {
-    msg( 4, "Return type for command %u should be %d, is %d",
-      command, exp_type, sb_reply.hdr.ret_type );
+  // Clear the input buffer here, since we're using it to return
+  // data directly to the client.
+  if (nc) report_ok(nc);
+  if (!iwritev(sb_iov, n_iov)) {
+    ELoop->event_loop();
   }
-  switch ( sb_reply.hdr.ret_type ) {
+  nl_assert( nc >= sizeof(subbusd_rep_hdr_t) );
+  if ( sb_reply->hdr.status < 0 ) 
+    exp_type = SBRT_NONE;
+  if ( sb_reply->hdr.ret_type != exp_type ) {
+    msg( 4, "Return type for command %u should be %d, is %d",
+      command, exp_type, sb_reply->hdr.ret_type );
+  }
+  switch ( sb_reply->hdr.ret_type ) {
     case SBRT_NONE:
-      nl_assert( rv == sizeof(subbusd_rep_hdr_t));
+      nl_assert( nc == sizeof(subbusd_rep_hdr_t));
       break;
     case SBRT_US:
-      nl_assert( rv == sizeof(subbusd_rep_hdr_t) + sizeof(uint16_t));
+      nl_assert( nc == sizeof(subbusd_rep_hdr_t) + sizeof(uint16_t));
       break;
     case SBRT_CAP:
-      nl_assert( rv == sizeof(subbusd_rep_hdr_t) + sizeof(subbusd_cap_t));
+      nl_assert( nc == sizeof(subbusd_rep_hdr_t) + sizeof(subbusd_cap_t));
       break;
     case SBRT_MREAD:
       break;
     default:
-      msg( 4, "Unknown return type: %d", sb_reply.hdr.ret_type );
+      msg( 4, "Unknown return type: %d", sb_reply->hdr.ret_type );
   }
-  return sb_reply.hdr.status;
+  return sb_reply->hdr.status;
 }
 
 /** Initializes communications with subbusd driver.
@@ -67,30 +101,24 @@ int subbuspp::send_to_subbusd( uint16_t command, void *data,
  */
 int subbuspp::load() {
   int rv;
-  if ( sb_fd != -1 ) {
+  if (fd > 0 || ELoop != 0) {
     msg( -2, "Attempt to reload subbus" );
     return subbus_subfunction;
   }
-  sb_fd = open(tm_dev_name(path), O_RDWR );
-  if ( sb_fd == -1 ) {
+  connect();
+  PELoop.add_child(this);
+  ELoop->event_loop(); // should run until connected
+  if (fd < 0) {
     msg( -2, "Error opening subbusd: %s", strerror(errno));
     return 0;
   }
-  sb_iov[0].iov_base = &sb_req_hdr;
-  sb_iov[0].iov_len = sizeof(sb_req_hdr);
-  sb_req_hdr.iohdr.type = _IO_MSG;
-  sb_req_hdr.iohdr.combine_len = 0;
-  sb_req_hdr.iohdr.mgrid = SUBBUSD_MGRID;
-  sb_req_hdr.iohdr.subtype = 0;
-  sb_req_hdr.sb_kw = SB_KW;
-  sb_iov[2].iov_base = &sb_reply
-  sb_iov[2].iov_len = sizeof(sb_reply);
+  sb_reply = (subbusd_rep_t *)buf;
   rv = send_to_subbusd( SBC_GETCAPS, NULL, 0, SBRT_CAP );
   if ( rv != SBS_OK )
     msg( 4, "Expected SBS_OK while getting capabilities" );
-  subbus_subfunction = sb_reply.data.capabilities.subfunc;
-  subbus_features = sb_reply.data.capabilities.features;
-  strncpy(local_subbus_name, sb_reply.data.capabilities.name, SUBBUS_NAME_MAX);
+  subbus_subfunction = sb_reply->data.capabilities.subfunc;
+  subbus_features = sb_reply->data.capabilities.features;
+  strncpy(local_subbus_name, sb_reply->data.capabilities.name, SUBBUS_NAME_MAX);
   local_subbus_name[SUBBUS_NAME_MAX-1] = '\0'; // guarantee nul-term.
   return subbus_subfunction;
 }
@@ -114,7 +142,7 @@ int subbuspp::read_ack( uint16_t addr, uint16_t *data ) {
 
   rdata.data = addr;
   rv = send_to_subbusd( SBC_READACK, &rdata, sizeof(rdata), SBRT_US );
-  *data = sb_reply.data.value;
+  *data = sb_reply->data.value;
   switch ( rv ) {
     case SBS_ACK: rc = 1; break;
     case -ETIMEDOUT:
@@ -210,7 +238,7 @@ int subbuspp::send_CSF( uint16_t command, uint16_t val ) {
  * @return SBS_OK on success.
  */
 int subbuspp::subbus_quit(void) {
-  if ( sb_fd == -1 ) return 0;
+  if ( fd < 0 ) return 0;
   return send_to_subbusd( SBC_QUIT, NULL, 0, SBRT_NONE );
 }
 
@@ -262,14 +290,14 @@ int subbuspp::mread_subbus_nw(subbus_mread_req *req, uint16_t *data,
   rv = send_to_subbusd( SBC_MREAD, req, req->req_len, SBRT_MREAD );
   if ( rv >= 0 ) {
     int i;
-    nw = sb_reply.data.mread.n_reads;
+    nw = sb_reply->data.mread.n_reads;
     if (nw > req->n_reads) {
       msg(MSG_ERROR, "mread expected %d words, returned %d",
         req->n_reads, nw);
       nw = req->n_reads;
     }
     for ( i = 0; i < nw; ++i ) {
-      data[i] = sb_reply.data.mread.rvals[i];
+      data[i] = sb_reply->data.mread.rvals[i];
     }
   }
   if (nwords != 0)
