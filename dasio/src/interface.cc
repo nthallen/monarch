@@ -32,13 +32,15 @@ Interface::Interface(const char *name, int bufsz) {
   flags = 0;
   ELoop = 0;
   n_fills = n_empties = n_eagain = n_eintr = 0;
-  obuf = 0;
-  onc = ocp = 0;
+  // obuf = 0;
+  // onc = ocp = 0;
   n_errors = 0;
   n_suppressed = 0;
   total_errors = 0;
   total_suppressed = 0;
   qerr_threshold = 5;
+  wiov = 0;
+  n_wiov = 0;
   set_ibufsize(bufsz);
 }
 
@@ -81,6 +83,12 @@ bool Interface::ProcessData(int flag) {
   return false;
 }
 
+bool Interface::iwritev(struct iovec *iov, int nparts) {
+  wiov = iov;
+  n_wiov = nparts;
+  return iwrite_check();
+}
+
 /**
  * Sets up a write of nc bytes from the buffer pointed to by str.
  * If the write cannot be accomplished immediately, the information
@@ -96,25 +104,38 @@ bool Interface::ProcessData(int flag) {
  */
 bool Interface::iwrite(const char *str, unsigned int nc, unsigned int cp) {
   nl_assert(fd >= 0);
-  nl_assert(ocp >= onc);
-  obuf = (unsigned char *)str;
-  onc = nc;
-  ocp = cp;
-  return iwrite_check();
+  nl_assert(obuf_empty());
+  pvt_iov.iov_base = (void *)(str+cp);
+  pvt_iov.iov_len = nc - cp;
+  return iwritev(&pvt_iov, 1);
+  // obuf = (unsigned char *)str;
+  // onc = nc;
+  // ocp = cp;
+  // return iwrite_check();
 }
 
 bool Interface::iwrite_check() {
   bool rv = false;
   if (!obuf_empty()) {
-    int nb = onc-ocp;
-    int ntr = write(fd, obuf+ocp, nb);
+    int ntr = writev(fd, wiov, n_wiov);
     if (ntr < 0 && errno != EAGAIN) {
       flags &= ~Fl_Write;
       return(iwrite_error(errno));
     }
     if (ntr > 0) {
-      ocp += ntr;
-      rv = iwritten(ntr);
+      int ntrr = ntr;
+      while (ntr > 0 && n_wiov > 0) {
+        if (ntr >= wiov->iov_len) {
+          ntr -= wiov->iov_len;
+          ++wiov;
+          --n_wiov;
+        } else {
+          wiov->iov_len -= ntr;
+          wiov->iov_base = (void*)(((const char *)(wiov->iov_base))+ntr);
+          ntr = 0;
+        }
+      }
+      rv = iwritten(ntrr);
     }
   }
   flags = obuf_empty() ?
