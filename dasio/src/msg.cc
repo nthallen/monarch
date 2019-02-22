@@ -79,7 +79,7 @@ static int write_to_memo = 0, write_to_stderr = 0, write_to_file = 0;
 FILE *file_fp;
 
 /*
-<opts> "vo:mV"
+<opts> "nvo:mV"
 
 <sort>
   -n <name> Change AppID name
@@ -129,7 +129,7 @@ void msg_init_options(int argc, char **argv) {
     }
   }
   
-  if (write_to_memo) {
+  if (write_to_memo && !we_are_memo) {
     // memo_fp = fopen( tm_dev_name( "memo" ), "w" );
     // memo_fp = fopen( "memo.log", "w" );
     
