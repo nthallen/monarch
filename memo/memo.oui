@@ -4,6 +4,11 @@
 <include> oui
 <include> msg
 
+<opts> "l:"
+
+<sort>
+  -l <#> limits the number of total clients
+
 <init>
 	memo_init_options(argc, argv);
 

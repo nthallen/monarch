@@ -1,0 +1,8 @@
+<package> msg_internal
+<include> "msg_internal.h"
+<include> msg
+<include> oui
+
+<unsort>
+  Prints a one-off message to
+  the command line via memo.

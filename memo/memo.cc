@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <getopt.h>
 #include "nl.h"
 #include "nl_assert.h"
@@ -12,34 +13,27 @@
 
 DAS_IO::AppID_t DAS_IO::AppID("memo", "memo server", "V1.0");
 
-  MemoServer::MemoServer(const char *service, int bufsz) :
-      Unix(0),
-      TCP(0),
-      service(service),
-      bufsz(bufsz) { }
+memo_socket::~memo_socket() {}
 
-  MemoServer::~MemoServer() {}
-
-  void MemoServer::Start(MemoServer::Srv_type which) {
-    if (which & Srv_Unix) {
-      Unix = new Server_socket("Unix", bufsz, service, Socket::Socket_Unix, &Subs);
-      Unix->connect();
-      ELoop.add_child(Unix);
-    }
-    if (which & Srv_TCP) {
-      TCP = new Server_socket("TCP", bufsz, service, Socket::Socket_TCP, &Subs);
-      TCP->connect();
-      ELoop.add_child(TCP);
-    }
-    msg(0, "%s %s Starting", AppID.fullname, AppID.rev);
-    ELoop.event_loop();
-    msg(0, "Terminating");
-  }
-
-  memo_socket::~memo_socket() {}
+int memo_quit_threshold = 1;
 
 void memo_init_options( int argc, char **argv ) {
   set_we_are_memo();
+	int c;
+
+  optind = OPTIND_RESET;
+  opterr = 0;
+  while ((c = getopt(argc, argv, opt_string)) != -1) {
+    switch (c) {
+      case 'l':
+        memo_quit_threshold = atoi(optarg);
+        break;
+      case '?':
+        fprintf( stderr, "Unrecognized option: '-%c'\n", optopt );
+        exit(1);
+      default: break; // could check for errors
+    }
+  }
 }
 
 memo_socket *new_memo_socket(Authenticator *Auth, SubService *SS) {
@@ -64,11 +58,10 @@ bool memo_socket::protocol_input() {
 
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
-  int bufsize = 1000;
   
-  //to be built up
-  MemoServer memoserver("memo", bufsize);
-  memoserver.Subs.add_subservice(new SubService("memo", (socket_clone_t)new_memo_socket, (void*)0));
-  memoserver.Start(MemoServer::Srv_Unix);
+  Server server("memo");
+  server.add_subservice(new SubService("memo", (socket_clone_t)new_memo_socket, (void*)0));
+  server.set_passive_exit_threshold(memo_quit_threshold);
+  server.Start(Server::Srv_Unix);
   return 0;
 }

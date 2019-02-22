@@ -122,7 +122,7 @@ namespace DAS_IO {
       inline bool rm_subservice(std::string svcs) {
         return Subs.rm_subservice(svcs);
       }
-
+      
       typedef enum { Srv_Unix = 1, Srv_TCP = 2, Srv_Both = 3 } Srv_type;
       /**
        * Creates the specified server sockets, prints a startup message,
