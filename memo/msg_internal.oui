@@ -3,9 +3,6 @@
 <include> msg
 <include> oui
 
-<init>
-	msg_init_options(argc, argv);
-
 <unsort>
   Prints a one-off message to
   the command line via memo.

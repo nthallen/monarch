@@ -311,7 +311,7 @@ bool Socket::closed() {
     msg(2, "%s: Should not have been reading from listening socket", iname);
     return true;
   } else if (is_server_client) {
-    msg(0, "%s: Client disconnected", iname);
+    msg(-2, "%s: Client disconnected", iname);
     if (ELoop)
       ELoop->delete_child(this);
     return false;

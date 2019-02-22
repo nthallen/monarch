@@ -4,7 +4,7 @@
 <include> oui
 <include> msg
 
-<opts> "l"
+<opts> "l:"
 
 <sort>
   -l <#> limits the number of total clients

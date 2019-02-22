@@ -3,6 +3,8 @@ MSG_OBJ=msg.o msg_internal_oui.o
 CXXFLAGS=-I/usr/local/include -g -Wall
 LDFLAGS=-L/usr/local/lib
 LIBS=-ldasio -ltm -lnl
+.PHONY : install clean all
+all : memo msg
 memo : $(MEMO_OBJ)
 	$(CXX) $(LDFLAGS) $(CXXFLAGS) -o memo $(MEMO_OBJ) $(LIBS)
 msg : $(MSG_OBJ)
@@ -14,8 +16,6 @@ msg_internal_oui.cc : msg_internal.oui
 memooui.cc : memo.oui
 	oui -o memooui.cc memo.oui
 
-.PHONY : install clean all
-all : memo msg
 install : memo msg
 	@cp -vp memo msg /usr/local/bin
 clean :

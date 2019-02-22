@@ -22,6 +22,9 @@ class memo_socket : public DAS_IO::Serverside_client {
   protected:
     bool protocol_input();
 };
+
+extern int memo_quit_threshold;
+
 void memo_init_options( int argc, char **argv );
 
 memo_socket *new_memo_socket(Authenticator *Auth, SubService *SS);
