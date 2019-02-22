@@ -10,6 +10,12 @@
 #include "nl_assert.h"
 // #include "tm.h"
 
+subbuspp::subbuspp(const char *service, const char *sub_service)
+    : Client(service, 512, service, sub_service) {
+}
+
+subbuspp::~subbuspp() {}
+
 /**
  @return Status reply from subbusd. Terminates if
  communication with subbusd fails.
@@ -18,7 +24,7 @@ int subbuspp::send_to_subbusd( uint16_t command, void *data,
 		int data_size, uint16_t exp_type ) {
   int rv;
   if ( sb_fd == -1 )
-    nl_error( 4, "Attempt to access subbusd before initialization" );
+    msg( 4, "Attempt to access subbusd before initialization" );
   int n_iov = 1;
   sb_req_hdr.command = command;
   if ( data_size > 0 ) {
@@ -26,15 +32,15 @@ int subbuspp::send_to_subbusd( uint16_t command, void *data,
     sb_iov[1].iov_len = data_size;
     ++n_iov;
   }
-  rv = MsgSendv( sb_fd, sb_iov, n_iov, &sb_iov[2], 1 );
+  rv = MsgSendv(sb_iov, n_iov, &sb_iov[2], 1);
   if ( rv == -1 )
-    nl_error( 3, "Error sending to subbusd: %s",
+    msg( 3, "Error sending to subbusd: %s",
       strerror(errno) );
   nl_assert( rv >= sizeof(subbusd_rep_hdr_t) );
   if ( sb_reply.hdr.status < 0 ) 
     exp_type = SBRT_NONE;
   if ( sb_reply.hdr.ret_type != exp_type ) {
-    nl_error( 4, "Return type for command %u should be %d, is %d",
+    msg( 4, "Return type for command %u should be %d, is %d",
       command, exp_type, sb_reply.hdr.ret_type );
   }
   switch ( sb_reply.hdr.ret_type ) {
@@ -50,17 +56,10 @@ int subbuspp::send_to_subbusd( uint16_t command, void *data,
     case SBRT_MREAD:
       break;
     default:
-      nl_error( 4, "Unknown return type: %d", sb_reply.hdr.ret_type );
+      msg( 4, "Unknown return type: %d", sb_reply.hdr.ret_type );
   }
   return sb_reply.hdr.status;
 }
-
-subbuspp::subbuspp(const char *path) {
-  this->path = path;
-  sb_fd = -1;
-}
-
-subbuspp::~subbuspp() {}
 
 /** Initializes communications with subbusd driver.
     Returns library subfunction on success,
@@ -69,12 +68,12 @@ subbuspp::~subbuspp() {}
 int subbuspp::load() {
   int rv;
   if ( sb_fd != -1 ) {
-    nl_error( -2, "Attempt to reload subbus" );
+    msg( -2, "Attempt to reload subbus" );
     return subbus_subfunction;
   }
   sb_fd = open(tm_dev_name(path), O_RDWR );
   if ( sb_fd == -1 ) {
-    nl_error( -2, "Error opening subbusd: %s", strerror(errno));
+    msg( -2, "Error opening subbusd: %s", strerror(errno));
     return 0;
   }
   sb_iov[0].iov_base = &sb_req_hdr;
@@ -88,7 +87,7 @@ int subbuspp::load() {
   sb_iov[2].iov_len = sizeof(sb_reply);
   rv = send_to_subbusd( SBC_GETCAPS, NULL, 0, SBRT_CAP );
   if ( rv != SBS_OK )
-    nl_error( 4, "Expected SBS_OK while getting capabilities" );
+    msg( 4, "Expected SBS_OK while getting capabilities" );
   subbus_subfunction = sb_reply.data.capabilities.subfunc;
   subbus_features = sb_reply.data.capabilities.features;
   strncpy(local_subbus_name, sb_reply.data.capabilities.name, SUBBUS_NAME_MAX);
@@ -101,8 +100,8 @@ int subbuspp::load() {
  * subbusd during load_subbus().
  */
 const char *subbuspp::get_subbus_name() {
-  if ( sb_fd == -1 )
-    nl_error( 4, "Attempt to read subbus_name before initialization" );
+  if ( fd < 0 )
+    msg( 4, "Attempt to read subbus_name before initialization" );
   return( local_subbus_name );
 }
 
@@ -121,31 +120,9 @@ int subbuspp::read_ack( uint16_t addr, uint16_t *data ) {
     case -ETIMEDOUT:
     case SBS_NOACK: rc = 0; break;
     default:
-      nl_error( 4, "Invalid status response to read_ack(): %d",	rv );
+      msg( 4, "Invalid status response to read_ack(): %d",	rv );
   }
   return rc;
-}
-
-/**
- @return Cached read value or zero if address is invalid.
- */
-uint16_t subbuspp::cache_read( uint16_t addr ) {
-  int rv;
-  subbusd_req_data1 rdata;
-  uint16_t data;
-
-  rdata.data = addr;
-  rv = send_to_subbusd( SBC_READCACHE, &rdata, sizeof(rdata), SBRT_US );
-  data = sb_reply.data.value;
-  switch ( rv ) {
-    case SBS_ACK: break;
-    case -ETIMEDOUT:
-    case SBS_NOACK: data = 0; break;
-    default:
-      nl_error( 4, "Invalid status response to cache_read(): %d",
-	rv );
-  }
-  return data;
 }
 
 /**
@@ -179,31 +156,8 @@ int subbuspp::write_ack(uint16_t addr, uint16_t data) {
     case -ETIMEDOUT:
     case SBS_NOACK: rc = 0; break;
     default:
-      nl_error( 4, "Invalid status response to write_ack(): %d",
+      msg( 4, "Invalid status response to write_ack(): %d",
 	rv );
-  }
-  return rc;
-}
-
-/**
- @return non-zero value if the hardware acknowledge is
- observed. Historically, the value recorded the number
- of iterations in the software loop waiting for
- the microsecond timeout.
- */
-int subbuspp::cache_write(uint16_t addr, uint16_t data) {
-  int rv, rc;
-  subbusd_req_data0 wdata;
-
-  wdata.address = addr;
-  wdata.data = data;
-  rv = send_to_subbusd( SBC_WRITECACHE, &wdata, sizeof(wdata), SBRT_NONE );
-  switch (rv ) {
-    case SBS_ACK: rc = 1; break;
-    case -ETIMEDOUT:
-    case SBS_NOACK: rc = 0; break;
-    default:
-      nl_error( 4, "Invalid status response to cache_write(): %d", rv );
   }
   return rc;
 }
@@ -223,124 +177,32 @@ int subbuspp::send_CSF( uint16_t command, uint16_t val ) {
     case SBC_SETFAIL:
       break;
     default:
-      nl_error( 4, "Invalid command in set_CSF: %d", command );
+      msg( 4, "Invalid command in set_CSF: %d", command );
   }
   csf_data.data = val;
   rv = send_to_subbusd( command, &csf_data, sizeof(csf_data), SBRT_NONE );
   return( (rv == SBS_OK) ? 1 : 0 );
 }
 
-/** Set cmdenbl value.
- @return non-zero on success. Zero if not supported.
- */
-int subbuspp::set_cmdenbl(int val) {
-  return send_CSF( SBC_SETCMDENBL, val ? 1 : 0);
-}
+#ifdef SUBBUS_INTERRUPTS
+  int subbuspp::subbus_int_attach( char *cardID, uint16_t address,
+        uint16_t region, struct sigevent *event ) {
+    subbusd_req_data2 idata;
+    nl_assert(cardID != NULL);
+    strncpy( idata.cardID, cardID, 8);//possibly not nul-terminated
+    idata.address = address;
+    idata.region = region;
+    idata.event = *event;
+    return send_to_subbusd( SBC_INTATT, &idata, sizeof(idata), SBRT_US );
+  }
 
-/**
-  Function did not exist at all before version 3.10, so
-  programs intending to use this function should verify that
-  the resident library version is at least 3.10. The feature
-  word can also be checked for support, and that is consistent
-  back to previous versions.
- @param value 1 turns on cmdstrobe, 0 turns off cmdstrobe
- @return non-zero on success, zero if operation isn't supported.
- */
-int subbuspp::set_cmdstrobe(int val) {
-  return send_CSF(SBC_SETCMDSTRB, val ? 1 : 0);
-}
-
-/**
- Sets the value of a dedicated set of indicator lights, usually
- located on a control panel on the instrument and/or in the
- cockpit of the aircraft. For each bit of the input argument,
- a non-zero value indicates the associated light should be on.
- 
- By convention, the least significant bit is associated with the
- main "fail light" located in the cockpit on aircraft instruments,
- indicating that the instrument is not acquiring data..
- This light (and the associated bit value on readback) will also
- be set by the system controller's two minute timeout circuit.
- 
- @see read_failure()
- @param value Binary-encoded light settings.
- */
-int subbuspp::set_failure(uint16_t value) {
-  return send_CSF( SBC_SETFAIL, value );
-}
-
-/** Internal function to handle read_switches() and read_failure(),
-  which take no arguments, return uint16_t or zero if
-  the function is not supported.
-  */
-uint16_t subbuspp::read_special( uint16_t command ) {
-  int rv;
-  rv = send_to_subbusd( command, NULL, 0, SBRT_US );
-  return (rv == SBS_OK) ? sb_reply.data.value : 0;
-}
-
-/**
- Reads the positions of a dedicated set of system mode switches,
- usually located on a control panel on the instrument.
- @return The binary-encoded switch positions, or zero on error.
- */
-uint16_t subbuspp::read_switches(void) {
-  return read_special( SBC_READSW );
-}
-
-/**
- The value reported represents the current state of the indicator
- lights. As noted in read_switches(), the least significant bit
- is associated the the main "fail light" located in the cockpit.
- This light can be lit via set_failure() or the system controller's
- two minute timeout circuit. In either case, read_failure() will
- report the actual state of the light.
- @return The binary-encoded value of the indicator light settings.
- */
-uint16_t subbuspp::read_failure(void) {
-  return read_special( SBC_READFAIL );
-}
-
-/**
- Historically, tick_sic() has been associated with two timers.
- The first is a 2-second timeout that can reboot the system.
- The second is a 2-minute timeout that lights the main fail
- light indicating that the instrument is not acquiring data.
-
- It is unclear whether the new syscon_usb will support the
- reboot timer or rely on a motherboard-specific watchdog
- timer.
- */
-int subbuspp::tick_sic( void ) {
-  return send_to_subbusd( SBC_TICK, NULL, 0, SBRT_NONE );
-}
-
-/**
- If system controller is associated with a watchdog timer
- that can reboot the system, this command disables that
- timer.
- */
-int subbuspp::disarm_sic(void) {
-  return send_to_subbusd( SBC_DISARM, NULL, 0, SBRT_NONE );
-}
-
-int subbuspp::subbus_int_attach( char *cardID, uint16_t address,
-      uint16_t region, struct sigevent *event ) {
-  subbusd_req_data2 idata;
-  nl_assert(cardID != NULL);
-  strncpy( idata.cardID, cardID, 8);//possibly not nul-terminated
-  idata.address = address;
-  idata.region = region;
-  idata.event = *event;
-  return send_to_subbusd( SBC_INTATT, &idata, sizeof(idata), SBRT_US );
-}
-
-int subbuspp::subbus_int_detach( char *cardID ) {
-  subbusd_req_data3 idata;
-  nl_assert(cardID != NULL);
-  strncpy( idata.cardID, cardID, 8);//possibly not non-terminated
-  return send_to_subbusd( SBC_INTDET, &idata, sizeof(idata), SBRT_US );
-}
+  int subbuspp::subbus_int_detach( char *cardID ) {
+    subbusd_req_data3 idata;
+    nl_assert(cardID != NULL);
+    strncpy( idata.cardID, cardID, 8);//possibly not non-terminated
+    return send_to_subbusd( SBC_INTDET, &idata, sizeof(idata), SBRT_US );
+  }
+#endif // SUBBUS_INTERRUPTS
 
 /**
  * Requests subbusd to terminate. subbusd will wait until
@@ -373,7 +235,7 @@ int subbuspp::mread_subbus( subbus_mread_req *req, uint16_t *data) {
   if ( req == NULL ) return 200;
   rv = mread_subbus_nw(req, data, &nw);
   if (nw < req->n_reads && nl_response > 0)
-    nl_error(MSG_WARN, "mread returned %d/%d words", nw, req->n_reads);
+    msg(MSG_WARN, "mread returned %d/%d words", nw, req->n_reads);
   return rv;
 }
 
@@ -402,7 +264,7 @@ int subbuspp::mread_subbus_nw(subbus_mread_req *req, uint16_t *data,
     int i;
     nw = sb_reply.data.mread.n_reads;
     if (nw > req->n_reads) {
-      nl_error(MSG_ERROR, "mread expected %d words, returned %d",
+      msg(MSG_ERROR, "mread expected %d words, returned %d",
         req->n_reads, nw);
       nw = req->n_reads;
     }
@@ -523,7 +385,7 @@ subbus_mread_req *subbuspp::pack_mread_requests( unsigned int addr, ... ) {
         nb = snprintf( buf+nc, space, "%X,", addrs[i++] );
       }
       if ( nb >= space ) {
-        nl_error( 2, "Buffer overflow in pack_mread_requests()" );
+        msg( 2, "Buffer overflow in pack_mread_requests()" );
         return NULL;
       }
       nc += nb;
@@ -546,7 +408,7 @@ subbus_mread_req *subbuspp::pack_mread_request( int n_reads, const char *req ) {
 
   nb = snprintf( buf, space, "M%X#%s\n", n_reads, req );
   if ( nb >= space ) {
-    nl_error( 2, "Buffer overflow in pack_mread_request()" );
+    msg( 2, "Buffer overflow in pack_mread_request()" );
     return NULL;
   }
   return pack_mread( nb, n_reads, buf );
