@@ -1,37 +1,19 @@
 <package> subbusd
-<include> <unistd.h>
-<include> msg
-<follow> msg
 <include> "subbusd_int.h"
-<include> "nortlib.h"
+<include> msg oui
+<follow> msg oui
 
-<opts> "H:S:"
-<init>
-  cache_init_options( argc, argv );
-
-<defs>
-static void cache_init_options(
-    int argc, char **argv ) {
-  int optltr;
-
-  optind = OPTIND_RESET;
-  opterr = 0;
-  while ((optltr = getopt(argc, argv, opt_string)) != -1) {
-    switch (optltr) {
-      case 'H':
-        cache_hw_range = optarg;
-        break;
-      case 'S':
-        cache_sw_range = optarg;
-        break;
-      case '?':
-        nl_error(3, "Unrecognized Option -%c", optopt);
-      default:
-        break;
-    }
-  }
-}
-
+<opts> "s:q"
 <sort>
-	-H <low>-<high> hardware address range (hex, no 0x)
-	-S <low>-<high> software address range
+  -s <service> Specify service name
+  -q Connect to cmd/Quit for shutdown
+
+<init>
+  subbusd_init_options(argc, argv);
+
+<package> AppID_init
+<include> "dasio/appid.h"
+<include> msg
+<preceed> msg
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("subbusd", "Subbus Driver", "V3.0");

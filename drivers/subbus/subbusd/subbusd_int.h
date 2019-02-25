@@ -1,6 +1,6 @@
 #ifndef SUBBUSD_INT_H_INCLUDED
 #define SUBBUSD_INT_H_INCLUDED
-#include <sys/dispatch.h>
+#include "dasio/server.h"
 #include "subbusd.h"
 
 /** \file
@@ -10,37 +10,76 @@
   * functions.
   */
 
-typedef struct carddef {
-  struct carddef *next;
-  char cardID[ CardID_MAX ];
-  unsigned short address;
-  unsigned int reg_id;
-  unsigned int bitno;
-  struct sigevent event;
-  int owner;
-} card_def;
+extern const char *subbusd_service;
+extern bool subbusd_cmd_quit;
+void subbusd_init_options(int argc, char **argv);
 
-typedef struct {
-  unsigned short address;
-  unsigned short bits;
-  card_def *def[8];
-} region;
-#define MAX_REGIONS 4
+class subbusd_flavor {
+  public:
+    subbusd_flavor(const char *flavor, DAS_IO::socket_clone_t cloner);
+    ~subbusd_flavor();
+    const char *flavor;
+    virtual void init_subbus();
+    virtual void shutdown_subbus();
+    DAS_IO::socket_clone_t cloner;
+};
 
-extern const char *subbusd_devname;
-extern card_def *carddefs;
-extern region regions[MAX_REGIONS];
-extern void incoming_sbreq( int rcvid, subbusd_req_t *req );
-extern void init_subbus(dispatch_t *dpp );
-extern void shutdown_subbus(void);
-extern int expint_attach( int rcvid, char *cardID, unsigned short address,
-                      int region, struct sigevent *event, card_def **card );
-extern int expint_detach( int rcvid, char *cardID, unsigned short *addr,
-                      unsigned int *bn );
+class subbusd_client : public DAS_IO::Serverside_client {
+  public:
+    subbusd_client(DAS_IO::Authenticator *orig, int bufsize);
+    ~subbusd_client();
+    bool app_input();
+    virtual bool incoming_sbreq(subbusd_req_t *req);
+  protected:
+    bool error_return(uint16_t err_code);
+    subbusd_rep_t *reply;
+    uint16_t reply_size;
+};
 
-extern char *cache_hw_range, *cache_sw_range;
-extern void sb_cache_init(void);
-extern int sb_cache_write( unsigned short addr, unsigned short data );
-extern int sb_cache_read( unsigned short addr, unsigned short *data );
+class subbusd_core {
+  public:
+    subbusd_core(const char *service);
+    ~subbusd_core();
+    void register_flavor(subbusd_flavor *);
+    DAS_IO::Server srvr;
+    void Start(DAS_IO::Server::Srv_type type);
+  private:
+    std::list<subbusd_flavor*> devs;
+};
+
+#ifdef SUBBUS_INTERRUPTS
+
+  typedef struct carddef {
+    struct carddef *next;
+    char cardID[ CardID_MAX ];
+    unsigned short address;
+    unsigned int reg_id;
+    unsigned int bitno;
+    struct sigevent event;
+    int owner;
+  } card_def;
+
+  typedef struct {
+    unsigned short address;
+    unsigned short bits;
+    card_def *def[8];
+  } region;
+  #define MAX_REGIONS 4
+
+  extern card_def *carddefs;
+  extern region regions[MAX_REGIONS];
+  extern int expint_attach( int rcvid, char *cardID, unsigned short address,
+                        int region, struct sigevent *event, card_def **card );
+  extern int expint_detach( int rcvid, char *cardID, unsigned short *addr,
+                        unsigned int *bn );
+
+#endif // SUBBUS_INTERRUPTS
+
+#ifdef SUBBUS_CACHE
+  extern char *cache_hw_range, *cache_sw_range;
+  extern void sb_cache_init(void);
+  extern int sb_cache_write( unsigned short addr, unsigned short data );
+  extern int sb_cache_read( unsigned short addr, unsigned short *data );
+#endif
 
 #endif
