@@ -1,6 +1,5 @@
 find_program(OUI_EXE
     oui
-    HINTS ${le_das_BINARY_DIR}/oui/src
 )
 if(OUI_EXE STREQUAL "OUI_EXE-NOTFOUND")
     message(FATAL_ERROR "oui not found!")
@@ -12,8 +11,9 @@ MACRO(OUI_FILE _filename)
     ADD_CUSTOM_COMMAND(
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.cc
         COMMAND ${OUI_EXE}
-                -o${_basename}oui.cc
+                -o${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.cc
                 ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         DEPENDS ${_filename} )
 ENDMACRO(OUI_FILE)
 
@@ -30,7 +30,7 @@ target_include_directories(subbusd PRIVATE
 
 target_link_libraries(subbusd dasio nl)
 
-add_executable(subbusd_CAN subbusd.cc subbusd_CANoui.cc)
+add_executable(subbusd_CAN subbusd.cc subbusd_CANoui.cc CAN/subbusd_CAN.cc)
 target_include_directories(subbusd_CAN PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../include
 )

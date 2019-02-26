@@ -1,7 +1,7 @@
 #ifndef SUBBUSD_CAN_H_INCLUDED
 #define SUBBUSD_CAN_H_INCLUDED
 #include "dasio/server.h"
-#include "../subbusd_int.h"
+#include "subbusd_int.h"
 
 extern void subbusd_CAN_init_options(int argc, char **argv);
 

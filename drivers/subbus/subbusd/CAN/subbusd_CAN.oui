@@ -2,7 +2,7 @@
 <include> subbusd
 <follow> subbusd msg oui
 <include> "subbusd_int.h"
-<include> "CAN/subbusd_CAN.h"
+<include> "subbusd_CAN.h"
 
 <init>
   subbusd_CAN_init_options(argc, argv);

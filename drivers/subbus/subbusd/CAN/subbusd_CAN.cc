@@ -1,5 +1,5 @@
 #include "nl_assert.h"
-#include "../subbusd_int.h"
+#include "subbusd_int.h"
 #include "subbusd_CAN.h"
 
 using namespace DAS_IO;

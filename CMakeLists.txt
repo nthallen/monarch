@@ -46,5 +46,3 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/cmdgen"
                  "${CMAKE_BINARY_DIR}/cmdgen")
 add_subdirectory("${CMAKE_SOURCE_DIR}/oui/src"
                  "${CMAKE_BINARY_DIR}/oui/src")
-add_subdirectory("${CMAKE_SOURCE_DIR}/drivers"
-                 "${CMAKE_BINARY_DIR}/drivers")
