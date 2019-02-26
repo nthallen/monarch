@@ -44,10 +44,6 @@ bool subbuspp::app_input() {
   return true;
 }
 
-/**
- @return Status reply from subbusd. Terminates if
- communication with subbusd fails.
- */
 int subbuspp::send_to_subbusd( uint16_t command, void *data,
 		int data_size, uint16_t exp_type ) {
   if (fd < 0)
@@ -153,11 +149,6 @@ int subbuspp::read_ack( uint16_t addr, uint16_t *data ) {
   return rc;
 }
 
-/**
- * Read subbus ignoring acknowledge.
- * @param addr The subbus address
- * @return The value read or zero if no acknowledge was received
- */
 uint16_t subbuspp::read_subbus(uint16_t addr) {
   uint16_t data;
   if (!read_ack(addr, &data)) {
@@ -166,12 +157,6 @@ uint16_t subbuspp::read_subbus(uint16_t addr) {
   return data;
 }
 
-/**
- @return non-zero value if the hardware acknowledge is
- observed. Historically, the value recorded the number
- of iterations in the software loop waiting for
- the microsecond timeout.
- */
 int subbuspp::write_ack(uint16_t addr, uint16_t data) {
   int rv, rc;
   subbusd_req_data0 wdata;
@@ -190,11 +175,6 @@ int subbuspp::write_ack(uint16_t addr, uint16_t data) {
   return rc;
 }
 
-/** This is an internal function for sending messages
- * with a single uint16_t argument and a simple
- * status return.
- @return non-zero on success. Zero if unsupported.
- */
 int subbuspp::send_CSF( uint16_t command, uint16_t val ) {
   int rv;
   subbusd_req_data1 csf_data;
@@ -242,20 +222,6 @@ int subbuspp::subbus_quit(void) {
   return send_to_subbusd( SBC_QUIT, NULL, 0, SBRT_NONE );
 }
 
-/**
- * @param req structure defining multi-read request
- * @param data pointer to where read data should be stored
- * Passes the raw command directly to the subbus driver and parses
- * the return string for a multi-read. Up to req->n_reads values will be
- * written into the array pointed to by the data argument.
- * If the request returns less data than requested, a warning will
- * be issued unless suppressed by set_response().
- * @return Zero on success. If return value is negative, it is the
- * error code returned by the subbusd driver and no values are reported.
- * If it is positive (SBS_NOACK), it indicates that although the
- * requested number of values are reported, at least one of the
- * values did not have an acknowledge, and a zero value was reported.
- */
 int subbuspp::mread_subbus( subbus_mread_req *req, uint16_t *data) {
   // rv should be the number of bytes retuned from subbusd into sb_reply.
   int rv;
@@ -267,21 +233,6 @@ int subbuspp::mread_subbus( subbus_mread_req *req, uint16_t *data) {
   return rv;
 }
 
-/**
- * @param req structure defining multi-read request
- * @param data pointer to where read data should be stored
- * @param nwords pointer to where actual read length should be stored
- * Passes the raw command directly to the subbus driver and parses
- * the return string for a multi-read. Up to req->n_reads values will be
- * written into the array pointed to by the data argument.
- * If the request returns more data than requested, and error
- * will be reported (MSG_ERROR).
- * @return Zero on success. If return value is negative, it is the
- * error code returned by the subbusd driver and no values are reported.
- * If it is positive (SBS_NOACK), it indicates that although the
- * requested number of values are reported, at least one of the
- * values did not have an acknowledge, and a zero value was reported.
- */
 int subbuspp::mread_subbus_nw(subbus_mread_req *req, uint16_t *data,
             uint16_t *nwords) {
   int rv;
@@ -305,46 +256,6 @@ int subbuspp::mread_subbus_nw(subbus_mread_req *req, uint16_t *data,
   return rv;
 }
 
-/**
- Packages a request string into a newly allocated structure that
- can be passed to mread_subbus(). Called by pack_mread_request()
- and pack_mread_requests(). The req_str syntax is:
-
- \code{.unparsed}
-    <req>
-      : M <count> '#' <addr_list> '\n'
-    <addr_list>
-      : <addr_list_elt>
-      : <addr_list> ',' <addr_list_elt>
-    <addr_list_elt>
-      : <addr>
-      : <addr> ':' <incr> ':' <addr>
-      : <count> '@' <addr>
-      : <addr> '|' <count> '@' <addr>
-
-    <count>, <addr>, <incr> are all 1-4 hex digits
-  \endcode
-  
-  The four current addr_list_elt syntaxes have the following
-  meaning:
-
-  \code{.unparsed}  
-  <addr>:
-    Read one word from the specified address
-  <addr1> ':' <incr> ':' <addr2>:
-    Read one word from each address, starting at <addr1>,
-    incremented the address by <incr> and ending
-    when the address exceeds <addr2>
-  <count> '@' <addr>:
-    Read <count> words from <addr>
-  <addr1> '|' <count> '@' <addr>:
-    Read count1 from <addr1> and read count1 or <count> words
-    from <addr>, whichever is less. Returns between 1 and
-    <count>+1 words.
-  \endcode
-
- @return the newly allocated request structure.
- */
 subbus_mread_req *subbuspp::pack_mread( int req_len, int n_reads,
         const char *req_str ) {
   int req_size = 2*sizeof(uint16_t) + req_len + 1;
@@ -355,11 +266,6 @@ subbus_mread_req *subbuspp::pack_mread( int req_len, int n_reads,
   return req;
 }
 
-/**
- * Takes a zero-terminated list of addresses, generates the appropriate
- * text request string and invokes pack_mread().
- * @return the newly allocated request structure.
- */
 subbus_mread_req *subbuspp::pack_mread_requests( unsigned int addr, ... ) {
   uint16_t addrs[50];
   int n_reads = 0;
@@ -425,10 +331,6 @@ subbus_mread_req *subbuspp::pack_mread_requests( unsigned int addr, ... ) {
   }
 }
 
-/**
- * Takes a multi-read <addr-list> string and invokes pack_mread().
- * @return the newly allocated request structure.
- */
 subbus_mread_req *subbuspp::pack_mread_request( int n_reads, const char *req ) {
   char buf[256];
   int space = 256;

@@ -43,20 +43,20 @@ subbusd_client::subbusd_client(Authenticator *auth, int bufsize)
 
 subbusd_client::~subbusd_client() {}
 
-bool subbusd_client::error_return(uint16_t err_code) {
+bool subbusd_client::status_return(uint16_t err_code) {
     reply->hdr.status = err_code;
     reply->hdr.ret_type = SBRT_NONE;
     iwrite((const char*)reply, sizeof(subbusd_rep_hdr_t));
     return false;
 }
 
-bool subbusd_client::app_input() {
+bool subbusd_client::protocol_input() {
   subbusd_req_t *sbdmsg = (subbusd_req_t *)buf;
   unsigned nb_exp;
   
   if ( nc < sizeof(subbusd_req_hdr_t) ||
        sbdmsg->sbhdr.sb_kw != SB_KW) {
-    return error_return(SBS_REQ_SYNTAX);
+    return status_return(SBS_REQ_SYNTAX);
   }
   /* check the size of the incoming message */
   switch ( sbdmsg->sbhdr.command ) {
@@ -90,7 +90,7 @@ bool subbusd_client::app_input() {
       }
       break;
     default:
-      return error_return(SBS_REQ_SYNTAX);
+      return status_return(SBS_REQ_SYNTAX);
   }
   nb_exp += sizeof(subbusd_req_hdr_t);
   if ( nc < nb_exp )
@@ -100,7 +100,7 @@ bool subbusd_client::app_input() {
 }
 
 bool subbusd_client::incoming_sbreq(subbusd_req_t *req) {
-  return error_return(SBS_NOT_IMPLEMENTED);
+  return status_return(SBS_NOT_IMPLEMENTED);
 }
 
 const char *subbusd_service = "subbusd";
