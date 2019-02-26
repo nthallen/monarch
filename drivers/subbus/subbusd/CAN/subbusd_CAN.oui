@@ -2,18 +2,20 @@
 <include> subbusd
 <follow> subbusd msg oui
 <include> "subbusd_int.h"
+<include> "CAN/subbusd_CAN.h"
 
 <init>
-  subbusd_CAN_init_options(int argc, char **argv);
+  subbusd_CAN_init_options(argc, argv);
 
 <comment>
 subbusd_CAN_init_options() is responsible for:
-  subbusd_server->add_subservice(subservice(ss, cloner, data))
-  init_subbus();
-ss needs to be built from the server's service, which may
-be specified on the command line.
+  subbusd_core::subbusd->register_flavor(my_instance);
 data is only useful when the cloner is shared between
 subservices.
 
-Maybe init_subbus() could be handled differently, called
-after all the init_options() have been processed for example.
+<package> AppID_init
+<include> "dasio/appid.h"
+<include> msg
+<preceed> msg
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("CAN", "Subbus CAN Driver", "V1.0");

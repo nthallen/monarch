@@ -105,7 +105,7 @@ bool subbusd_client::incoming_sbreq(subbusd_req_t *req) {
 
 const char *subbusd_service = "subbusd";
 bool subbusd_cmd_quit = false;
-subbusd_core *subbusd = 0;
+subbusd_core *subbusd_core::subbusd = 0;
 
 subbusd_core::subbusd_core(const char *service) : srvr(service) {
 }
@@ -157,20 +157,22 @@ void subbusd_init_options(int argc, char **argv) {
       default: break; // could check for errors
     }
   }
-  subbusd = new subbusd_core(subbusd_service);
+  nl_assert(subbusd_core::subbusd == 0);
+  subbusd_core::subbusd = new subbusd_core(subbusd_service);
 }
 
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
+  nl_assert(subbusd_core::subbusd != 0);
   if (subbusd_cmd_quit) {
     Quit *q = new Quit();
-    subbusd->srvr.ELoop.add_child(q);
+    subbusd_core::subbusd->srvr.ELoop.add_child(q);
     q->connect();
   }
 
   signal( SIGINT, sigint_handler );
   signal( SIGHUP, sigint_handler );
 
-  subbusd->Start(Server::Srv_Unix);
+  subbusd_core::subbusd->Start(Server::Srv_Unix);
   return 0;
 }

@@ -43,6 +43,7 @@ class subbusd_core {
     void register_flavor(subbusd_flavor *);
     DAS_IO::Server srvr;
     void Start(DAS_IO::Server::Srv_type type);
+    static subbusd_core *subbusd;
   private:
     std::list<subbusd_flavor*> devs;
 };
