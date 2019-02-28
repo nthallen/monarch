@@ -26,14 +26,16 @@ class subbusd_flavor {
 
 class subbusd_client : public DAS_IO::Serverside_client {
   public:
-    subbusd_client(DAS_IO::Authenticator *orig, int bufsize);
+    subbusd_client(DAS_IO::Authenticator *orig);
     ~subbusd_client();
     bool protocol_input();
-    virtual bool incoming_sbreq(subbusd_req_t *req);
+    bool iwritten();
+    virtual bool incoming_sbreq();
   protected:
     bool status_return(uint16_t err_code);
-    subbusd_rep_t *reply;
-    uint16_t reply_size;
+    bool request_pending;
+    subbusd_req_t *req;
+    subbusd_rep_t rep;
 };
 
 class subbusd_core {

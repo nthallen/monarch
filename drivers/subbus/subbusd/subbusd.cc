@@ -35,31 +35,32 @@ subbusd_flavor::~subbusd_flavor() {}
 void subbusd_flavor::init_subbus() {}
 void subbusd_flavor::shutdown_subbus() {}
 
-subbusd_client::subbusd_client(Authenticator *auth, int bufsize)
-      : Serverside_client(auth, auth->get_client_app(), bufsize) {
-  reply_size = bufsize;
-  reply = (reply_size > 0) ? (subbusd_rep_t*)new_memory(reply_size) : 0;
-}
+subbusd_client::subbusd_client(Authenticator *auth)
+      : Serverside_client(auth, auth->get_client_app(), sizeof(subbusd_req_t)),
+        request_pending(false) {}
 
 subbusd_client::~subbusd_client() {}
 
 bool subbusd_client::status_return(uint16_t err_code) {
-    reply->hdr.status = err_code;
-    reply->hdr.ret_type = SBRT_NONE;
-    iwrite((const char*)reply, sizeof(subbusd_rep_hdr_t));
+    rep.hdr.status = err_code;
+    rep.hdr.ret_type = SBRT_NONE;
+    iwrite((const char*)(&rep), sizeof(subbusd_rep_hdr_t));
     return false;
 }
 
 bool subbusd_client::protocol_input() {
-  subbusd_req_t *sbdmsg = (subbusd_req_t *)buf;
+  subbusd_req_t *req = (subbusd_req_t *)buf;
   unsigned nb_exp;
   
+  nl_assert(!pending_request);
+  pending_request = true;
+  flags &= ~DAS_IO::Interface::Fl_Read;
   if ( nc < sizeof(subbusd_req_hdr_t) ||
-       sbdmsg->sbhdr.sb_kw != SB_KW) {
+       req->sbhdr.sb_kw != SB_KW) {
     return status_return(SBS_REQ_SYNTAX);
   }
   /* check the size of the incoming message */
-  switch ( sbdmsg->sbhdr.command ) {
+  switch ( req->sbhdr.command ) {
     case SBC_WRITEACK:
     case SBC_WRITECACHE:
       nb_exp = sizeof(subbusd_req_data0); break;
@@ -85,8 +86,8 @@ bool subbusd_client::protocol_input() {
     case SBC_MREAD:
       nb_exp = 3*sizeof(uint16_t);
       if ( nc >= nb_exp ) {
-        nl_assert( sbdmsg->data.d4.req_len >= nb_exp );
-        nb_exp = sbdmsg->data.d4.req_len;
+        nl_assert( req->data.d4.req_len >= nb_exp );
+        nb_exp = req->data.d4.req_len;
       }
       break;
     default:
@@ -95,8 +96,16 @@ bool subbusd_client::protocol_input() {
   nb_exp += sizeof(subbusd_req_hdr_t);
   if ( nc < nb_exp )
     msg( 4, "Received short message for command %d: Expected %d received %d",
-      sbdmsg->sbhdr.command, nb_exp, nc );
-  return incoming_sbreq( sbdmsg );
+      req->sbhdr.command, nb_exp, nc );
+  return incoming_sbreq();
+}
+
+bool subbusd_client::iwritten(int nb) {
+  if (obuf_empty()) {
+    consume(nc);
+    request_pending = false;
+    flags |= DAS_IO::Interface::Fl_Read;
+  }
 }
 
 bool subbusd_client::incoming_sbreq(subbusd_req_t *req) {
