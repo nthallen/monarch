@@ -58,6 +58,7 @@ typedef struct {
   ll_of_pkg packages;
   package *crnt_pkg;
   char *synopsis;
+	ll_of_str path;
   ll_of_str sorted; /* sorted usage */
 } glbldef;
 
@@ -70,6 +71,8 @@ typedef union {
 #define YYSTYPE yystype
 
 extern YYSTYPE yyval, yylval;
+
+void add_path(const char *given_path);
 
 void oui_opts(char *str);
 void oui_inits(char *str);

@@ -5,14 +5,14 @@
    msg_init
    oui
 */
+#include <stdio.h>
 #include "oui.h"
 #include "ouidefs.h"
 #include <unistd.h>
 #include "nl.h"
-#include <stdio.h>
 #include "compiler.h"
 #include <stdlib.h>
-const char *opt_string = "ukwvo:h";
+const char *opt_string = "I:ukwvo:h";
   int (*msg)(int level, const char *s, ...) = compile_error;
 
 void oui_init_options(int argc, char **argv) {
@@ -24,6 +24,7 @@ void oui_init_options(int argc, char **argv) {
     opterr = 0;
     while ((optltr = getopt(argc, argv, opt_string)) != -1) {
       switch (optltr) {
+      	case 'I': add_path(optarg);
       	case 'u': sort_output = 0; break;
         case 'h':
           print_usage(argc, argv);
@@ -42,6 +43,7 @@ void oui_init_options(int argc, char **argv) {
 void print_usage(int argc, char **argv) {
   printf("%s %s\n", argv[0], "[options] file [file ...]");
   printf("  %s\n", "-h Print usage message");
+  printf("  %s\n", "-I <path> include directory");
   printf("  %s\n", "-k Keep incomplete output file on error");
   printf("  %s\n", "-o <filename> Specify Output Filename");
   printf("  %s\n", "-u Do not sort the 'sort' strings");

@@ -4,12 +4,14 @@
 
 <comment>  The default extension is fine
 
-<opts>  "u"
+<opts>  "I:u"
 <synopsis>
 %C	[options] file [file ...]
 
 <sort>
+	-I <path> include directory
 	-u Do not sort the 'sort' strings
 <include> "ouidefs.h"
 <switch>
+	case 'I': add_path(optarg);
 	case 'u': sort_output = 0; break;
