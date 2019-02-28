@@ -52,8 +52,8 @@ bool subbusd_client::protocol_input() {
   subbusd_req_t *req = (subbusd_req_t *)buf;
   unsigned nb_exp;
   
-  nl_assert(!pending_request);
-  pending_request = true;
+  nl_assert(!request_pending);
+  request_pending = true;
   flags &= ~DAS_IO::Interface::Fl_Read;
   if ( nc < sizeof(subbusd_req_hdr_t) ||
        req->sbhdr.sb_kw != SB_KW) {
@@ -106,9 +106,10 @@ bool subbusd_client::iwritten(int nb) {
     request_pending = false;
     flags |= DAS_IO::Interface::Fl_Read;
   }
+  return false;
 }
 
-bool subbusd_client::incoming_sbreq(subbusd_req_t *req) {
+bool subbusd_client::incoming_sbreq() {
   return status_return(SBS_NOT_IMPLEMENTED);
 }
 

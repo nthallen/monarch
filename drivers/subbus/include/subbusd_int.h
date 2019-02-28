@@ -29,7 +29,7 @@ class subbusd_client : public DAS_IO::Serverside_client {
     subbusd_client(DAS_IO::Authenticator *orig);
     ~subbusd_client();
     bool protocol_input();
-    bool iwritten();
+    bool iwritten(int nb);
     virtual bool incoming_sbreq();
   protected:
     bool status_return(uint16_t err_code);

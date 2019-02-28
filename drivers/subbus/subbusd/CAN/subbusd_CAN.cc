@@ -1,4 +1,5 @@
 // #undef HAVE_CAN_H
+#include <string.h>
 #ifdef HAVE_CAN_H
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -18,8 +19,7 @@ subbusd_CAN_client::~subbusd_CAN_client() {}
 Serverside_client *new_subbusd_CAN_client(Authenticator *auth, SubService *ss) {
   ss = ss; // not interested
   subbusd_CAN_client *clt =
-    new subbusd_CAN_client(auth, sizeof(subbusd_req_t),
-          (subbusd_CAN*)ss->svc_data);
+    new subbusd_CAN_client(auth, (subbusd_CAN*)ss->svc_data);
   return clt;
 }
 
@@ -31,16 +31,15 @@ Serverside_client *new_subbusd_CAN_client(Authenticator *auth, SubService *ss) {
 bool subbusd_CAN_client::incoming_sbreq() {
   int rv, rsize;
   uint8_t device_id, addr;
-  req_nc = 0;
   
   switch ( req->sbhdr.command ) {
     case SBC_READACK:
-      frame.can_id = (req->data.dl.data >> 8) & 0xFF;
+      frame.can_id = (req->data.d1.data >> 8) & 0xFF;
       frame.data[0] = CAN_CMD_CODE_RD;
       frame.data[1] = 1;
-      frame.data[2] = req->data.dl.data & 0xFF;
+      frame.data[2] = req->data.d1.data & 0xFF;
       frame.can_dlc = 3;
-      flavor->enqueue_request(&frame, &rep.data.value, 2, this);
+      flavor->enqueue_request(&frame, (uint8_t*)&rep.data.value, 2, this);
       break;
     case SBC_MREAD:
       // Setup necessary preconditions, then call processing function
@@ -48,7 +47,6 @@ bool subbusd_CAN_client::incoming_sbreq() {
       // enqueue_sbreq(device_id, req->data.d4.multread_cmd,
       //              req->data.d4.n_reads);
       return status_return(SBS_NOT_IMPLEMENTED);
-      return;
     case SBC_WRITEACK:
       frame.can_id = (req->data.d0.address >> 8) & 0xFF;
       frame.data[0] = CAN_CMD_CODE_WR_INC;
@@ -82,21 +80,21 @@ void subbusd_CAN_client::request_complete(int16_t status, uint16_t n_bytes) {
   }
   rep.hdr.status = status;
   switch (rep.hdr.ret_type) {
-    case: SBRT_NONE:
+    case SBRT_NONE:
       if (n_bytes > 0) {
         report_err("%s: Excess data for SBRT_NONE, nb=%d", iname, n_bytes);
       } else report_ok();
       iwrite((const char *)&rep, sizeof(subbusd_rep_hdr_t));
       break;
-    case: SBRT_US: // Return unsigned short value
+    case SBRT_US: // Return unsigned short value
       if (n_bytes != 2) {
         report_err("%s: Expected 2 bytes, received %d", n_bytes);
       } else report_ok();
       iwrite((const char*)&rep, sizeof(subbusd_rep_hdr_t)+2);
       break;
-    case: SBRT_MREAD 3 // Multi-Read
-    case: SBRT_MREADACK 4 // Multi-Read w/ACK
-    case: SBRT_CAP:  // Capabilities: We should not see this here
+    case SBRT_MREAD: // Multi-Read
+    case SBRT_MREADACK: // Multi-Read w/ACK
+    case SBRT_CAP:  // Capabilities: We should not see this here
     default:
       report_err("%s: Invalid ret_type %d in request_complete", iname, rep.hdr.ret_type);
       status_return(SBS_REQ_SYNTAX);
@@ -188,10 +186,10 @@ bool CAN_socket::protocol_input() {
   if (frame->data[0] != CAN_CMD(request.frame->data[0],rep_seq_no)) {
     if (CAN_CMD_CODE(frame->data[0]) == CAN_CMD_CODE_ERROR) {
       if (frame->data[1] == CAN_ERR_NACK) {
-        clt->request_complete(SBS_NOACK, request.bufsz);
+        request.clt->request_complete(SBS_NOACK, request.bufsz);
       } else {
         report_err("%s: CAN_ERR %d", iname, frame->data[1]);
-        clt->request_complete(SBS_RESP_ERROR, 0);
+        request.clt->request_complete(SBS_RESP_ERROR, 0);
       }
     } else {
       report_err("%s: req/rep cmd,seq mismatch: %02X/%02X",
@@ -231,7 +229,7 @@ bool CAN_socket::protocol_input() {
   ++rep_seq_no;
   // If request is complete, call clt->request_complete
   if (request.bufsz == 0) {
-    clt->request_complete(SBS_ACK, rep_len);
+    request.clt->request_complete(SBS_ACK, rep_len);
   }
   consume(nc);
   return false;
@@ -239,7 +237,7 @@ bool CAN_socket::protocol_input() {
 
 void CAN_socket::enqueue_request(struct can_frame *frame, uint8_t *rep_buf, int buflen,
         subbusd_CAN_client *clt) {
-  nl_assert(frame)
+  nl_assert(frame);
   nl_assert(frame->can_dlc <= 8);
   reqs.push_back(can_request(frame, rep_buf, buflen, clt));
   process_requests();
@@ -253,7 +251,7 @@ void CAN_socket::process_requests() {
   if (request_pending) return;
   can_request req = reqs.front();
   request_pending = true;
-  req.frame->can_id = (req.frame->can_id & CAN_ID_BOARD_MASK) | CAN_ID_REQ_ID(req_no);
+  req.frame->can_id = (req.frame->can_id & CAN_ID_BOARD_MASK) | CAN_ID_REQID(req_no);
   ++req_no;
   rep_seq_no = 0;
   #ifdef HAVE_LINUX_CAN_H
@@ -266,9 +264,9 @@ void CAN_socket::process_requests() {
       nc += snprintf(&msgbuf[nc], 80-nc, " %02X", req.frame->data[i]);
     }
     msg(0, "%s", msgbuf);
-    for (int i = 0; i < buflen; ++i)
-      frame->rep_buf[i] = i;
-    clt->request_complete(SBS_ACK, buflen);
+    for (int i = 0; i < req.bufsz; ++i)
+      req.buf[i] = i;
+    req.clt->request_complete(SBS_ACK, req.bufsz);
     reqs.pop_front();
     request_pending = false;
     ++req_no;
@@ -283,12 +281,12 @@ void subbusd_CAN::init_subbus() {
   // setup socket
   CAN = new CAN_socket();
   CAN->setup();
-  subbusd->srvr.ELoop.add_child(CAN);
+  subbusd_core::subbusd->srvr.ELoop.add_child(CAN);
 }
 
 void subbusd_CAN::shutdown_subbus() {
   // teardown socket
-  subbusd->srvr.ELoop.delete_child(CAN);
+  subbusd_core::subbusd->srvr.ELoop.delete_child(CAN);
   CAN = 0;
 }
 

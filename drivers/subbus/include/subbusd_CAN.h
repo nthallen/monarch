@@ -11,15 +11,19 @@
     uint8_t  can_dlc;
     uint8_t  data[8];
   };
+  #define CAN_MTU sizeof(struct can_frame)
+  #define CAN_EFF_FLAG 0x80000000U
+  #define CAN_RTR_FLAG 0x40000000U
+  #define CAN_ERR_FLAG 0x20000000U
 #endif
 
-#define SUBBUSD_CAN_NAME "
+#define SUBBUSD_CAN_NAME "le-das CAN driver V1.0"
 extern void subbusd_CAN_init_options(int argc, char **argv);
 class subbusd_CAN;
 
 class subbusd_CAN_client : public subbusd_client {
   public:
-    subbusd_CAN_client(DAS_IO::Authenticator *orig, subbusd_CAN *fl);
+    subbusd_CAN_client(DAS_IO::Authenticator *auth, subbusd_CAN *fl);
     ~subbusd_CAN_client();
     bool incoming_sbreq();
     void request_complete(int16_t status, uint16_t n_bytes);
@@ -36,7 +40,6 @@ class can_request {
     inline can_request(struct can_frame *frame, uint8_t *buf, int bufsz,
       subbusd_CAN_client *clt) : frame(frame), buf(buf), bufsz(bufsz),
       clt(clt) {}
-    ~can_request();
     struct can_frame *frame;
     uint8_t *buf;
     int bufsz;
@@ -67,7 +70,10 @@ class subbusd_CAN : public subbusd_flavor {
     ~subbusd_CAN();
     void init_subbus();
     void shutdown_subbus();
-    // static subbusd_CAN *CAN;
+    inline void enqueue_request(struct can_frame *frame, uint8_t *rep_buf,
+        int buflen, subbusd_CAN_client *clt) {
+          CAN->enqueue_request(frame, rep_buf, buflen, clt);
+      }
   private:
     // CAN sockets, states, etc.
     CAN_socket *CAN;
