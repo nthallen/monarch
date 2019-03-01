@@ -1,0 +1,13 @@
+<package> tm_client
+<include> "tm_client.h"
+<opts> "t:"
+<sort>
+	-t <TMbfr node>
+<switch>
+  case 't':
+    tm_set_srcnode(optarg);
+    break;
+
+<package> msghdr_default
+<vars>
+  char *msg_hdr_default = "tm_client";
