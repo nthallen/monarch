@@ -81,7 +81,7 @@ int subbuspp::send_to_subbusd( uint16_t command, void *data,
       nl_assert( nc == sizeof(subbusd_rep_hdr_t) + sizeof(uint16_t));
       break;
     case SBRT_CAP:
-      nl_assert( nc == sizeof(subbusd_rep_hdr_t) + sizeof(subbusd_cap_t));
+      nl_assert( nc >= sizeof(subbusd_rep_hdr_t) + sizeof(subbusd_cap_t));
       break;
     case SBRT_MREAD:
       break;

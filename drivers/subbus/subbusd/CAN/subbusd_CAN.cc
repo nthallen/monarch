@@ -30,10 +30,12 @@ Serverside_client *new_subbusd_CAN_client(Authenticator *auth, SubService *ss) {
  */
 bool subbusd_CAN_client::incoming_sbreq() {
   int rv, rsize;
-  uint8_t device_id, addr;
+  //uint8_t device_id, addr;
+  req = (subbusd_req_t *)&buf[0];
   
   switch ( req->sbhdr.command ) {
     case SBC_READACK:
+      rep.hdr.ret_type = SBRT_US;
       frame.can_id = (req->data.d1.data >> 8) & 0xFF;
       frame.data[0] = CAN_CMD_CODE_RD;
       frame.data[1] = 1;
@@ -48,6 +50,7 @@ bool subbusd_CAN_client::incoming_sbreq() {
       //              req->data.d4.n_reads);
       return status_return(SBS_NOT_IMPLEMENTED);
     case SBC_WRITEACK:
+      rep.hdr.ret_type = SBRT_NONE;
       frame.can_id = (req->data.d0.address >> 8) & 0xFF;
       frame.data[0] = CAN_CMD_CODE_WR_INC;
       frame.data[1] = 3;
@@ -104,7 +107,11 @@ void subbusd_CAN_client::request_complete(int16_t status, uint16_t n_bytes) {
 
 CAN_socket::CAN_socket()
   : DAS_IO::Interface("if_CAN", sizeof(struct can_frame)),
-    request_pending(false) {}
+    request_pending(false)
+    #ifndef HAVE_LINUX_CAN_H
+    , bytectr(0)
+    #endif
+    {}
 
 CAN_socket::~CAN_socket() {}
 
@@ -251,7 +258,7 @@ void CAN_socket::process_requests() {
   if (request_pending) return;
   can_request req = reqs.front();
   request_pending = true;
-  req.frame->can_id = (req.frame->can_id & CAN_ID_BOARD_MASK) | CAN_ID_REQID(req_no);
+  req.frame->can_id = CAN_REQUEST_ID(req.frame->can_id,req_no);
   ++req_no;
   rep_seq_no = 0;
   #ifdef HAVE_LINUX_CAN_H
@@ -265,11 +272,10 @@ void CAN_socket::process_requests() {
     }
     msg(0, "%s", msgbuf);
     for (int i = 0; i < req.bufsz; ++i)
-      req.buf[i] = i;
+      req.buf[i] = bytectr++;
     req.clt->request_complete(SBS_ACK, req.bufsz);
     reqs.pop_front();
     request_pending = false;
-    ++req_no;
   }
   #endif
 }

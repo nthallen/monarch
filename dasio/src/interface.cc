@@ -218,10 +218,10 @@ void Interface::close() {
 }
 
 void Interface::set_ibufsize(int bufsz) {
-  if (bufsize != bufsz) {
+  if (bufsz == 0 || bufsize != bufsz+1) {
     if (buf) free_memory(buf);
-    bufsize = bufsz;
-    buf = bufsize ? (unsigned char *)new_memory(bufsz) : 0;
+    bufsize = bufsz ? bufsz+1 : 0;
+    buf = bufsize ? (unsigned char *)new_memory(bufsize) : 0;
   }
 }
 

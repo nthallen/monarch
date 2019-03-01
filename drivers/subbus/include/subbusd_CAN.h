@@ -62,6 +62,9 @@ class CAN_socket : public DAS_IO::Interface {
     uint8_t seq_no, req_no;
     uint8_t rep_seq_no;
     uint16_t rep_len;
+    #ifndef HAVE_LINUX_CAN_H
+    uint8_t bytectr;
+    #endif
 };
 
 class subbusd_CAN : public subbusd_flavor {
@@ -89,7 +92,7 @@ class subbusd_CAN : public subbusd_flavor {
 #define CAN_ID_REQID(x) ((x)&CAN_ID_REQID_MASK)
 #define CAN_REPLY_ID(bd,req) \
     (CAN_ID_BOARD(bd)|(req&CAN_ID_REQID)|CAN_ID_REPLY_BIT)
-#define CAN_REQUEST_ID(bd,req) (CAN_ID_BOARD(bd)|(req&CAN_ID_REQID))
+#define CAN_REQUEST_ID(bd,req) (CAN_ID_BOARD(bd)|(CAN_ID_REQID(req)))
 #define CAN_REQUEST_MATCH(id,bd) \
     ((id & (CAN_ID_BOARD_MASK|CAN_ID_REPLY_BIT)) == CAN_ID_BOARD(bd))
 
