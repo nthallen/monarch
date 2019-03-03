@@ -36,7 +36,7 @@ void subbusd_flavor::init_subbus() {}
 void subbusd_flavor::shutdown_subbus() {}
 
 subbusd_client::subbusd_client(Authenticator *auth)
-      : Serverside_client(auth, auth->get_client_app(), sizeof(subbusd_req_t)),
+      : Serverside_client(auth, auth->get_client_app(), sizeof(subbusd_req_t)+1),
         request_pending(false) {}
 
 subbusd_client::~subbusd_client() {}

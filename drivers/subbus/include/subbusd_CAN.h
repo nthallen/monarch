@@ -21,6 +21,25 @@
 extern void subbusd_CAN_init_options(int argc, char **argv);
 class subbusd_CAN;
 
+/**
+ * While message is being processed, sb_can_seq will be
+ * incremented. Since there are 6 bytes of data in the
+ * first frame and 7 bytes in each frame after that, the
+ * starting offset by sb_can_seq is:
+ *   0 => 0
+ *   1 => 6
+ *   2 => 13
+ * offset = sb_can_seq ? 7*sb_can_seq - 1 : 0;
+ */
+typedef struct {
+  uint8_t device_id;
+  uint8_t sb_can_cmd;
+  uint8_t sb_can_seq;
+  uint8_t sb_nb;
+  uint8_t sb_can[256];
+  bool end_of_request;
+} can_msg_t;
+
 class subbusd_CAN_client : public subbusd_client {
   public:
     subbusd_CAN_client(DAS_IO::Authenticator *auth, subbusd_CAN *fl);
@@ -30,17 +49,29 @@ class subbusd_CAN_client : public subbusd_client {
     // static const int subbusd_CAN_max_req_size = 512;
     // static const int subbusd_CAN_max_rep_size = 512;
   private:
+    /**
+     * Sets up the framework for processing an mread request, then calls process_mread().
+     */
+    void setup_mread();
+    /**
+     * Process a step in the mread
+     */
+    void process_mread();
+    void format_mread_rd();
     subbusd_CAN *flavor;
     /** Where we assemble CAN messages */
-    struct can_frame frame;
+    // struct can_frame frame;
+    uint16_t mread_word_space_remaining;
+    uint16_t mread_words_requested;
+    can_msg_t can_msg;
 };
 
 class can_request {
   public:
-    inline can_request(struct can_frame *frame, uint8_t *buf, int bufsz,
-      subbusd_CAN_client *clt) : frame(frame), buf(buf), bufsz(bufsz),
+    inline can_request(can_msg_t *can_msg, uint8_t *buf, int bufsz,
+      subbusd_CAN_client *clt) : msg(can_msg), buf(buf), bufsz(bufsz),
       clt(clt) {}
-    struct can_frame *frame;
+    can_msg_t *msg;
     uint8_t *buf;
     int bufsz;
     subbusd_CAN_client *clt;
@@ -53,13 +84,17 @@ class CAN_socket : public DAS_IO::Interface {
     /** Open and setup the CAN socket */
     void setup();
     bool protocol_input();
-    void enqueue_request(struct can_frame *frame, uint8_t *rep_buf, int buflen,
+    bool iwritten(int nb);
+    void enqueue_request(can_msg_t *can_msg, uint8_t *rep_buf, int buflen,
         subbusd_CAN_client *clt);
   private:
     void process_requests();
     std::list<can_request> reqs;
+    can_frame reqfrm;
     bool request_pending;
-    uint8_t seq_no, req_no;
+    bool request_processing;
+    uint8_t seq_no; // may not be used?
+    uint8_t req_no;
     uint8_t rep_seq_no;
     uint16_t rep_len;
     #ifndef HAVE_LINUX_CAN_H
@@ -73,9 +108,9 @@ class subbusd_CAN : public subbusd_flavor {
     ~subbusd_CAN();
     void init_subbus();
     void shutdown_subbus();
-    inline void enqueue_request(struct can_frame *frame, uint8_t *rep_buf,
+    inline void enqueue_request(can_msg_t *can_msg, uint8_t *rep_buf,
         int buflen, subbusd_CAN_client *clt) {
-          CAN->enqueue_request(frame, rep_buf, buflen, clt);
+          CAN->enqueue_request(can_msg, rep_buf, buflen, clt);
       }
   private:
     // CAN sockets, states, etc.

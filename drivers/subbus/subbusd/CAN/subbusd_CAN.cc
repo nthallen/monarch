@@ -9,6 +9,7 @@
 #include "nl_assert.h"
 #include "subbusd_int.h"
 #include "subbusd_CAN.h"
+#include "dasio/ascii_escape.h"
 
 using namespace DAS_IO;
 
@@ -36,29 +37,32 @@ bool subbusd_CAN_client::incoming_sbreq() {
   switch ( req->sbhdr.command ) {
     case SBC_READACK:
       rep.hdr.ret_type = SBRT_US;
-      frame.can_id = (req->data.d1.data >> 8) & 0xFF;
-      frame.data[0] = CAN_CMD_CODE_RD;
-      frame.data[1] = 1;
-      frame.data[2] = req->data.d1.data & 0xFF;
-      frame.can_dlc = 3;
-      flavor->enqueue_request(&frame, (uint8_t*)&rep.data.value, 2, this);
+      can_msg.device_id = (req->data.d1.data >> 8) & 0xFF;
+      can_msg.sb_can_cmd = CAN_CMD_CODE_RD;
+      can_msg.sb_can_seq = 0;
+      can_msg.sb_nb = 1;
+      can_msg.sb_can[0] = req->data.d1.data & 0xFF;
+      can_msg.end_of_request = true;
+      flavor->enqueue_request(&can_msg, (uint8_t*)&rep.data.value, 2, this);
       break;
     case SBC_MREAD:
       // Setup necessary preconditions, then call processing function
       // Need to decode this and enqueue multiple requests
       // enqueue_sbreq(device_id, req->data.d4.multread_cmd,
       //              req->data.d4.n_reads);
-      return status_return(SBS_NOT_IMPLEMENTED);
+      setup_mread();
+      break;
     case SBC_WRITEACK:
       rep.hdr.ret_type = SBRT_NONE;
-      frame.can_id = (req->data.d0.address >> 8) & 0xFF;
-      frame.data[0] = CAN_CMD_CODE_WR_INC;
-      frame.data[1] = 3;
-      frame.data[2] = req->data.d0.address & 0xFF;
-      frame.data[3] = req->data.d0.data & 0xFF;
-      frame.data[4] = (req->data.d0.data >> 8) & 0xFF;
-      frame.can_dlc = 5;
-      flavor->enqueue_request(&frame, 0, 0, this);
+      can_msg.device_id = (req->data.d0.address >> 8) & 0xFF;
+      can_msg.sb_can_cmd = CAN_CMD_CODE_WR_INC;
+      can_msg.sb_can_seq = 0;
+      can_msg.sb_nb = 3;
+      can_msg.sb_can[0] = req->data.d0.address & 0xFF;
+      can_msg.sb_can[1] = req->data.d0.data & 0xFF;
+      can_msg.sb_can[2] = (req->data.d0.data >> 8) & 0xFF;
+      can_msg.end_of_request = true;
+      flavor->enqueue_request(&can_msg, 0, 0, this);
       break;
     case SBC_GETCAPS:
       rep.hdr.status = SBS_OK;
@@ -77,11 +81,15 @@ bool subbusd_CAN_client::incoming_sbreq() {
 }
 
 void subbusd_CAN_client::request_complete(int16_t status, uint16_t n_bytes) {
+  rep.hdr.status = status;
   if (status < 0) {
     status_return(status);
     return;
   }
-  rep.hdr.status = status;
+  if (n_bytes & 1) {
+    msg(1, "%s: request_complete: n_bytes is odd: %d",
+      iname, n_bytes);
+  }
   switch (rep.hdr.ret_type) {
     case SBRT_NONE:
       if (n_bytes > 0) {
@@ -97,6 +105,21 @@ void subbusd_CAN_client::request_complete(int16_t status, uint16_t n_bytes) {
       break;
     case SBRT_MREAD: // Multi-Read
     case SBRT_MREADACK: // Multi-Read w/ACK
+      if (n_bytes > mread_word_space_remaining*2) {
+        report_err("%s: Overrun on mread. n_bytes=%d words_remaining=%d",
+          n_bytes, mread_word_space_remaining);
+        status_return(SBS_RESP_ERROR);
+        return;
+      }
+      rep.data.mread.n_reads += n_bytes/2;
+      if (buf[cp] == '\n') {
+        iwrite((const char*)&rep,
+          sizeof(subbusd_rep_hdr_t)+2+2*rep.data.mread.n_reads);
+        report_ok();
+      } else {
+        process_mread();
+      }
+      break;
     case SBRT_CAP:  // Capabilities: We should not see this here
     default:
       report_err("%s: Invalid ret_type %d in request_complete", iname, rep.hdr.ret_type);
@@ -105,8 +128,213 @@ void subbusd_CAN_client::request_complete(int16_t status, uint16_t n_bytes) {
   }
 }
 
+void subbusd_CAN_client::setup_mread() {
+  cp = ((unsigned char*)&req->data.d4.multread_cmd) - (&buf[0]);
+  if (not_str("M") ||
+      not_hex(mread_word_space_remaining) ||
+      not_str("#")) {
+    status_return(SBS_REQ_SYNTAX);
+    return;
+  }
+  if (mread_word_space_remaining != req->data.d4.n_reads) {
+    msg(1, "setup_mread() M%X# != n_reads %X",
+      mread_word_space_remaining, req->data.d4.n_reads);
+  }
+  rep.hdr.ret_type = SBRT_MREAD;
+  rep.data.mread.n_reads = 0;
+  process_mread();
+}
+
+/**
+ * On entry, buf[cp] should point to [0-9a-fA-F] (start) or ',' (continue)
+ * '\n' is also a possibility, but I am handling that in request_complete()
+ */
+void subbusd_CAN_client::process_mread() {
+  uint16_t arg1, arg2, arg3;
+  if (rep.data.mread.n_reads > 0 && cp < nc && buf[cp] == ',') {
+    ++cp;
+  }
+  if (not_hex(arg1)) {
+    if (cp >= nc)
+      report_err("%s: Truncated mread?", iname);
+    status_return(SBS_REQ_SYNTAX);
+    return;
+  }
+  switch (buf[cp]) {
+    case ',':
+      can_msg.sb_can_cmd = CAN_CMD_CODE_RD;
+      can_msg.sb_can_seq = 0;
+      can_msg.device_id = (arg1>>8) & 0xFF;
+      can_msg.sb_can[0] = arg1&0xFF;
+      can_msg.sb_nb = 1;
+      format_mread_rd();
+      break;
+    case ':':
+      ++cp;
+      if (not_hex(arg2) || not_str(":") || not_hex(arg3) || cp >= nc) {
+        if (cp >= nc)
+          report_err("%s: Truncated mread?", iname);
+        status_return(SBS_REQ_SYNTAX);
+        return;
+      }
+      if (arg3 < arg1 || (arg3&0xFF00) != (arg1&0xFF00)) {
+        report_err("%s: Invalid RD_INC %X:1:%X", iname, arg1, arg3);
+        status_return(SBS_REQ_SYNTAX);
+        return;
+      }
+      if (arg2 == 1) {
+        uint8_t count = (arg3-arg1)+1;
+        // setup CAN_CMD_CODE_RD_INC
+        can_msg.sb_can_cmd = CAN_CMD_CODE_RD_INC;
+        can_msg.sb_can_seq = 0;
+        can_msg.device_id = (arg1>>8) & 0xFF;
+        can_msg.sb_nb = 2;
+        can_msg.sb_can[0] = count; // count
+        can_msg.sb_can[1] = arg1 & 0xFF;
+        can_msg.end_of_request = (buf[cp] == '\n');
+        flavor->enqueue_request(&can_msg,
+          (uint8_t*)&rep.data.mread.rvals[rep.data.mread.n_reads],
+          count*2, this);
+      } else {
+        // setup CAN_CMD_CODE_RD and unwind
+        can_msg.sb_can_cmd = CAN_CMD_CODE_RD;
+        can_msg.sb_can_seq = 0;
+        can_msg.device_id = (arg1>>8) & 0xFF;
+        can_msg.sb_nb = 0;
+        for ( ; arg1 <= arg3; arg1 += arg2) {
+          can_msg.sb_can[can_msg.sb_nb] = arg1 & 0xFF;
+          ++can_msg.sb_nb;
+        }
+        format_mread_rd();
+        break;
+      }
+      break;
+    case '@':
+      ++cp;
+      if (arg1 > 255) {
+        report_err("%s: Invalid count %d in @", iname, arg1);
+        status_return(SBS_REQ_SYNTAX);
+        return;
+      }
+      if (not_hex(arg2) || cp >= nc) {
+        if (cp >= nc) report_err("%s: Truncated mread? '%s'", iname,
+          ::ascii_escape((const char *)req->data.d4.multread_cmd));
+        status_return(SBS_REQ_SYNTAX);
+        return;
+      }
+      can_msg.device_id = (arg2>>8) & 0xFF;
+      can_msg.sb_can_cmd = CAN_CMD_CODE_RD_NOINC;
+      can_msg.sb_can_seq = 0;
+      can_msg.sb_can[0] = arg1&0xFF;
+      can_msg.sb_can[1] = arg2&0xFF;
+      can_msg.sb_nb = 2;
+      can_msg.end_of_request = (buf[cp] == '\n');
+      flavor->enqueue_request(&can_msg,
+          (uint8_t*)&rep.data.mread.rvals[rep.data.mread.n_reads],
+          arg1*2, this);
+      break;
+    case '|':
+      ++cp;
+      if (not_hex(arg2) || not_str("@") ||
+          not_hex(arg3) || cp >= nc) {
+        if (cp >= nc) report_err("%s: Truncated mread? '%s'", iname,
+          ::ascii_escape(req->data.d4.multread_cmd));
+        status_return(SBS_REQ_SYNTAX);
+        return;
+      }
+      if (arg2 > 255) {
+        report_err("%s: Invalid count %d in |@", iname, arg2);
+        status_return(SBS_REQ_SYNTAX);
+        return;
+      }
+      if ((arg3&0xFF00) != (arg1&0xFF00)) {
+        report_err(
+          "%s: Invalid RdAddrNoInc %X|%X@%X to multiple devices.",
+          iname, arg1, arg3);
+        status_return(SBS_REQ_SYNTAX);
+        return;
+      }
+      can_msg.device_id = (arg1>>8) & 0xFF;
+      can_msg.sb_can_cmd = CAN_CMD_CODE_RD_CNT_NOINC;
+      can_msg.sb_can_seq = 0;
+      can_msg.sb_can[0] = arg1&0xFF;
+      can_msg.sb_can[1] = arg2&0xFF;
+      can_msg.sb_can[2] = arg3&0xFF;
+      can_msg.sb_nb = 3;
+      can_msg.end_of_request = (buf[cp] == '\n');
+      flavor->enqueue_request(&can_msg,
+          (uint8_t*)&rep.data.mread.rvals[rep.data.mread.n_reads],
+          2+arg2*2, this);
+      break;
+    case '\n':
+      msg(4, "%s: '\\n' should have been handled", iname);
+  }
+}
+
+/**
+ * On entry, buf[cp] should either point to '\n' or ','
+ * I use while(){switch() { }} with both 'continue' and 'break' statements
+ * inside the switch. A break inside the switch will hit the break outside
+ * the switch and exit the while loop. A continue inside the switch will
+ * skip the break and go to the next iteration step.
+ */
+void subbusd_CAN_client::format_mread_rd() {
+  uint16_t arg1, arg2, arg3;
+  nl_assert(cp < nc);
+  while (cp < nc && buf[cp] == ',') {
+    unsigned int cp_sav = cp++;
+    if (not_hex(arg1)) {
+      if (cp >= nc)
+        report_err("%s: Truncated mread?", iname);
+      status_return(SBS_REQ_SYNTAX);
+      return;
+    }
+    switch (buf[cp]) {
+      case '\n':
+      case ',':
+        if (((arg1>>8)&0xFF) != can_msg.device_id) {
+          cp = cp_sav;
+          break;
+        }
+        can_msg.sb_can[can_msg.sb_nb++] = arg1&0xFF;
+        continue;
+      case ':':
+        ++cp;
+        if (not_hex(arg2) || not_str(":") || not_hex(arg3) || cp >= nc) {
+          if (cp >= nc)
+            report_err("%s: Truncated mread?", iname);
+          status_return(SBS_REQ_SYNTAX);
+          return;
+        }
+        if (arg3 < arg1 || (arg3&0xFF00) != (arg1&0xFF00)) {
+          report_err("%s: Invalid RD_INC %X:1:%X", iname, arg1, arg3);
+          status_return(SBS_REQ_SYNTAX);
+          return;
+        }
+        if (((arg1>>8)&0xFF) != can_msg.device_id || arg2 == 1) {
+          cp = cp_sav;
+          break;
+        }
+        // setup CAN_CMD_CODE_RD and unwind
+        for ( ; arg1 <= arg3; arg1 += arg2) {
+          can_msg.sb_can[can_msg.sb_nb] = arg1 & 0xFF;
+          ++can_msg.sb_nb;
+        }
+        continue;
+      default:
+        cp = cp_sav;
+        break;
+    }
+    break;
+  }
+  can_msg.end_of_request = (buf[cp] == '\n');
+  flavor->enqueue_request(&can_msg,
+    (uint8_t*)&rep.data.mread.rvals[rep.data.mread.n_reads],
+    can_msg.sb_nb*2, this);
+}
+
 CAN_socket::CAN_socket()
-  : DAS_IO::Interface("if_CAN", sizeof(struct can_frame)),
+  : DAS_IO::Interface("if_CAN", sizeof(struct can_frame)+1),
     request_pending(false)
     #ifndef HAVE_LINUX_CAN_H
     , bytectr(0)
@@ -145,11 +373,11 @@ void CAN_socket::setup() {
 }
 
 bool CAN_socket::protocol_input() {
-  struct can_frame *frame = (struct can_frame*)&buf[0];
+  struct can_frame *repfrm = (struct can_frame*)&buf[0];
   // reassemble response as necessary
   if (nc != sizeof(struct can_frame)) {
     msg(0, "%s: read %d, expected %d with can_dlc=%d",
-      iname, nc, CAN_MTU, frame->can_dlc);
+      iname, nc, CAN_MTU, repfrm->can_dlc);
   }
   if (!request_pending) {
     report_err("%s: Unexpected input", iname);
@@ -159,57 +387,57 @@ bool CAN_socket::protocol_input() {
   nl_assert(!reqs.empty());
   can_request request = reqs.front();
   // check for CAN error frame
-  if (frame->can_id & (CAN_EFF_FLAG|CAN_RTR_FLAG)) {
-    report_err("%s: Unexpected packet type: ID:%08X", iname, frame->can_id);
+  if (repfrm->can_id & (CAN_EFF_FLAG|CAN_RTR_FLAG)) {
+    report_err("%s: Unexpected packet type: ID:%08X", iname, repfrm->can_id);
     consume(nc);
     return false;
   }
-  if (frame->can_id & CAN_ERR_FLAG) {
+  if (repfrm->can_id & CAN_ERR_FLAG) {
     char msgbuf[80];
     int nc = snprintf(&msgbuf[0], 80, "ErrFrame ID:%8X DLC:%d",
-      frame->can_id, frame->can_dlc);
-    for (int i = 0; i < frame->can_dlc; ++i) {
-      nc += snprintf(&msgbuf[nc], 80-nc, " %02X", frame->data[i]);
+      repfrm->can_id, repfrm->can_dlc);
+    for (int i = 0; i < repfrm->can_dlc; ++i) {
+      nc += snprintf(&msgbuf[nc], 80-nc, " %02X", repfrm->data[i]);
     }
     report_err("%s", msgbuf);
     consume(nc);
     return false;
   }
   // check incoming ID with request
-  if ((frame->can_id & CAN_ID_BDREQ_MASK) !=
-      ((request.frame->can_id & CAN_ID_BDREQ_MASK) | CAN_ID_REPLY_BIT)) {
+  if ((repfrm->can_id & CAN_ID_BDREQ_MASK) !=
+      ((reqfrm.can_id & CAN_ID_BDREQ_MASK) | CAN_ID_REPLY_BIT)) {
     report_err("%s: Invalid ID: %X, expected %X", iname,
-      frame->can_id, request.frame->can_id | CAN_ID_REPLY_BIT);
+      repfrm->can_id, reqfrm.can_id | CAN_ID_REPLY_BIT);
     consume(nc);
     return false;
   }
   // check incoming cmd with request
   // check incoming seq with req_seq_no
-  if (frame->can_dlc < 2) {
-    report_err("%s: DLC:%d (<2)", iname, frame->can_dlc);
+  if (repfrm->can_dlc < 2) {
+    report_err("%s: DLC:%d (<2)", iname, repfrm->can_dlc);
     consume(nc);
     return false;
   }
-  if (frame->data[0] != CAN_CMD(request.frame->data[0],rep_seq_no)) {
-    if (CAN_CMD_CODE(frame->data[0]) == CAN_CMD_CODE_ERROR) {
-      if (frame->data[1] == CAN_ERR_NACK) {
+  if (repfrm->data[0] != CAN_CMD(reqfrm.data[0],rep_seq_no)) {
+    if (CAN_CMD_CODE(repfrm->data[0]) == CAN_CMD_CODE_ERROR) {
+      if (repfrm->data[1] == CAN_ERR_NACK) {
         request.clt->request_complete(SBS_NOACK, request.bufsz);
       } else {
-        report_err("%s: CAN_ERR %d", iname, frame->data[1]);
+        report_err("%s: CAN_ERR %d", iname, repfrm->data[1]);
         request.clt->request_complete(SBS_RESP_ERROR, 0);
       }
     } else {
       report_err("%s: req/rep cmd,seq mismatch: %02X/%02X",
-        iname, frame->data[0], request.frame->data[0]);
+        iname, repfrm->data[0], reqfrm.data[0]);
     }
     consume(nc);
     return false;
   }
   // if seq == 0, check len with request and update
-  int nbdat = frame->can_dlc - 1; // not counting cmd byte
-  uint8_t *data = &frame->data[1];
-  if (CAN_CMD_SEQ(frame->data[0]) == 0) {
-    rep_len = frame->data[1];
+  int nbdat = repfrm->can_dlc - 1; // not counting cmd byte
+  uint8_t *data = &repfrm->data[1];
+  if (CAN_CMD_SEQ(repfrm->data[0]) == 0) {
+    rep_len = repfrm->data[1];
     if (rep_len > request.bufsz) {
       report_err("%s: reply length %d exceeds request len %d",
         iname, rep_len, request.bufsz);
@@ -224,7 +452,7 @@ bool CAN_socket::protocol_input() {
   // check dlc_len against remaining request len
   if (nbdat > request.bufsz) {
     report_err("%s: msg overflow. cmdseq=%02X dlc=%d bufsz=%d",
-      iname, frame->data[0], frame->can_dlc, request.bufsz);
+      iname, repfrm->data[0], repfrm->can_dlc, request.bufsz);
     consume(nc);
     return false;
   }
@@ -234,50 +462,84 @@ bool CAN_socket::protocol_input() {
   request.bufsz -= nbdat;
   // update rep_seq_no
   ++rep_seq_no;
+  consume(nc);
   // If request is complete, call clt->request_complete
   if (request.bufsz == 0) {
+    reqs.pop_front();
+    // clearing request_pending after request_complete()
+    // simply limits the depth of recursion
     request.clt->request_complete(SBS_ACK, rep_len);
+    request_pending = false;
+    process_requests();
   }
-  consume(nc);
   return false;
 }
 
-void CAN_socket::enqueue_request(struct can_frame *frame, uint8_t *rep_buf, int buflen,
+bool CAN_socket::iwritten(int nb) {
+  if (obuf_empty()) process_requests();
+}
+
+void CAN_socket::enqueue_request(can_msg_t *can_msg, uint8_t *rep_buf, int buflen,
         subbusd_CAN_client *clt) {
-  nl_assert(frame);
-  nl_assert(frame->can_dlc <= 8);
-  reqs.push_back(can_request(frame, rep_buf, buflen, clt));
+  nl_assert(can_msg);
+  reqs.push_back(can_request(can_msg, rep_buf, buflen, clt));
   process_requests();
 }
 
 /**
- * This code currently assumes that all outbound requests will fit in a single
- * packet. 
  */
 void CAN_socket::process_requests() {
-  if (request_pending) return;
+  if (request_pending || request_processing || reqs.empty()) return;
   can_request req = reqs.front();
-  request_pending = true;
-  req.frame->can_id = CAN_REQUEST_ID(req.frame->can_id,req_no);
-  ++req_no;
-  rep_seq_no = 0;
-  #ifdef HAVE_LINUX_CAN_H
-    iwrite(fd, req.frame, sizeof(struct can_frame));
-  #else
-  { char msgbuf[80];
-    int nc = 0;
-    nc += snprintf(&msgbuf[nc], 80-nc, "CANout ID:x%02X Data:", req.frame->can_id);
-    for (int i = 0; i < req.frame->can_dlc; ++i) {
-      nc += snprintf(&msgbuf[nc], 80-nc, " %02X", req.frame->data[i]);
+  request_processing = true;
+  while (!request_pending && obuf_empty()) {
+    uint8_t req_seq_no = req.msg->sb_can_seq;
+    uint16_t offset = req_seq_no ? (req_seq_no*7 - 1) : 0;
+    nl_assert(offset < req.msg->sb_nb);
+    uint16_t nbdata = req.msg->sb_nb - offset;
+    reqfrm.can_id = CAN_REQUEST_ID(req.msg->device_id,req_no);
+    if (req.msg->sb_can_seq) {
+      if (nbdata > 7) nbdata = 7;
+      reqfrm.can_dlc = nbdata+1;
+      reqfrm.data[0] = CAN_CMD(req.msg->sb_can_cmd,req.msg->sb_can_seq);
+      memcpy(&reqfrm.data[1], &req.msg->sb_can[offset], nbdata);
+    } else {
+      if (nbdata > 6) nbdata = 6;
+      reqfrm.can_dlc = nbdata+2;
+      reqfrm.data[0] = CAN_CMD(req.msg->sb_can_cmd,req_seq_no);
+      reqfrm.data[1] = req.msg->sb_nb;
+      memcpy(&reqfrm.data[2], &req.msg->sb_can[offset], nbdata);
     }
-    msg(0, "%s", msgbuf);
-    for (int i = 0; i < req.bufsz; ++i)
-      req.buf[i] = bytectr++;
-    req.clt->request_complete(SBS_ACK, req.bufsz);
-    reqs.pop_front();
-    request_pending = false;
+    ++req.msg->sb_can_seq;
+    if (offset+nbdata >= req.msg->sb_nb) {
+      request_pending = true;
+      ++req_no;
+    }
+    rep_seq_no = 0;
+    #ifdef HAVE_LINUX_CAN_H
+      iwrite(fd, &reqfrm, sizeof(struct can_frame));
+    #else
+    { char msgbuf[80];
+      int nc = 0;
+      nc += snprintf(&msgbuf[nc], 80-nc, "CANout ID:x%02X Data:", reqfrm.can_id);
+      for (int i = 0; i < reqfrm.can_dlc; ++i) {
+        nc += snprintf(&msgbuf[nc], 80-nc, " %02X", reqfrm.data[i]);
+      }
+      msg(0, "%s", msgbuf);
+      if (request_pending) {
+        for (int i = 0; i < req.bufsz; ++i) {
+          req.buf[i] = bytectr++;
+        }
+        request_pending = false;
+        reqs.pop_front();
+        request_processing = false; // this is a hack
+        req.clt->request_complete(SBS_ACK, req.bufsz);
+        break;
+      }
+    }
+    #endif
   }
-  #endif
+  request_processing = false;
 }
 
 subbusd_CAN::subbusd_CAN() : subbusd_flavor("CAN", new_subbusd_CAN_client) {}

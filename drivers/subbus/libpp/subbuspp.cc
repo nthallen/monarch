@@ -11,7 +11,7 @@
 // #include "tm.h"
 
 subbuspp::subbuspp(const char *service, const char *sub_service)
-    : Client(service, sizeof(subbusd_rep_t), service, sub_service) {
+    : Client(service, sizeof(subbusd_rep_t)+1, service, sub_service) {
 }
 
 subbuspp::~subbuspp() {}
