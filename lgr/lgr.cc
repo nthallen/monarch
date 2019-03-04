@@ -1,10 +1,10 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-#include "tm_client.h"
-#include "nl.h"
-#include "dasio/msg.h"
-#include "nl_assert.h"
+#include "../dasio/src/dasio/tm_client.h"
+#include "../nl/src/nl.h"
+#include "../dasio/src/dasio/msg.h"
+#include "../nl/src/nl_assert.h"
 #include "oui.h"
 #include "lgr.h"
 
