@@ -1,10 +1,11 @@
 // #undef HAVE_CAN_H
 #include <string.h>
-#ifdef HAVE_CAN_H
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <linux/can.h>
-#include <linux/can/raw.h>
+#include "subbusd_CAN_config.h"
+#ifdef HAVE_LINUX_CAN_H
+  #include <sys/ioctl.h>
+  #include <sys/socket.h>
+  #include <linux/can.h>
+  #include <linux/can/raw.h>
 #endif
 #include "nl_assert.h"
 #include "subbusd_int.h"
@@ -372,12 +373,61 @@ void CAN_socket::setup() {
   #endif
 }
 
+bool CAN_socket::iwritten(int nb) {
+  if (obuf_empty()) process_requests();
+}
+
+const char *CAN_socket::ascii_escape() {
+  static char abuf[128];
+  unsigned int anc = 0;
+  for (unsigned lcp = 0; lcp < nc; lcp += sizeof(struct can_frame)) {
+    struct can_frame *repfrm = (struct can_frame*)&buf[lcp];
+    unsigned int nb = nc-lcp;
+    if (nb < sizeof(struct can_frame))
+      anc += snprintf(&abuf[anc], 128-anc-1, "Short(%d):", nb);
+    unsigned int dlc_offset = (&(repfrm->can_dlc) - &buf[lcp]);
+    if (nb >= dlc_offset) {
+      anc += snprintf(&abuf[anc], 128-anc-1, " ID:%X", repfrm->can_id);
+      if (nb > dlc_offset) {
+        unsigned dlc = repfrm->can_dlc;
+        anc += snprintf(&abuf[anc], 128-anc-1, " DLC:%u%s",
+          dlc, dlc>8 ? "!" : "");
+        if (dlc > 8) dlc = 8;
+        unsigned int data_offset =
+          (&(repfrm->data[0]) - &buf[lcp]);
+        if (nb > data_offset) {
+          if (nb < data_offset+dlc)
+            dlc = nb-data_offset;
+          anc += snprintf(&abuf[anc], 128-anc-1, " [");
+          for (int i = 0; i < dlc; ++i) {
+            anc += snprintf(&abuf[anc], 128-anc-1, "%s%X",
+              i ? " " : "", repfrm->data[i]);
+          }
+          anc += snprintf(&abuf[anc], 128-anc-1, "]");
+          if (nb > sizeof(struct can_frame)) {
+            anc += snprintf(&abuf[anc], 128-anc-1, "\n");
+          }
+        }
+      }
+    } else {
+      anc += snprintf(&abuf[anc], 128-anc-1, "[");
+      for (int i = 0; i < nb; ++i) {
+        anc += snprintf(&abuf[anc], 128-anc-1, "%s%X",
+          i ? " " : "", buf[lcp+i]);
+      }
+      anc += snprintf(&abuf[anc], 128-anc-1, "]");
+    }
+  }
+  return abuf;
+}
+
 bool CAN_socket::protocol_input() {
   struct can_frame *repfrm = (struct can_frame*)&buf[0];
   // reassemble response as necessary
   if (nc != sizeof(struct can_frame)) {
     msg(0, "%s: read %d, expected %d with can_dlc=%d",
       iname, nc, CAN_MTU, repfrm->can_dlc);
+    // This could happen if the frame is shortened with less data
   }
   if (!request_pending) {
     report_err("%s: Unexpected input", iname);
@@ -456,6 +506,10 @@ bool CAN_socket::protocol_input() {
     consume(nc);
     return false;
   }
+  if (nl_debug_level <= MSG_DBG(1)) {
+    msg(MSG_DBG(1), "CANin %s", ascii_escape());
+  }
+  
   // copy data into reply
   memcpy(request.buf, data, nbdat);
   request.buf += nbdat;
@@ -473,10 +527,6 @@ bool CAN_socket::protocol_input() {
     process_requests();
   }
   return false;
-}
-
-bool CAN_socket::iwritten(int nb) {
-  if (obuf_empty()) process_requests();
 }
 
 void CAN_socket::enqueue_request(can_msg_t *can_msg, uint8_t *rep_buf, int buflen,
@@ -516,16 +566,19 @@ void CAN_socket::process_requests() {
       ++req_no;
     }
     rep_seq_no = 0;
-    #ifdef HAVE_LINUX_CAN_H
-      iwrite(fd, &reqfrm, sizeof(struct can_frame));
-    #else
-    { char msgbuf[80];
+    if (nl_debug_level <= MSG_DBG(1)) {
+      char msgbuf[80];
       int nc = 0;
       nc += snprintf(&msgbuf[nc], 80-nc, "CANout ID:x%02X Data:", reqfrm.can_id);
       for (int i = 0; i < reqfrm.can_dlc; ++i) {
         nc += snprintf(&msgbuf[nc], 80-nc, " %02X", reqfrm.data[i]);
       }
-      msg(0, "%s", msgbuf);
+      msg(MSG_DBG(1), "%s", msgbuf);
+    }
+    #ifdef HAVE_LINUX_CAN_H
+      iwrite(fd, &reqfrm, sizeof(struct can_frame));
+    #else
+      // This is development/debugging code
       if (request_pending) {
         for (int i = 0; i < req.bufsz; ++i) {
           req.buf[i] = bytectr++;
@@ -536,7 +589,6 @@ void CAN_socket::process_requests() {
         req.clt->request_complete(SBS_ACK, req.bufsz);
         break;
       }
-    }
     #endif
   }
   request_processing = false;

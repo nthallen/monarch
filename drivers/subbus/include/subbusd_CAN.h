@@ -83,10 +83,12 @@ class CAN_socket : public DAS_IO::Interface {
     ~CAN_socket();
     /** Open and setup the CAN socket */
     void setup();
-    bool protocol_input();
-    bool iwritten(int nb);
     void enqueue_request(can_msg_t *can_msg, uint8_t *rep_buf, int buflen,
         subbusd_CAN_client *clt);
+  protected:
+    bool iwritten(int nb);
+    const char *ascii_escape();
+    bool protocol_input();
   private:
     void process_requests();
     std::list<can_request> reqs;
