@@ -353,22 +353,38 @@ void CAN_socket::setup() {
 	// * type: SOCK_RAW
 	// * proto: CAN_RAW
   fd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+  if (fd < 0) {
+    msg(3, "%s: socket() returned error %d: %s",
+      errno, strerror(errno));
+  }
   // interface: "CAN0"
   addr.can_family = PF_CAN;
   strcpy(ifr.ifr_name, "CAN0");
-  if (ioctl(fd, SIOCGIFINDEX, &ifr)) { error }
+  if (ioctl(fd, SIOCGIFINDEX, &ifr)) {
+    msg(3, "%s: ioctl() error %d: %s",
+      errno, strerror(errno));
+  }
   addr.can_ifindex = ifr.ifr_ifindex;
-  if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) { error }
+  if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+    msg(3, "%s: bind() error %d: %s",
+      errno, strerror(errno));
+  }
   filter.can_id = CAN_ID_REPLY_BIT;
   filter.can_mask = CAN_ID_REPLY_BIT;
   if (setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, &filter,
-      sizeof(struct can_filter)) != 0) { error }
+      sizeof(struct can_filter)) != 0) {
+    msg(3, "%s: setsockopt() error %d setting filter: %s",
+      errno, strerror(errno));
+  }
   // Also want to receive error packets
   can_err_mask_t err_mask = (CAN_ERR_TX_TIMEOUT | CAN_ERR_LOSTARB |
       CAN_ERR_CRTL | CAN_ERR_PROT | CAN_ERR_TRX | CAN_ERR_ACK |
       CAN_ERR_BUSOFF | CAN_ERR_BUSERROR);
-  if (setsockopt(s, SOL_CAN_RAW, CAN_RAW_ERR_FILTER, &err_mask,
-    sizeof(err_mask)) != 0) { error }
+  if (setsockopt(fd, SOL_CAN_RAW, CAN_RAW_ERR_FILTER, &err_mask,
+        sizeof(err_mask)) != 0) {
+    msg(3, "%s: setsockopt() error %d setting error filter: %s",
+      errno, strerror(errno));
+  }
   flags = DAS_IO::Interface::Fl_Read;
   #endif
 }
