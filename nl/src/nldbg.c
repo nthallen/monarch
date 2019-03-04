@@ -12,12 +12,7 @@ int nl_debug_level;
 =Description
 
 nl_debug_level controls which debug messages are output in
-=nl_err=() by =msgv=(). nl_debug_level has no effect on
-msg(), which controls debug verbosity via the -l flag.
-
-=SeeAlso
-
-  =Nortlib= functions.
+msg() and msgv() functions.
 
 =End
 */

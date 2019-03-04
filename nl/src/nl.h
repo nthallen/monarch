@@ -42,6 +42,27 @@ int nl_verr(int level, const char *fmt, va_list args);
 #define MSG_DBG(X) (MSG_DEBUG-(X))
 /** @} */
 
+/**
+ * nl_debug_level controls which debug messages are output in
+ * msg() and msgv() functions. It is initialized to -1.
+ * If the level code passed to msg() or msgv() is less than
+ * or equal to MSG_DEBUG (-2) but also less than nl_debug_level,
+ * the message is not displayed. Hence by lowering the
+ * value of nl_debug_level, more messages are enabled.
+ *
+ * nl_debug_level can be set directly by program code,
+ * but the most common method to adjust it is via the
+ * -v option defined in msg.oui. Each occurance of -v
+ * decrements nl_debug_level by one, enabling another
+ * level of messages.
+ *
+ * Messages of level MSG_DEBUG (which is the same as
+ * MSG_DBG(0)) will not be displayed by default, but
+ * will be with the -v option. Messages of level
+ * MSG_DBG(1) will display only if the -v option
+ * appears at least twice on the command line
+ * (e.g. -vv).
+ */
 extern int nl_debug_level;
 extern int nl_response;
 int set_response(int newval);
