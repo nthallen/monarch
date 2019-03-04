@@ -6,6 +6,8 @@
   #include <sys/socket.h>
   #include <linux/can.h>
   #include <linux/can/raw.h>
+  #include <linux/can/error.h>
+  #include <net/if.h>
 #endif
 #include "nl_assert.h"
 #include "subbusd_int.h"
@@ -592,7 +594,7 @@ void CAN_socket::process_requests() {
       msg(MSG_DBG(1), "%s", msgbuf);
     }
     #ifdef HAVE_LINUX_CAN_H
-      iwrite(fd, &reqfrm, sizeof(struct can_frame));
+      iwrite((const char *)&reqfrm, sizeof(struct can_frame));
     #else
       // This is development/debugging code
       if (request_pending) {

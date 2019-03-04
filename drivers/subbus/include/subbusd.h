@@ -2,6 +2,7 @@
 #define SUBBUSD_H_INCLUDED
 // #include <sys/iomsg.h>
 // #include <sys/siginfo.h>
+#include <signal.h>
 #include "subbus.h"
 
 #define SUBBUSD_MGRID_OFFSET 1
