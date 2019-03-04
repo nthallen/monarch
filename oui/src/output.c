@@ -58,7 +58,8 @@ static void dump_llos_usage( ll_of_str *ll, char *prefix ) {
   char *s;
   
   while ( s = llos_deq( ll ) ) {
-    for (int i = 0; i < sizeof(s); i++) {
+    int i;
+    for (i = 0; i < sizeof(s); i++) {
       if (s[i] == '\t') {
         s[i] = ' ';
       }
