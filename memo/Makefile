@@ -1,6 +1,6 @@
 MEMO_OBJ=memo.o memooui.o
 MSG_OBJ=msg.o msg_internal_oui.o
-CXXFLAGS=-I/usr/local/include -g -Wall
+CXXFLAGS=-std=c++11 -I/usr/local/include -g -Wall
 LDFLAGS=-L/usr/local/lib
 LIBS=-ldasio -ltm -lnl
 .PHONY : install clean all

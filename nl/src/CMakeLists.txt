@@ -1,5 +1,8 @@
 add_library(nl nl_error.c nl_verr.c nldbg.c nlresp.c strdup.c newmem.c
   compiler.c compile_opts.c ll_of_str.c opnifile.c skeleton.c mlf.c)
+target_include_directories(nl PRIVATE
+  ${le_das_SOURCE_DIR}/oui/src
+)
 install(TARGETS nl
   ARCHIVE
   DESTINATION lib

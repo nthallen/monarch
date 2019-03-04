@@ -5,3 +5,6 @@ memooui.cc
 FullBuild.*
 *.o
 *.exe
+msg
+msg_internal_oui.cc
+
