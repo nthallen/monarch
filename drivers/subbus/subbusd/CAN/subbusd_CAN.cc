@@ -361,7 +361,7 @@ void CAN_socket::setup() {
   }
   // interface: "CAN0"
   addr.can_family = PF_CAN;
-  strcpy(ifr.ifr_name, "CAN0");
+  strcpy(ifr.ifr_name, "can0");
   if (ioctl(fd, SIOCGIFINDEX, &ifr)) {
     msg(3, "%s: ioctl() error %d: %s", iname,
       errno, strerror(errno));
@@ -472,8 +472,8 @@ bool CAN_socket::protocol_input() {
     return false;
   }
   // check incoming ID with request
-  if ((repfrm->can_id & CAN_ID_BDREQ_MASK) !=
-      ((reqfrm.can_id & CAN_ID_BDREQ_MASK) | CAN_ID_REPLY_BIT)) {
+  if ((repfrm->can_id & CAN_SFF_MASK) !=
+      ((reqfrm.can_id & CAN_SFF_MASK) | CAN_ID_REPLY_BIT)) {
     report_err("%s: Invalid ID: %X, expected %X", iname,
       repfrm->can_id, reqfrm.can_id | CAN_ID_REPLY_BIT);
     consume(nc);

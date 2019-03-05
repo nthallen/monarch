@@ -18,8 +18,8 @@ typedef struct {
 #define VCONV (0.025/16)
 #define ICONV28 (20e-3/(16*7))
 #define ICONV50 (20e-3/(16*3))
-#define ADINCONV28 ((0.5 * (2+29.4))/(16*2))
-#define ADINCONV50 ((0.5 * (2+59.0))/(16*2))
+#define ADINCONV28 ((0.5e-3 * (2+29.4))/(16*2))
+#define ADINCONV50 ((0.5e-3 * (2+59.0))/(16*2))
 
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
@@ -42,6 +42,6 @@ int main(int argc, char **argv) {
   uint16_t PM0V2 = P->read_subbus(0x0123);
   msg(0, "  V1: %5.2lf V", PM0V1*VCONV); 
   msg(0, "  V2: %5.2lf V", PM0V2*ADINCONV28); 
-  msg(0, "   I: %6.3lf A", PM0I1*ICONV28); 
+  msg(0, "   I: %6.3lf A", PM0I1*ICONV50); 
   P->subbus_quit();
 }
