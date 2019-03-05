@@ -363,7 +363,7 @@ void CAN_socket::setup() {
   addr.can_family = PF_CAN;
   strcpy(ifr.ifr_name, "CAN0");
   if (ioctl(fd, SIOCGIFINDEX, &ifr)) {
-    msg(3, "%s: ioctl() error %d: %s",
+    msg(3, "%s: ioctl() error %d: %s", iname,
       errno, strerror(errno));
   }
   addr.can_ifindex = ifr.ifr_ifindex;
