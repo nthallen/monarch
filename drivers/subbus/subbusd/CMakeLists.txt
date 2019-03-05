@@ -27,3 +27,6 @@ target_include_directories(subbusd_CAN PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}
 )
 target_link_libraries(subbusd_CAN dasio nl)
+
+install(TARGETS subbusd_CAN RUNTIME DESTINATION bin)
+
