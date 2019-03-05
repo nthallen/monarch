@@ -337,7 +337,7 @@ void subbusd_CAN_client::format_mread_rd() {
 }
 
 CAN_socket::CAN_socket()
-  : DAS_IO::Interface("if_CAN", sizeof(struct can_frame)+1),
+  : DAS_IO::Interface("if_CAN", CAN_MTU+1),
     request_pending(false)
     #ifndef HAVE_LINUX_CAN_H
     , bytectr(0)
@@ -398,14 +398,14 @@ bool CAN_socket::iwritten(int nb) {
 const char *CAN_socket::ascii_escape() {
   static char abuf[128];
   unsigned int anc = 0;
-  for (unsigned lcp = 0; lcp < nc; lcp += sizeof(struct can_frame)) {
+  for (unsigned lcp = 0; lcp < nc; lcp += CAN_MTU) {
     struct can_frame *repfrm = (struct can_frame*)&buf[lcp];
     unsigned int nb = nc-lcp;
-    if (nb < sizeof(struct can_frame))
+    if (nb < CAN_MTU)
       anc += snprintf(&abuf[anc], 128-anc-1, "Short(%d):", nb);
     unsigned int dlc_offset = (&(repfrm->can_dlc) - &buf[lcp]);
     if (nb >= dlc_offset) {
-      anc += snprintf(&abuf[anc], 128-anc-1, " ID:%X", repfrm->can_id);
+      anc += snprintf(&abuf[anc], 128-anc-1, " ID:%02X", repfrm->can_id);
       if (nb > dlc_offset) {
         unsigned dlc = repfrm->can_dlc;
         anc += snprintf(&abuf[anc], 128-anc-1, " DLC:%u%s",
@@ -418,11 +418,11 @@ const char *CAN_socket::ascii_escape() {
             dlc = nb-data_offset;
           anc += snprintf(&abuf[anc], 128-anc-1, " [");
           for (int i = 0; i < dlc; ++i) {
-            anc += snprintf(&abuf[anc], 128-anc-1, "%s%X",
+            anc += snprintf(&abuf[anc], 128-anc-1, "%s%02X",
               i ? " " : "", repfrm->data[i]);
           }
           anc += snprintf(&abuf[anc], 128-anc-1, "]");
-          if (nb > sizeof(struct can_frame)) {
+          if (nb > CAN_MTU) {
             anc += snprintf(&abuf[anc], 128-anc-1, "\n");
           }
         }
@@ -430,7 +430,7 @@ const char *CAN_socket::ascii_escape() {
     } else {
       anc += snprintf(&abuf[anc], 128-anc-1, "[");
       for (int i = 0; i < nb; ++i) {
-        anc += snprintf(&abuf[anc], 128-anc-1, "%s%X",
+        anc += snprintf(&abuf[anc], 128-anc-1, "%s%02X",
           i ? " " : "", buf[lcp+i]);
       }
       anc += snprintf(&abuf[anc], 128-anc-1, "]");
@@ -442,7 +442,7 @@ const char *CAN_socket::ascii_escape() {
 bool CAN_socket::protocol_input() {
   struct can_frame *repfrm = (struct can_frame*)&buf[0];
   // reassemble response as necessary
-  if (nc != sizeof(struct can_frame)) {
+  if (nc != CAN_MTU) {
     msg(0, "%s: read %d, expected %d with can_dlc=%d",
       iname, nc, CAN_MTU, repfrm->can_dlc);
     // This could happen if the frame is shortened with less data
@@ -516,6 +516,7 @@ bool CAN_socket::protocol_input() {
       request.bufsz = rep_len;
     --nbdat;
     ++data;
+    msg(MSG_DBG(2), "Reply length: %d", request.bufsz);
   }
   // check dlc_len against remaining request len
   if (nbdat > request.bufsz) {
@@ -532,6 +533,7 @@ bool CAN_socket::protocol_input() {
   memcpy(request.buf, data, nbdat);
   request.buf += nbdat;
   request.bufsz -= nbdat;
+  msg(MSG_DBG(2), "Seq:%d nbdat:%d bufsz:%d", rep_seq_no, nbdat, request.bufsz);
   // update rep_seq_no
   ++rep_seq_no;
   consume(nc);
@@ -594,7 +596,7 @@ void CAN_socket::process_requests() {
       msg(MSG_DBG(1), "%s", msgbuf);
     }
     #ifdef HAVE_LINUX_CAN_H
-      iwrite((const char *)&reqfrm, sizeof(struct can_frame));
+      iwrite((const char *)&reqfrm, CAN_MTU);
     #else
       // This is development/debugging code
       if (request_pending) {

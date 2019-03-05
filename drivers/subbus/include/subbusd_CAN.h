@@ -12,6 +12,7 @@
     uint8_t  data[8];
   };
   #define CAN_MTU sizeof(struct can_frame)
+  #define CAN_SFF_MASK 0x000007FFU
   #define CAN_EFF_FLAG 0x80000000U
   #define CAN_RTR_FLAG 0x40000000U
   #define CAN_ERR_FLAG 0x20000000U
