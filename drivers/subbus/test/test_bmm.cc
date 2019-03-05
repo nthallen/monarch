@@ -36,6 +36,16 @@ int main(int argc, char **argv) {
   msg(0, "  Board S/N:  %d", value & 0xFF);
   value = P->read_subbus(0x0102);
   msg(0, "  Build No:   %u", value);
+  
+  subbus_mread_req *mreq = P->pack_mread_request(0x21, "106|20@107");
+  device_name_t devname;
+  uint16_t nread;
+  int rv = P->mread_subbus_nw(mreq, (uint16_t*)&devname, &nread);
+  if (rv) {
+    msg(2, "Error from mread");
+  } else {
+    msg(0, "nr:%u/%u '%s'", nread, devname.n_words, &devname.name[0]);
+  }
 
   uint16_t PM0I1 = P->read_subbus(0x0121);
   uint16_t PM0V1 = P->read_subbus(0x0122);
