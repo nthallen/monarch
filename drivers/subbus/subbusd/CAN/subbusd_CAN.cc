@@ -359,6 +359,10 @@ void CAN_socket::setup() {
     msg(3, "%s: socket() returned error %d: %s",
       errno, strerror(errno));
   }
+  if (fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK) == -1) {
+    msg(3, "fcntl() failure in DAS_IO::Socket(%s): %s", iname,
+      std::strerror(errno));
+  }
   // interface: "CAN0"
   addr.can_family = PF_CAN;
   strcpy(ifr.ifr_name, "can0");
