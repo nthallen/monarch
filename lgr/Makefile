@@ -1,18 +1,16 @@
-CFLAGS=-Wall -g
-CXXFLAGS=-Wall -g
-# I specify these two to:
-#  a) override the setting CXX=cc in appgen.mk
-#  b) use g++ to link instead of $(CC)=cc, which ties into a different library
-LINK.cxx=$(CXX) $(AG_LDFLAGS) $(LDFLAGS)
-
-lgr : lgr.o lgroui.o
-	$(LINK.cxx) -o lgr lgr.o lgroui.o -ldasio -lnl
-lgr.o : lgr.cc
-lgroui.c : lgr.oui
-	oui -o lgroui.c lgr.oui
-.PHONY : all install clean
+LGR_OBJ=lgr.o lgroui.o
+CXXFLAGS=-I/usr/local/include -g -Wall
+LDFLAGS=-L/usr/local/lib
+LIBS=-ldasio -ltm -lnl
+.PHONY : install clean all
 all : lgr
+lgr : $(LGR_OBJ)
+	$(CXX) $(LDFLAGS) $(CXXFLAGS) -o lgr $(LGR_OBJ) $(LIBS)
+lgr.o : lgr.cc lgr.h
+lgroui.cc : lgr.oui
+	oui -o lgroui.cc lgr.oui
+
 install : lgr
-	cp -vf lgr /usr/local/bin
+	@cp -vp lgr /usr/local/bin
 clean :
-	rm -f *.o lgr lgroui.c FullBuild.*
+	rm -f $(LGR_OBJ) lgr FullBuild.* lgroui.cc

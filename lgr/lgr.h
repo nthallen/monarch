@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "mlf.h"
+#include "dasio/tm_client.h"
 
 #ifdef __cplusplus
 

@@ -1,11 +1,13 @@
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 #include <errno.h>
-#include "../dasio/src/dasio/tm_client.h"
-#include "../nl/src/nl.h"
-#include "../dasio/src/dasio/msg.h"
-#include "../nl/src/nl_assert.h"
+#include "nl.h"
+#include "dasio/tm.h"
+#include "dasio/msg.h"
+#include "nl_assert.h"
 #include "oui.h"
+#include "dasio/tm_client.h"
 #include "lgr.h"
 
 void lgr_init( int argc, char **argv ) {
@@ -27,7 +29,7 @@ void lgr_init( int argc, char **argv ) {
 char *tmc_lgr::mlf_config;
 unsigned int tmc_lgr::file_limit = 4096*3;
 
-tmc_lgr::tmc_lgr() : tm_client( 4096, 0, 0 ) {
+tmc_lgr::tmc_lgr() : tm_client( 4096, 0, 0) {
   mlf = mlf_init( 3, 60, 1, "LOG", "dat", mlf_config );
   ofp = NULL;
 }

@@ -10,6 +10,7 @@
 #include <process.h>
 #include "dasio/tm_client.h"
 #include "dasio/msg.h"
+#include "dasio/tm.h"
 #include "nl.h"
 #include "nl_assert.h"
 
@@ -33,7 +34,7 @@ void tm_client::init(int bufsize_in, int non_block, const char *srcfile) {
   tm_info_ready = false;
   tm_quit = false;
   if ( buf == 0)
-    msg( 3, "Memory allocation failure in tm_client::tm_client");
+    report_err( 3, "Memory allocation failure in tm_client::tm_client");
   tm_msg = (tm_msg_t *)buf;
   non_block = non_block ? O_NONBLOCK : 0;
   bfr_fd =
@@ -52,16 +53,18 @@ void tm_client::init(int bufsize_in, int non_block, const char *srcfile) {
     nl_assert(nb1 == nb2);
     fp = fopen( filename, "w" );
     if (fp) fclose(fp);
-    else msg(2, "Unable to create run file '%s'", filename);
+    else report_err(2, "Unable to create run file '%s'", filename);
   }
 }
 
 tm_client::tm_client(int bufsize_in, int non_block, char *srcfile) {
-  init(bufsize_in, non_block, srcfile );
+  //init(bufsize_in, non_block, srcfile );
+  DAS_IO::Client("tm_client", bufsize_in, "TM/DCf", "TM/DCo");
 }
 
 tm_client::tm_client(int bufsize_in, int fast, int non_block) {
-  init(bufsize_in, non_block, tm_dev_name( fast ? "TM/DCf" : "TM/DCo" ));
+  //init(bufsize_in, non_block, tm_dev_name( fast ? "TM/DCf" : "TM/DCo" ));
+  DAS_IO::Client("tm_client", bufsize_in, "TM/DCf", "TM/DCo");
 }
 
 int tm_client::process_eof() {
@@ -69,14 +72,17 @@ int tm_client::process_eof() {
   return 1;
 }
 
-void tm_client::read() {
+/** 
+ *  Edited out as of 6 March 2019 for le-dasng
+ */
+/* void tm_client::read() {
   int nb;
   do {
     nb = (bfr_fd == -1) ? 0 :
         ::read( bfr_fd, buf + bytes_read, bufsize-bytes_read);
     if ( nb == -1 ) {
       if ( errno == EAGAIN ) return; // must be non-blocking
-      else msg( 1, "tm_client::read error from read(): %s",
+      else report_err( 1, "tm_client::read error from read(): %s",
         strerror(errno));
     }
     if (nb <= 0) {
@@ -95,17 +101,17 @@ void tm_client::read() {
       process_message();
     }
   }
-}
+} */
 
 /** This is the basic operate loop for a simple extraction
- *
+ *  Edited out as of 6 March 2019 for le-dasng
  */
-void tm_client::operate() {
+/* void tm_client::operate() {
   tminitfunc();
   while ( !tm_quit ) {
     read();
   }
-}
+} */
 
 /* *
  * Internal function to establish input_tm_type.
@@ -130,7 +136,7 @@ void tm_client::init_tm_type() {
 
 void tm_client::process_init() {
   if ( memcmp( &tm_info, &tm_msg->body.init.tm, sizeof(tm_dac_t) ) )
-    msg(3, "tm_dac differs");
+    report_err(3, "tm_dac differs");
   tm_info.nrowminf = tm_msg->body.init.nrowminf;
   tm_info.max_rows = tm_msg->body.init.max_rows;
   tm_info.t_stmp = tm_msg->body.init.t_stmp;
@@ -242,7 +248,7 @@ void tm_client::resize_buffer( int bufsize_in ) {
   bufsize = bufsize_in;
   buf = new char[bufsize];
   if ( buf == 0)
-    msg( 3,
+    report_err( 3,
        "Memory allocation failure in tm_client::resize_buffer");
 }
 

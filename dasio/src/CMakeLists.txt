@@ -19,6 +19,7 @@ install(TARGETS dasio
   DESTINATION lib
 )
 install(FILES cmd_version.oui cmd_writer.oui msg.oui
+  tm_client.oui
   DESTINATION share/oui
 )
 add_subdirectory("${CMAKE_SOURCE_DIR}/dasio/src/dasio"

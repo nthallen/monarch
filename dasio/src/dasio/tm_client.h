@@ -11,10 +11,10 @@
 /**
  * \brief Defines interface for tm client connection to TMbfr
  */
-class tm_client {
+class tm_client : public DAS_IO::Client {
   public:
-    tm_client(int bufsize_in, int fast = 0, int non_block = 0);
-    tm_client(int bufsize_in, int non_block, char *srcfile);
+    tm_client(int bufsize_in, bool fast = false, bool non_block = false);
+    tm_client(int bufsize_in, bool non_block, char *srcfile);
     void operate(); // event loop
     void resize_buffer(int bufsize_in);
     void load_tmdac(char *path);
@@ -26,7 +26,7 @@ class tm_client {
     virtual void process_tstamp();
     virtual int process_eof();
     int bfr_fd;
-    void read();
+    //void read();
     bool tm_quit;
     virtual const char *context();
     void tm_init();
@@ -45,7 +45,7 @@ class tm_client {
     unsigned int toread; /// number of bytes needed before next action
     bool tm_info_ready;
     char *buf;
-    void init(int bufsize_in, int non_block, const char *srcfile);
+    void init(int bufsize_in, bool non_block, const char *srcfile);
 };
 
 #define TM_STATE_HDR 0
@@ -53,7 +53,7 @@ class tm_client {
 
 class ext_tm_client : public tm_client {
   public:
-    inline ext_tm_client(int bufsize_in, int fast = 0, int non_block = 0) :
+    inline ext_tm_client(int bufsize_in, bool fast = false, bool non_block = false) :
       tm_client(bufsize_in, fast, non_block) {}
   protected:
     void process_data();
