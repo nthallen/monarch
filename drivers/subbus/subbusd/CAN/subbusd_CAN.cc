@@ -558,6 +558,11 @@ bool CAN_socket::protocol_timeout() {
   return false;
 }
 
+bool CAN_socket::closed() {
+  msg(0, "%s: socket closed", iname);
+  return true;
+}
+
 void CAN_socket::enqueue_request(can_msg_t *can_msg, uint8_t *rep_buf, int buflen,
         subbusd_CAN_client *clt) {
   nl_assert(can_msg);

@@ -95,6 +95,7 @@ class CAN_socket : public DAS_IO::Interface {
     const char *ascii_escape();
     bool protocol_input();
     bool protocol_timeout();
+    bool closed();
   private:
     void process_requests();
     std::list<can_request> reqs;
