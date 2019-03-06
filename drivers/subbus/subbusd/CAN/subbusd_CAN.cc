@@ -489,7 +489,7 @@ bool CAN_socket::protocol_input() {
   if (repfrm->data[0] != CAN_CMD(reqfrm.data[0],rep_seq_no)) {
     if (CAN_CMD_CODE(repfrm->data[0]) == CAN_CMD_CODE_ERROR) {
       if (repfrm->data[1] == CAN_ERR_NACK) {
-        request.clt->request_complete(SBS_NOACK, request.bufsz);
+        request.clt->request_complete(SBS_NOACK, rep_recd);
       } else {
         report_err("%s: CAN_ERR %d", iname, repfrm->data[1]);
         request.clt->request_complete(SBS_RESP_ERROR, 0);
@@ -506,22 +506,20 @@ bool CAN_socket::protocol_input() {
   uint8_t *data = &repfrm->data[1];
   if (CAN_CMD_SEQ(repfrm->data[0]) == 0) {
     rep_len = repfrm->data[1];
-    if (rep_len > request.bufsz) {
+    if (rep_len > request.msg->bufsz) {
       report_err("%s: reply length %d exceeds request len %d",
-        iname, rep_len, request.bufsz);
+        iname, rep_len, request.msg->bufsz);
       consume(nc);
       return false;
     }
-    if (rep_len < request.bufsz)
-      request.bufsz = rep_len;
     --nbdat;
     ++data;
-    msg(MSG_DBG(2), "Reply length: %d", request.bufsz);
+    msg(MSG_DBG(2), "rep_recd: %d", rep_recd);
   }
   // check dlc_len against remaining request len
-  if (nbdat > request.bufsz) {
-    report_err("%s: msg overflow. cmdseq=%02X dlc=%d bufsz=%d",
-      iname, repfrm->data[0], repfrm->can_dlc, request.bufsz);
+  if (rep_recd + nbdat > rep_len) {
+    report_err("%s: msg overflow. cmdseq=%02X dlc=%d rep_len=%d",
+      iname, repfrm->data[0], repfrm->can_dlc, rep_len);
     consume(nc);
     return false;
   }
@@ -530,15 +528,15 @@ bool CAN_socket::protocol_input() {
   }
   
   // copy data into reply
-  memcpy(request.buf, data, nbdat);
-  request.buf += nbdat;
-  request.bufsz -= nbdat;
-  msg(MSG_DBG(2), "Seq:%d nbdat:%d bufsz:%d", rep_seq_no, nbdat, request.bufsz);
+  memcpy(request.msg->buf, data, nbdat);
+  request.msg->buf += nbdat;
+  rep_recd += nbdat;
+  msg(MSG_DBG(2), "Seq:%d nbdat:%d recd:%d", rep_seq_no, nbdat, rep_recd);
   // update rep_seq_no
   ++rep_seq_no;
   consume(nc);
   // If request is complete, call clt->request_complete
-  if (request.bufsz == 0) {
+  if (rep_recd == rep_len) {
     reqs.pop_front();
     // clearing request_pending after request_complete()
     // simply limits the depth of recursion
@@ -557,6 +555,11 @@ void CAN_socket::enqueue_request(can_msg_t *can_msg, uint8_t *rep_buf, int bufle
 }
 
 /**
+ * Called
+ *  - When a new request has been enqueued
+ *  - When a previous request has been completed
+ *  - When the current request's output has been flushed and more
+ *    may be required (req.msg->sb_can_seq > 0)
  */
 void CAN_socket::process_requests() {
   if (request_pending || request_processing || reqs.empty()) return;
@@ -574,6 +577,7 @@ void CAN_socket::process_requests() {
       reqfrm.data[0] = CAN_CMD(req.msg->sb_can_cmd,req.msg->sb_can_seq);
       memcpy(&reqfrm.data[1], &req.msg->sb_can[offset], nbdata);
     } else {
+      rep_recd = 0;
       if (nbdata > 6) nbdata = 6;
       reqfrm.can_dlc = nbdata+2;
       reqfrm.data[0] = CAN_CMD(req.msg->sb_can_cmd,req_seq_no);
@@ -600,13 +604,13 @@ void CAN_socket::process_requests() {
     #else
       // This is development/debugging code
       if (request_pending) {
-        for (int i = 0; i < req.bufsz; ++i) {
-          req.buf[i] = bytectr++;
+        for (int i = 0; i < req.msg->bufsz; ++i) {
+          req.msg->buf[i] = bytectr++;
         }
         request_pending = false;
         reqs.pop_front();
         request_processing = false; // this is a hack
-        req.clt->request_complete(SBS_ACK, req.bufsz);
+        req.clt->request_complete(SBS_ACK, req.msg->bufsz);
         break;
       }
     #endif

@@ -6,6 +6,7 @@
   #include <linux/can.h>
   #include <linux/can/raw.h>
 #else
+  // placeholders for testing on unsupported platforms (cygwin)
   struct can_frame {
     uint32_t can_id;
     uint8_t  can_dlc;
@@ -39,6 +40,8 @@ typedef struct {
   uint8_t sb_nb;
   uint8_t sb_can[256];
   bool end_of_request;
+  uint8_t *buf;
+  int bufsz;
 } can_msg_t;
 
 class subbusd_CAN_client : public subbusd_client {
@@ -70,11 +73,11 @@ class subbusd_CAN_client : public subbusd_client {
 class can_request {
   public:
     inline can_request(can_msg_t *can_msg, uint8_t *buf, int bufsz,
-      subbusd_CAN_client *clt) : msg(can_msg), buf(buf), bufsz(bufsz),
-      clt(clt) {}
+      subbusd_CAN_client *clt) : msg(can_msg), clt(clt) {
+        can_msg->buf = buf;
+        can_msg->bufsz = bufsz;
+      }
     can_msg_t *msg;
-    uint8_t *buf;
-    int bufsz;
     subbusd_CAN_client *clt;
 };
 
@@ -100,6 +103,7 @@ class CAN_socket : public DAS_IO::Interface {
     uint8_t req_no;
     uint8_t rep_seq_no;
     uint16_t rep_len;
+    uint16_t rep_recd;
     #ifndef HAVE_LINUX_CAN_H
     uint8_t bytectr;
     #endif
