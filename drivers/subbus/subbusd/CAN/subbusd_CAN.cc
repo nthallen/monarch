@@ -531,7 +531,8 @@ bool CAN_socket::protocol_input() {
   memcpy(request.msg->buf, data, nbdat);
   request.msg->buf += nbdat;
   rep_recd += nbdat;
-  msg(MSG_DBG(2), "Seq:%d nbdat:%d recd:%d", rep_seq_no, nbdat, rep_recd);
+  msg(MSG_DBG(2), "Seq:%d nbdat:%d recd:%d rep_len:%d",
+    rep_seq_no, nbdat, rep_recd, rep_len);
   // update rep_seq_no
   ++rep_seq_no;
   consume(nc);

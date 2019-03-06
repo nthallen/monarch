@@ -11,7 +11,7 @@ DAS_IO::AppID_t DAS_IO::AppID("test_bmm", "BMM Test Program", "V1.0");
 
 typedef struct {
   uint16_t n_words;
-  char name[0x40];
+  char name[0x50];
 } device_name_t;
 
 /* Conversion factors for output in Volts and Amps */
@@ -37,12 +37,12 @@ int main(int argc, char **argv) {
   value = P->read_subbus(0x0102);
   msg(0, "  Build No:   %u", value);
   
-  subbus_mread_req *mreq = P->pack_mread_request(0x21, "106|20@107");
+  subbus_mread_req *mreq = P->pack_mread_request(0x29, "106|28@107");
   device_name_t devname;
   uint16_t nread;
   int rv = P->mread_subbus_nw(mreq, (uint16_t*)&devname, &nread);
-  if (rv) {
-    msg(2, "Error from mread");
+  if (rv < 0) {
+    msg(2, "Error %d from mread", rv);
   } else {
     msg(0, "nr:%u/%u '%s'", nread, devname.n_words, &devname.name[0]);
   }
