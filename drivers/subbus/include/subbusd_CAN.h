@@ -17,6 +17,7 @@
   #define CAN_EFF_FLAG 0x80000000U
   #define CAN_RTR_FLAG 0x40000000U
   #define CAN_ERR_FLAG 0x20000000U
+  #define CAN_ERR_MASK 0x1FFFFFFFU
 #endif
 
 #define SUBBUSD_CAN_NAME "le-das CAN driver V1.0"
@@ -93,6 +94,7 @@ class CAN_socket : public DAS_IO::Interface {
     bool iwritten(int nb);
     const char *ascii_escape();
     bool protocol_input();
+    bool protocol_timeout();
   private:
     void process_requests();
     std::list<can_request> reqs;

@@ -461,13 +461,7 @@ bool CAN_socket::protocol_input() {
     return false;
   }
   if (repfrm->can_id & CAN_ERR_FLAG) {
-    char msgbuf[80];
-    int nc = snprintf(&msgbuf[0], 80, "ErrFrame ID:%8X DLC:%d",
-      repfrm->can_id, repfrm->can_dlc);
-    for (int i = 0; i < repfrm->can_dlc; ++i) {
-      nc += snprintf(&msgbuf[nc], 80-nc, " %02X", repfrm->data[i]);
-    }
-    report_err("%s", msgbuf);
+    report_err("%s: CAN error frame ID:0x%X", iname, repfrm->can_id & CAN_ERR_MASK);
     consume(nc);
     return false;
   }
@@ -535,13 +529,29 @@ bool CAN_socket::protocol_input() {
     rep_seq_no, nbdat, rep_recd, rep_len);
   // update rep_seq_no
   ++rep_seq_no;
-  consume(nc);
+  report_ok(nc);
+  TO.Clear();
   // If request is complete, call clt->request_complete
   if (rep_recd == rep_len) {
     reqs.pop_front();
     // clearing request_pending after request_complete()
     // simply limits the depth of recursion
     request.clt->request_complete(SBS_ACK, rep_len);
+    request_pending = false;
+    process_requests();
+  }
+  return false;
+}
+
+bool CAN_socket::protocol_timeout() {
+  TO.Clear();
+  if (request_pending) {
+    can_request request = reqs.front();
+    report_err("%s: Timeout reading from ID:0x%X", iname,
+      request.msg->device_id);
+    consume(nc);
+    reqs.pop_front();
+    request.clt->request_complete(SBS_NOACK, 0);
     request_pending = false;
     process_requests();
   }
@@ -602,6 +612,7 @@ void CAN_socket::process_requests() {
     }
     #ifdef HAVE_LINUX_CAN_H
       iwrite((const char *)&reqfrm, CAN_MTU);
+      if (request_pending) TO.set(0,10);
     #else
       // This is development/debugging code
       if (request_pending) {
