@@ -1,5 +1,6 @@
 // #undef HAVE_CAN_H
 #include <string.h>
+#include <fcntl.h>
 #include "subbusd_CAN_config.h"
 #ifdef HAVE_LINUX_CAN_H
   #include <sys/ioctl.h>
@@ -361,7 +362,7 @@ void CAN_socket::setup() {
   }
   if (fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK) == -1) {
     msg(3, "fcntl() failure in DAS_IO::Socket(%s): %s", iname,
-      std::strerror(errno));
+      strerror(errno));
   }
   // interface: "CAN0"
   addr.can_family = PF_CAN;
@@ -446,6 +447,7 @@ const char *CAN_socket::ascii_escape() {
 bool CAN_socket::protocol_input() {
   struct can_frame *repfrm = (struct can_frame*)&buf[0];
   // reassemble response as necessary
+  if (nc < CAN_MTU) return false;
   if (nc != CAN_MTU) {
     msg(0, "%s: read %d, expected %d with can_dlc=%d",
       iname, nc, CAN_MTU, repfrm->can_dlc);
@@ -534,6 +536,7 @@ bool CAN_socket::protocol_input() {
   // update rep_seq_no
   ++rep_seq_no;
   report_ok(nc);
+  msg(MSG_DBG(1), "%s: Clearing timeout", iname);
   TO.Clear();
   // If request is complete, call clt->request_complete
   if (rep_recd == rep_len) {
@@ -558,6 +561,8 @@ bool CAN_socket::protocol_timeout() {
     request.clt->request_complete(SBS_NOACK, 0);
     request_pending = false;
     process_requests();
+  } else {
+    msg(1, "%s: Timeout without request_pending", iname);
   }
   return false;
 }
@@ -621,7 +626,11 @@ void CAN_socket::process_requests() {
     }
     #ifdef HAVE_LINUX_CAN_H
       iwrite((const char *)&reqfrm, CAN_MTU);
-      if (request_pending) TO.set(0,10);
+      if (request_pending) {
+        msg(MSG_DBG(1), "%s: Setting timeout", iname);
+        TO.Set(0,100);
+        flags |= DAS_IO::Interface::Fl_Timeout;
+      }
     #else
       // This is development/debugging code
       if (request_pending) {
