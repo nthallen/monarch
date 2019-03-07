@@ -86,7 +86,7 @@ bool subbusd_CAN_client::incoming_sbreq() {
 
 void subbusd_CAN_client::request_complete(int16_t status, uint16_t n_bytes) {
   rep.hdr.status = status;
-  if (status < 0 || status == SBS_NOACK) {
+  if (status < 0) {
     status_return(status);
     return;
   }
@@ -488,8 +488,9 @@ bool CAN_socket::protocol_input() {
   }
   if (repfrm->data[0] != CAN_CMD(reqfrm.data[0],rep_seq_no)) {
     if (CAN_CMD_CODE(repfrm->data[0]) == CAN_CMD_CODE_ERROR) {
-      if (repfrm->data[1] == CAN_ERR_NACK) {
-        request.clt->request_complete(SBS_NOACK, rep_recd);
+      if (repfrm->data[2] == CAN_ERR_NACK) {
+        memset(request.msg->buf, 0, request.msg->bufsz - rep_recd);
+        request.clt->request_complete(SBS_NOACK, request.msg->bufsz);
       } else {
         report_err("%s: CAN_ERR %d", iname, repfrm->data[1]);
         request.clt->request_complete(SBS_RESP_ERROR, 0);
@@ -497,8 +498,14 @@ bool CAN_socket::protocol_input() {
     } else {
       report_err("%s: req/rep cmd,seq mismatch: %02X/%02X",
         iname, repfrm->data[0], reqfrm.data[0]);
+      consume(nc);
+      return false;
     }
-    consume(nc);
+    reqs.pop_front();
+    request_pending = false;
+    report_ok(nc);
+    TO.Clear();
+    process_requests();
     return false;
   }
   // if seq == 0, check len with request and update
@@ -558,7 +565,8 @@ bool CAN_socket::protocol_timeout() {
       request.msg->device_id);
     consume(nc);
     reqs.pop_front();
-    request.clt->request_complete(SBS_NOACK, 0);
+    memset(request.msg->buf, 0, request.msg->bufsz-rep_recd);
+    request.clt->request_complete(SBS_NOACK, request.msg->bufsz);
     request_pending = false;
     process_requests();
   } else {
@@ -628,7 +636,7 @@ void CAN_socket::process_requests() {
       iwrite((const char *)&reqfrm, CAN_MTU);
       if (request_pending) {
         msg(MSG_DBG(1), "%s: Setting timeout", iname);
-        TO.Set(0,100);
+        TO.Set(0,10);
         flags |= DAS_IO::Interface::Fl_Timeout;
       }
     #else

@@ -23,8 +23,12 @@ typedef struct {
 
 void identify_board(subbuspp *P, uint8_t bdid) {
   uint16_t bdid_hi = bdid<<8;
-  msg(0,"read_subbus(0x%02X03)", bdid);
-  uint16_t value = P->read_subbus(bdid_hi | 0x03);
+  msg(0,"read_ack(0x%02X03)", bdid);
+  uint16_t value;
+  if (! P->read_ack(bdid_hi | 0x03, &value)) {
+    msg(2, "No acknowledge from board %d", bdid);
+    return;
+  }
   msg(0, "  Board Type: %d", value>>8);
   msg(0, "  Board S/N:  %d", value & 0xFF);
   value = P->read_subbus(bdid_hi | 0x02);
@@ -40,6 +44,26 @@ void identify_board(subbuspp *P, uint8_t bdid) {
     msg(2, "Error %d from mread", rv);
   } else {
     msg(0, "nr:%u/%u '%s'", nread, devname.n_words, &devname.name[0]);
+  }
+}
+
+void test_ack(subbuspp *P, uint16_t addr) {
+  // msg(0, "Test read from non-existant address on existing board");
+  uint16_t value;
+  if (! P->read_ack(addr, &value)) {
+    msg(2, "No acknowledge from address 0x%04X", addr);
+  } else {
+    msg(0, "ACK from addr 0x%04X", addr);
+  }
+}
+
+void test_nack(subbuspp *P, uint16_t addr) {
+  // msg(0, "Test read from non-existant address on existing board");
+  uint16_t value;
+  if (! P->read_ack(addr, &value)) {
+    msg(0, "No acknowledge from address 0x%04X", addr);
+  } else {
+    msg(2, "Unexpected ACK from addr 0x%04X", addr);
   }
 }
 
@@ -62,6 +86,14 @@ int main(int argc, char **argv) {
   msg(0, "  V2: %5.2lf V", PM0V2*ADINCONV28);
   msg(0, "   I: %6.3lf A", PM0I1*ICONV50);
   
+  msg(0, "Test read from non-existant board");
   identify_board(P, 2);
-  P->subbus_quit();
+  
+  // test_ack(P, 0x0121);
+  // test_nack(P, 0x0140);
+  // test_ack(P, 0x0121);
+  // test_nack(P, 0x0140);
+
+  // P->subbus_quit();
+  return 0;
 }

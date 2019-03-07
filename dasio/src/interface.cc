@@ -103,7 +103,9 @@ bool Interface::iwritev(struct iovec *iov, int nparts) {
  * @return true if a fatal error occurs
  */
 bool Interface::iwrite(const char *str, unsigned int nc, unsigned int cp) {
-  nl_assert(fd >= 0);
+  if (fd < 0) {
+    msg(4, "%s: Connection closed unexpectedly", iname);
+  }
   nl_assert(obuf_empty());
   pvt_iov.iov_base = (void *)(str+cp);
   pvt_iov.iov_len = nc - cp;
