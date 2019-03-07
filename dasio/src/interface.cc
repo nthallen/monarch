@@ -183,7 +183,7 @@ bool Interface::tm_sync() {
   return false;
 }
 
-bool Interface::closed() {
+bool Interface::process_eof() {
   return true;
 }
 
@@ -205,15 +205,15 @@ void Interface::set_ibufsize(int bufsz) {
 }
 
 bool Interface::fillbuf(int N) {
-  int i;
+  int nb_read;
   if (!buf) msg(4, "Ser_Sel::fillbuf with no buffer");
   if (N > bufsize)
     msg(4, "Ser_Sel::fillbuf(N) N > bufsize: %d > %d",
       N, bufsize);
   if (nc > N-1) return false;
   ++n_fills;
-  i = read( fd, &buf[nc], N - 1 - nc );
-  if ( i < 0 ) {
+  nb_read = read( fd, &buf[nc], N - 1 - nc );
+  if ( nb_read < 0 ) {
     if ( errno == EAGAIN ) {
       ++n_eagain;
     } else if (errno == EINTR) {
@@ -222,11 +222,11 @@ bool Interface::fillbuf(int N) {
       return read_error(errno);
     }
     return false;
-  } else if (i == 0) {
+  } else if (nb_read == 0) {
     close();
-    return closed();
+    return process_eof();
   }
-  nc += i;
+  nc += nb_read;
   buf[nc] = '\0';
   return false;
 }

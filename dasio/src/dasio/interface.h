@@ -175,7 +175,7 @@ class Interface {
      * 
      * @return true if the event loop should terminate.
      */
-    virtual bool closed();
+    virtual bool process_eof();
     
     /**
      * Shuts down the connection. Note that this function does not

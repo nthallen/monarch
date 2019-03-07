@@ -29,7 +29,7 @@ void tm_client::init(int bufsize_in, int non_block, const char *srcfile) {
   next_minor_frame = 0;
   majf_row = 0;
   minf_row = 0;
-  tm_init();
+  tm_expect_hdr();
   buf = new char[bufsize];
   tm_info_ready = false;
   tm_quit = false;
@@ -73,10 +73,11 @@ int tm_client::process_eof() {
 }
 
 /** 
- *  Edited out as of 6 March 2019 for le-dasng
+ *  Edited 7 March 2019 for le-dasng
  */
-/* void tm_client::read() {
-  int nb;
+bool tm_client::app_input() {
+  if (tm_quit) return true;
+  /* int nb;
   do {
     nb = (bfr_fd == -1) ? 0 :
         ::read( bfr_fd, buf + bytes_read, bufsize-bytes_read);
@@ -87,21 +88,21 @@ int tm_client::process_eof() {
     }
     if (nb <= 0) {
       bytes_read = 0;
-      tm_init();
+      tm_expect_hdr();
       // toread = sizeof(tm_hdr_t);
       if ( process_eof() ) return;
     }
     if ( tm_quit ) return; // possible if set from an outside command
   } while (nb == 0 );
-  bytes_read += nb;
-  if ( bytes_read >= toread ) {
+  bytes_read += nb; */
+  if ( nc >= toread ) {
     if (tm_msg->hdr.tm_id != TMHDR_WORD) {
       seek_tmid();
     } else {
       process_message();
     }
   }
-} */
+}
 
 /** This is the basic operate loop for a simple extraction
  *  Edited out as of 6 March 2019 for le-dasng
@@ -151,7 +152,7 @@ const char *tm_client::context() {
   return "";
 }
 
-void tm_client::tm_init() {
+void tm_client::tm_expect_hdr() {
   tm_state = TM_STATE_HDR;
   toread = sizeof(tm_hdr_t);
 }
@@ -166,7 +167,7 @@ void tm_client::seek_tmid() {
         msg(1, "%sDiscarding %d bytes in seek_tmid()", context(), i);
         memmove(buf, buf+i, bytes_read - i);
         bytes_read -= i;
-        tm_init();
+        tm_expect_hdr();
         return;
       }
     }
@@ -174,7 +175,7 @@ void tm_client::seek_tmid() {
   msg(1, "%sDiscarding %d bytes (to EOB) in seek_tmid()",
     context(), bytes_read);
   bytes_read = 0;
-  tm_init();
+  tm_expect_hdr();
 }
   
 void tm_client::process_message() {
@@ -236,7 +237,7 @@ void tm_client::process_message() {
         } else if ( bytes_read == toread ) {
           bytes_read = 0;
         }
-        tm_init();
+        tm_expect_hdr();
         break;
       default: msg(4, "%sInvalid tm_state %d", context(), tm_state);
     }

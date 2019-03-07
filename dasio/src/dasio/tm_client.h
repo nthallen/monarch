@@ -26,10 +26,10 @@ class tm_client : public DAS_IO::Client {
     virtual void process_tstamp();
     virtual int process_eof();
     int bfr_fd;
-    //void read();
+    bool app_input();
     bool tm_quit;
     virtual const char *context();
-    void tm_init();
+    void tm_expect_hdr();
     void seek_tmid();
     tm_msg_t *tm_msg;
     int nbQrow; // may differ from nbrow if stripping MFCtr & Synch

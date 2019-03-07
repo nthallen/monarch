@@ -119,7 +119,7 @@ class Socket : public Interface {
      * true.
      * @return true it the event loop should exit
      */
-    bool closed();
+    bool process_eof();
     
     /**
      * Shut down the connection.
