@@ -243,7 +243,7 @@ bool Interface::fillbuf(int N, int flag) {
       return read_error(errno);
     }
     return false;
-  } else if (i == 0 && !(flag & Fl_Read)) {
+  } else if (i == 0 && (flag & Fl_Read)) {
     close();
     return closed();
   }
