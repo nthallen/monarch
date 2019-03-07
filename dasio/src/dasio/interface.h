@@ -205,11 +205,12 @@ class Interface {
      */
     inline bool fillbuf() { return fillbuf(bufsize); }
     /**
+     * @param N The maximum number of characters desired
      * Reads up to N-nc characters into buf. If an error is encountered,
      * will return the response from read_error(errno)
      * @return true on an error requiring termination of the driver 
      */
-    bool fillbuf(int N);
+    bool fillbuf(int N, int flag = Fl_Read);
     /**
      * Remove nchars from the front of buf, and shift the remain
      * characters, if any, to the beginning of the buffer, adjusting
@@ -218,7 +219,11 @@ class Interface {
      * reported at termination. If n_fills is much greater than n_empties,
      * you may need to adjust your min and time settings for more efficient
      * operation.
+     * The flag argument is used to inform the response to reading 0 bytes.
+     * If we are processing a timeout and did not actually see a read flag,
+     * then we won't interpret 0 bytes as EOF.
      * @param nchars number of characters to remove from front of buffer
+     * @flag The flag argument from ProcessData().
      */
     void consume(int nchars);
     /**

@@ -65,7 +65,7 @@ bool Interface::ProcessData(int flag) {
   if ((flags & flag & gflag(0)) && tm_sync())
     return true;
   if ((flags&Fl_Read) && (flags&flag&(Fl_Read|Fl_Timeout))) {
-    if (fillbuf()) return true;
+    if (fillbuf(bufsize, flag)) return true;
     if (fd < 0) return false;
     if (protocol_input()) return true;
   }
@@ -225,7 +225,7 @@ void Interface::set_ibufsize(int bufsz) {
   }
 }
 
-bool Interface::fillbuf(int N) {
+bool Interface::fillbuf(int N, int flag) {
   int i;
   if (!buf) msg(4, "Ser_Sel::fillbuf with no buffer");
   if (N > bufsize)
@@ -243,7 +243,7 @@ bool Interface::fillbuf(int N) {
       return read_error(errno);
     }
     return false;
-  } else if (i == 0) {
+  } else if (i == 0 && !(flag & Fl_Read)) {
     close();
     return closed();
   }
