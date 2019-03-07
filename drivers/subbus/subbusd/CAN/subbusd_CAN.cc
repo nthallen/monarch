@@ -86,7 +86,7 @@ bool subbusd_CAN_client::incoming_sbreq() {
 
 void subbusd_CAN_client::request_complete(int16_t status, uint16_t n_bytes) {
   rep.hdr.status = status;
-  if (status < 0) {
+  if (status < 0 || status == SBS_NOACK) {
     status_return(status);
     return;
   }
@@ -103,7 +103,7 @@ void subbusd_CAN_client::request_complete(int16_t status, uint16_t n_bytes) {
       break;
     case SBRT_US: // Return unsigned short value
       if (n_bytes != 2) {
-        report_err("%s: Expected 2 bytes, received %d", n_bytes);
+        report_err("%s: Expected 2 bytes, received %d", iname, n_bytes);
       } else report_ok();
       iwrite((const char*)&rep, sizeof(subbusd_rep_hdr_t)+2);
       break;
