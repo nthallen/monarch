@@ -1,6 +1,7 @@
 <package> lgr
 <include> tm_client msg
 <include> "lgr.h"
+<include> "dasio/tm.h"
 
 <init> lgr_init(argc, argv);
 

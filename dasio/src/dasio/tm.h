@@ -232,7 +232,7 @@ extern char *TM_buf;
 #endif
 
 extern const char *tm_dev_name(const char *base);
-extern int tm_open_name(const char *name, const char *node, int flags);
+extern int tm_open_name(const char *name, const char *node, bool flags);
 
 /* Command Interpreter Client (CIC) and Server (CIS) Utilities
    Message-level definition is in cmdalgo.h

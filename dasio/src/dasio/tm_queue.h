@@ -10,9 +10,11 @@
 
 // Define a hierarchy here. A tmq_descriptor can either hold
 // a timestamp or reference data rows in the tmq.
-// This works within DG because we don't have readers starting
+// This works within tm_gen because we don't have readers starting
 // and stopping. We have exactly one reader that will go
 // through all the data.
+
+namespace DAS_IO {
 
 enum tmqtype { tmq_tstamp, tmq_data  };
 
@@ -78,5 +80,7 @@ class tm_queue {
     tmq_ref *last_tmqr;
     int tmq_low_water;
 };
+
+}
 
 #endif

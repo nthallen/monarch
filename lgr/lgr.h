@@ -6,8 +6,8 @@
 #include "dasio/tm_client.h"
 
 #ifdef __cplusplus
-
-  class tmc_lgr : public tm_client {
+using namespace DAS_IO;
+  class tmc_lgr : public DAS_IO::tm_client {
     public:
       tmc_lgr();
       static char *mlf_config;

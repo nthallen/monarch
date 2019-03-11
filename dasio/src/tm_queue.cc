@@ -4,6 +4,8 @@
 #include "nl.h"
 #include "nl_assert.h"
 
+namespace DAS_IO {
+
 /**
  * Base class for tmq_data_ref and tmq_tstamp_ref
  * These make up part of the control structure of tm_queue.
@@ -60,10 +62,10 @@ tm_queue::tm_queue( int n_Qrows, int low_water ) {
 }
 
 /**
- * General DG initialization. Assumes tm_info structure has been defined.
+ * General tm_gen initialization. Assumes tm_info structure has been defined.
  * Establishes the connection to the TMbfr, specifying the O_NONBLOCK option for collection.
  * Initializes the queue itself.
- * Creates dispatch queue and registers "DG/cmd" device and initializes timer.
+ * Creates dispatch queue and registers "tm_gen/cmd" device and initializes timer.
  */
 void tm_queue::init() {
   // Determine the output_tm_type
@@ -202,4 +204,6 @@ void tm_queue::retire_tstamp( tmq_tstamp_ref *tmqts ) {
   if ( first_tmqr == 0 ) last_tmqr = first_tmqr;
   unlock();
   delete(tmqts);
+}
+
 }

@@ -14,6 +14,8 @@
 #include "nl.h"
 #include "nl_assert.h"
 
+namespace DAS_IO {
+
 unsigned int tm_client::next_minor_frame;
 unsigned int tm_client::minf_row;
 unsigned int tm_client::majf_row;
@@ -23,7 +25,7 @@ void tm_set_srcnode(char *nodename) {
   tm_client::srcnode = nodename;
 }
 
-void tm_client::init(int bufsize_in, int non_block, const char *srcfile) {
+void tm_client::init(int bufsize_in, const char *srcfile, bool non_block) {
   bufsize = bufsize_in;
   bytes_read = 0;
   next_minor_frame = 0;
@@ -34,13 +36,13 @@ void tm_client::init(int bufsize_in, int non_block, const char *srcfile) {
   tm_info_ready = false;
   tm_quit = false;
   if ( buf == 0)
-    report_err( 3, "Memory allocation failure in tm_client::tm_client");
+    report_err(/* 3, */"Memory allocation failure in tm_client::tm_client");
   tm_msg = (tm_msg_t *)buf;
-  non_block = non_block ? O_NONBLOCK : 0;
-  bfr_fd =
+  non_block = non_block ? O_NONBLOCK : false;
+  /* bfr_fd =
     srcfile ?
-    tm_open_name( srcfile, srcnode, O_RDONLY | non_block ) :
-    -1;
+    tm_open_name( srcfile, srcnode, non_block ) :
+    -1; */
   if (bfr_fd != -1) {
     int nb1, nb2;
     char *filename;
@@ -53,23 +55,16 @@ void tm_client::init(int bufsize_in, int non_block, const char *srcfile) {
     nl_assert(nb1 == nb2);
     fp = fopen( filename, "w" );
     if (fp) fclose(fp);
-    else report_err(2, "Unable to create run file '%s'", filename);
+    else report_err(/*2, */"Unable to create run file '%s'", filename);
   }
 }
 
-tm_client::tm_client(int bufsize_in, int non_block, char *srcfile) {
-  //init(bufsize_in, non_block, srcfile );
-  DAS_IO::Client("tm_client", bufsize_in, "TM/DCf", "TM/DCo");
-}
+tm_client::tm_client(int bufsize_in, bool fast) 
+  : DAS_IO::Client("tm_client", bufsize_in, "TM", (fast ? "DCf" : "DCo")) {}
 
-tm_client::tm_client(int bufsize_in, int fast, int non_block) {
-  //init(bufsize_in, non_block, tm_dev_name( fast ? "TM/DCf" : "TM/DCo" ));
-  DAS_IO::Client("tm_client", bufsize_in, "TM/DCf", "TM/DCo");
-}
-
-int tm_client::process_eof() {
+bool tm_client::process_eof() {
   tm_quit = true;
-  return 1;
+  return true;
 }
 
 /** 
@@ -137,7 +132,7 @@ void tm_client::init_tm_type() {
 
 void tm_client::process_init() {
   if ( memcmp( &tm_info, &tm_msg->body.init.tm, sizeof(tm_dac_t) ) )
-    report_err(3, "tm_dac differs");
+    report_err(/*3, */"tm_dac differs");
   tm_info.nrowminf = tm_msg->body.init.nrowminf;
   tm_info.max_rows = tm_msg->body.init.max_rows;
   tm_info.t_stmp = tm_msg->body.init.t_stmp;
@@ -249,11 +244,13 @@ void tm_client::resize_buffer( int bufsize_in ) {
   bufsize = bufsize_in;
   buf = new char[bufsize];
   if ( buf == 0)
-    report_err( 3,
-       "Memory allocation failure in tm_client::resize_buffer");
+    report_err(/* 3,
+       */"Memory allocation failure in tm_client::resize_buffer");
 }
 
 void tm_client::load_tmdac(char *path) {
   ::load_tmdac(path);
   init_tm_type();
+}
+
 }

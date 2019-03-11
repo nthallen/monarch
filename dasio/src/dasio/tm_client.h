@@ -5,16 +5,19 @@
 #define TM_CLIENT_H_INCLUDED
 #include <stdio.h>
 #include "tm.h"
+#include "dasio/client.h"
 
 #ifdef __cplusplus
+
+namespace DAS_IO {
 
 /**
  * \brief Defines interface for tm client connection to TMbfr
  */
 class tm_client : public DAS_IO::Client {
   public:
-    tm_client(int bufsize_in, bool fast = false, bool non_block = false);
-    tm_client(int bufsize_in, bool non_block, char *srcfile);
+    tm_client(int bufsize_in, char *srcfile, bool non_block = false);
+    tm_client(int bufsize_in, bool fast);
     void operate(); // event loop
     void resize_buffer(int bufsize_in);
     void load_tmdac(char *path);
@@ -24,7 +27,7 @@ class tm_client : public DAS_IO::Client {
     virtual void process_data() = 0;
     virtual void process_init();
     virtual void process_tstamp();
-    virtual int process_eof();
+    virtual bool process_eof();
     int bfr_fd;
     bool app_input();
     bool tm_quit;
@@ -45,7 +48,7 @@ class tm_client : public DAS_IO::Client {
     unsigned int toread; /// number of bytes needed before next action
     bool tm_info_ready;
     char *buf;
-    void init(int bufsize_in, bool non_block, const char *srcfile);
+    void init(int bufsize_in, const char *srcfile, bool non_block);
 };
 
 #define TM_STATE_HDR 0
@@ -54,12 +57,14 @@ class tm_client : public DAS_IO::Client {
 class ext_tm_client : public tm_client {
   public:
     inline ext_tm_client(int bufsize_in, bool fast = false, bool non_block = false) :
-      tm_client(bufsize_in, fast, non_block) {}
+      tm_client(bufsize_in, fast) {}
   protected:
     void process_data();
 };
 
 extern void tminitfunc();
+
+}
 
 extern "C" {
 #endif

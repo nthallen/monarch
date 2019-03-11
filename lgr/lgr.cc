@@ -7,8 +7,10 @@
 #include "dasio/msg.h"
 #include "nl_assert.h"
 #include "oui.h"
-#include "dasio/tm_client.h"
 #include "lgr.h"
+#include "dasio/tm_client.h"
+
+using namespace DAS_IO;
 
 void lgr_init( int argc, char **argv ) {
   int c;
@@ -29,7 +31,7 @@ void lgr_init( int argc, char **argv ) {
 char *tmc_lgr::mlf_config;
 unsigned int tmc_lgr::file_limit = 4096*3;
 
-tmc_lgr::tmc_lgr() : tm_client( 4096, 0, 0) {
+tmc_lgr::tmc_lgr() : tm_client( 4096, false) {
   mlf = mlf_init( 3, 60, 1, "LOG", "dat", mlf_config );
   ofp = NULL;
 }
@@ -129,7 +131,7 @@ void tminitfunc() {}
 int main( int argc, char **argv ) {
   oui_init_options(argc, argv);
   tmc_lgr tmc;
-  tmc.operate();
+  //tmc.operate(); //we eventually need to figure out a new operate() method
   return 0;
 }
 
