@@ -1,48 +1,20 @@
-# project(oui)
+cmake_minimum_required(VERSION 2.8.8)
+cmake_policy(SET CMP0048 NEW)
+project(oui VERSION 2.0.0)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_program(LEX_EXE
-    flex
-)
-if(LEX_EXE STREQUAL "LEX_EXE-NOTFOUND")
-    message(FATAL_ERROR "dear user, plase install flex!")
-endif(LEX_EXE STREQUAL "LEX_EXE-NOTFOUND")
+find_package(FLEX REQUIRED)
+find_package(BISON REQUIRED)
 
-find_program(YACC_EXE
-    bison
-)
-if(YACC_EXE STREQUAL "YACC_EXE-NOTFOUND")
-    message(FATAL_ERROR "dear user, plase install bison!")
-endif(YACC_EXE STREQUAL "YACC_EXE-NOTFOUND")
+FLEX_TARGET(OUI_Scanner yylex.l ${CMAKE_CURRENT_BINARY_DIR}/yylex.c)
+BISON_TARGET(OUI_Parser ouigrmr.y ${CMAKE_CURRENT_BINARY_DIR}/ouigrmr.c)
 
-# reuseable cmake macro for yacc
-MACRO(YACC_FILE _filename)
-    GET_FILENAME_COMPONENT(_basename ${_filename} NAME_WE)
-    ADD_CUSTOM_COMMAND(
-        OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.c
-                ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.h
-        COMMAND ${YACC_EXE} -d
-                --output=${_basename}.c
-                ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
-        DEPENDS ${_filename}
-    )
-ENDMACRO(YACC_FILE)
-
-# reuseable cmake macro for lex
-MACRO(LEX_FILE _filename)
-    GET_FILENAME_COMPONENT(_basename ${_filename} NAME_WE)
-    ADD_CUSTOM_COMMAND(
-        OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.c
-        COMMAND ${LEX_EXE} -i -L
-                -o${_basename}.c
-                ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
-        DEPENDS ${_filename} )
-ENDMACRO(LEX_FILE)
-
-YACC_FILE(ouigrmr.y)
-LEX_FILE(yylex.l)
-
-add_executable(oui llop.c opnifile.c ouigrmr.c ouiinit.c ouimain.c
-      output.c sortpkg.c yylex.c)
+add_executable(oui llop.c opnifile.c ouiinit.c ouimain.c
+      output.c sortpkg.c
+      ${BISON_OUI_Parser_OUTPUT_SOURCE}
+      ${FLEX_OUI_Scanner_OUTPUTS})
 
 target_compile_definitions(oui PRIVATE
   -DPKGDATADIR="${CMAKE_INSTALL_PREFIX}/share/oui")

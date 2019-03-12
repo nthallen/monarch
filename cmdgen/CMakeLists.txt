@@ -1,50 +1,22 @@
-# project(cmdgen)
+cmake_minimum_required(VERSION 2.8.8)
+cmake_policy(SET CMP0048 NEW)
+project(cmdgen VERSION 2.0.0)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_program(LEX_EXE
-    flex
-)
-if(LEX_EXE STREQUAL "LEX_EXE-NOTFOUND")
-    message(FATAL_ERROR "dear user, plase install flex!")
-endif(LEX_EXE STREQUAL "LEX_EXE-NOTFOUND")
+find_package(FLEX REQUIRED)
+find_package(BISON REQUIRED)
 
-find_program(YACC_EXE
-    bison
-)
-if(YACC_EXE STREQUAL "YACC_EXE-NOTFOUND")
-    message(FATAL_ERROR "dear user, plase install bison!")
-endif(YACC_EXE STREQUAL "YACC_EXE-NOTFOUND")
+FLEX_TARGET(CmdScanner yylex.l ${CMAKE_CURRENT_BINARY_DIR}/yylex.c)
+BISON_TARGET(CmdParser yyparse.y ${CMAKE_CURRENT_BINARY_DIR}/yyparse.c)
 
-# reuseable cmake macro for yacc
-MACRO(YACC_FILE _filename)
-    GET_FILENAME_COMPONENT(_basename ${_filename} NAME_WE)
-    ADD_CUSTOM_COMMAND(
-        OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.c
-                ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.h
-        COMMAND ${YACC_EXE} -d -t -l
-                --output=${_basename}.c
-                ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
-        DEPENDS ${_filename}
-    )
-ENDMACRO(YACC_FILE)
-
-# reuseable cmake macro for lex
-MACRO(LEX_FILE _filename)
-    GET_FILENAME_COMPONENT(_basename ${_filename} NAME_WE)
-    ADD_CUSTOM_COMMAND(
-        OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}.c
-        COMMAND ${LEX_EXE} -i
-                -o${_basename}.c
-                ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
-        DEPENDS ${_filename} )
-ENDMACRO(LEX_FILE)
-
-YACC_FILE(yyparse.y)
-LEX_FILE(yylex.l)
 set(CURSES_NEED_NCURSES, TRUE)
 
 add_executable(cmdgen cmdgen.c dstructs.c interfaces.c prompts.c
-    rules.c states.c trie.c vunion.c yyparse.c yylex.c
-    cmdgenoui.c)
+    rules.c states.c trie.c vunion.c cmdgenoui.c
+    ${BISON_CmdParser_OUTPUT_SOURCE}
+    ${FLEX_CmdScanner_OUTPUTS})
 target_include_directories(cmdgen PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${le_das_SOURCE_DIR}/nl/src
