@@ -4,13 +4,13 @@
 #include <signal.h>
 #include <errno.h>
 #include <unistd.h>
-#include <sys/neutrino.h>
-#include <sys/netmgr.h>
-#include <sys/iomsg.h>
-#include "tm.h"
-#include "tm_gen_Resmgr.h"
-#include "tm_gen_cmd.h"
-#include "tm_gen_tmr.h"
+#include <sys/neutrino.h> //QNX
+#include <sys/netmgr.h> //QNX
+#include <sys/iomsg.h> //QNX
+#include "dasio/tm.h"
+#include "dasio/tm_gen_Resmgr.h"
+#include "dasio/tm_gen_cmd.h"
+#include "dasio/tm_gen_tmr.h"
 
 int tm_gen_tmr_pulse_func( message_context_t *ctp, int code,
         unsigned flags, void *handle ) {

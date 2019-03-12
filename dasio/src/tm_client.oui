@@ -5,9 +5,10 @@
 	-t <TMbfr node>
 <switch>
   case 't':
-    tm_set_srcnode(optarg);
+    //tm_set_srcnode(optarg);
+    msg(1, "-t argument coming soon!");
     break;
 
 <package> msghdr_default
 <vars>
-  char *msg_hdr_default = "tm_client";
+  const char *msg_hdr_default = "tm_client";

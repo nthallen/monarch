@@ -1,8 +1,8 @@
 /* DG.c */
 #include <errno.h>
 #include <sys/uio.h>
-#include "tm_gen.h"
-#include "msg.h"
+#include "dasio/tm_gen.h"
+#include "dasio/msg.h"
 
 tm_generator::tm_generator(int nQrows, int low_water)
     : tm_queue(nQrows,low_water) {

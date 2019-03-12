@@ -1,6 +1,6 @@
 // Include tm_gen_data.h first here to make sure our definition of
 // IOFUNC_ATTR_T gets used in this file
-#include "tm_gen_data.h"
+#include "dasio/tm_gen_data.h"
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include "nl.h"
 #include "nl_assert.h"
-#include "tm.h"
+#include "dasio/tm.h"
 
 resmgr_connect_funcs_t tm_gen_data::connect_funcs;
 resmgr_io_funcs_t tm_gen_data::io_funcs;

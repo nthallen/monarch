@@ -1,8 +1,8 @@
 #ifndef TM_GEN_TMR_H
 #define TM_GEN_TMR_H
 
-#include <sys/iofunc.h>
-#include <sys/dispatch.h>
+#include <sys/iofunc.h> //QNX
+#include <sys/dispatch.h> //QNX
 #include <time.h>
 #include <stdint.h>
 #include "tm_gen_Resmgr.h"

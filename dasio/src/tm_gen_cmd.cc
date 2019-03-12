@@ -5,11 +5,11 @@
 #include <fcntl.h>
 #include <string.h>
 #include <ctype.h>
-#include "tm_gen_Resmgr.h"
-#include "tm_gen_cmd.h"
+#include "dasio/tm_gen_Resmgr.h"
+#include "dasio/tm_gen_cmd.h"
 #include "nl.h"
 #include "nl_assert.h"
-#include "tm.h"
+#include "dasio/tm.h"
 
 static tm_gen_cmd *Cmd;
 resmgr_connect_funcs_t tm_gen_cmd::connect_funcs;

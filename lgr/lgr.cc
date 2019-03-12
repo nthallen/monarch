@@ -9,8 +9,11 @@
 #include "oui.h"
 #include "lgr.h"
 #include "dasio/tm_client.h"
+#include "dasio/appid.h"
 
 using namespace DAS_IO;
+
+AppID_t DAS_IO::AppID("lgr", "telemetry data logger", "V2.0");
 
 void lgr_init( int argc, char **argv ) {
   int c;
@@ -79,7 +82,7 @@ void tmc_lgr::write_tstamp() {
   nl_assert( ofp != NULL );
   static tm_hdr_t ts_hdr = { TMHDR_WORD, TMTYPE_TSTAMP };
   lgr_write(&ts_hdr, sizeof(tm_hdr_t), "writing tstamp hdr" );
-  lgr_write( &tm_info.t_stmp, sizeof(tstamp_t), "writing tstamp" ); 
+  lgr_write( &tm_info.t_stmp, sizeof(tstamp_t), "writing tstamp" );
 }
 
 void tmc_lgr::process_data_t3() {

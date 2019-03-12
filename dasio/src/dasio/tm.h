@@ -259,7 +259,7 @@ void tma_new_state(unsigned int partition, const char *name);
 void tma_new_time(unsigned int partition, long int t1, const char *next_cmd);
 void tma_hold(int hold);
 
-/* tmdac.c */
+/* tmdac.cc */
 void load_tmdac( const char *path );
 
 #ifdef __cplusplus

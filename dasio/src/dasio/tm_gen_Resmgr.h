@@ -1,9 +1,9 @@
 #ifndef RESMGR_H_
 #define RESMGR_H_
 
-#include <sys/iofunc.h>
-#include <sys/dispatch.h>
-#include <sys/resmgr.h>
+#include <sys/iofunc.h> //QNX
+#include <sys/dispatch.h> //QNX
+#include <sys/resmgr.h> //QNX
 #include <list>
 
 class tm_gen_dispatch;
