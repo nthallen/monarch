@@ -12,6 +12,7 @@ find_package(BISON REQUIRED)
 
 FLEX_TARGET(OUI_Scanner yylex.l ${CMAKE_CURRENT_BINARY_DIR}/yylex.c)
 BISON_TARGET(OUI_Parser ouigrmr.y ${CMAKE_CURRENT_BINARY_DIR}/ouigrmr.c)
+ADD_FLEX_BISON_DEPENDENCY(OUI_Scanner OUI_Parser)
 
 add_executable(oui llop.c opnifile.c ouiinit.c ouimain.c
       output.c sortpkg.c

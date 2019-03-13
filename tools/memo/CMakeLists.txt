@@ -1,25 +1,26 @@
 cmake_minimum_required(VERSION 2.8.8)
 cmake_policy(SET CMP0048 NEW)
-project(le-das-meo VERSION 2.0.0)
+project(le-das-memo VERSION 2.0.0)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # This should somehow be put into a module
-find_program(OUI_EXE oui)
-if(OUI_EXE STREQUAL "OUI_EXE-NOTFOUND")
-    message(FATAL_ERROR "oui not found!")
-endif(OUI_EXE STREQUAL "OUI_EXE-NOTFOUND")
+# find_program(OUI_EXE oui
+             # HINTS ${le_das_tools_BINARY_DIR}/oui/src)
+# if(OUI_EXE STREQUAL "OUI_EXE-NOTFOUND")
+    # message(FATAL_ERROR "oui not found!")
+# endif(OUI_EXE STREQUAL "OUI_EXE-NOTFOUND")
 # reuseable cmake macro for oui
 MACRO(OUI_FILE _filename)
     GET_FILENAME_COMPONENT(_basename ${_filename} NAME_WE)
     ADD_CUSTOM_COMMAND(
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.cc
-        COMMAND ${OUI_EXE}
+        COMMAND ${le_das_tools_BINARY_DIR}/oui/src/oui
                 -o${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.cc
                 ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        DEPENDS ${_filename} )
+        DEPENDS ${_filename} ${le_das_tools_BINARY_DIR}/oui/src/oui )
 ENDMACRO(OUI_FILE)
 
 if (${CMAKE_CROSSCOMPILING})

@@ -13,7 +13,7 @@ target_include_directories(dasio PUBLIC
 target_include_directories(dasio PRIVATE
   ${CMAKE_SOURCE_DIR}/tm/src
   ${CMAKE_SOURCE_DIR}/nl/src
-  ${CMAKE_SOURCE_DIR}/cmdgen
+  ${CMAKE_SOURCE_DIR}/tools/cmdgen
 )
 install(TARGETS dasio
   ARCHIVE

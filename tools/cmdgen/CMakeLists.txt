@@ -12,6 +12,7 @@ find_package(BISON REQUIRED)
 
 FLEX_TARGET(CmdScanner yylex.l ${CMAKE_CURRENT_BINARY_DIR}/yylex.c)
 BISON_TARGET(CmdParser yyparse.y ${CMAKE_CURRENT_BINARY_DIR}/yyparse.c)
+ADD_FLEX_BISON_DEPENDENCY(CmdScanner CmdParser)
 
 set(CURSES_NEED_NCURSES, TRUE)
 
@@ -22,7 +23,7 @@ add_executable(cmdgen cmdgen.c dstructs.c interfaces.c prompts.c
 target_include_directories(cmdgen PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${le_das_SOURCE_DIR}/nl/src
-  ${le_das_SOURCE_DIR}/oui/src)
+  ${le_das_tools_SOURCE_DIR}/oui/src)
 target_link_libraries(cmdgen nl)
 install(TARGETS cmdgen RUNTIME
         DESTINATION bin)
