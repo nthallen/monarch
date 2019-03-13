@@ -71,8 +71,7 @@
   }
   
   bool memo_client::iwritten(int nb) {
-    ocp += nb;
-    return (is_negotiated() && ocp >= onc);
+    return (is_negotiated() && obuf_empty());
   }
 
 static int write_to_memo = 0, write_to_stderr = 0, write_to_file = 0;

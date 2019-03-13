@@ -12,6 +12,8 @@ add_library(dasio interface.cc ascii_escape.cc not_parsed.cc serial.cc
 target_include_directories(dasio PUBLIC
   ${CMAKE_BINARY_DIR}/dasio/src
   ${CMAKE_SOURCE_DIR}/dasio/src
+)
+target_include_directories(dasio PRIVATE
   ${CMAKE_SOURCE_DIR}/tm/src
   ${CMAKE_SOURCE_DIR}/nl/src
   ${CMAKE_SOURCE_DIR}/cmdgen

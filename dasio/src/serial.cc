@@ -118,7 +118,7 @@ void Serial::update_tc_vmin(int new_vmin) {
 void Serial::flush_input() {
   do {
     nc = cp = 0;
-    if (fillbuf()) return;
+    if (fillbuf(bufsize, Fl_Timeout)) return;
   } while (nc > 0);
 }
 

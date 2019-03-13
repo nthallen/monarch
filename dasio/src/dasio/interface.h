@@ -5,6 +5,7 @@
 #ifndef DAS_IO_INTERFACE_H_INCLUDED
 #define DAS_IO_INTERFACE_H_INCLUDED
 #include <string>
+#include <sys/uio.h>
 #include "timeout.h"
 
 namespace DAS_IO {
@@ -90,6 +91,13 @@ class Interface {
      */
     bool iwrite(const char *str);
     /**
+     * Sets up a multi-part write
+     * @param iov pointer to an array of iovec structs
+     * @param nparts the number of elements in the iov array
+     * @return true if event loop should terminate.
+     */
+    bool iwritev(struct iovec *iov, int nparts);
+    /**
      * @brief Called whenever enqueued data is written to the interface.
      * @param nb The number of bytes written
      * @return true if the event loop should terminate.
@@ -107,7 +115,7 @@ class Interface {
     /**
      * @return true if there is no pending data in obuf
      */
-    inline bool obuf_empty() { return ocp >= onc; }
+    inline bool obuf_empty() { return n_wiov == 0; }
     /**
      * Called from fillbuf() when read() returns an error. If read() returns zero,
      * read_error() is called with EOK, which higher-level processors can use
@@ -197,11 +205,12 @@ class Interface {
      */
     inline bool fillbuf() { return fillbuf(bufsize); }
     /**
+     * @param N The maximum number of characters desired
      * Reads up to N-nc characters into buf. If an error is encountered,
      * will return the response from read_error(errno)
      * @return true on an error requiring termination of the driver 
      */
-    bool fillbuf(int N);
+    bool fillbuf(int N, int flag = Fl_Read);
     /**
      * Remove nchars from the front of buf, and shift the remain
      * characters, if any, to the beginning of the buffer, adjusting
@@ -210,7 +219,11 @@ class Interface {
      * reported at termination. If n_fills is much greater than n_empties,
      * you may need to adjust your min and time settings for more efficient
      * operation.
+     * The flag argument is used to inform the response to reading 0 bytes.
+     * If we are processing a timeout and did not actually see a read flag,
+     * then we won't interpret 0 bytes as EOF.
      * @param nchars number of characters to remove from front of buffer
+     * @flag The flag argument from ProcessData().
      */
     void consume(int nchars);
     /**
@@ -568,12 +581,12 @@ class Interface {
     int bufsize;
     int n_fills, n_empties;
     int n_eagain, n_eintr;
-    /** The current output buffer */
-    unsigned char *obuf;
-    /** The number of characters in obuf */
-    unsigned int onc;
-    /** The current character offset in obuf */
-    unsigned int ocp;
+    // /** The current output buffer */
+    // unsigned char *obuf;
+    // /** The number of characters in obuf */
+    // unsigned int onc;
+    // /** The current character offset in obuf */
+    // unsigned int ocp;
     /** Timeout object */
     Timeout TO;
   private:
@@ -594,6 +607,9 @@ class Interface {
     /** Total number of errors found. */
     int total_errors;
     int total_suppressed;
+    struct iovec pvt_iov;
+    struct iovec *wiov;
+    int n_wiov;
 };
 
 }

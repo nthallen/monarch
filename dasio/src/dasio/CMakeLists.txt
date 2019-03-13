@@ -1,5 +1,6 @@
-install(FILES interface.h serial.h timeout.h socket.h modbus_rtu.h
-  client.h server.h appid.h tm.h tm_client.h tm_data_sndr.h 
+install(FILES ascii_escape.h interface.h serial.h timeout.h
+  socket.h modbus_rtu.h client.h server.h appid.h tm.h
+  tm_client.h tm_data_sndr.h 
   #tm_gen.h tm_gen_cmd.h tm_gen_data.h
   #tm_gen_tmr.h tm_gen_Resmgr.h
   tm_server.h tm_queue.h

@@ -196,13 +196,13 @@ namespace DAS_IO {
    * Strategy here is:
    * next_command->cmdlen == 0 until there is something to write
    * next_command->next == 0 until there is something to write
-   * we cannot write unless and until ocp >= onc
+   * we cannot write unless and until obuf_empty()
    * if there is something to write, and we can write, we write it
    * and we set written == true
    * 
    */
   void Cmd_turf::turf_check() {
-    while (ocp >= onc) {
+    while (obuf_empty()) {
       if (written) {
         --next_command->ref_count;
         next_command = next_command->next;
@@ -221,7 +221,7 @@ namespace DAS_IO {
   }
   
   bool Cmd_turf::iwritten(int nb) {
-    if (written && ocp >= onc)
+    if (written && obuf_empty())
       turf_check();
     return false;
   }
@@ -425,7 +425,7 @@ std::list<cmdif_rd *> cmdif_rd::rdrs;
 cmdif_wr_clt::~cmdif_wr_clt() {}
 
 void cmdif_wr_clt::Turf(const char *cmd, int cmdlen) {
-  if (ocp < onc) {
+  if (!obuf_empty()) {
     report_err("%s: Output buffer overflow", iname);
     return;
   }

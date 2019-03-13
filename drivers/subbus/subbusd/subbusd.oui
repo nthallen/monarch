@@ -1,0 +1,19 @@
+<package> subbusd
+<include> "subbusd_int.h"
+<include> msg oui
+<follow> msg oui
+
+<opts> "s:q"
+<sort>
+  -s <service> Specify service name
+  -q Connect to cmd/Quit for shutdown
+
+<init>
+  subbusd_init_options(argc, argv);
+
+<package> AppID_init
+<include> "dasio/appid.h"
+<include> msg
+<preceed> msg
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("subbusd", "Subbus Driver", "V3.0");

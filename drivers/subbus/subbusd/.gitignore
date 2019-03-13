@@ -1,0 +1,4 @@
+*.exe
+*.o
+*.stackdump
+*oui.cc
