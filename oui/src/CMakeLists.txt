@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if (NOT ${CMAKE_CROSSCOMPILING})
+
 find_package(FLEX REQUIRED)
 find_package(BISON REQUIRED)
 
@@ -23,8 +25,11 @@ target_include_directories(oui PRIVATE
   ${CMAKE_SOURCE_DIR}/nl/src)
 target_link_libraries(oui nl)
 install(TARGETS oui RUNTIME DESTINATION bin)
-install(FILES oui.h DESTINATION include)
 install (FILES oui.oui DESTINATION share/oui)
+
+endif (NOT ${CMAKE_CROSSCOMPILING})
+
+install(FILES oui.h DESTINATION include)
 
 # ouiinit.c is generated via oui
 # oui -o ouiinit.c ouiinit.oui
