@@ -10,7 +10,8 @@ if (NOT ${CMAKE_CROSSCOMPILING})
 find_package(FLEX REQUIRED)
 find_package(BISON REQUIRED)
 
-FLEX_TARGET(OUI_Scanner yylex.l ${CMAKE_CURRENT_BINARY_DIR}/yylex.c)
+FLEX_TARGET(OUI_Scanner yylex.l ${CMAKE_CURRENT_BINARY_DIR}/yylex.c
+            COMPILE_FLAGS "-i -L")
 BISON_TARGET(OUI_Parser ouigrmr.y ${CMAKE_CURRENT_BINARY_DIR}/ouigrmr.c)
 ADD_FLEX_BISON_DEPENDENCY(OUI_Scanner OUI_Parser)
 
