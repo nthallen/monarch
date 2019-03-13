@@ -36,8 +36,14 @@ glbldef global_defs;
   #define CHECK_HEAP
 #endif
 
+void add_path(const char *given_path) {
+	llos_enq(&global_defs.path, given_path);
+}
+
 int main(int argc, char **argv) {
   unsigned int errlevel;
+
+  add_path(".");
 
   oui_init_options(argc, argv);
   errlevel = yyparse();

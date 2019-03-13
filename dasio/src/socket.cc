@@ -304,7 +304,7 @@ bool Socket::protocol_except() {
   return true;
 }
 
-bool Socket::closed() {
+bool Socket::process_eof() {
   // msg(2, "%s: Socket closed", iname);
   
   if (is_server) {

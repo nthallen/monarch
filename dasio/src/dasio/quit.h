@@ -20,7 +20,7 @@ namespace DAS_IO {
        */
       Quit(const char *hostname);
       ~Quit();
-      bool closed();
+      bool process_eof();
   };
 }
 

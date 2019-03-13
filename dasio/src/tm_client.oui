@@ -1,0 +1,14 @@
+<package> tm_client
+<include> "dasio/tm_client.h"
+<opts> "t:"
+<sort>
+	-t <TMbfr node>
+<switch>
+  case 't':
+    //tm_set_srcnode(optarg);
+    msg(1, "-t argument coming soon!");
+    break;
+
+<package> msghdr_default
+<vars>
+  const char *msg_hdr_default = "tm_client";
