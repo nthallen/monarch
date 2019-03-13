@@ -28,7 +28,7 @@ int tm_gen_cmd::execute(char *buf) {
   return tmg->execute(buf);
 }
 
-tm_gen_cmd::tm_gen_cmd(tm_generator *tm_gen) : tm_gen_dispatch_client() {
+tm_gen_cmd::tm_gen_cmd(tm_generator *tm_gen) : DAS_IO::Serverside_client() {
   tmg = tm_gen;
 }
 

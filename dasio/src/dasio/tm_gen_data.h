@@ -26,7 +26,7 @@ struct data_dev_ocb {
 };
 
 
-class tm_gen_data : public tm_gen_dispatch_client {
+class tm_gen_data : public DAS_IO::Serverside_client() {
   private:
     int dev_id;
     const char *name; // Keep around mostly for debugging

@@ -6,7 +6,7 @@
 /** tm_gen_Resmgr.h Framework for 
 */
 
-tm_gen_dispatch_client::tm_gen_dispatch_client() {
+tm_gen_dispatch_client::tm_gen_dispatch_client() : public DAS_IO::Serverside_client() {
   dispatch = NULL;
 }
 

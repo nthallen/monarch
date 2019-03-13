@@ -18,7 +18,7 @@ class tm_gen_dispatch;
   As written, this is probably a bad design, since tm_gen_dispatch::client_add is called with a partially constructed client.
   In a multi-threaded environment, there is a potential for harm.
 */
-class tm_gen_dispatch_client {
+class tm_gen_dispatch_client : public DAS_IO::Serverside_client() {
   public:
     tm_gen_dispatch_client();
     virtual ~tm_gen_dispatch_client(); // calls detach() if necessary

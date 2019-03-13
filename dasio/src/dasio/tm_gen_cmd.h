@@ -6,7 +6,7 @@
 
 class tm_generator;
 
-class tm_gen_cmd : public tm_gen_dispatch_client {
+class tm_gen_cmd : public DAS_IO::Serverside_client() {
   private:
     int dev_id;
     tm_generator *tmg;

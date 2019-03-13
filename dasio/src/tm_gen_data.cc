@@ -52,7 +52,7 @@ static void ocb_free(struct data_dev_ocb *ocb) {
 
 tm_gen_data::tm_gen_data(tm_gen_dispatch *dispatch, const char *name_in, void *data,
 	 int data_size, int synch)
-    : tm_gen_dispatch_client() {
+    : DAS_IO::Serverside_client() {
 
   dispatch_t *dpp = dispatch->dpp;
   name = name_in;
