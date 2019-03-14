@@ -29,7 +29,7 @@ if [ ! -d $builddir ]; then
   msg Creating build $builddir
   mkdir $builddir
   cd $builddir
-  cmake -DCMAKE_BUILD_TYPE=Debug .. && make
+  cmake -DCMAKE_BUILD_TYPE=Debug $crargs .. && make
 else
   msg Using existing $builddir
   cd $builddir

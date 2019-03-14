@@ -12,17 +12,23 @@ set(CMAKE_CXX_EXTENSIONS OFF)
     # message(FATAL_ERROR "oui not found!")
 # endif(OUI_EXE STREQUAL "OUI_EXE-NOTFOUND")
 # reuseable cmake macro for oui
+if (${CMAKE_CROSSCOMPILING})
+  set(OUI_EXE /usr/local/bin/oui)
+else (${CMAKE_CROSSCOMPILING})
+  set(OUI_EXE ${le_das_tools_BINARY_DIR}/oui/src/oui)
+endif (${CMAKE_CROSSCOMPILING})
+
 MACRO(OUI_FILE _filename)
     GET_FILENAME_COMPONENT(_basename ${_filename} NAME_WE)
     ADD_CUSTOM_COMMAND(
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.cc
-        COMMAND ${le_das_tools_BINARY_DIR}/oui/src/oui
+        COMMAND ${OUI_EXE}
                 -o${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.cc
                 -I${le_das_SOURCE_DIR}/dasio/src
                 -I${le_das_tools_SOURCE_DIR}/oui/src
                 ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        DEPENDS ${_filename} ${le_das_tools_BINARY_DIR}/oui/src/oui )
+        DEPENDS ${_filename} ${OUI_EXE} )
 ENDMACRO(OUI_FILE)
 
 if (${CMAKE_CROSSCOMPILING})
