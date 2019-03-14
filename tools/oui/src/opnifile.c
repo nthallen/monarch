@@ -52,7 +52,8 @@ FILE *open_input_file(char *filename) {
     fp = fopen(partname, "r");
   } else {
     /* Code that Miles added, 27th February 2019, 14:20 */
-    for (struct llosleaf *current = global_defs.path.first; current != 0; current = current->next) {
+    struct llosleaf *current;
+    for (current = global_defs.path.first; current != 0; current = current->next) {
       /* Need to clear the strings */
       strncpy(buffer_1, "\0", PATH_MAX);
       strncpy(buffer_2, "\0", PATH_MAX);
