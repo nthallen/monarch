@@ -212,7 +212,7 @@ void cmdgen_init_options(int argc, char **argv) {
         msg(3, "Unknown command option -%c", optopt);
     }
   }
-  compile_init_options(argc, argv, ".c");
+  // compile_init_options(argc, argv, ".c");
 }
 
 int main(int argc, char **argv) {
