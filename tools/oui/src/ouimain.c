@@ -46,6 +46,7 @@ int main(int argc, char **argv) {
   add_path(".");
 
   oui_init_options(argc, argv);
+  llos_enq(&global_defs.path, PKGDATADIR);
   errlevel = yyparse();
   if (error_level < errlevel) error_level = errlevel;
   if (error_level == 0) {

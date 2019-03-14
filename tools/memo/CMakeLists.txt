@@ -18,6 +18,8 @@ MACRO(OUI_FILE _filename)
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.cc
         COMMAND ${le_das_tools_BINARY_DIR}/oui/src/oui
                 -o${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.cc
+                -I${le_das_SOURCE_DIR}/dasio/src
+                -I${le_das_tools_SOURCE_DIR}/oui/src
                 ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         DEPENDS ${_filename} ${le_das_tools_BINARY_DIR}/oui/src/oui )
@@ -31,7 +33,11 @@ else (${CMAKE_CROSSCOMPILING})
   include_directories( /usr/local/include )
 endif (${CMAKE_CROSSCOMPILING})
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
+include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${le_das_tools_SOURCE_DIR}/oui/src
+  ${le_das_SOURCE_DIR}/nl/src
+)
 
 OUI_FILE(memo.oui)
 add_executable(memo memo.cc memooui.cc)
