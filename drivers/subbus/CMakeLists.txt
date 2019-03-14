@@ -21,9 +21,7 @@ MACRO(OUI_FILE _filename)
         DEPENDS ${_filename} )
 ENDMACRO(OUI_FILE)
 
-add_subdirectory("${le-das-drivers_SOURCE_DIR}/subbus/libpp"
-                 "${le-das-drivers_BINARY_DIR}/subbus/libpp")
-add_subdirectory("${le-das-drivers_SOURCE_DIR}/subbus/subbusd"
-                 "${le-das-drivers_BINARY_DIR}/subbus/subbusd")
-add_subdirectory("${le-das-drivers_SOURCE_DIR}/subbus/test"
-                 "${le-das-drivers_BINARY_DIR}/subbus/test")
+add_subdirectory("libpp")
+add_subdirectory("subbusd")
+add_subdirectory("include")
+add_subdirectory("test")

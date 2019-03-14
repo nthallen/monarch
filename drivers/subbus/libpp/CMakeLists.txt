@@ -5,17 +5,8 @@ project(subbuspp VERSION 2.0.0)
 add_library(subbuspp subbuspp.cc)
 target_include_directories(subbuspp PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/../include
-# ${CMAKE_SOURCE_DIR}/dasio/src
-# ${CMAKE_SOURCE_DIR}/tm/src
-# ${CMAKE_SOURCE_DIR}/nl/src
-# ${CMAKE_SOURCE_DIR}/drivers/subbus/include
-# ${CMAKE_SOURCE_DIR}/drivers/subbus/subbusd
-# ${CMAKE_SOURCE_DIR}/cmdgen
 )
 install(TARGETS subbuspp
   ARCHIVE
   DESTINATION lib
-)
-install(FILES subbuspp.h
-  DESTINATION include
 )
