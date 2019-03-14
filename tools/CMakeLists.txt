@@ -10,5 +10,3 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/cmdgen"
                  "${CMAKE_CURRENT_BINARY_DIR}/cmdgen")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/oui/src"
                  "${CMAKE_CURRENT_BINARY_DIR}/oui/src")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/memo"
-                 "${CMAKE_CURRENT_BINARY_DIR}/memo")

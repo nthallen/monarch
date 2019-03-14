@@ -42,5 +42,5 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/nl/src"
                  "${CMAKE_BINARY_DIR}/nl/src")
 add_subdirectory("${CMAKE_SOURCE_DIR}/tm/src"
                  "${CMAKE_BINARY_DIR}/tm/src")
-add_subdirectory("${CMAKE_SOURCE_DIR}/tools"
-                 "${CMAKE_BINARY_DIR}/tools")
+add_subdirectory("tools")
+add_subdirectory("utils")
