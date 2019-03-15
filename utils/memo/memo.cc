@@ -8,7 +8,7 @@
 #include "dasio/appid.h"
 #include "dasio/loop.h"
 #include "dasio/server.h"
-#define MSG_INTERNAL
+#define MSG_INTERNAL /* Required to make we_are_memo() and msg_internal() visible */
 #include "dasio/msg.h"
 
 DAS_IO::AppID_t DAS_IO::AppID("memo", "memo server", "V1.0");
@@ -42,17 +42,16 @@ memo_socket *new_memo_socket(Authenticator *Auth, SubService *SS) {
 }
 
 bool memo_socket::protocol_input() {
-  nl_assert(DAS_IO::Interface::nc > 0);
-  nl_assert(DAS_IO::Interface::buf[nc] == '\0');
+  nl_assert(nc > 0);
+  nl_assert(buf[nc] == '\0');
   
-  /* If we encounter a newline character, we replace it with null. */
-  if (DAS_IO::Interface::buf[nc-1] == '\n') {
-    DAS_IO::Interface::buf[nc-1] = '\0';
+  /* Add a newline if necessary */
+  if (buf[nc-1] != '\n') {
+    buf[nc++] = '\n';
   }
-  /* And then we printf() with a newline added, for cleanliness. */
-  printf("%s\n", DAS_IO::Interface::buf);
+  msg_internal(0, (const char*)buf, nc);
   
-  DAS_IO::Interface::report_ok(DAS_IO::Interface::nc);
+  report_ok(nc);
   return false;
 }
 

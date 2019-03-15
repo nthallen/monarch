@@ -7,15 +7,16 @@
 <opts> "l:"
 
 <sort>
-  -l <#> limits the number of total clients
+  -l <n> Sets the quit threshold value (default 1)
 
 <init>
 	memo_init_options(argc, argv);
 
 <unsort>
-  This is the memo program, and it's really
-  cool because it allows us to
-  send everything to one place and
-  does other stuff
+  <blank>
+  With a quit threshold value n > 0, memo will terminate after 
+  n clients have connected and all clients have disconnected.
+  -l0 will keep memo running even after all clients have disconnected,
+  which can be useful in certain testing scenarios.
 
 <package> msgmemo
