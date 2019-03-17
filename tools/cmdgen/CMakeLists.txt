@@ -23,7 +23,7 @@ add_executable(cmdgen cmdgen.c dstructs.c interfaces.c prompts.c
     ${FLEX_CmdScanner_OUTPUTS})
 target_include_directories(cmdgen PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
-  ${le_das_SOURCE_DIR}/nl/src
+  ${le_das_SOURCE_DIR}/libs/nl
   ${le_das_tools_SOURCE_DIR}/oui/src)
 target_link_libraries(cmdgen nl)
 install(TARGETS cmdgen RUNTIME

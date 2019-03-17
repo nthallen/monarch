@@ -6,7 +6,5 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 add_definitions( -D_POSIX_SOURCE=1 -D_XOPEN_SOURCE=500 )
 
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/cmdgen"
-                 "${CMAKE_CURRENT_BINARY_DIR}/cmdgen")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/oui/src"
-                 "${CMAKE_CURRENT_BINARY_DIR}/oui/src")
+add_subdirectory(cmdgen)
+add_subdirectory(oui/src)

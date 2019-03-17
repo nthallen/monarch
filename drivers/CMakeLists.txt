@@ -13,5 +13,4 @@ else (${CMAKE_CROSSCOMPILING})
   include_directories( /usr/local/include )
 endif (${CMAKE_CROSSCOMPILING})
 
-add_subdirectory("${le-das-drivers_SOURCE_DIR}/subbus"
-                 "${le-das-drivers_BINARY_DIR}/subbus")
+add_subdirectory(subbus)

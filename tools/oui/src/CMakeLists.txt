@@ -24,7 +24,7 @@ target_compile_definitions(oui PRIVATE
   -DPKGDATADIR="${CMAKE_INSTALL_PREFIX}/share/oui")
 target_include_directories(oui PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_SOURCE_DIR}/nl/src)
+  ${le_das_SOURCE_DIR}/libs/nl)
 target_link_libraries(oui nl)
 install(TARGETS oui RUNTIME DESTINATION bin)
 install (FILES oui.oui DESTINATION share/oui)
