@@ -4,11 +4,11 @@
 #include <signal.h>
 #include <errno.h>
 #include <unistd.h>
-#include <sys/neutrino.h> //QNX
-#include <sys/netmgr.h> //QNX
-#include <sys/iomsg.h> //QNX
+//#include <sys/neutrino.h> //QNX
+//#include <sys/netmgr.h> //QNX
+//#include <sys/iomsg.h> //QNX
 #include "dasio/tm.h"
-#include "dasio/tm_gen_Resmgr.h"
+#include "dasio/tm_gen_client.h"
 #include "dasio/tm_gen_cmd.h"
 #include "dasio/tm_gen_tmr.h"
 
@@ -19,7 +19,7 @@ int tm_gen_tmr_pulse_func( message_context_t *ctp, int code,
   return 0;
 }
 
-tm_gen_tmr::tm_gen_tmr(tm_generator *tm_gen) : tm_gen_dispatch_client() {
+tm_gen_tmr::tm_gen_tmr(tm_generator *tm_gen) : tm_gen_client() {
   timerid = -1;
   dg = tm_gen;
   struct timespec ts;
@@ -45,7 +45,7 @@ void tm_gen_tmr::attach() {
   tmr_ev.sigev_code = pulse_code;
   rc = timer_create( CLOCK_REALTIME, &tmr_ev, &timerid );
   if ( rc < 0 ) nl_error( 3, "Error creating timer" );
-  tm_gen_dispatch_client::attach(dg->dispatch);
+  tm_gen_client::attach(dg->dispatch);
 }
 
 int tm_gen_tmr::ready_to_quit() {

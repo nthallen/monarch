@@ -114,10 +114,10 @@ void tm_generator::check_writev( int rc, int wr_size, const char *where ) {
  * Control initialization
  * This is how 
  */
-void tm_generator::operate() {
+/* void tm_generator::operate() {
   if ( autostart ) tm_start(1);
   dispatch->Loop();
-}
+} */
 
 /**
   Interperet data generator commands: I need to abstract the "signal handlers" operation.
@@ -187,7 +187,8 @@ int tm_generator::execute(const char *cmd) {
     }
     unlock();
     msg( -2, "Received Quit" );
-    dispatch->ready_to_quit();
+    //dispatch->ready_to_quit();
+    msg( 2, "Implement Server shutdown!" );
     event(tmg_event_quit);
     return 1;
   }

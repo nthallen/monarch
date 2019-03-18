@@ -1,17 +1,17 @@
 #ifndef TM_GEN_TMR_H
 #define TM_GEN_TMR_H
 
-#include <sys/iofunc.h> //QNX
-#include <sys/dispatch.h> //QNX
+//#include <sys/iofunc.h> //QNX
+//#include <sys/dispatch.h> //QNX
 #include <time.h>
 #include <stdint.h>
-#include "tm_gen_Resmgr.h"
+#include "tm_gen_client.h"
 #include "nl.h"
 #include "tm_gen.h"
 
 class tm_generator;
 
-class tm_gen_tmr : public tm_gen_dispatch_client {
+class tm_gen_tmr : public tm_gen_client {
   public:
     tm_gen_tmr(tm_generator *tm_gen);
     ~tm_gen_tmr();
@@ -27,8 +27,8 @@ class tm_gen_tmr : public tm_gen_dispatch_client {
 };
 
 extern "C" {
-    int tm_gen_tmr_pulse_func( message_context_t *ctp, int code,
-        unsigned flags, void *handle );
+    /* int tm_gen_tmr_pulse_func( message_context_t *ctp, int code,
+        unsigned flags, void *handle ); */
 }
 
 #endif

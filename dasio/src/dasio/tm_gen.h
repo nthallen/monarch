@@ -2,25 +2,24 @@
 #define TM_GEN_H_INCLUDED
 
 #include "tm_queue.h"
-#include "tm_gen_Resmgr.h"
+#include "tm_gen_client.h"
 #include "tm_gen_cmd.h"
 #include "tm_gen_tmr.h"
 
 enum tm_gen_event { tm_gen_event_start, tm_gen_event_stop, tm_gen_event_fast, tm_gen_event_quit };
 
-class tm_queue;
 class tm_gen_cmd;
 class tm_gen_tmr;
 
-class tm_generator : public tm_queue {
+class tm_generator : public DAS_IO::tm_queue {
   public:
     tm_generator(int nQrows, int low_water);
     virtual ~tm_generator();
     void init( int collection );
-    void operate(); // event loop
+    //void operate(); // event loop
     int execute(const char *cmd);
     virtual void event(enum tm_gen_event evt);
-    tm_gen_dispatch *dispatch;
+    //tm_gen_dispatch *dispatch;
     virtual void service_row_timer() = 0;
   protected:
     bool quit; // non-zero means we are terminating

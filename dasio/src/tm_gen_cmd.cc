@@ -5,7 +5,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <ctype.h>
-#include "dasio/tm_gen_Resmgr.h"
+#include "dasio/tm_gen_client.h"
 #include "dasio/tm_gen_cmd.h"
 #include "nl.h"
 #include "nl_assert.h"
@@ -55,7 +55,7 @@ void tm_gen_cmd::attach() {
     report_err( /*3, */"Unable to attach name %s: errno %d", wr_devname, errno );
  
   Cmd = this;
-  tm_gen_dispatch_client::attach(tmg->dispatch); // Now get in on the quit loop
+  tm_gen_client::attach(tmg->dispatch); // Now get in on the quit loop
 }
 
 tm_gen_cmd::~tm_gen_cmd() { }
