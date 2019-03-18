@@ -31,7 +31,7 @@ void cic_transmit(char *buf, int n_chars, int transmit) {
   }
   if (transmit) {
     cmdbuf[curpos] = '\0';
-    ci_sendcmd(DAS_IO::Cmd_Send, cmdbuf);
+    ci_sendcmd(Cmd_Send, cmdbuf);
   }
   for (cl = cur; cl != NULL && cmd_check(&cl->state); cl = cl->prev);
   if (cl == NULL) {

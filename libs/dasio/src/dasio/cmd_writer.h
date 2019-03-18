@@ -2,13 +2,16 @@
 #ifndef DAS_IO_CMD_WRITER_H_INCLUDED
 #define DAS_IO_CMD_WRITER_H_INCLUDED
 
+
+typedef enum { Cmd_Send, Cmd_Test, Cmd_Send_Quiet } CI_Cmd_Mode;
+
+#ifdef __cplusplus
+
 #include "client.h"
 #include "loop.h"
 #include "cmdalgo.h"
 
 namespace DAS_IO {
-
-typedef enum { Cmd_Send, Cmd_Test, Cmd_Send_Quiet } Cmd_Mode;
   
 class Cmd_writer : public Client {
   public:
@@ -44,7 +47,7 @@ class Cmd_writer : public Client {
      * any required terminating newline character
      * @return CMDREP_* error codes
      */
-    int sendcmd(Cmd_Mode mode, const char *cmdtext);
+    int sendcmd(CI_Cmd_Mode mode, const char *cmdtext);
     
     /**
      * @return A string which is appropriate for
@@ -81,6 +84,15 @@ class Cmd_writer : public Client {
 
 }
 
+extern "C" {
+
+#else // __cplusplus
+
+  #include <stdbool.h>
+  #define CMD_VERSION_MAX 80
+
+#endif // __cplusplus
+  
 /**
  * Command line options parser for DAS_IO::Cmd_writer
  */
@@ -106,7 +118,7 @@ bool cic_init();
  * any required terminating newline character
  * @return CMDREP_* error codes
  */
-int ci_sendcmd(DAS_IO::Cmd_Mode mode, const char *cmdtext);
+int ci_sendcmd(CI_Cmd_Mode mode, const char *cmdtext);
 
 /**
  * @brief Application-level method to send a formatted command
@@ -115,7 +127,7 @@ int ci_sendcmd(DAS_IO::Cmd_Mode mode, const char *cmdtext);
  * @param fmt Format for printf-style command.
  * @return CMDREP_* error codes
  */
-int ci_sendfcmd(DAS_IO::Cmd_Mode mode, const char *fmt, ...);
+int ci_sendfcmd(CI_Cmd_Mode mode, const char *fmt, ...);
 
 /** cic_transmit receives commands from the interactive command
    parser and transmits them as required to the command server
@@ -141,5 +153,9 @@ int ci_sendfcmd(DAS_IO::Cmd_Mode mode, const char *fmt, ...);
    their original representation before actual transmission.
 */
 void cic_transmit(char *buf, int n_chars, int transmit);
+
+#ifdef __cplusplus
+  };
+#endif
 
 #endif

@@ -110,7 +110,7 @@ bool Cmd_writer::app_connected() {
   return true;
 }
 
-int Cmd_writer::sendcmd(Cmd_Mode mode, const char *cmdtext) {
+int Cmd_writer::sendcmd(CI_Cmd_Mode mode, const char *cmdtext) {
   const char *cmdopts = "";
   int clen, rv;
   char buf[CMD_MAX_COMMAND_IN+1];
@@ -211,14 +211,14 @@ bool cic_init() {
   return ! cmd->is_negotiated();
 }
 
-int ci_sendcmd(DAS_IO::Cmd_Mode mode, const char *cmdtext) {
+int ci_sendcmd(CI_Cmd_Mode mode, const char *cmdtext) {
   if (DAS_IO::Cmd_writer::Cmd == 0) {
     if (cic_init()) return CMDREP_QUIT;
   }
   return DAS_IO::Cmd_writer::Cmd->sendcmd(mode, cmdtext);
 }
 
-int ci_sendfcmd(DAS_IO::Cmd_Mode mode, const char *fmt, ...) {
+int ci_sendfcmd(CI_Cmd_Mode mode, const char *fmt, ...) {
   va_list arg;
   char cmdbuf[CMD_INTERP_MAX];
 
