@@ -1,0 +1,268 @@
+Bugs {
+todo {
+  Test Code generation for new syntaxes {
+	Hold;
+	Hold or 5;
+	Hold or 5 else Validate Failed;
+	Hold and Validate WAIT_FOR_CONDITION;
+	Hold and Validate WAIT_FOR_CONDITION or 5;
+	Hold and Validate WAIT_FOR_CONDITION or 5 else Validate Failed;
+	Resume Foo;
+	
+	Look specifically at how the default states are handled.
+  }
+  Augment documentation
+  
+  Document tma_state structure {
+	This should be part of an appendix in the html documentation
+	Commands for a state are stored as an array of
+	tma_state structures (defined in tma.h)
+	typedef struct {
+	  long int dt;
+	  char *cmd;
+	} tma_state;
+	dt is the number of seconds since the beginning of the
+	state for this command. Commands must of course be sorted
+	with respect to time. The last command in the state should
+	have a dt of -1.
+	cmd is a string of the following syntax:
+	  >_?[\w\s]+   Command text to be sent to server
+	  #\d+         Validate state_case
+	  "[\w\s]+     Quoted Text for prompt
+	  ?\d+,\d+,\d+[,\d+]?
+				   Hold. Arguments are:
+				   1: Number of commands to advance on success
+					  (i.e. size of the else clause + 1). Min
+					  value is 1.
+				   2: timeout in seconds. -1 means no timeout
+				   3: state_case to validate
+				   4: state_case of this state for Resume
+	  R\d+,\d+     Resume ( partition number, state_case )
+				   state_case is compared to the fourth
+				   argument in the corresponding Hold statement
+	}
+  }
+  Feature request {
+	grammar.y {
+	  Add new syntax for generic Hold
+	  Add new syntax for Resume <state>
+	}
+	states.c {
+	  Should I support a new opcode for Resume?
+	  Probably a good idea: Needs partno and
+	  state_case
+	}
+	tmaR2.c {
+	}
+	tma_file.c {
+	  Validate <state> and Hold;
+	  Hold;
+	  Resume <state>?
+	  Generate 4-arg Hold output
+	}
+
+	Hold [or timeout [else condition]]
+	but mostly:
+	Hold;
+	to be supported in slurp files, coupled with
+	Resume <state>;
+	which needn't be supported in slurp files.
+
+	Hold [and Validate <name>] [or timeout [else condition]]
+	?1+,timeout or -1,statecase(<NAME>) or 0,statecase(<crntstate>)
+	tma_process needs to be tweaked to
+	  a. not return the 0 if present, but keep looping
+	
+	Resume <STATENAME>;
+	tma_succeed( partion_number(<STATENAME>), 0,
+				  statecase(<STATENAME>) )
+	tma_succeed() needs to be tweaked
+	  a. If caller state_case is 0, then only resume state
+		 if callee callee state_case equals 4th argument.
+	  This makes sure that Resume <state>; will only
+	  resume the specified state, but also allows this to be
+	  issued from any location.
+	
+	Validate <NAME> and Hold;
+	This syntax is useful for eliminating any race condition
+	where the validated state might immediately Resume the held
+	state.
+	
+	Resume <state>; would need to translate the state name
+	to a partition number and then call tma_succeed( <pn>, 0 );
+	Note that with this implementation, the resume command is
+	actually "Resume partition of <state>", since it would resume
+	any other state in the same partition. Could use negative
+	state_case values to identify the states, using the same
+	state_case values.
+	
+	Is it easy to map state names to partition numbers?
+	Not as currently implemented. Mapping is determined
+	in list_states(), but not remembered in a convenient
+	form.
+	
+	Could add partition number to get_state_case, but then
+	need to have a different function to locate the partition.
+	No biggy.
+  }
+  BUG {
+	Internal TMC statement followed directly by hold until
+	generates assertion failure
+	Sample code below fails without the +1: {
+		Hold until valid (Mass_Idle);
+		{ if ( dither3_skip-- > 0 ) {
+			if ( pump_fail_ct <= 0 ) Validate Record_Aerosol;
+			  else Validate Record_Gas;
+		  }
+		}
+		Validate Mass_Dither_3;
+		{ dither3_skip = 3; }
+	+1	Hold until valid (Mass_Idle);
+		{ if ( pump_fail_ct <= 0 ) Validate Record_Aerosol;
+		  else Validate Record_Gas;
+		}
+	}
+  }
+  Command rearrangement {
+	Is a bad thing. Consider just doing away with it.
+	states.c has some bugs with it anyway.
+  }
+  code generation {
+	tmcalgo code generation 1.2 when waiting at the end of a state,
+	still should call tma_time_check() (see 1.2 below under code)
+  }
+  runtime { done
+	tma.c needs to deal gracefully with the case nexttime==0
+  }
+}
+Support Routines {
+  void tma_new_state(int partition, const char *name);
+  void tma_new_time(int partition, long int t1, const char *next_cmd);
+	specify the next significant time for a partition
+  int tma_time_check(int partition);
+	Check to see if a significant time is up
+  void tma_sendcmd(const char *cmd);
+  { Display Command at debug(2)
+	Send Command if that option is specified
+  }
+  void tma_init_options(const char *hdr, int argc, char **argv);
+  { calls Con_init_options() and
+	cic_options()
+  }
+  For each partition {
+	Keep track of (Current state name), base time, next time
+	Console number, Console Row
+  }
+  #define OPT_TMA_INIT "r:pm"
+}
+Documentation {
+  "Holding" options can stop the clock, but cannot stop conditions
+  which are in place. If you want to stop conditions, you must
+  support a holding state, or explicitly support holding in your
+  conditions.
+  
+  Startup procedure:
+	tma_init_options
+	Initialize_States_from_NVRAM
+	Initialize_Other_Stuff
+  "Telemetry Start" cannot be in a non-volatile state, since it
+  must be issued no matter what the startup procedure.
+}
+Options {
+  >msg_init_options("TMA", argc, argv); OPT_MSG_INIT msg.txt
+  >DC_init_options(argc, argv); OPT_DC_INIT dc.txt
+  Con_init_options(argc, argv); OPT_CON_INIT nl_cons.txt
+  cic_options(argc, argv, "TMA"); OPT_CIC_INIT client.txt
+  tma_init_options(MSG_HEADER, argc, argv); OPT_TMA_INIT tma.txt
+  
+  nl_cons.h is included always, so OPT_CON_INIT is defined
+  We must define CONSOLE_INIT, since it is only defined when
+  N_CONSOLES is defined. Of course nothing precludes an
+  algorithm from also being a display program... I suggest
+  we define CONSOLE_INIT to call tma_init_options() and have
+  tma_init_options call Con_init_options and cic_options.
+  We will have to define OPT_CONSOLE_INIT to be:
+
+  #ifndef MSG_LABEL
+	#define MSG_LABEL "TMA"
+  #endif
+  #define OPT_CONSOLE_INIT OPT_CON_INIT OPT_CIC_INIT OPT_TMA_INIT
+  #define CONSOLE_INIT tma_init_options(MSG_LABEL, nparts, argc, argv)
+  
+  Display Options:
+	Display a Partition on Device d at Line l
+	-A,-a <console> Define (first,next) console
+	-r <row> Display next partition at this row of current console
+	-r -1 Don't display next partition
+	Display on a terminal?
+  Playback Option:
+	-p Playback or simulation: don't send commands to server
+	Don't send commands to a command server {
+	  Probably used in conjunction with debug options
+	}
+  NVRAM Option:
+	-m Don't use NVRAM, even if present
+	Do or Don't support use of NVRAM (Playback option
+	should probably disable NVRAM.) As a rule, probably
+	support it if it exists, else don't.
+	This option probably belongs in DC_init_options
+	(and maybe DG_init_options as well) since it affects
+	states in general, not just algorithms.
+  CIC Option:
+	-C
+	Specify node on which to locate command interpreter
+  MSG Options:
+  Debug levels:
+    1. Message State Transitions
+	2. Message Commands Begin Sent (This is a debug option,
+	since commands will be logged by the server)
+}
+Code generation {
+  for each partition:
+	Output top-level state declaration
+  for each partition:
+	for each state:
+	  Output low-level state declaration
+	  Output TMC commands for T=-1
+	  for each command:
+		process
+  Substates {
+	i = -1, 0, ... , N
+	t(i) = time associated with i'th substate.
+		   t(-1)=-1, t(0)=0, t(N+1)=0
+	T(i) = TMC commands listed at time t(i) (no commands listed at t(N+1))
+	C(i) = Interpreter commands listed at time t(i)
+	
+	for each T in T(-1)
+	  depending on (State) { T }
+	
+	depending on (State once) {
+	  tma_new_state(partition, "State"); /* sets starting time, name */
+	  validate State_0_;
+	}
+
+	for i = 0, ..., N
+	  depending on (State_i_ once) {
+		C(i)
+		tma_new_time(partition, t(i+1), text);
+	  }
+	for i = 0, ..., N-1
+	  for each T in T(i)
+		depending on (State_i_ once) { T }
+	  depending on (State_i_, 1 Hz) {
+		if (tma_check_time(partition))
+		  validate State_i+1_;
+	  }
+	if (i == N)  1.2
+	  for each T in T(i)
+		depending on (State_i_) { T }
+	  depending on (State_i_, 1 Hz) {
+		tma_check_time(partition);
+	  }
+  }
+}
+Parsing {
+  For prettiness: swallow leading whitespace intelligently
+  when reading tmc statements. Replace appropriate indentation
+  during output.
+}

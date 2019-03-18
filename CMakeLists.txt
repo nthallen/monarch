@@ -34,13 +34,7 @@ endif(CMAKE_VERSION VERSION_LESS 2.8.11)
 
 endif(1) # google test
 
-add_subdirectory("${CMAKE_SOURCE_DIR}/dasio/src"
-                 "${CMAKE_BINARY_DIR}/dasio/src")
-add_subdirectory("${CMAKE_SOURCE_DIR}/dasio/test"
-                 "${CMAKE_BINARY_DIR}/dasio/test")
-add_subdirectory("${CMAKE_SOURCE_DIR}/nl/src"
-                 "${CMAKE_BINARY_DIR}/nl/src")
-add_subdirectory("${CMAKE_SOURCE_DIR}/tm/src"
-                 "${CMAKE_BINARY_DIR}/tm/src")
-add_subdirectory("tools")
-add_subdirectory("utils")
+add_subdirectory(libs)
+add_subdirectory(tools)
+add_subdirectory(utils)
+add_subdirectory(drivers)

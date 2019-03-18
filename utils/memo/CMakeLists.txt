@@ -7,7 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # This should somehow be put into a module
 # find_program(OUI_EXE oui
-             # HINTS ${le_das_tools_BINARY_DIR}/oui/src)
+             # HINTS ${le_das_BINARY_DIR}/tools/oui/src)
 # if(OUI_EXE STREQUAL "OUI_EXE-NOTFOUND")
     # message(FATAL_ERROR "oui not found!")
 # endif(OUI_EXE STREQUAL "OUI_EXE-NOTFOUND")
@@ -15,7 +15,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 if (${CMAKE_CROSSCOMPILING})
   set(OUI_EXE /usr/local/bin/oui)
 else (${CMAKE_CROSSCOMPILING})
-  set(OUI_EXE ${le_das_tools_BINARY_DIR}/oui/src/oui)
+  set(OUI_EXE ${le_das_BINARY_DIR}/tools/oui/src/oui)
 endif (${CMAKE_CROSSCOMPILING})
 
 MACRO(OUI_FILE _filename)
@@ -24,8 +24,8 @@ MACRO(OUI_FILE _filename)
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.cc
         COMMAND ${OUI_EXE}
                 -o${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.cc
-                -I${le_das_SOURCE_DIR}/dasio/src
-                -I${le_das_tools_SOURCE_DIR}/oui/src
+                -I${le_das_SOURCE_DIR}/libs/dasio/src
+                -I${le_das_SOURCE_DIR}/tools/oui/src
                 ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         DEPENDS ${_filename} ${OUI_EXE} )
@@ -41,8 +41,8 @@ endif (${CMAKE_CROSSCOMPILING})
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
-  ${le_das_tools_SOURCE_DIR}/oui/src
-  ${le_das_SOURCE_DIR}/nl/src
+  ${le_das_SOURCE_DIR}/tools/oui/src
+  ${le_das_SOURCE_DIR}/libs/nl
 )
 
 OUI_FILE(memo.oui)
