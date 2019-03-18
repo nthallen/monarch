@@ -1,0 +1,167 @@
+/* extmain.skel include file for extraction
+ *
+ * Revision 1.10  2011/01/05 21:06:21  ntallen
+ * Support for nctable in addition to photon
+ *
+ * Revision 1.9  2009/05/04 15:52:04  ntallen
+ * debugged
+ *
+ * Revision 1.8  2008/08/25 15:37:55  ntallen
+ * Use atexit() for shutdown message
+ *
+ * Revision 1.7  2008/08/25 14:37:25  ntallen
+ * Need nortlib.h
+ *
+ * Revision 1.6  2008/08/25 14:36:06  ntallen
+ * Add startup and shutdown messages
+ *
+ * Revision 1.5  2008/08/20 18:08:50  ntallen
+ * enable oui_init_options()
+ * refer to ext_data_client instead of data_client
+ *
+ * Revision 1.4  2008/08/01 15:06:21  ntallen
+ * Changes required while moving functionality into libraries
+ *
+ * Revision 1.3  2008/07/23 17:53:15  ntallen
+ * First cut at QNX6 skeleton
+ *
+ * Revision 1.2  2008/07/03 20:58:07  ntallen
+ * In the process of testing.
+ *
+ * Revision 1.1  2008/07/03 15:11:07  ntallen
+ * Copied from QNX4 version V1R9
+ */
+/* Skeleton headers section */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <math.h>
+#include "nortlib.h"
+#include "oui.h"
+#include "DC.h"
+
+%headers%
+
+/* Skeleton console_functions section */
+#ifdef TABLELIB_H
+  #define phdisplay(x,y) tbl_dispfield(x,y)
+#endif
+%console_functions%
+
+/* Skeleton data_defs section */
+#ifndef EXTRACTION_INIT
+  #define EXTRACTION_INIT
+#endif
+#ifndef EXTRACTION_TERM
+  #define EXTRACTION_TERM
+#endif
+#ifndef EXTRACTION_ROW
+  #define EXTRACTION_ROW
+#endif
+%data_defs%
+
+/* Skeleton main_program section */
+#ifdef TABLELIB_H
+  #include "DCph.h"
+  #ifndef DATA_CLIENT_CLASS
+    #define DATA_CLIENT_CLASS ph_data_client
+  #endif
+#else
+  #ifdef NCTABLE_H_INCLUDED
+    #include "DCnc.h"
+    #ifndef DATA_CLIENT_CLASS
+      #define DATA_CLIENT_CLASS nc_data_client
+    #endif
+  #else
+    #ifndef DATA_CLIENT_CLASS
+      #define DATA_CLIENT_CLASS ext_data_client
+    #endif
+  #endif
+#endif
+typedef DATA_CLIENT_CLASS DATA_CLIENT;
+
+int main(int argc, char **argv) {
+  oui_init_options(argc, argv);
+  nl_error( 0, "Startup" );
+  DATA_CLIENT DC(4096, 1, 0);
+  EXTRACTION_INIT;
+  DC.operate();
+  EXTRACTION_TERM;
+  nl_error( 0, "Shutdown" );
+  return 0;
+}
+
+%main_program%
+
+/* Skeleton rest of the file */
+
+#define incmod(x,y) if (x==((y)-1)) x = 0; else x++
+
+#if (NROWMINF == 1)
+  #define MINF_ROW 0
+  #define MINF_ROW_ZERO
+  #define MINF_ROW_INC
+#else
+  #define MINF_ROW data_client::minf_row
+  #define MINF_ROW_ZERO data_client::minf_row = 0
+  #define MINF_ROW_INC ++data_client::minf_row
+#endif
+
+#define incmod(x,y) if (x==((y)-1)) x = 0; else x++
+
+#if TM_DATA_TYPE == TMTYPE_DATA_T3
+void DATA_CLIENT::process_data() {
+  tm_data_t3_t *data = &msg->body.data3;
+  unsigned char *raw;
+  int n_rows = data->n_rows;
+  MFCtr = data->mfctr;
+  #ifdef IVFUNCS
+    unsigned short delta = MFCtr - next_minor_frame;
+    if (delta != 0) {
+        // Because we are TMTYPE_DATA_T3, we know NROWMINF == 1
+        if (delta > NROWMAJF) delta = NROWMAJF;
+        while (delta-- > 0) {
+          ivfuncs[majf_row]();
+          incmod(majf_row, NROWMAJF);
+        }
+    }
+  #endif
+  majf_row = (((unsigned short)MFCtr) % NROWMAJF);
+
+  for ( raw = &data->data[0]; n_rows > 0; --n_rows, raw += nbQrow ) {
+    home = (union home_row *) raw;
+    EXTRACTION_ROW
+    efuncs[majf_row]();
+    incmod(majf_row, NROWMAJF);
+    ++MFCtr;
+  }
+  next_minor_frame = MFCtr;
+}
+#else
+  #error Data types TMTYPE_DATA_T1 and TMTYPE_DATA_T2 not implemented in extmain.skel
+#endif
+
+#ifdef NEED_TIME_FUNCS
+  #define ROWS(x) (((unsigned long)(x))*NROWMINF+MINF_ROW)
+  #define FRACSECS(x) (((unsigned long)ROWS(x))*NSECSPER)
+
+  long itime(void) {
+      return(tm_info.t_stmp.secs +
+        FRACSECS(MFCtr-tm_info.t_stmp.mfc_num) / NROWSPER );
+  }
+  double dtime(void) {
+      return(tm_info.t_stmp.secs +
+        (double) FRACSECS(MFCtr-tm_info.t_stmp.mfc_num) / NROWSPER );
+  }
+  double etime(void) {
+    double t;
+    static double t0 = -1e9;
+    
+    t = dtime();
+    if (t0 == -1e9) t0 = t;
+    return(t - t0);
+  }
+#endif
+
+/* Skeleton End of File */

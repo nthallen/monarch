@@ -1,7 +1,7 @@
 /* Copyright 2012 by the President and Fellows of Harvard College */
 
-/*! \file tm.h
- * \brief Defines basic telemetry formats
+/** @file tm.h
+ * @brief Defines basic telemetry formats
  */
 
 #ifndef TM_H
@@ -9,6 +9,7 @@
 
 #include <sys/types.h> /* this is for pid_t and nid_t and time_t */
 #include <fcntl.h> /* for arguments to tm_open_name() */
+#include <stdbool.h>
 
 #ifndef __GNUC__
   #define __attribute__(x)
@@ -230,9 +231,6 @@ extern char *TM_buf;
 #ifdef __cplusplus
   extern "C" {
 #endif
-
-extern const char *tm_dev_name(const char *base);
-extern int tm_open_name(const char *name, const char *node, bool flags);
 
 /* Command Interpreter Client (CIC) and Server (CIS) Utilities
    Message-level definition is in cmdalgo.h

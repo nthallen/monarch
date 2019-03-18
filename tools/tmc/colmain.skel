@@ -1,0 +1,214 @@
+/* Skeleton headers section */
+/* colmain.skel Skeleton for collection main program
+ *
+ * Revision 1.11  2011/03/08 14:05:30  ntallen
+ * Check for dg_event_quit in addition to dg_event_stop
+ *
+ * Revision 1.10  2008/09/07 16:11:19  ntallen
+ * Pre-declare VSET functions
+ *
+ * Revision 1.9  2008/08/25 14:36:06  ntallen
+ * Add startup and shutdown messages
+ *
+ * Revision 1.8  2008/08/20 18:39:21  ntallen
+ * Enable oui_init_options()
+ *
+ * Revision 1.7  2008/08/01 15:06:21  ntallen
+ * Changes required while moving functionality into libraries
+ *
+ * Revision 1.6  2008/07/29 20:11:22  ntallen
+ * Changes for Col_send
+ *
+ * Revision 1.5  2008/07/29 18:57:10  ntallen
+ * Fixed handling of MFCtr, minf_row and majf_row
+ *
+ * Revision 1.4  2008/07/23 17:41:07  ntallen
+ * Compilation tweaks
+ *
+ * Revision 1.3  2008/07/23 17:08:00  ntallen
+ * First cut at QNX6 collection skeleton
+ *
+ * Revision 1.2  2008/07/03 20:58:07  ntallen
+ * In the process of testing.
+ *
+ * Revision 1.1  2008/07/03 15:11:07  ntallen
+ * Copied from QNX4 version V1R9
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include "nortlib.h"
+#include "oui.h"
+#include "tm.h"
+#include "DGcol.h"
+
+%headers%
+
+/* Skeleton console_functions section */
+/* Photon and resource manager probably don't mix */
+%console_functions%
+
+/* Skeleton data_defs section */
+/* Some temporary defs until everything is in the right place */
+#ifndef TS_MFC_LIMIT
+  #define TS_MFC_LIMIT 32767
+#endif
+
+/* for debugging */
+int check_ts = 1;
+
+#define incmod(x,y) if (x==((y)-1)) x = 0; else x++
+
+//static short rowlets;
+
+#if (NROWMINF == 1)
+  #define MINF_ROW 0
+  #define MINF_ROW_INC
+#else
+  #define MINF_ROW collector::minf_row
+  #define MINF_ROW_INC incmod(collector::minf_row,NROWMINF)
+#endif
+
+%data_defs%
+
+/* Skeleton main_program section */
+int main(int argc, char **argv) {
+  oui_init_options(argc, argv);
+  nl_error( 0, "Startup");
+  tmc_collector col;
+  col.init();
+  col.init_senders();
+  tminitfunc();
+  col.operate();
+  nl_error( 0, "Shutdown" );
+  return 0;
+}
+
+%main_program%
+
+/* Skeleton Collect_Row section */
+/**
+ * Called from a slow timer to make sure we aren't drifting.
+ */
+void tmc_collector::ts_check() {
+  rowlets -= TRN;
+  if (rowlets < LOWLIM || rowlets > HIGHLIM)
+    ts_checks = TSCHK_RTIME | TSCHK_CHECK;
+}
+
+void tmc_collector::event(enum dg_event evt) {
+  collector::event(evt);
+  if ( evt == dg_event_start ) {
+    rowlets = 0;
+    ts_checks =  TSCHK_RTIME | TSCHK_REQUIRED;
+  #ifdef SUBBUS_H_INCLUDED
+    } else if ( evt == dg_event_stop ||
+                evt == dg_event_quit ) {
+      disarm_sic();
+  #endif
+  }
+}
+
+/**
+ * Should come up with a test to guarantee that the right thing
+ * happens in all circumstances. 
+ */
+void tmc_collector::service_row_timer() {
+  time_t rtime;
+  long dt;
+  
+  #ifdef SUBBUS_H_INCLUDED
+    tick_sic();
+  #endif
+  if (ts_checks & TSCHK_RTIME) {
+    rtime = time(NULL);
+    // It's only reasonable to check realtime at even second boundaries
+    // This check assumes tm_info.t_stmp.mfc_num % MFSECNUM == 0
+    if ((ts_checks & TSCHK_CHECK) && next_minor_frame%MFSECNUM == 0) {
+      dt = (next_minor_frame - tm_info.t_stmp.mfc_num)/MFSECNUM;
+      dt *= MFSECDEN;
+      dt = rtime - dt - tm_info.t_stmp.secs;
+      if (dt > SECDRIFT || dt < -SECDRIFT)
+        ts_checks |= TSCHK_REQUIRED;
+    }
+  }
+  if ((ts_checks & TSCHK_RTIME) && (ts_checks & TSCHK_REQUIRED)) {
+    next_minor_frame = next_minor_frame % LCMMN;
+    commit_tstamp( next_minor_frame, rtime );
+  } else if ( next_minor_frame == 0 ) {
+    //m* = (2^16)%lcm(M,n)
+    //m1 = 0
+    //t1 = t0 + d(2^16 - m* - m0)/n
+    next_minor_frame = ROLLOVER_MFC;
+    commit_tstamp( 0, tm_info.t_stmp.secs +
+      MFSECDEN *
+      ((long)USHRT_MAX - tm_info.t_stmp.mfc_num - next_minor_frame + 1) /
+      MFSECNUM );
+  } else if ( next_minor_frame - tm_info.t_stmp.mfc_num > TS_MFC_LIMIT) {
+    // q = floor((m-m0)/n)
+    // m1 = m0+q*n
+    // t1 = t0 + d*(m1-m0)/n = t0 + d*q
+    unsigned short q = (next_minor_frame - tm_info.t_stmp.mfc_num)/MFSECNUM;
+    commit_tstamp( tm_info.t_stmp.mfc_num + q * MFSECNUM,
+        tm_info.t_stmp.secs + MFSECDEN * q );
+  }
+  ts_checks = 0;
+  if ( NROWMINF == 1 || MINF_ROW == NROWMINF-1 ) {
+    /* Last row of minor frame: Synch Calculations */
+    Synch = ( INVSYNCH && collector::majf_row == NROWMAJF-1) ?
+      ~SYNCHVAL : SYNCHVAL;
+  }
+
+  if ( MINF_ROW == 0 ) {
+    MFCtr = next_minor_frame;
+    next_minor_frame++;
+  }
+  
+  /* appropriate collection function */
+  home = (union home_row *) row[last];
+  efuncs[collector::majf_row]();
+  rowlets += TRD;
+  commit_rows(MFCtr, MINF_ROW, 1);
+  MINF_ROW_INC;
+  incmod(collector::majf_row, NROWMAJF);
+  transmit_data(0);
+}
+
+%Collect_Row%
+
+/* Skeleton init_senders_head */
+void tmc_collector::init_senders() {
+%init_senders_head%
+
+/* Skeleton init_senders_tail section */
+}
+%init_senders_tail%
+
+/* Skeleton "rest of the file" section */
+
+#ifdef NEED_TIME_FUNCS
+  #define ROWS(x) (((unsigned long)(x))*NROWMINF+MINF_ROW)
+  #define FRACSECS(x) (((unsigned long)ROWS(x))*NSECSPER)
+
+  long itime(void) {
+      return(tm_info.t_stmp.secs +
+        FRACSECS(MFCtr-tm_info.t_stmp.mfc_num) / NROWSPER );
+  }
+  double dtime(void) {
+      return(tm_info.t_stmp.secs +
+        (double) FRACSECS(MFCtr-tm_info.t_stmp.mfc_num) / NROWSPER );
+  }
+  double etime(void) {
+    double t;
+    static double t0 = -1e9;
+    
+    t = dtime();
+    if (t0 == -1e9) t0 = t;
+    return(t - t0);
+  }
+#endif
+
+/* Skeleton End of File */
