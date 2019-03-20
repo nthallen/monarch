@@ -1,4 +1,4 @@
-/** @file Timeout.cc */
+/** @file timeout.cc */
 
 #include <string.h>
 #include <errno.h>

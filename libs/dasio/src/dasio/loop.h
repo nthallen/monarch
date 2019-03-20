@@ -1,5 +1,5 @@
 /**
- * \file dasio.h
+ * \file loop.h
  * Header for the Harvard Link Engineering Data Acquisition System I/O library
  */
 #ifndef DAS_IO_LOOP_H_INCLUDED

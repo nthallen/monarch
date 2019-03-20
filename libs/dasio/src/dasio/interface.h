@@ -1,5 +1,5 @@
 /**
- * \file dasio.h
+ * \file interface.h
  * Header for the Harvard Link Engineering Data Acquisition System I/O library
  */
 #ifndef DAS_IO_INTERFACE_H_INCLUDED
@@ -223,7 +223,7 @@ class Interface {
      * If we are processing a timeout and did not actually see a read flag,
      * then we won't interpret 0 bytes as EOF.
      * @param nchars number of characters to remove from front of buffer
-     * @flag The flag argument from ProcessData().
+     * @param flag The flag argument from ProcessData().
      */
     void consume(int nchars);
     /**
