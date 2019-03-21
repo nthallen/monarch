@@ -6,7 +6,7 @@ CFLAGS=-g -Wall -I/usr/local/include
 
 LFLAGS=-i
 LDFLAGS=-L/usr/local/lib -Wl,-rpath -Wl,/usr/local/lib
-LIBS=-lnort -lm
+LIBS=-lnl -lm
 YACC.y=bison -y $(YFLAGS)
 
 # SRC, TOOL and DOC are types of files which should be saved
@@ -34,7 +34,7 @@ TARGET=tmc
 SUBDIRS=regress
 LSRC=/usr/local/share/huarp
 LBIN=/usr/local/bin
-NRTL=/usr/local/include/nortlib.h
+NRTL=/usr/local/include/nl.h
 TMCREV=tmc
 
 #-----------------------------------------------------------------
@@ -42,7 +42,7 @@ TMCREV=tmc
 #-----------------------------------------------------------------
 tmc : $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o tmc $(OBJ) $(LIBS)
-	usemsg tmc tmcmain.c
+	# usemsg tmc tmcmain.c
 
 .PHONY : install distribution regresstest clean
 

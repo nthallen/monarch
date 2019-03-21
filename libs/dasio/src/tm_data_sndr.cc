@@ -1,4 +1,4 @@
-/** @file dasio_tm.cc */
+/** @file tm_data_sndr.cc */
 #include "dasio/tm_data_sndr.h"
 #include "dasio/loop.h"
 #include "nl.h"
