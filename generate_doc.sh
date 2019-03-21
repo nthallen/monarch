@@ -21,3 +21,25 @@ generate libs/tm
 generate libs/nl
 generate libs/dasio
 generate tools/cmdgen
+
+cd ../dox
+
+cat >index.html <<EOF
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Doxygen Archives</title>
+</head>
+<body>
+<h1>Doxygen Archives</h1>
+<ul>
+EOF
+
+find . -mindepth 2 -name index.html | xargs grep "<title>" |
+  sed -e 's/^\(.*\):<title>\(.*\)<\/title>/<li><a href="\1">\2<\/a><\/li>/' >>index.html
+
+cat >>index.html <<EOF
+</ul>
+</body>
+</html>
+EOF
