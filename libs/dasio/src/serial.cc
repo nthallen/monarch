@@ -1,4 +1,4 @@
-/** @file dasio_serial.cc */
+/** @file serial.cc */
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>

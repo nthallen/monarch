@@ -1,4 +1,4 @@
-/** @file dasio_socket.cc */
+/** @file socket.cc */
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
