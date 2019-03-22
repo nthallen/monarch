@@ -51,7 +51,7 @@ void print_recv_objs(void) {
     fprintf( ofile, "\n\n /* receive objects */\n" );
     for (npp = pps; npp != NULL; npp = npp->next)
       if (npp->type == PPP_RECV)
-    fprintf(ofile, " DG_data *%s_obj;\n", npp->name );
+    fprintf(ofile, " TM_data_rcvr *%s_obj;\n", npp->name );
   }
 }
 

@@ -1,12 +1,31 @@
-/* DG.c */
+/** @file tm_gen.cc */
 #include <errno.h>
 #include <sys/uio.h>
+#include "nl.h"
 #include "dasio/tm_gen.h"
 #include "dasio/msg.h"
 
+namespace DAS_IO {
+
+tm_gen_bfr::tm_gen_bfr()
+  : Client("bfr", 80, "tm_bfr", "input") {}
+
+tm_gen_bfr::~tm_gen_bfr() {}
+
+bool tm_gen_bfr::iwritev(struct iovec *iov, int nparts, const char *where) {
+  bool rv = Interface::iwritev(iov, nparts);
+  if (!obuf_empty()) {
+    msg(MSG_FATAL, "%s: Incomplete write %s", iname, where);
+  }
+  return rv;
+}
+
+tm_generator *tm_generator::TM_server;
+
 tm_generator::tm_generator(int nQrows, int low_water)
-    : tm_queue(nQrows,low_water) {
-  tmg_bfr_fd = -1;
+    : tm_queue(nQrows,low_water), Server("tm_gen") {
+  bfr = 0;
+  tmr = 0;
   quit = false;
   started = false;
   regulated = false;
@@ -21,19 +40,16 @@ tm_generator::~tm_generator() {}
  */
 void tm_generator::init(int collection) {
   tm_queue::init();
-  tmg_bfr_fd = open(tm_dev_name("TM/DG"), collection ? O_WRONLY|O_NONBLOCK : O_WRONLY );
-  if (tmg_bfr_fd < 0) msg(3, "Unable to open TM/DG: %d", errno );
+  bfr = new tm_gen_bfr();
+  // tmg_bfr_fd = open(tm_dev_name("TM/DG"), collection ? O_WRONLY|O_NONBLOCK : O_WRONLY );
+  // if (tmg_bfr_fd < 0) msg(3, "Unable to open TM/DG: %d", errno );
   tm_hdr_t hdr = { TMHDR_WORD, TMTYPE_INIT };
-  iov_t iov[2];
+  struct iovec iov[2];
   SETIOV(&iov[0], &hdr, sizeof(hdr));
   SETIOV(&iov[1], &tm_info, sizeof(tm_info));
-  int rc = writev( tmg_bfr_fd, iov, 2);
-  check_writev( rc, sizeof(tm_info)+sizeof(hdr), "sending TMTYPE_INIT" );
-  dispatch = new DG_dispatch();
-  cmd = new DG_cmd(this);
-  cmd->attach();
-  tmr = new DG_tmr(this);
-  tmr->attach();
+  bfr->iwritev( iov, 2, "sending TMTYPE_INIT");
+  tm_gen_cmd::attach(this); // defines the subservice
+  tmr = new tm_gen_tmr(this);
   row_period_nsec_default = tmi(nsecsper)*(uint64_t)1000000000L/tmi(nrowsper);
   row_period_nsec_current = row_period_nsec_default;
 }
@@ -47,7 +63,7 @@ void tm_generator::transmit_data( int single_row ) {
   int rc;
   tm_hdrs_t hdrs;
   hdrs.s.hdr.tm_id = TMHDR_WORD;
-  iov_t iov[3];
+  struct iovec iov[3];
   while ( first_tmqr ) {
     switch ( first_tmqr->type ) {
       case tmq_tstamp:
@@ -56,10 +72,8 @@ void tm_generator::transmit_data( int single_row ) {
         SETIOV(&iov[0], &hdrs, sizeof(tm_hdr_t));
         SETIOV(&iov[1], &tmqts->TS, sizeof(tmqts->TS));
         lock(__FILE__, __LINE__);
-        if ( tmg_bfr_fd != -1 ) {
-          rc = writev(tmg_bfr_fd, iov, 2);
-          check_writev( rc, sizeof(tm_hdr_t)+sizeof(tmqts->TS),
-             "transmitting tstamp" );
+        if ( bfr ) {
+          bfr->iwritev(iov, 2, "transmitting tstamp");
         }
         unlock();
         retire_tstamp(tmqts);
@@ -88,26 +102,18 @@ void tm_generator::transmit_data( int single_row ) {
             n_iov = 3;
           }
           lock(__FILE__,__LINE__);
-          if ( tmg_bfr_fd != -1 ) {
-            rc = writev(tmg_bfr_fd, iov, n_iov);
+          if ( bfr ) {
+            bfr->iwritev(iov, n_iov, "transmitting data");
             unlock();
-            check_writev( rc, nbDataHdr + n_rows * nbQrow,
-               "transmitting data" );
           } else unlock();
           retire_rows(tmqdr, n_rows);
           if ( single_row ) return;
         }
         break;
       default:
-        msg(4, "Invalid type in transmit_data" );
+        msg(MSG_EXIT_ABNORM, "Invalid type in transmit_data" );
     }
   }
-}
-
-void tm_generator::check_writev( int rc, int wr_size, const char *where ) {
-  if ( rc < 0 ) msg( 3, "Error %d %s", errno, where );
-  else if ( rc != wr_size )
-    msg( 3, "writev %d, not %d, %s", rc, wr_size, where );
 }
 
 /**
@@ -181,14 +187,11 @@ int tm_generator::execute(const char *cmd) {
     lock(__FILE__,__LINE__);
     started = false;
     quit = true;
-    if ( tmg_bfr_fd != -1 ) {
-      close(tmg_bfr_fd);
-      tmg_bfr_fd = -1;
-    }
+    bfr->close();
     unlock();
-    msg( -2, "Received Quit" );
+    msg( MSG_DEBUG, "Received Quit" );
     //dispatch->ready_to_quit();
-    msg( 2, "Implement Server shutdown!" );
+    msg( MSG_ERROR, "Implement Server shutdown!" );
     event(tmg_event_quit);
     return 1;
   }
@@ -256,14 +259,14 @@ int tm_generator::execute(const char *cmd) {
         }
         break;
       default:
-        msg(2,"Invalid TM command in tm_generator::execute: '%s'", cmd );
+        msg(MSG_ERROR,"Invalid TM command in tm_generator::execute: '%s'", cmd );
         break;
     }
-  } else msg(2, "Invalid command in tm_generator::execute: '%s'", cmd );
+  } else msg(MSG_ERROR, "Invalid command in tm_generator::execute: '%s'", cmd );
   return 0;
 }
 
-void tm_generator::event(enum tmg_event evt) {}
+void tm_generator::event(enum tm_gen_event evt) {}
 
 void tm_generator::tm_start(int lock_needed) {
   if (lock_needed) lock(__FILE__,__LINE__);
@@ -290,4 +293,6 @@ void tm_generator::tm_stop() {
   unlock();
   tmr->settime(0);
   event(tmg_event_stop);
+}
+
 }

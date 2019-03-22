@@ -10,7 +10,9 @@
 #include "nl.h"
 #include "oui.h"
 #include "dasio/tm.h"
-#include "dasio/tm_col.h"
+#include "dasio/tm_server.h"
+
+using namespace DAS_IO;
 
 %headers%
 
@@ -44,13 +46,13 @@ int check_ts = 1;
 /* Skeleton main_program section */
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
-  nl_error( 0, "Startup");
+  msg( 0, "Startup");
   tmc_collector col;
   col.init();
   col.init_senders();
   tminitfunc();
   col.operate();
-  nl_error( 0, "Shutdown" );
+  msg( 0, "Shutdown" );
   return 0;
 }
 

@@ -1,35 +1,4 @@
-/* place.c
- * Revision 1.6  2008/08/13 14:28:28  ntallen
- * Always define global DG_data objects for TM 'Receive'
- * Place __attribute__((packed)) appropriately in home_row definition
- *
- * Revision 1.5  2008/07/21 16:27:42  ntallen
- * Add 'home_row' to union defintion
- *
- * Revision 1.4  2008/07/16 19:13:40  ntallen
- * Compiling support for TM_Data_Type 3
- * Omit definitions for Synch and MFCtr from home row
- *
- * Revision 1.3  2008/07/16 18:55:14  ntallen
- * Changes to support TM_Data_Type 3
- *
- * Revision 1.2  2008/07/03 18:18:48  ntallen
- * To compile under QNX6 with minor blind adaptations to changes between
- * dbr.h and tm.h
- *
- * Revision 1.1  2008/07/03 15:11:07  ntallen
- * Copied from QNX4 version V1R9
- *
- * Revision 1.10  1995/10/18 02:03:08  nort
- * *** empty log message ***
- *
- * Revision 1.9  1993/09/27  19:37:23  nort
- * Change relating to states.
- *
- * Revision 1.8  1993/07/13  19:44:05  nort
- * Place "validate <state>" on initprog
- *
- * Revision 1.7  1993/07/09  19:40:59  nort
+/** @file place.c
  */
 #include <stdio.h>
 #include <stdlib.h>

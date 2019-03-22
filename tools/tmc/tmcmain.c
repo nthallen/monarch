@@ -1,39 +1,4 @@
-/* tmcmain.c
- *
- * Revision 1.5  2009/04/30 14:21:37  ntallen
- * Up the release number
- *
- * Revision 1.4  2008/08/13 14:28:28  ntallen
- * Always define global DG_data objects for TM 'Receive'
- * Place __attribute__((packed)) appropriately in home_row definition
- *
- * Revision 1.3  2008/07/15 16:54:32  ntallen
- * Handle optargs reset portably
- *
- * Revision 1.2  2008/07/03 18:18:48  ntallen
- * To compile under QNX6 with minor blind adaptations to changes between
- * dbr.h and tm.h
- *
- * Revision 1.1  2008/07/03 15:11:07  ntallen
- * Copied from QNX4 version V1R9
- *
- * Revision 1.14  2001/03/14 15:29:22  nort
- * Added processing for #define _Address generation
- *
- * Revision 1.13  2001/01/24 15:44:10  nort
- * Updated Copyright notice
- *
- * Revision 1.12  1995/10/18  02:01:48  nort
- * *** empty log message ***
- *
- * Revision 1.11  1993/09/27  19:34:46  nort
- * Changes to use common compiler functions
- *
- * Revision 1.10  1993/07/09  19:39:58  nort
- * *** empty log message ***
- *
- * Revision 1.9  1993/05/21  19:44:13  nort
- * Added State Variable Support
+/** @file tmcmain.c
  */
 #include <stdio.h>
 #include <stdarg.h>

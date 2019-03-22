@@ -1,81 +1,75 @@
 /**
  * tm_gen_tmr Object definitions
  */
-#include <signal.h>
 #include <errno.h>
+#include <string.h>
 #include <unistd.h>
-//#include <sys/neutrino.h> //QNX
-//#include <sys/netmgr.h> //QNX
-//#include <sys/iomsg.h> //QNX
+#include <sys/timerfd.h>
 #include "dasio/tm.h"
-#include "dasio/tm_gen_client.h"
 #include "dasio/tm_gen_cmd.h"
 #include "dasio/tm_gen_tmr.h"
+#include "nl.h"
 
-int tm_gen_tmr_pulse_func( message_context_t *ctp, int code,
-        unsigned flags, void *handle ) {
-  tm_gen_tmr *tmr = (tm_gen_tmr *)handle;
-  tmr->dg->service_row_timer();
-  return 0;
-}
+namespace DAS_IO {
 
-tm_gen_tmr::tm_gen_tmr(tm_generator *tm_gen) : tm_gen_client() {
-  timerid = -1;
-  dg = tm_gen;
+tm_gen_tmr::tm_gen_tmr(tm_generator *tm_gen)
+    : Interface("tmr", 8), tmg(tm_gen) {
   struct timespec ts;
   if (clock_getres(CLOCK_REALTIME, &ts))
-    nl_error(4, "Error from clock_getres()");
-  timer_resolution_nsec = timespec2nsec(&ts);
-}
-
-void tm_gen_tmr::attach() {
-  struct sigevent tmr_ev;
-  int rc;
-
-  pulse_code =
-    pulse_attach( dg->dispatch->dpp, MSG_FLAG_ALLOC_PULSE, 0, tm_gen_tmr_pulse_func, this );
-  if ( pulse_code < 0 )
-    nl_error(3, "Error %d from pulse_attach", errno );
-  int coid = message_connect( dg->dispatch->dpp, MSG_FLAG_SIDE_CHANNEL );
-  if ( coid == -1 )
-    nl_error(3, "Error %d from message_connect", errno );
-  tmr_ev.sigev_notify = SIGEV_PULSE;
-  tmr_ev.sigev_coid = coid;
-  tmr_ev.sigev_priority = getprio(0);
-  tmr_ev.sigev_code = pulse_code;
-  rc = timer_create( CLOCK_REALTIME, &tmr_ev, &timerid );
-  if ( rc < 0 ) nl_error( 3, "Error creating timer" );
-  tm_gen_client::attach(dg->dispatch);
-}
-
-int tm_gen_tmr::ready_to_quit() {
-  if ( timerid != -1 ) {
-    if ( pulse_detach(dg->dispatch->dpp, pulse_code, 0) == -1 ) {
-      nl_error( 2, "pulse_detach returned -1" );
-    }
-    if ( timer_delete(timerid) == -1 ) {
-      nl_error( 2, "timer_delete returned errno %d", errno );
-    }
-    timerid = -1;
+    msg(MSG_EXIT_ABNORM, "Error from clock_getres()");
+  timer_resolution_nsec =
+    ts.tv_sec * (uint64_t)1000000000L + ts.tv_nsec;
+  fd = timerfd_create(CLOCK_REALTIME, TFD_NONBLOCK);
+  if (fd < 0) {
+    msg(MSG_FATAL, "timerfd_create returned error %d: %s",
+      errno, strerror(errno));
   }
-  return 1;
+  flags = Fl_Read;
+  tmg->ELoop.add_child(this);
 }
 
 tm_gen_tmr::~tm_gen_tmr() {
-  nl_error( 0, "Destructing tm_gen_tmr object" );
+  msg( 0, "Destructing tm_gen_tmr object" );
 }
 
+bool tm_gen_tmr::protocol_input() {
+  // could look at buf and make sure only
+  // one timer expiration has occurred.
+  report_ok(nc);
+  tmg->service_row_timer();
+  return 0;
+}
+
+// int tm_gen_tmr::ready_to_quit() {
+  // if ( timerid != -1 ) {
+    // if ( pulse_detach(dg->dispatch->dpp, pulse_code, 0) == -1 ) {
+      // msg(MSG_ERROR, "pulse_detach returned -1" );
+    // }
+    // if ( timer_delete(timerid) == -1 ) {
+      // msg(MSG_ERROR, "timer_delete returned errno %d", errno );
+    // }
+    // timerid = -1;
+  // }
+  // return 1;
+// }
+
 void tm_gen_tmr::settime( int per_sec, int per_nsec ) {
+  // ### Change this to start on the second
   struct itimerspec itime;
 
   itime.it_value.tv_sec = itime.it_interval.tv_sec = per_sec;
   itime.it_value.tv_nsec = itime.it_interval.tv_nsec = per_nsec;
-  timer_settime(timerid, 0, &itime, NULL);
+  timerfd_settime(fd, 0, &itime, NULL);
 }
 
 void tm_gen_tmr::settime( uint64_t per_nsec ) {
+  // ### Change this to start on the second
   struct itimerspec itime;
-  nsec2timespec( &itime.it_value, per_nsec );
+  itime.it_value.tv_sec = per_nsec / (uint64_t)1000000000;
+  itime.it_value.tv_nsec = per_nsec % (uint64_t)1000000000;
+  // nsec2timespec( &itime.it_value, per_nsec );
   itime.it_interval = itime.it_value;
-  timer_settime(timerid, 0, &itime, NULL);
+  timerfd_settime(fd, 0, &itime, NULL);
+}
+
 }

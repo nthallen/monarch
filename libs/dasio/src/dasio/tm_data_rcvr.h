@@ -1,6 +1,6 @@
-/** @file dasio/tm_server.h */
-#ifndef DASIO_TM_SERVER_H_INCLUDED
-#define DASIO_TM_SERVER_H_INCLUDED
+/** @file dasio/tm_data_rcvr.h */
+#ifndef DASIO_TM_DATA_RCVR_H_INCLUDED
+#define DASIO_TM_DATA_RCVR_H_INCLUDED
 
 #include "server.h"
 
@@ -9,7 +9,7 @@ namespace DAS_IO {
   class TM_data_rcvr;
   
   /**
-   * @brief Per-datum class for DG to receive data from drivers
+   * @brief Per-datum class for TM gen to receive data from drivers
    */
   class TM_data_rcvr_def {
     friend class TM_data_rcvr;
@@ -42,17 +42,8 @@ namespace DAS_IO {
     protected:
       TM_data_rcvr_def *def;
   };
-  
-  class TM_cmd : public Socket {
-    public:
-      TM_cmd(Authenticator *auth, const char *iname);
-      ~TM_cmd();
-      bool protocol_input();
-      static TM_cmd *new_tm_cmd(Authenticator *auth, SubService *ss);
-    protected:
-  };
 
-  extern Server TM_server;
+  // extern Server TM_server;
 
   TM_data_rcvr_def *TM_receive(const char *name, void *data, int data_size, int synch);
 }
