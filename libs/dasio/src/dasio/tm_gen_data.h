@@ -8,7 +8,6 @@
 #include <signal.h>
 #include <limits.h>
 #include "tm_gen.h"
-#include "server.h"
 
 class tm_generator;
 class tm_gen_data;
@@ -29,7 +28,7 @@ struct data_dev_ocb {
 class tm_gen_data : public DAS_IO::Serverside_client {
   public:
     // tm_gen_data(tm_generator *tm_gen); // perhaps I only need the dispatch
-    tm_gen_data(/*tm_gen_dispatch *disp, */const char *name, void *data,
+    tm_gen_data(tm_gen_dispatch *disp, const char *name, void *data,
         int data_size, int synch);
     ~tm_gen_data();
     int ready_to_quit(); // virtual function of tm_gen_client
@@ -45,7 +44,6 @@ class tm_gen_data : public DAS_IO::Serverside_client {
     void *dptr;
     int dsize;
     bool synched;
-    bool blocked;
     //struct data_dev_attr data_attr;
     //struct data_dev_ocb *blocked;
     //static resmgr_connect_funcs_t connect_funcs;

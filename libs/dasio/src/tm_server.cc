@@ -7,7 +7,7 @@
 
 namespace DAS_IO {
   
-  Server TM_server("tmgen");
+  Server TM_server("DG");
   
   TM_data_rcvr::TM_data_rcvr(Authenticator *auth, const char *iname, TM_data_rcvr_def *def)
         : Serverside_client(auth, iname, 128), def(def) {

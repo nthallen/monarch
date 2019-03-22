@@ -9,8 +9,8 @@ add_definitions( -D_POSIX_SOURCE=1 -D_XOPEN_SOURCE=500 )
 add_library(dasio interface.cc ascii_escape.cc not_parsed.cc serial.cc
   timeout.cc loop.cc socket.cc unix_name.cc modbus_rtu.cc
   client.cc server.cc appid.cc tm_data_sndr.cc tm_server.cc
-  tm_gen.cc tm_gen_cmd.cc tm_gen_client.cc
-  tm_gen_tmr.cc
+  #tm_gen.cc tm_gen_cmd.cc tm_gen_client.cc
+  #tm_gen_tmr.cc
   tm_gen_data.cc 
   tm_queue.cc tm_client.cc tmdac.cc tm_info.cc
   cmd_writer.cc cmd_version.cc cmd_version_def.cc msg.cc
