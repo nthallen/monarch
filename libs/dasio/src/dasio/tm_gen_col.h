@@ -44,7 +44,7 @@ class collector : public tm_generator {
 class tmc_collector : public collector {
   public:
     void service_row_timer();
-    void init_senders(tmc_collector *tmg);
+    void init_senders();
     void event(enum tm_gen_event evt);
   private:
     void ts_check(); // don't know how to get to this one from a timer

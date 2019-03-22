@@ -1,26 +1,6 @@
-/* pfuncs.c
-   Contains routines to output function definitions.
-   Revision 1.4  2008/07/16 19:13:40  ntallen
-   Compiling support for TM_Data_Type 3
-   Omit definitions for Synch and MFCtr from home row
-
-   Revision 1.3  2008/07/16 18:55:14  ntallen
-   Changes to support TM_Data_Type 3
-
-   Revision 1.2  2008/07/03 18:18:48  ntallen
-   To compile under QNX6 with minor blind adaptations to changes between
-   dbr.h and tm.h
-
-   Revision 1.1  2008/07/03 15:11:07  ntallen
-   Copied from QNX4 version V1R9
-
-   Revision 1.10  1993/09/27 19:38:07  nort
-   Cleanup.
-
- * Revision 1.9  1993/06/23  17:24:45  nort
- * Corrected bug when printing nested IV functions: printf w/o args
- * One for lint.
-*/
+/** @file pfuncs.c
+ * Contains routines to output function definitions.
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -405,7 +385,7 @@ void print_funcs(void) {
   int need_nfunc;
   
   /* output tminitfunc always */
-  fprintf(ofile, "\nvoid tminitfunc(void) {");
+  fprintf(ofile, "\nvoid DAS_IO::tminitfunc(void) {");
   if (initprog.first != NULL) {
     adjust_indent(2);
     print_stat(initprog.first);
