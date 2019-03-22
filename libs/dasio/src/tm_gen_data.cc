@@ -47,12 +47,9 @@ static void ocb_free(struct data_dev_ocb *ocb) {
   free(ocb);
 } */
 
-
-
-
 tm_gen_data::tm_gen_data(/*tm_gen_dispatch *dispatch, */ const char *name_in, void *data,
 	 int data_size, int synch)
-    : DAS_IO::Serverside_client() {
+    : DAS_IO::Serverside_client((DAS_IO::Authenticator*) 0, name_in, data_size) {
 
   //dispatch_t *dpp = dispatch->dpp;
   name = name_in;
@@ -134,13 +131,13 @@ bool tm_gen_data::protocol_input() {
 } */
 
 void tm_gen_data::synch() {
-  data_attr.written = false;
+  //data_attr.written = false;
   if (blocked) {
-    MsgReply(blocked->rcvid, blocked->msgsize, 0, 0);
-    blocked = 0;
+    //MsgReply(blocked->rcvid, blocked->msgsize, 0, 0);
+    blocked = false;
   }
-  if (IOFUNC_NOTIFY_OUTPUT_CHECK( data_attr.notify, 1 ) )
-    iofunc_notify_trigger(data_attr.notify, 1, IOFUNC_NOTIFY_OUTPUT);
+  //if (IOFUNC_NOTIFY_OUTPUT_CHECK( data_attr.notify, 1 ) )
+  //  iofunc_notify_trigger(data_attr.notify, 1, IOFUNC_NOTIFY_OUTPUT);
 }
 
 int tm_gen_data::stale(int max_stale) {
@@ -150,7 +147,7 @@ int tm_gen_data::stale(int max_stale) {
   return rv;
 }
 
-int tm_gen_data_io_write( resmgr_context_t *ctp,
+/* int tm_gen_data_io_write( resmgr_context_t *ctp,
          io_write_t *msg, IOFUNC_OCB_T *ocb ) {
   int status, nonblock;
 
@@ -177,7 +174,7 @@ int tm_gen_data_io_close_ocb(resmgr_context_t *ctp, void *rsvd,
   IOFUNC_ATTR_T *wr_attr = ocb->hdr.attr;
   iofunc_notify_remove(ctp, wr_attr->notify);
   return(iofunc_close_ocb_default(ctp, rsvd, &ocb->hdr));
-}
+} */
 
 /** tm_gen_data::ready_to_quit() returns true if we are ready to terminate. For tm_gen/data, that means all writers
   have closed their connections and we have detached the device.
@@ -186,12 +183,13 @@ int tm_gen_data::ready_to_quit() {
   // unlink the name
   quitting = true;
   if ( dev_id != -1 ) {
-    int rc = resmgr_detach( dispatch->dpp, dev_id, _RESMGR_DETACH_PATHNAME );
+    int rc = 0; //resmgr_detach( dispatch->dpp, dev_id, _RESMGR_DETACH_PATHNAME );
     if ( rc == -1 )
       report_err(/* 2, */"Error returned from resmgr_detach: %d", errno );
     dev_id = -1;
   }
-  if ( data_attr.attr.count )
+  /*if ( data_attr.attr.count )
     msg( -2, "Still waiting for tm_gen/data/%s", name );
-  return data_attr.attr.count == 0;
+  return data_attr.attr.count == 0; */
+  return false;
 }

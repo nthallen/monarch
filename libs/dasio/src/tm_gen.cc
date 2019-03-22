@@ -6,7 +6,7 @@
 
 tm_generator::tm_generator(int nQrows, int low_water)
     : tm_queue(nQrows,low_water) {
-  tmg_bfr_fd = -1;
+  tm_gen_bfr_fd = -1;
   quit = false;
   started = false;
   regulated = false;
@@ -21,18 +21,18 @@ tm_generator::~tm_generator() {}
  */
 void tm_generator::init(int collection) {
   tm_queue::init();
-  tmg_bfr_fd = open(tm_dev_name("TM/DG"), collection ? O_WRONLY|O_NONBLOCK : O_WRONLY );
-  if (tmg_bfr_fd < 0) msg(3, "Unable to open TM/DG: %d", errno );
+  tm_gen_bfr_fd = open(tm_dev_name("TM/DG"), collection ? O_WRONLY|O_NONBLOCK : O_WRONLY );
+  if (tm_gen_bfr_fd < 0) msg(3, "Unable to open TM/DG: %d", errno );
   tm_hdr_t hdr = { TMHDR_WORD, TMTYPE_INIT };
   iov_t iov[2];
   SETIOV(&iov[0], &hdr, sizeof(hdr));
   SETIOV(&iov[1], &tm_info, sizeof(tm_info));
-  int rc = writev( tmg_bfr_fd, iov, 2);
+  int rc = writev( tm_gen_bfr_fd, iov, 2);
   check_writev( rc, sizeof(tm_info)+sizeof(hdr), "sending TMTYPE_INIT" );
-  dispatch = new DG_dispatch();
-  cmd = new DG_cmd(this);
+  //dispatch = new DG_dispatch();
+  cmd = new tm_gen_cmd(this);
   cmd->attach();
-  tmr = new DG_tmr(this);
+  tmr = new tm_gen_tmr(this);
   tmr->attach();
   row_period_nsec_default = tmi(nsecsper)*(uint64_t)1000000000L/tmi(nrowsper);
   row_period_nsec_current = row_period_nsec_default;
@@ -40,7 +40,7 @@ void tm_generator::init(int collection) {
 
 void tm_generator::transmit_data( int single_row ) {
   // We can read from the queue without locking
-  // But we need to lock when we reference tmg_bfr_fd
+  // But we need to lock when we reference tm_gen_bfr_fd
   tmq_tstamp_ref *tmqts;
   tmq_data_ref *tmqdr;
   // msg( 0, "transmit_data(%s)", single_row ? "single" : "all" );
@@ -56,8 +56,8 @@ void tm_generator::transmit_data( int single_row ) {
         SETIOV(&iov[0], &hdrs, sizeof(tm_hdr_t));
         SETIOV(&iov[1], &tmqts->TS, sizeof(tmqts->TS));
         lock(__FILE__, __LINE__);
-        if ( tmg_bfr_fd != -1 ) {
-          rc = writev(tmg_bfr_fd, iov, 2);
+        if ( tm_gen_bfr_fd != -1 ) {
+          rc = writev(tm_gen_bfr_fd, iov, 2);
           check_writev( rc, sizeof(tm_hdr_t)+sizeof(tmqts->TS),
              "transmitting tstamp" );
         }
@@ -88,8 +88,8 @@ void tm_generator::transmit_data( int single_row ) {
             n_iov = 3;
           }
           lock(__FILE__,__LINE__);
-          if ( tmg_bfr_fd != -1 ) {
-            rc = writev(tmg_bfr_fd, iov, n_iov);
+          if ( tm_gen_bfr_fd != -1 ) {
+            rc = writev(tm_gen_bfr_fd, iov, n_iov);
             unlock();
             check_writev( rc, nbDataHdr + n_rows * nbQrow,
                "transmitting data" );
@@ -181,9 +181,9 @@ int tm_generator::execute(const char *cmd) {
     lock(__FILE__,__LINE__);
     started = false;
     quit = true;
-    if ( tmg_bfr_fd != -1 ) {
-      close(tmg_bfr_fd);
-      tmg_bfr_fd = -1;
+    if ( tm_gen_bfr_fd != -1 ) {
+      close(tm_gen_bfr_fd);
+      tm_gen_bfr_fd = -1;
     }
     unlock();
     msg( -2, "Received Quit" );
