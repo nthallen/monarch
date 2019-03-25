@@ -1,13 +1,15 @@
-/** @file tm_server.cc */
+/** @file tm_data_rcvr.cc */
 #include <string.h>
-#include "dasio/tm_server.h"
+#include "dasio/tm_data_rcvr.h"
+#include "dasio/tm_gen.h"
+#include "dasio/tm_gen_col.h"
 #include "dasio/appid.h"
 #include "nl.h"
-#include "dasio/msg.h"
+//#include "dasio/msg.h"
 
 namespace DAS_IO {
   
-  Server TM_server("DG");
+  // Server TM_server("DG");
   
   TM_data_rcvr::TM_data_rcvr(Authenticator *auth, const char *iname, TM_data_rcvr_def *def)
         : Serverside_client(auth, iname, 128), def(def) {
@@ -67,11 +69,13 @@ namespace DAS_IO {
     interface = 0;
   }
   
-  TM_data_rcvr_def *TM_receive(const char *name, void *data, int data_size, int synch) {
-    int svclen = snprintf(0, 0, "%s/data/%s", TM_server.get_service(), name);
+  TM_data_rcvr_def *collector::receive(const char *name, void *data, int data_size, int synch) {
+    int svclen = snprintf(0, 0, "%s/data/%s",
+      get_service(), name);
     char *subservice = (char *)new_memory(svclen+1);
-    snprintf(subservice, svclen+1, "%s/data/%s", TM_server.get_service(), name);
-    TM_server.add_subservice(
+    snprintf(subservice, svclen+1, "%s/data/%s",
+      get_service(), name);
+    add_subservice(
       new SubService(
         subservice,
         TM_data_rcvr::new_tm_data_rcvr,

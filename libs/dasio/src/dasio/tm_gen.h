@@ -1,26 +1,39 @@
 #ifndef TM_GEN_H_INCLUDED
 #define TM_GEN_H_INCLUDED
 
+#include "client.h"
+#include "server.h"
 #include "tm_queue.h"
-#include "tm_gen_client.h"
 #include "tm_gen_cmd.h"
 #include "tm_gen_tmr.h"
 
-enum tm_gen_event { tm_gen_event_start, tm_gen_event_stop, tm_gen_event_fast, tm_gen_event_quit };
+namespace DAS_IO {
+
+enum tm_gen_event { tmg_event_start, tmg_event_stop, tmg_event_fast, tmg_event_quit };
 
 class tm_gen_cmd;
 class tm_gen_tmr;
 
-class tm_generator : public DAS_IO::tm_queue {
+class tm_gen_bfr : public Client {
+  public:
+    tm_gen_bfr();
+    ~tm_gen_bfr();
+    inline bool iwritev(struct iovec *iov, int nparts, const char *where);
+    inline bool obuf_empty() {
+      return Interface::obuf_empty();
+    }
+  protected:
+};
+
+class tm_generator : public tm_queue, public Server {
   public:
     tm_generator(int nQrows, int low_water);
     virtual ~tm_generator();
     void init( int collection );
-    //void operate(); // event loop
     int execute(const char *cmd);
     virtual void event(enum tm_gen_event evt);
-    //tm_gen_dispatch *dispatch;
     virtual void service_row_timer() = 0;
+    static tm_generator *TM_server;
   protected:
     bool quit; // non-zero means we are terminating
     bool started; // True while running
@@ -30,8 +43,7 @@ class tm_generator : public DAS_IO::tm_queue {
 
     // virtual void single_step() = 0;
     void transmit_data( int single_row );
-    int tm_gen_bfr_fd;
-    tm_gen_cmd *cmd;
+    tm_gen_bfr *bfr;
     tm_gen_tmr *tmr;
   private:
     void tm_start(int lock_needed = 1);
@@ -39,7 +51,9 @@ class tm_generator : public DAS_IO::tm_queue {
     void tm_stop();
     uint64_t row_period_nsec_default;
     uint64_t row_period_nsec_current;
-    void check_writev( int rc, int wr_size, const char *where );
 };
+
+#define SETIOV(x,y,z) ((x)->iov_base = y, (x)->iov_len = z)
+}
 
 #endif

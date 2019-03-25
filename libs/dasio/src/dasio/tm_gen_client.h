@@ -1,6 +1,8 @@
 #ifndef RESMGR_H_
 #define RESMGR_H_
 
+THIS FILE IS NO LONGER NEEDED
+
 //#include <sys/iofunc.h> //QNX
 //#include <sys/dispatch.h> //QNX
 //#include <sys/resmgr.h> //QNX

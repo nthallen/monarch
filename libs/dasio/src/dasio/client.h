@@ -13,7 +13,20 @@ namespace DAS_IO {
     public:
       typedef enum { Clt_connecting, Clt_negotiating, Clt_negotiated }
                          clt_state_t;
+      /**
+       * @param iname the interface name
+       * @param bufsz the input buffer size
+       * @param service the remote service name we are connecting to
+       * @param sub_service the sub service name (without the service prefix)
+       */
       Client(const char *iname, int bufsz, const char *service, const char *sub_service);
+      /**
+       * @param iname the interface name
+       * @param bufsz the input buffer size
+       * @param hostname the remote host we are connecting to over TCP/IP
+       * @param service the remote service name we are connecting to
+       * @param sub_service the sub service name (without the service prefix)
+       */
       Client(const char *iname, int bufsz, const char *hostname, const char *service,
                     const char *sub_service);
       virtual ~Client();

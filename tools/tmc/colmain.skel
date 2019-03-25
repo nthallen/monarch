@@ -7,10 +7,15 @@
 #include <assert.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <limits.h>
 #include "nl.h"
 #include "oui.h"
 #include "dasio/tm.h"
-#include "dasio/tm_col.h"
+#include "dasio/tm_gen.h"
+#include "dasio/tm_gen_col.h"
+#include "dasio/tm_data_rcvr.h"
+
+using namespace DAS_IO;
 
 %headers%
 
@@ -44,13 +49,13 @@ int check_ts = 1;
 /* Skeleton main_program section */
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
-  nl_error( 0, "Startup");
+  msg( 0, "Startup");
   tmc_collector col;
   col.init();
   col.init_senders();
-  tminitfunc();
-  col.operate();
-  nl_error( 0, "Shutdown" );
+  DAS_IO::tminitfunc();
+  col.ELoop.event_loop();
+  msg( 0, "Shutdown" );
   return 0;
 }
 
@@ -60,20 +65,20 @@ int main(int argc, char **argv) {
 /**
  * Called from a slow timer to make sure we aren't drifting.
  */
-void tmc_collector::ts_check() {
+void DAS_IO::tmc_collector::ts_check() {
   rowlets -= TRN;
   if (rowlets < LOWLIM || rowlets > HIGHLIM)
     ts_checks = TSCHK_RTIME | TSCHK_CHECK;
 }
 
-void tmc_collector::event(enum dg_event evt) {
+void DAS_IO::tmc_collector::event(enum tm_gen_event evt) {
   collector::event(evt);
-  if ( evt == dg_event_start ) {
+  if ( evt == tmg_event_start ) {
     rowlets = 0;
     ts_checks =  TSCHK_RTIME | TSCHK_REQUIRED;
   #ifdef SUBBUS_H_INCLUDED
-    } else if ( evt == dg_event_stop ||
-                evt == dg_event_quit ) {
+    } else if ( evt == tmg_event_stop ||
+                evt == tmg_event_quit ) {
       disarm_sic();
   #endif
   }
@@ -83,7 +88,7 @@ void tmc_collector::event(enum dg_event evt) {
  * Should come up with a test to guarantee that the right thing
  * happens in all circumstances. 
  */
-void tmc_collector::service_row_timer() {
+void DAS_IO::tmc_collector::service_row_timer() {
   time_t rtime;
   long dt;
   
@@ -147,7 +152,7 @@ void tmc_collector::service_row_timer() {
 %Collect_Row%
 
 /* Skeleton init_senders_head */
-void tmc_collector::init_senders() {
+void DAS_IO::tmc_collector::init_senders() {
 %init_senders_head%
 
 /* Skeleton init_senders_tail section */
