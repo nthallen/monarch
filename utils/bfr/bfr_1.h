@@ -2,15 +2,8 @@
 #ifndef TMBFR_H_INCLUDED
 #define TMBFR_H_INCLUDED
 #include <pthread.h>
-#include "tm.h"
-
-struct tm_ocb;
-struct tm_attr;
-#define THREAD_POOL_PARAM_T dispatch_context_t
-#define IOFUNC_OCB_T struct tm_ocb
-#define IOFUNC_ATTR_T struct tm_attr
-#include <sys/iofunc.h>
-#include <sys/dispatch.h>
+#include "dasio/tm.h"
+#include "dasio/tm_queue.h"
 
 /* Semantics of Data_Queue
    Data_Queue.first, .last are indices into row and range from
@@ -19,7 +12,7 @@ struct tm_attr;
    .last is where the next row will be written to
    first==last is empty unless full is asserted
 */
-typedef struct dataqueue {
+/* typedef struct dataqueue {
   char *raw;
   char **row;
   tm_hdrw_t output_tm_type;
@@ -32,14 +25,14 @@ typedef struct dataqueue {
   int last;
   int full;
   int nonblocking;
-} data_queue_t;
+} data_queue_t; */
 
-extern data_queue_t Data_Queue; // There can be only one
+/* extern data_queue_t Data_Queue; // There can be only one
 
 typedef struct tsqueue {
   int ref_count;
   tstamp_t TS;
-} TS_queue_t;
+} TS_queue_t; */
 
 /* Semantics of the dq_descriptor
    next points to a later descriptor. A separate descriptor is
