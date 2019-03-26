@@ -61,7 +61,7 @@ typedef enum {
   TM_STATE_HDR, TM_STATE_INFO, TM_STATE_DATA
 } state_t;
 
-class bfr_input_client : public Serverside_client {
+class bfr_input_client : public Serverside_client, public tm_queue {
   public:
     bfr_input_client(Authenticator *Auth, const char *iname, bool blocking);
     ~bfr_input_client();
@@ -75,8 +75,8 @@ class bfr_input_client : public Serverside_client {
     
     struct part_s {
       tm_hdrs_t hdr;
-      char *dptr; // pointer into other buffers
-      int nbdata; // How many bytes are still expected in this sub-transfer
+      // char *dptr; // pointer into other buffers
+      // int nbdata; // How many bytes are still expected in this sub-transfer
     } part;
     
     struct data_s {
@@ -85,15 +85,19 @@ class bfr_input_client : public Serverside_client {
     } data;
     
     struct write_s {
-      char *buf; // allocated temp buffer
-      //int rcvid; // Who is writing
+      // char *buf; // allocated temp buffer
+      // int rcvid; // Who is writing
       int nbrow_rec; // bytes per row received
       int nbhdr_rec; // bytes in the header of data messages
       int nb_msg; // bytes remaining in this write
       int off_msg; // bytes already read from this write
       int nb_rec; // bytes remaining in this record
-      int off_queue; // bytes already read in this queue block
+      int off_queue; // bytes already written in this queue block
     } write;
+  private:
+    bool process_tm_info();
+    int (bfr_input_client::*data_state_eval)();
+    int data_state_T3();
 };
 
 class bfr_output_client : public Serverside_client {

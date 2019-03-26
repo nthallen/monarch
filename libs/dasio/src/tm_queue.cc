@@ -48,12 +48,9 @@ tmq_tstamp_ref::tmq_tstamp_ref( mfc_t MFCtr, time_t time ) : tmq_ref(tmq_tstamp)
   * tm_queue base class constructor.
   * Determines the output_tm_type and allocates the queue storage.
   */
-tm_queue::tm_queue( int n_Qrows, int low_water ) {
-  total_Qrows = n_Qrows;
-  tmq_low_water = low_water;
-  if ( low_water > n_Qrows )
-    msg( 3, "low_water must be <= n_Qrows" );
-
+tm_queue::tm_queue( ) {
+  total_Qrows = 0;
+  tmq_low_water = 0;
   raw = 0;
   row = 0;
   first = last = 0;
@@ -63,11 +60,14 @@ tm_queue::tm_queue( int n_Qrows, int low_water ) {
 
 /**
  * General tm_gen initialization. Assumes tm_info structure has been defined.
- * Establishes the connection to the TMbfr, specifying the O_NONBLOCK option for collection.
  * Initializes the queue itself.
- * Creates dispatch queue and registers "tm_gen/cmd" device and initializes timer.
  */
-void tm_queue::init() {
+void tm_queue::init( int n_Qrows, int low_water) {
+  total_Qrows = n_Qrows;
+  tmq_low_water = low_water;
+  if ( low_water > n_Qrows )
+    msg(MSG_FATAL, "low_water must be <= n_Qrows" );
+  
   // Determine the output_tm_type
   nbQrow = tmi(nbrow);
   tm_info.nrowminf = tmi(nbminf)/tmi(nbrow);
@@ -82,14 +82,14 @@ void tm_queue::init() {
     output_tm_type = TMTYPE_DATA_T1;
     nbDataHdr = 6;
   }
-  if (nbQrow <= 0) msg(3,"nbQrow <= 0");
+  if (nbQrow <= 0) msg(MSG_FATAL,"nbQrow <= 0");
   int total_size = nbQrow * total_Qrows;
   raw = new unsigned char[total_size];
   if ( ! raw )
-    msg( 3, "memory allocation failure: raw" );
+    msg(MSG_FATAL, "memory allocation failure: raw" );
   row = new unsigned char*[total_Qrows];
   if ( ! row )
-    msg( 3, "memory allocation failure: row" );
+    msg(MSG_FATAL, "memory allocation failure: row" );
   int i;
   unsigned char *currow = raw;
   for ( i = 0; i < total_Qrows; i++ ) {

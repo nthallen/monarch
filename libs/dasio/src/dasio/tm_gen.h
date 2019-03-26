@@ -16,7 +16,7 @@ class tm_gen_tmr;
 
 class tm_gen_bfr : public Client {
   public:
-    tm_gen_bfr();
+    tm_gen_bfr(bool collection);
     ~tm_gen_bfr();
     inline bool iwritev(struct iovec *iov, int nparts, const char *where);
     inline bool obuf_empty() {
@@ -27,9 +27,9 @@ class tm_gen_bfr : public Client {
 
 class tm_generator : public tm_queue, public Server {
   public:
-    tm_generator(int nQrows, int low_water);
+    tm_generator();
     virtual ~tm_generator();
-    void init( int collection );
+    void init(int nQrows, int low_water, bool collection);
     int execute(const char *cmd);
     virtual void event(enum tm_gen_event evt);
     virtual void service_row_timer() = 0;
@@ -42,7 +42,7 @@ class tm_generator : public tm_queue, public Server {
     bool regulation_optional;
 
     // virtual void single_step() = 0;
-    void transmit_data( int single_row );
+    void transmit_data(int single_row);
     tm_gen_bfr *bfr;
     tm_gen_tmr *tmr;
   private:

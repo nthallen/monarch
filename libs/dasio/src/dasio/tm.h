@@ -9,6 +9,7 @@
 
 #include <sys/types.h> /* this is for pid_t and nid_t and time_t */
 #include <fcntl.h> /* for arguments to tm_open_name() */
+#include <stdint.h>
 #include <stdbool.h>
 
 #ifndef __GNUC__
@@ -23,9 +24,9 @@
  *   assert( sizeof(tmcks_t) == 4 );
  * to the initialization somewhere.
  */
-typedef unsigned short mfc_t;
-typedef unsigned short tm_hdrw_t;
-typedef unsigned long tmcks_t;
+typedef uint16_t mfc_t;
+typedef uint16_t tm_hdrw_t;
+typedef uint32_t tmcks_t;
 typedef struct {
   tm_hdrw_t tm_id; /* 'TM' TMHDR_WORD */
   tm_hdrw_t tm_type;
@@ -57,8 +58,8 @@ typedef struct {
 } __attribute__((packed)) tstamp_t;
 
 typedef struct {
-  unsigned char version[16]; /* 1.0 etc. contents of VERSION */
-  unsigned char md5[16];     /* MD5 digest of core TM frame definitions */
+  uint8_t version[16]; /* 1.0 etc. contents of VERSION */
+  uint8_t md5[16];     /* MD5 digest of core TM frame definitions */
 } tmid_t;
 
 /**
@@ -92,8 +93,8 @@ typedef struct {
  */
 typedef struct {
   tm_dac_t tm;      /* data info */
-  unsigned short nrowminf;    /* number rows per minor frame */
-  unsigned short max_rows;    /* maximum number of rows allowed to be sent in a message */
+  uint16_t nrowminf;    /* number rows per minor frame */
+  uint16_t max_rows;    /* maximum number of rows allowed to be sent in a message */
   tstamp_t t_stmp;          /* current time stamp */
 } tm_info_t;
 
@@ -113,7 +114,7 @@ typedef struct {
  */
 typedef struct {
   tm_hdrw_t n_rows;
-  unsigned char data[2];
+  uint8_t data[2];
 } __attribute__((packed)) tm_data_t1_t;
 
 /**
@@ -133,7 +134,7 @@ typedef struct {
   tm_hdrw_t n_rows;
   mfc_t mfctr;
   mfc_t rownum;
-  unsigned char data[2];
+  uint8_t data[2];
 } __attribute__((packed)) tm_data_t2_t;
 
 /**
@@ -151,7 +152,7 @@ typedef struct {
 typedef struct {
   tm_hdrw_t n_rows;
   mfc_t mfctr;
-  unsigned char data[2];
+  uint8_t data[2];
 } __attribute__((packed)) tm_data_t3_t;
 
 /**
@@ -173,7 +174,7 @@ typedef struct {
   tm_hdrw_t n_rows;
   mfc_t mfctr;
   tmcks_t cksum;
-  unsigned char data[2];
+  uint8_t data[2];
 } __attribute__((packed)) tm_data_t4_t;
 
 /**

@@ -12,7 +12,7 @@
    .last is where the next row will be written to
    first==last is empty unless full is asserted
 */
-/* typedef struct dataqueue {
+typedef struct dataqueue {
   char *raw;
   char **row;
   tm_hdrw_t output_tm_type;
@@ -25,14 +25,13 @@
   int last;
   int full;
   int nonblocking;
-} data_queue_t; */
-
-/* extern data_queue_t Data_Queue; // There can be only one
+} data_queue_t;
+extern data_queue_t Data_Queue; // There can be only one
 
 typedef struct tsqueue {
   int ref_count;
   tstamp_t TS;
-} TS_queue_t; */
+} TS_queue_t;
 
 /* Semantics of the dq_descriptor
    next points to a later descriptor. A separate descriptor is

@@ -7,8 +7,8 @@
 
 namespace DAS_IO {
 
-tm_gen_bfr::tm_gen_bfr()
-  : Client("bfr", 80, "tm_bfr", "input") {}
+tm_gen_bfr::tm_gen_bfr(bool collection)
+  : Client("bfr", 80, "tm_bfr", collection ? "input-nb" : "input") {}
 
 tm_gen_bfr::~tm_gen_bfr() {}
 
@@ -22,8 +22,8 @@ bool tm_gen_bfr::iwritev(struct iovec *iov, int nparts, const char *where) {
 
 tm_generator *tm_generator::TM_server;
 
-tm_generator::tm_generator(int nQrows, int low_water)
-    : tm_queue(nQrows,low_water), Server("tm_gen") {
+tm_generator::tm_generator()
+    : tm_queue(), Server("tm_gen") {
   bfr = 0;
   tmr = 0;
   quit = false;
@@ -38,9 +38,9 @@ tm_generator::~tm_generator() {}
 /**
  * Assumes tm_info is defined
  */
-void tm_generator::init(int collection) {
-  tm_queue::init();
-  bfr = new tm_gen_bfr();
+void tm_generator::init(int nQrows, int low_water, bool collection) {
+  tm_queue::init(nQrows, low_water);
+  bfr = new tm_gen_bfr(collection);
   // tmg_bfr_fd = open(tm_dev_name("TM/DG"), collection ? O_WRONLY|O_NONBLOCK : O_WRONLY );
   // if (tmg_bfr_fd < 0) msg(3, "Unable to open TM/DG: %d", errno );
   tm_hdr_t hdr = { TMHDR_WORD, TMTYPE_INIT };

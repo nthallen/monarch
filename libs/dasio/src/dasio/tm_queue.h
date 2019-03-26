@@ -42,7 +42,9 @@ class tmq_data_ref : public tmq_ref {
     int n_rows;
 };
 
-/* Semantics of tm_queue
+extern void tminitfunc();
+
+/** Semantics of tm_queue
    tm_queue.first, .last are indices into row and range from
      [0..total_Qrows)
    .first is where the next row will be read from
@@ -51,11 +53,10 @@ class tmq_data_ref : public tmq_ref {
    
    if collection is true, then allocate_rows will throw rather than block
 */
-extern void tminitfunc();
 class tm_queue {
   public:
-    tm_queue( int n_Qrows, int low_water );
-    void init(); // allocate space for the queue
+    tm_queue();
+    void init( int n_Qrows, int low_water ); // allocate space for the queue
 
   protected:
     int allocate_rows(unsigned char **rowp);

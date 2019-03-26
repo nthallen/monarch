@@ -5,7 +5,7 @@ using namespace DAS_IO;
 unsigned short collector::majf_row = 0;
 unsigned short collector::minf_row = 0;
 
-collector::collector() : tm_generator(4,1) {
+collector::collector() : tm_generator() {
   regulated = true;
   regulation_optional = false;
 }
@@ -13,7 +13,7 @@ collector::collector() : tm_generator(4,1) {
 collector::~collector() {}
 
 void collector::init() {
-  tm_generator::init( 1 );
+  tm_generator::init(4, 1, true);
 }
 
 void collector::event(enum tm_gen_event evt) {
