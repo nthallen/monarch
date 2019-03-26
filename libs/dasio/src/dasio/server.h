@@ -23,6 +23,7 @@ namespace DAS_IO {
    * @return Pointer to a Socket subclass or zero if an error occurs.
    */
   typedef Serverside_client *(* socket_clone_t)(Authenticator *, SubService *);
+  typedef bool (*Authentication_hook)(Authenticator *, SubService *);
   
   class SubService {
     public:
@@ -31,10 +32,11 @@ namespace DAS_IO {
        * @param func Factory function to the appropriate Socket subclass
        * @param svc_data subservice-specific data reference
        */
-      SubService(std::string name, socket_clone_t func, void *svc_data);
+      SubService(std::string name, socket_clone_t func, void *svc_data, Authentication_hook hook = 0);
       ~SubService();
       std::string name;
       socket_clone_t func;
+      Authentication_hook auth_hook;
       void *svc_data;
   };
   

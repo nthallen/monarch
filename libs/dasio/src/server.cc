@@ -9,8 +9,9 @@
 
 namespace DAS_IO {
 
-  SubService::SubService(std::string name, socket_clone_t func, void *svc_data)
-      : name(name), func(func), svc_data(svc_data) {}
+  SubService::SubService(std::string name, socket_clone_t func, void *svc_data,
+        Authentication_hook hook)
+      : name(name), func(func), svc_data(svc_data), auth_hook(hook) {}
   SubService::~SubService() {}
 
   SubServices::SubServices() {}
@@ -91,6 +92,13 @@ namespace DAS_IO {
       SubService *ssvc = srvr->Subs.find_subservice(subservice);
       if (ssvc == 0) {
         report_err("%s: Undefined subservice:'%s'", iname, subservice.c_str());
+        close();
+        if (ELoop)
+          ELoop->delete_child(this);
+        return false;
+      }
+      if (ssvc->auth_hook && !ssvc->auth_hook(this, ssvc)) {
+        report_err("%s: Rejecting connection due to auth_hook", iname);
         close();
         if (ELoop)
           ELoop->delete_child(this);

@@ -1,5 +1,5 @@
 /* TM server example */
-#include "dasio/tm_server.h"
+#include "dasio/tm_data_rcvr.h"
 #include "dasio/loop.h"
 #include "dasio/appid.h"
 #include "dasio/msg.h"
