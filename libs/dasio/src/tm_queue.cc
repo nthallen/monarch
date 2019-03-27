@@ -219,14 +219,14 @@ void tm_queue::retire_rows(tmq_data_ref *tmqd, int n_rows ) {
   unlock();
 }
 
-void tm_queue::retire_tstamp( tmq_tstamp_ref *tmqts ) {
-  lock(__FILE__,__LINE__);
-  nl_assert( tmqts == first_tmqr );
-  first_tmqr = tmqts->next_tmqr;
-  if ( first_tmqr == 0 ) last_tmqr = first_tmqr;
-  unlock();
-  delete(tmqts);
-}
+// void tm_queue::retire_tstamp( tmq_tstamp_ref *tmqts ) {
+  // lock(__FILE__,__LINE__);
+  // nl_assert( tmqts == first_tmqr );
+  // first_tmqr = tmqts->next_tmqr;
+  // if ( first_tmqr == 0 ) last_tmqr = first_tmqr;
+  // unlock();
+  // delete(tmqts);
+// }
 
 /**
  * @param tmqrp Point to the current tmq_ref*

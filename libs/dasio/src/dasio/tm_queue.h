@@ -67,7 +67,7 @@ class tm_queue {
     void commit_rows( mfc_t MFCtr, int mfrow, int n_rows );
     void commit_tstamp( mfc_t MFCtr, time_t time );
     void retire_rows( tmq_data_ref *tmqd, int n_rows );
-    void retire_tstamp( tmq_tstamp_ref *tmqts );
+    // void retire_tstamp( tmq_tstamp_ref *tmqts );
     bool next_tmqr(tmq_ref **tmqrp);
     virtual void lock(const char * by = 0, int line = -1);
     virtual void unlock();
