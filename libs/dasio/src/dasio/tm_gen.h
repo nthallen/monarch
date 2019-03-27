@@ -23,6 +23,7 @@ class tm_gen_bfr : public Client {
       return Interface::obuf_empty();
     }
   protected:
+    bool app_connected();
 };
 
 class tm_generator : public tm_queue, public Server {

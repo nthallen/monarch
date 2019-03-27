@@ -2,8 +2,10 @@
 #include <errno.h>
 #include <sys/uio.h>
 #include "nl.h"
+#include "nl_assert.h"
 #include "dasio/tm_gen.h"
 #include "dasio/msg.h"
+#include "dasio/tm.h"
 
 namespace DAS_IO {
 
@@ -12,7 +14,16 @@ tm_gen_bfr::tm_gen_bfr(bool collection)
 
 tm_gen_bfr::~tm_gen_bfr() {}
 
+bool tm_gen_bfr::app_connected() {
+  tm_hdr_t hdr = { TMHDR_WORD, TMTYPE_INIT };
+  struct iovec iov[2];
+  SETIOV(&iov[0], &hdr, sizeof(hdr));
+  SETIOV(&iov[1], &tm_info, sizeof(tm_info));
+  return iwritev( iov, 2, "Sending tm_info");
+}
+
 bool tm_gen_bfr::iwritev(struct iovec *iov, int nparts, const char *where) {
+  nl_assert(is_negotiated());
   bool rv = Interface::iwritev(iov, nparts);
   if (!obuf_empty()) {
     msg(MSG_FATAL, "%s: Incomplete write %s", iname, where);
@@ -40,15 +51,8 @@ tm_generator::~tm_generator() {}
  */
 void tm_generator::init(int nQrows, int low_water, bool collection) {
   tm_queue::init(nQrows, low_water);
-  bfr = new tm_gen_bfr(collection);
-  // tmg_bfr_fd = open(tm_dev_name("TM/DG"), collection ? O_WRONLY|O_NONBLOCK : O_WRONLY );
-  // if (tmg_bfr_fd < 0) msg(3, "Unable to open TM/DG: %d", errno );
-  tm_hdr_t hdr = { TMHDR_WORD, TMTYPE_INIT };
-  struct iovec iov[2];
-  SETIOV(&iov[0], &hdr, sizeof(hdr));
-  SETIOV(&iov[1], &tm_info, sizeof(tm_info));
-  bfr->iwritev( iov, 2, "sending TMTYPE_INIT");
   tm_gen_cmd::attach(this); // defines the subservice
+  bfr = new tm_gen_bfr(collection);
   tmr = new tm_gen_tmr(this);
   row_period_nsec_default = tmi(nsecsper)*(uint64_t)1000000000L/tmi(nrowsper);
   row_period_nsec_current = row_period_nsec_default;

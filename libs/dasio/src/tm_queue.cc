@@ -18,7 +18,7 @@ tmq_ref::tmq_ref(tmqtype mytype) {
 /**
  * Convenience function to append an item to the end of the linked list and return the new item
  */
-tmq_ref *tmq_ref::next(tmq_ref *tmqr) {
+tmq_ref *tmq_ref::add_last(tmq_ref *tmqr) {
   next_tmqr = tmqr;
   return tmqr;
 }
@@ -146,7 +146,7 @@ void tm_queue::commit_rows( mfc_t MFCtr, int mfrow, int nrows ) {
   if ( tmqdr == 0 ) {
     tmqdr = new tmq_data_ref(MFCtr, mfrow, last, nrows); // or retrieve from the free list?
     if ( last_tmqr )
-      last_tmqr = last_tmqr->next(tmqdr);
+      last_tmqr = last_tmqr->add_last(tmqdr);
     else first_tmqr = last_tmqr = tmqdr;
   } else tmqdr->append_rows(nrows);
   last += nrows;
@@ -161,7 +161,7 @@ void tm_queue::commit_rows( mfc_t MFCtr, int mfrow, int nrows ) {
 void tm_queue::commit_tstamp( mfc_t MFCtr, time_t time ) {
   tmq_tstamp_ref *tmqt = new tmq_tstamp_ref(MFCtr, time);
   lock(__FILE__,__LINE__);
-  if ( last_tmqr ) last_tmqr = last_tmqr->next(tmqt);
+  if ( last_tmqr ) last_tmqr = last_tmqr->add_last(tmqt);
   else first_tmqr = last_tmqr = tmqt;
   unlock();
 }
@@ -204,6 +204,31 @@ void tm_queue::retire_tstamp( tmq_tstamp_ref *tmqts ) {
   if ( first_tmqr == 0 ) last_tmqr = first_tmqr;
   unlock();
   delete(tmqts);
+}
+
+/**
+ * @param tmqrp Point to the current tmq_ref*
+ * Updates the contents of tmqrp to point to the next
+ * tmq_ref*, if such exists. *tmqrp will not be changed
+ * if there is no next tmq_ref*.
+ * @return true if a new tmq_ref* value has been written
+ * into *tmqrp.
+ */
+bool tm_queue::next_tmqr(tmq_ref **tmqrp) {
+  if (*tmqrp) {
+    tmq_ref *tmqr = *tmqrp;
+    if (tmqr->next_tmqr) {
+      --tmqr->ref_count;
+      tmqr = tmqr->next_tmqr;
+      ++tmqr->ref_count;
+      *tmqrp = tmqr;
+      return true;
+    } else return false;
+  } else if (first_tmqr) {
+    ++first_tmqr->ref_count;
+    *tmqrp = first_tmqr;
+    return true;
+  } else return false;
 }
 
 }

@@ -21,9 +21,12 @@ enum tmqtype { tmq_tstamp, tmq_data  };
 class tmq_ref {
   public:
     tmq_ref(tmqtype mytype);
-    tmq_ref *next(tmq_ref *tmqr);
+    tmq_ref *add_last(tmq_ref *tmqr);
     tmq_ref *next_tmqr;
+    /** Either data or timestamp */
     tmqtype type;
+    /** Used by bfr to keep track of client references */
+    int ref_count;
 };
 
 class tmq_tstamp_ref : public tmq_ref {
@@ -64,6 +67,7 @@ class tm_queue {
     void commit_tstamp( mfc_t MFCtr, time_t time );
     void retire_rows( tmq_data_ref *tmqd, int n_rows );
     void retire_tstamp( tmq_tstamp_ref *tmqts );
+    bool next_tmqr(tmq_ref **tmqrp);
     virtual void lock(const char * by = 0, int line = -1);
     virtual void unlock();
 
