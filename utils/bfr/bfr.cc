@@ -20,11 +20,11 @@ bool bfr_input_client::tmg_opened = false;
 bfr_input_client *blocked_writer;
 std::list<bfr_output_client*> all_readers;
 
-int min_reader( dq_descriptor_t *dqd ) {
-  if ( dqd != DQD_Queue.first ) return 0;
-  int min = dqd->Qrows_expired + dqd->n_Qrows;
+int min_reader( dq_descriptor_t *tmqr ) {
+  if ( tmqr != first_tmqr ) return 0;
+  int min = tmqr->Qrows_expired + tmqr->n_Qrows;
   for ( ocb = all_readers; ocb != 0; ocb = ocb->next_ocb ) {
-    if ( ocb->data.dqd == dqd && ocb->data.n_Qrows < min )
+    if ( ocb->data.tmqr == tmqr && ocb->data.n_Qrows < min )
       min = ocb->data.n_Qrows;
   }
   return min;
@@ -39,7 +39,7 @@ bool bfr_input_client::auth_hook(Authenticator *Auth, SubService *SS) {
 
 bfr_input_client::bfr_input_client(Authenticator *Auth, const char *iname, bool blocking)
     : Serverside_client(Auth, iname, bfr_input_client_ibufsize), blocking(blocking) {
-  data.dqd = 0;
+  data.tmqr = 0;
   data.n_Qrows = 0;
   state = TM_STATE_HDR;
   bufsize = sizeof(part.hdr);
@@ -307,11 +307,11 @@ bool bfr_input_client::process_tm_info() {
 // First check the data we've already moved into the queue
 // The rows we read in will always begin at Data_Queue.last,
 // which should be consistent with the end of the current
-// dqd data set. The number of rows is also guaranteed to
+// tmqr data set. The number of rows is also guaranteed to
 // fit within the Data_Queue without wrapping, so it should
 // be safe to add nrrecd to Data_Queue.last, though it may
 // be necessary to set last to zero afterwards.
-//   T1->T1 just add to current dqd without checks
+//   T1->T1 just add to current tmqr without checks
 //   T2->T2 Copy straight in, then verify continuity with previous
 // records.
 //   T3->T3 Copy straight in. Verify consecutive, etc.
@@ -320,7 +320,7 @@ int bfr_input_client::data_state_T3() {
   // int nrrecd = write.off_queue/write.nbrow_rec;
   // nl_assert(part.nbdata == 0); // redundant here: checked again in the loop below
   int nrowsfree, tot_nrrecd = 0;
-  lock_dq();
+  lock(__FILE__,__LINE__);
   
   {
     int nrrecd = write.off_queue/nbQrow;
@@ -350,13 +350,174 @@ int bfr_input_client::data_state_T3() {
       state = TM_STATE_DATA;
     }
   }
-  unlock_dq();
+  unlock();
   return tot_nrrecd;
+}
+
+void bfr_input_client::run_read_queue() {
+  std::list<bfr_output_client*>::iterator ocbi;
+  for (lock(__FILE__,__LINE__), ocbi = all_readers.start(), unlock();
+       ocbi != all_readers.end();
+       lock(__FILE__,__LINE__), ++ocbi, unlock()) {
+    bfr_output_client *ocb = *ocbi;
+    if (ocb->read.blocked) {
+      ocb->read.blocked = false;
+      read_reply(ocb);
+    }
+  }
+  run_write_queue();
+}
+
+/* read_reply(ocb) is called when we know we have
+   something to return on a read request.
+   First determine either the largest complete record that is less
+   than the requested size or the smallest complete record. If the
+   smallest record is larger than the request size, allocate the
+   partial buffer and copy the record into it.
+   Partial buffer size, if allocated, should be the larger of the size
+   of the tm_info message or a one-row data message (based on the
+   assumption that if a small request comes in, the smallest full
+   message will be chosen for output)
+
+   It is assumed that ocb has already been removed from whatever wait
+   queue it might have been on.
+*/
+void bfr_input_client::read_reply(bfr_output_client *ocb) {
+  struct iovec iov[3];
+  // int nb;
+  
+  if (! ocb->obuf_empty()) return;
+  
+  // if ( ocb->part.nbdata ) {
+    // // nb = ocb->read.nbytes;
+    // if ( ocb->part.nbdata < nb )
+      // nb = ocb->part.nbdata;
+    // MsgReply( ocb->read.rcvid, nb, ocb->part.dptr, nb );
+    // ocb->part.dptr += nb;
+    // ocb->part.nbdata -= nb;
+    // // New state was already defined (or irrelevant)
+  // } else 
+  if ( ocb->data.tmqr == 0 ) {
+    lock(__FILE__,__LINE__);
+    if (next_tmqr(&ocb->data.tmqr)) {
+      ocb->data.n_Qrows = 0;
+    
+      ocb->state = TM_STATE_HDR; // delete
+      ocb->part.hdr.s.hdr.tm_id = TMHDR_WORD;
+      ocb->part.hdr.s.hdr.tm_type = TMTYPE_INIT;
+
+      // Message consists of
+      //   tm_hdr_t (TMHDR_WORD, TMTYPE_INIT)
+      //   tm_info_t with the current timestamp
+      SETIOV( &iov[0], &ocb->part.hdr.s.hdr,
+        sizeof(ocb->part.hdr.s.hdr) );
+      SETIOV( &iov[1], &tm_info, sizeof(tm_info)-sizeof(tstamp_t) );
+      SETIOV( &iov[2], &ocb->data.tmqr->TSq->TS, sizeof(tstamp_t) );
+      nb = sizeof(tm_hdr_t) + sizeof(tm_info_t);
+      do_read_reply( ocb, nb, iov, 3 );
+    } // else enqueue_read( ocb, nonblock );
+    unlock();
+  } else {
+    /* I've handled ocb->data.n_Qrows */
+    dq_descriptor_t *tmqr = ocb->data.tmqr;
+
+    lock(__FILE__,__LINE__);
+    while (tmqr) {
+      int nQrows_ready;
+      
+      /* DQD has a total of tmqr->Qrows_expired + tmqr->n_Qrows */
+      if ( ocb->data.n_Qrows < tmqr->Qrows_expired ) {
+        // then we've missed some data: make a note and set
+        int n_missed = tmqr->Qrows_expired - ocb->data.n_Qrows;
+        ocb->read.rows_missing += n_missed;
+        ocb->data.n_Qrows = tmqr->Qrows_expired;
+      }
+      nQrows_ready = tmqr->n_Qrows + tmqr->Qrows_expired
+                      - ocb->data.n_Qrows;
+      assert( nQrows_ready >= 0 );
+      if ( nQrows_ready > 0 ) {
+        // ### make sure read.maxQrows < Data_Queue.total_Qrows
+        // (it was not! fixed in io_read().
+        if ( blocked_writer == 0 && dg_opened < 2 &&
+             tmqr->next == 0 && nQrows_ready < ocb->read.maxQrows
+             && ocb->hdr.attr->node_type == TM_DCo && !nonblock ) {
+          // We want to wait for more
+          // ### reasons not to wait:
+          // ###   DG is blocked or has terminated
+          enqueue_read( ocb, nonblock );
+        } else {
+          int XRow_Num, NMinf, Row_Num_start, n_iov;
+          mfc_t MFCtr_start;
+          int Qrow_start, nQ1, nQ2;
+          
+          if ( nQrows_ready > ocb->read.maxQrows )
+            nQrows_ready = ocb->read.maxQrows;
+          ocb->part.hdr.s.hdr.tm_id = TMHDR_WORD;
+          ocb->part.hdr.s.hdr.tm_type = Data_Queue.output_tm_type;
+          ocb->part.hdr.s.u.dhdr.n_rows = nQrows_ready;
+          XRow_Num = tmqr->Row_num + ocb->data.n_Qrows;
+          NMinf = XRow_Num/tm_info.nrowminf;
+          MFCtr_start = tmqr->MFCtr + NMinf;
+          Row_Num_start = XRow_Num % tm_info.nrowminf;
+          switch ( Data_Queue.output_tm_type ) {
+            case TMTYPE_DATA_T1: break;
+            case TMTYPE_DATA_T2:
+              ocb->part.hdr.s.u.dhdr.mfctr = MFCtr_start;
+              ocb->part.hdr.s.u.dhdr.rownum = Row_Num_start;
+              break;
+            case TMTYPE_DATA_T3:
+              ocb->part.hdr.s.u.dhdr.mfctr = MFCtr_start;
+              break;
+            default:
+              nl_error(4,"Invalid output_tm_type" );
+          }
+          SETIOV( &iov[0], &ocb->part.hdr.s.hdr, Data_Queue.nbDataHdr );
+          Qrow_start = tmqr->starting_Qrow + ocb->data.n_Qrows -
+                          tmqr->Qrows_expired;
+          if ( Qrow_start > Data_Queue.total_Qrows )
+            Qrow_start -= Data_Queue.total_Qrows;
+          nQ1 = nQrows_ready;
+          nQ2 = Qrow_start + nQ1 - Data_Queue.total_Qrows;
+          if ( nQ2 > 0 ) {
+            nQ1 -= nQ2;
+            SETIOV( &iov[2], Data_Queue.row[0], nQ2 * Data_Queue.nbQrow );
+            n_iov = 3;
+          } else n_iov = 2;
+          SETIOV( &iov[1], Data_Queue.row[Qrow_start],
+                      nQ1 * Data_Queue.nbQrow );
+          ocb->data.n_Qrows += nQrows_ready;
+          do_read_reply( ocb,
+            Data_Queue.nbDataHdr + nQrows_ready * Data_Queue.nbQrow,
+            iov, n_iov );
+        }
+        break; // out of while(tmqr)
+      } else if ( tmqr->next ) {
+        int do_TS = tmqr->TSq != tmqr->next->TSq;
+        tmqr = dq_deref(tmqr, 1);
+        // tmqr->ref_count++;
+        ocb->data.tmqr = tmqr;
+        ocb->data.n_Qrows = 0;
+        if ( do_TS ) {
+          ocb->part.hdr.s.hdr.tm_id = TMHDR_WORD;
+          ocb->part.hdr.s.hdr.tm_type = TMTYPE_TSTAMP;
+          SETIOV( &iov[0], &ocb->part.hdr.s.hdr, sizeof(tm_hdr_t) );
+          SETIOV( &iov[1], &tmqr->TSq->TS, sizeof(tstamp_t) );
+          do_read_reply( ocb, sizeof(tm_hdr_t)+sizeof(tstamp_t),
+            iov, 2 );
+          break;
+        } // else loop through again
+      } else {
+        enqueue_read( ocb, nonblock );
+        break;
+      }
+    }
+    unlock();
+  }
 }
 
 bfr_output_client::bfr_output_client(Authenticator *Auth, const char *iname, bool is_fast)
     : Serverside_client(Auth, iname, bfr_output_client_ibufsize), is_fast(is_fast) {
-  data.dqd = 0;
+  data.tmqr = 0;
   data.n_Qrows = 0;
   state = TM_STATE_HDR;
   part.nbdata = 0;

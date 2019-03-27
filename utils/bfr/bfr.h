@@ -40,28 +40,32 @@ typedef struct tsqueue {
    redefined. After that, progress simply involves updating
    starting_Qrow, n_Qrows and Qrows_expired.
 */
-typedef struct dq_descriptor {
-  struct dq_descriptor *next;
-  int ref_count;
-  int starting_Qrow;
-  int n_Qrows;
-  int Qrows_expired;
-  int min_reader;
-  TS_queue_t *TSq;
-  mfc_t MFCtr;
-  int Row_num;
-} dq_descriptor_t;
+// class tmq_descriptor {
+  // public:
+    // tmq_descriptor();
+  // protected:
+    // tmq_descriptor *next;
+    // int ref_count;
+    // int starting_Qrow;
+    // int n_Qrows;
+    // int Qrows_expired;
+    // int min_reader;
+    // TS_queue_t *TSq;
+    // mfc_t MFCtr;
+    // int Row_num;
+// };
 
-typedef struct {
-  dq_descriptor_t *first;
-  dq_descriptor_t *last;
-} DQD_Queue_t;
+// typedef struct {
+  // tmq_descriptor *first;
+  // tmq_descriptor *last;
+// } DQD_Queue_t;
 
 typedef enum {
   TM_STATE_HDR, TM_STATE_INFO, TM_STATE_DATA
 } state_t;
 
 class bfr_input_client : public Serverside_client, public tm_queue {
+  //friend class bfr_output_client;
   public:
     bfr_input_client(Authenticator *Auth, const char *iname, bool blocking);
     ~bfr_input_client();
@@ -70,6 +74,8 @@ class bfr_input_client : public Serverside_client, public tm_queue {
     static bool tmg_opened;
   protected:
     bool protocol_input();
+    void run_read_queue();
+    void read_reply(bfr_output_client *ocb);
     bool blocking;
     enum state_t state;
     
@@ -80,7 +86,7 @@ class bfr_input_client : public Serverside_client, public tm_queue {
     } part;
     
     struct data_s {
-      dq_descriptor_t *dqd; // Which dq_desc we reference
+      tmq_ref *tmqr; // Which dq_desc we reference
       int n_Qrows; // The number of Qrows in dq we have already processed
     } data;
     
@@ -101,6 +107,7 @@ class bfr_input_client : public Serverside_client, public tm_queue {
 };
 
 class bfr_output_client : public Serverside_client {
+  //friend class bfr_input_client;
   public:
     bfr_output_client(Authenticator *Auth, const char *iname, bool is_fast);
     ~bfr_output_client();
@@ -117,14 +124,14 @@ class bfr_output_client : public Serverside_client {
     } part;
     
     struct data_s {
-      dq_descriptor_t *dqd; // Which dq_desc we reference
+      tmq_ref *tmqr; // Which tmq_ref we reference
       int n_Qrows; // The number of Qrows in dq we have already processed
     } data;
     
     struct read_s {
       char *buf; // allocated temp buffer
       //int rcvid; // Who requested
-      int nbytes; // size of request
+      // int nbytes; // size of request
       int maxQrows; // max number of Qrows to be returned with this request
       int rows_missing; // cumulative count
       //bool blocked;
