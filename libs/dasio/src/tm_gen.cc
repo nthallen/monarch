@@ -80,7 +80,7 @@ void tm_generator::transmit_data( int single_row ) {
           bfr->iwritev(iov, 2, "transmitting tstamp");
         }
         unlock();
-        retire_tstamp(tmqts);
+        // retire_tstamp(tmqts);
         break;
       case tmq_data:
         tmqdr = (tmq_data_ref *)first_tmqr;
