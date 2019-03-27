@@ -37,8 +37,9 @@ class tmq_tstamp_ref : public tmq_ref {
 
 class tmq_data_ref : public tmq_ref {
   public:
-    tmq_data_ref(mfc_t MFCtr, int mfrow, int Qrow_in, int nrows_in );
+    tmq_data_ref(mfc_t MFCtr, int mfrow, int Qrow_in, int nrows_in, tmq_ref *tsp);
     void append_rows( int nrows );
+    tmq_ref *tsp;
     mfc_t MFCtr_start, MFCtr_next;
     int row_start, row_next;
     int Qrow;
@@ -77,8 +78,11 @@ class tm_queue {
     int total_Qrows;
     int nbQrow; // may differ from nbrow if stripping MFCtr & Synch
     int nbDataHdr;
+    /** Row index in the tm_queue where the next row of data will be read from */
     int first;
+    /** Row index in the tm_queue where the next row of data will be written */
     int last;
+    /** True if tm_queue is full */
     bool full;
     
     tmq_ref *first_tmqr;
