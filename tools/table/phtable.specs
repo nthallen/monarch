@@ -1,0 +1,20 @@
+phtable.clp
+ntable.con
+ntable.gla
+phtable.lido
+mod.lido
+ntable.HEAD.phi
+ntable.map
+dim.c
+table_name.c
+phbox.c
+phparam.c
+depfile.c
+phtable.pdl
+phtable.ptg
+table.INIT.phi
+table.FINL.phi
+$/Name/CScope.gnrc +instance=Col :inst
+$/Name/CScope.gnrc +instance=Table :inst
+$/Input/Include.gnrc:inst
+$/Output/PtgCommon.fw

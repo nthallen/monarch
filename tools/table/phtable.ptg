@@ -1,0 +1,63 @@
+# $1: PTGNode StringPrint
+# $2: PTGNode RulePrint
+# $3: PTGNode FieldPrint
+# $4: table name (string)
+File:
+  "%{\n"
+  $1
+  $2
+  "  PtRealizeWidget(w);\n"
+  "}\n%}\n\n"
+  "TM INITFUNC " $4 string "_init();\n"
+  $3
+  [ preview_loop ]
+
+# $1: table name (string)
+# $2: N_Fields (int)
+Init:
+  "/* phtable output */\n"
+  "#include \"tablelib.h\"\n"
+  "PtWidget_t *" $1 string "_tbl_fld[" $2 int "];\n"
+  "void " $1 string "_init( void ) {\n"
+  "  PtWidget_t *w;\n"
+
+# $1: table name (string)
+# $2: Rows $3: Cols (int)
+Window:
+  "  w = tbl_window( \"" $1 string "\", " $3 int ", " $2 int " );\n"
+  [ preview_window $1 string $3 int $2 int ]
+  
+# $1 $2 row, col
+# $3 attr
+# $4 str
+String:
+  "  tbl_label( w, \"" $4 string "\", " $2 int ", " $1 int
+   " ); /* Attr " $3 int " */\n" 
+  [ preview_label $4 string $2 int $1 int ]
+
+# $1: table name (string)
+# $2: Field Number (int)
+# $3: Default Text (PTGNode)
+# $4, $5: row, col (int)
+# $6, $7: width, height (int)
+FieldDef:
+  "  " $1 string "_tbl_fld[" $2 int "] = tbl_field( w, \""
+  $3 "\", " $5 int ", " $4 int ", " $6 int ", " $7 int " );\n"
+  [ preview_field $2 int $5 int $4 int $6 int $7 int ]
+
+# $1: table name (string)
+# $2: Field Number (int)
+# $3: Field Text (PTGNode)
+# $4: NSpaces (int)
+FieldRef:
+  "phdisplay( " $1 string "_tbl_fld[" $2 int "], text(" $3 "));"
+  " /* " $4 int " spaces */\n"
+
+# $1: row $2: col $3: w/h $4: dbl
+VRule :
+  "  tbl_vert_sep( w, " $2 int ", " $1 int ", " $3 int ", " $4 int " );\n"
+  [ preview_vrule $2 int $1 int $3 int $4 int ]
+HRule :
+  "  tbl_horiz_sep( w, " $2 int ", " $1 int ", " $3 int ", " $4 int " );\n"
+  [ preview_hrule $2 int $1 int $3 int $4 int ]
+

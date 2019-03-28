@@ -1,0 +1,17 @@
+%run == input +cmd=(ntable.specs:exe):stdout
+%visitprocs.c == ntable.specs:level_4_specs:ligaBe/visitprocs.c
+
+%phflags == <<
+ +cc_flags='-I/usr/local/include -Wl,-rpath -Wl,/usr/local/lib'
+ +lib=tmph ph tm nort
+ +lib_sp=(/usr/local/lib)
+
+%nflags == <<
+ +cc_flags='-I/usr/local/include -Wl,-rpath -Wl,/usr/local/lib'
+ +lib=nort
+ +lib_sp=(/usr/local/lib)
+
+phtable.exe == phtable.specs +(%phflags) :exe
+dbphtable == phtable.specs +(%phflags) +debug :exe
+ntable.exe == ntable.specs +(%nflags) :exe
+nctable.exe == nctable.specs +(%nflags) :exe

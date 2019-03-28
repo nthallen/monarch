@@ -1,0 +1,2 @@
+lisedit( SRCFILE, stderr, 0, 1 );
+CloseDepFile();
