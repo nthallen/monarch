@@ -57,4 +57,6 @@ extern dim_t ColSpecWidth( col_dim_t ColSpec );
 extern void RecordColSpecs( col_dim_t ColSpec, int ColNum, dim_t width );
 extern col_dim_t CalcColWidths( col_dim_t ColSpecs, dim_t MW, dim_t W );
 extern dim_t ColWidth( col_dim_t ColWidths, int ColNumber );
+
+#define max(a,b) (((a) > (b)) ? (a) : (b))
 #endif

@@ -50,7 +50,7 @@ void NewRule( int Row, int Col, int Width, int Height,
   unsigned char middle;
   int Length, Vertical, Lines;
   int preplus = 0, postplus = 0;
-  static nrule_id = 0;
+  static int rule_id = 0;
 
   rulecode = StringTable(index);
   if ( *rulecode == '+' ) {

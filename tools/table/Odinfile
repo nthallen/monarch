@@ -8,7 +8,7 @@
 
 %nflags == <<
  +cc_flags='-I/usr/local/include -Wl,-rpath -Wl,/usr/local/lib'
- +lib=nort
+ +lib=nl
  +lib_sp=(/usr/local/lib)
 
 phtable.exe == phtable.specs +(%phflags) :exe
