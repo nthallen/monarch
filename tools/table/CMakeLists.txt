@@ -9,40 +9,50 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (NOT ${CMAKE_CROSSCOMPILING})
 
+message("We are not cross compiling")
+find_program(ELI_EXE eli DOC "Eli Compiler Construction Tool")
+if ((${ELI_EXE} EQUAL ELI_EXE-NOTFOUND))
+
 add_subdirectory(derived)
 
-# message("We are not cross compiling")
-# find_program(ELI_EXE eli DOC "Eli Compiler Construction Tool")
-# if (NOT (${ELI_EXE} EQUAL ELI_EXE-NOTFOUND))
+else ((${ELI_EXE} EQUAL ELI_EXE-NOTFOUND))
 
-# message("We have found eli")
-# ADD_CUSTOM_COMMAND(
-  # OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/nctable
-  # COMMAND ${ELI_EXE} "${CMAKE_CURRENT_SOURCE_DIR}/nctable.specs +(%nflags) :exe >nctable.exe"
-  # WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  # DEPENDS
-    # nctable.specs
-    # ntable.clp
-    # ntable.con
-    # ntable.gla
-    # nctable.lido
-    # mod.lido
-    # nctable.HEAD.phi
-    # table.INIT.phi
-    # table.FINL.phi
-    # ntable.map
-    # dim.c
-    # depfile.c
-    # table_name.c
-    # ncbox.c
-    # nparam.c
-    # ncmodprint.c
-    # ntable.pdl
-    # nctable.ptg
-# )
+message("We have found eli")
+ADD_CUSTOM_COMMAND(
+  OUTPUT nctable.exe
+  COMMAND ./gen_nctable.sh ${ELI_EXE} nctable.specs ${CMAKE_CURRENT_BINARY_DIR}/nctable.exe
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  DEPENDS
+    nctable.specs
+    ntable.clp
+    ntable.con
+    ntable.gla
+    nctable.lido
+    mod.lido
+    nctable.HEAD.phi
+    table.INIT.phi
+    table.FINL.phi
+    ntable.map
+    dim.c
+    dim.h
+    dimfunc.h
+    depfile.c
+    depfile.h
+    table_name.c
+    table_name.h
+    ncbox.c
+    ncbox.h
+    nparam.c
+    param.h
+    ncmodprint.c
+    ncmodprint.h
+    ntable.pdl
+    nctable.ptg
+)
+add_custom_target(gen_nctable ALL DEPENDS nctable.exe)
 
-# install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nctable
-        # DESTINATION bin)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nctable.exe
+        DESTINATION bin)
 
-# endif (NOT (${ELI_EXE} EQUAL ELI_EXE-NOTFOUND))
+endif ((${ELI_EXE} EQUAL ELI_EXE-NOTFOUND))
 endif (NOT ${CMAKE_CROSSCOMPILING})
