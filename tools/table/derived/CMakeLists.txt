@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.8.8)
+cmake_policy(SET CMP0048 NEW)
+project(table_derived  VERSION 2.0.0)
+add_executable(nctable driver.c clpintf.c clp.c csm.c obstack.c obsave.c deftbl.c CoordMap.c coord.c source.c pdl_gen.c ptg_gen.c PtgCommon.c VoidPtrList.c clplib.c envmod.c BitSet.c treecon.c visitmap.c visitprocs.c dim.c table_name.c ncbox.c nparam.c ncmodprint.c Include.c glahead.c auxNUL.c dflteot.c tabsize.c idn.c Cint.c str.c auxScanEOL.c CchStr.c Ccomment.c SrcFileStack.c depfile.c Strings.c ColCScope.c TableCScope.c nodecode.c treebuild.c parser.c pgs_gen.c treestack.c dfltrepar.c attrmain.c)
+install(TARGETS nctable RUNTIME DESTINATION bin)
