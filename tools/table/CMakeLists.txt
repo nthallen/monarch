@@ -11,13 +11,13 @@ if (NOT ${CMAKE_CROSSCOMPILING})
 
 message("We are not cross compiling")
 find_program(ELI_EXE eli DOC "Eli Compiler Construction Tool")
-if ((${ELI_EXE} EQUAL ELI_EXE-NOTFOUND))
+if ((ELI_EXE STREQUAL "ELI_EXE-NOTFOUND"))
 
 add_subdirectory(derived)
 
-else ((${ELI_EXE} EQUAL ELI_EXE-NOTFOUND))
+else ((ELI_EXE STREQUAL "ELI_EXE-NOTFOUND"))
 
-message("We have found eli")
+message("We have found eli: ${ELI_EXE}")
 ADD_CUSTOM_COMMAND(
   OUTPUT nctable.exe
   COMMAND ./gen_nctable.sh ${ELI_EXE} nctable.specs ${CMAKE_CURRENT_BINARY_DIR}/nctable.exe
@@ -54,5 +54,5 @@ add_custom_target(gen_nctable ALL DEPENDS nctable.exe)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nctable.exe
         DESTINATION bin)
 
-endif ((${ELI_EXE} EQUAL ELI_EXE-NOTFOUND))
+endif ((ELI_EXE STREQUAL "ELI_EXE-NOTFOUND"))
 endif (NOT ${CMAKE_CROSSCOMPILING})
