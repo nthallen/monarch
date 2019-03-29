@@ -31,13 +31,16 @@ MACRO(OUI_FILE _filename)
         DEPENDS ${_filename} ${OUI_EXE} )
 ENDMACRO(OUI_FILE)
 
-if (${CMAKE_CROSSCOMPILING})
+if (NOT DEFINED le_das_SOURCE_DIR)
+message("We are building independent of le_dasng")
+if (DEFINED CMAKE_CROSSCOMPILING)
   link_directories( /opt/linkeng/am335x/lib )
   include_directories( /opt/linkeng/am335x/include )
-else (${CMAKE_CROSSCOMPILING})
+else (DEFINED CMAKE_CROSSCOMPILING)
   link_directories( /usr/local/lib )
   include_directories( /usr/local/include )
-endif (${CMAKE_CROSSCOMPILING})
+endif (DEFINED CMAKE_CROSSCOMPILING)
+endif (NOT DEFINED le_das_SOURCE_DIR)
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
