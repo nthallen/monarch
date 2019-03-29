@@ -26,7 +26,7 @@ target_include_directories(tmc PRIVATE
   ${le_das_SOURCE_DIR}/libs/dasio/src
   ${le_das_SOURCE_DIR}/libs/nl
   ${le_das_tools_SOURCE_DIR}/oui/src)
-target_link_libraries(tmc nl)
+target_link_libraries(tmc nl m)
 install(TARGETS tmc RUNTIME
         DESTINATION bin)
 install(FILES colmain.skel extmain.skel

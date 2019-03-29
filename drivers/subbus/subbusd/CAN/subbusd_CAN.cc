@@ -561,7 +561,7 @@ bool CAN_socket::protocol_timeout() {
   TO.Clear();
   if (request_pending) {
     can_request request = reqs.front();
-    report_err("%s: Timeout reading from ID:0x%X", iname,
+    msg(MSG_DBG(0), "%s: Timeout reading from ID:0x%X", iname,
       request.msg->device_id);
     consume(nc);
     reqs.pop_front();

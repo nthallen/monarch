@@ -2,3 +2,4 @@ build-*
 workspace
 *.bak
 *.swp
+*~
