@@ -9,7 +9,7 @@ function msg {
 
 function print_usage {
 cat  <<EOF
-$0 [cross] [install]
+$0 [cross]
 EOF
 }
 
@@ -24,13 +24,6 @@ if [ "$1" = "cross" ]; then
   crname='-cross'
 else
   crname=''
-fi
-
-if [ "$1" = "install" ]; then
-  shift
-  do_install="install"
-else
-  do_install=""
 fi
 
 if [ -n "$1" ]; then
@@ -60,9 +53,9 @@ if [ ! -d $builddir ]; then
   msg Creating build $builddir
   mkdir -p $builddir
   cd $builddir
-  cmake -DCMAKE_BUILD_TYPE=Debug $crargs $relsrcroot$subdir && make $do_install
+  cmake -DCMAKE_BUILD_TYPE=Debug $crargs $relsrcroot$subdir && make
 else
   msg Using existing $builddir
   cd $builddir
-  make $do_install
+  make
 fi

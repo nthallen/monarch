@@ -38,3 +38,6 @@ add_subdirectory(libs)
 add_subdirectory(tools)
 add_subdirectory(utils)
 add_subdirectory(drivers)
+
+# set(CPACK_GENERATOR "CygwinBinary")
+# include(CPack)
