@@ -18,13 +18,12 @@ if [ "$1" = "--help" -o "$1" = "-h" ]; then
   exit 0
 fi
 
+crargs=''
 if [ "$1" = "cross" ]; then
   shift
   crname='-cross'
-  crargs=" -DCMAKE_TOOLCHAIN_FILE=arm-toolchain.cmake"
 else
   crname=''
-  crargs=''
 fi
 
 if [ "$1" = "install" ]; then
@@ -51,6 +50,9 @@ if [ ! -d .git ]; then
   done
   [ -d .git -a ../git -ef . ] || nl_error Unable to locate source root
   [ -f le-dasng-doxygen.css ] || nl_error Not in the correct source tree
+fi
+if [ -n "$crname" ]; then
+  crargs=" -DCMAKE_TOOLCHAIN_FILE=$relsrcroot/arm-toolchain.cmake"
 fi
 branch=`git rev-parse --abbrev-ref HEAD`
 builddir="../build$crname-$branch$subdir"

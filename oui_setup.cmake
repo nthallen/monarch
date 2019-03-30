@@ -32,10 +32,12 @@ if (DEFINED le_das_SOURCE_DIR AND NOT CMAKE_CROSSCOMPILING)
     ${le_das_SOURCE_DIR}/libs/nl
   )
   set(OUI_EXE ${le_das_BINARY_DIR}/tools/oui/src/oui)
-  set(le_das_OUI_PATH "-I${le_das_SOURCE_DIR}/libs/dasio/src \
-   -I${le_das_SOURCE_DIR}/libs/nl \
-   -I${le_das_SOURCE_DIR}/libs/tm \
-   -I${le_das_SOURCE_DIR}/tools/oui/src")
+  set(le_das_OUI_PATH
+    -I${le_das_SOURCE_DIR}/libs/dasio/src
+    -I${le_das_SOURCE_DIR}/libs/nl
+    -I${le_das_SOURCE_DIR}/libs/tm
+    -I${le_das_SOURCE_DIR}/tools/oui/src
+  )
 else (DEFINED le_das_SOURCE_DIR AND NOT CMAKE_CROSSCOMPILING)
   set(OUI_EXE /usr/local/bin/oui)
 endif (DEFINED le_das_SOURCE_DIR AND NOT CMAKE_CROSSCOMPILING)
