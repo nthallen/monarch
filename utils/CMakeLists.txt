@@ -7,3 +7,5 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_definitions( -D_POSIX_SOURCE=1 -D_XOPEN_SOURCE=500 )
 
 add_subdirectory(memo)
+add_subdirectory(lgr)
+add_subdirectory(bfr)

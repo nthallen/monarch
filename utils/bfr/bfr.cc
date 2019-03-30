@@ -5,30 +5,32 @@
  */
 
 #include <list>
+#include <string.h>
 #include "rundir.h"
 #include "bfr.h"
 #include "oui.h"
 #include "nl.h"
 #include "nl_assert.h"
 #include "dasio/msg.h"
+#include "dasio/appid.h"
 
 using namespace DAS_IO;
 
 AppID_t DAS_IO::AppID("bfr", "bfr server", "V1.0");
 
 bool bfr_input_client::tmg_opened = false;
-bfr_input_client *blocked_writer;
+bool blocked_writer = false;
 std::list<bfr_output_client*> all_readers;
 
-int min_reader( dq_descriptor_t *tmqr ) {
-  if ( tmqr != first_tmqr ) return 0;
-  int min = tmqr->Qrows_expired + tmqr->n_Qrows;
-  for ( ocb = all_readers; ocb != 0; ocb = ocb->next_ocb ) {
-    if ( ocb->data.tmqr == tmqr && ocb->data.n_Qrows < min )
-      min = ocb->data.n_Qrows;
-  }
-  return min;
-}
+// int min_reader( dq_descriptor_t *tmqr ) {
+  // if ( tmqr != first_tmqr ) return 0;
+  // int min = tmqr->Qrows_expired + tmqr->n_Qrows;
+  // for ( ocb = all_readers; ocb != 0; ocb = ocb->next_ocb ) {
+    // if ( ocb->data.tmqr == tmqr && ocb->data.n_Qrows < min )
+      // min = ocb->data.n_Qrows;
+  // }
+  // return min;
+// }
 
 bool bfr_input_client::auth_hook(Authenticator *Auth, SubService *SS) {
   // should lock the tm_queue here:
@@ -43,7 +45,7 @@ bfr_input_client::bfr_input_client(Authenticator *Auth, const char *iname, bool 
   data.n_Qrows = 0;
   state = TM_STATE_HDR;
   bufsize = sizeof(part.hdr);
-  buf = (char *)&part.hdr;
+  buf = (unsigned char *)&part.hdr;
   write.nbrow_rec = 0;
   write.nbhdr_rec = 0;
   nc = 0;
@@ -56,7 +58,8 @@ bfr_input_client::bfr_input_client(Authenticator *Auth, const char *iname, bool 
 bfr_input_client::~bfr_input_client() {}
 
 bool bfr_input_client::protocol_input() {
-  blocked_writer = 0;
+  blocked_writer = false;
+  int new_rows = 0; // This might substitute...
   
   // _IO_SET_WRITE_NBYTES( ctp, msg->i.nbytes );
   // Not necessary since we'll handle the return ourselves
@@ -98,8 +101,8 @@ bool bfr_input_client::protocol_input() {
             // MsgError( write.rcvid, EINVAL );
             // Scan ahead for TMHDR_WORD
             bufsize = sizeof( part.hdr );
-            buf = (char *)&part.hdr;
-            return;
+            buf = (unsigned char *)&part.hdr;
+            return false;
           }
           switch ( part.hdr.s.hdr.tm_type ) {
             case TMTYPE_INIT:
@@ -107,7 +110,7 @@ bool bfr_input_client::protocol_input() {
                 msg(MSG_FATAL, "Second TMTYPE_INIT received" );
               write.off_queue = sizeof(tm_hdrs_t)-sizeof(tm_hdr_t);
               bufsize = sizeof(tm_info) - write.off_queue;
-              buf = (char *)&tm_info;
+              buf = (unsigned char *)&tm_info;
               memcpy( buf, &part.hdr.raw[sizeof(tm_hdr_t)],
                       write.off_queue );
               buf += write.off_queue;
@@ -122,7 +125,7 @@ bool bfr_input_client::protocol_input() {
               new_rows++;
               state = TM_STATE_HDR; // already there!
               bufsize = sizeof( part.hdr );
-              buf = (char *)&part.hdr;
+              buf = (unsigned char *)&part.hdr;
               break;
             case TMTYPE_DATA_T1:
             case TMTYPE_DATA_T2:
@@ -135,13 +138,13 @@ bool bfr_input_client::protocol_input() {
               write.nb_rec = part.hdr.s.u.dhdr.n_rows *
                 write.nbrow_rec;
               write.off_queue = 0;
-              new_rows += data_state_eval();
+              new_rows += (this->*data_state_eval)();
               // ### Make sure data_state_eval returns the number
               // of rows that have been completely added to DQ
               if ( write.nb_rec <= 0 ) {
                 state = TM_STATE_HDR;
                 bufsize = sizeof(part.hdr);
-                buf = (char *)&part.hdr;
+                buf = (unsigned char *)&part.hdr;
               } // else break out
               break;
             default:
@@ -156,14 +159,14 @@ bool bfr_input_client::protocol_input() {
           new_rows++;
           state = TM_STATE_HDR; //### Use state-init function?
           bufsize = sizeof(part.hdr);
-          buf = (char *)&part.hdr;
+          buf = (unsigned char *)&part.hdr;
           break;
         case TM_STATE_DATA:
-          new_rows += data_state_eval;
+          new_rows += (this->*data_state_eval)();
           if ( write.nb_rec <= 0 ) {
             state = TM_STATE_HDR;
             bufsize = sizeof(part.hdr);
-            buf = (char *)&part.hdr;
+            buf = (unsigned char *)&part.hdr;
           }
           break;
       }
@@ -176,7 +179,7 @@ bool bfr_input_client::protocol_input() {
   } else {
     // We must have nbdata == 0 meaning we're going to block
     nl_assert(blocking);
-    blocked_writer = this;
+    blocked_writer = true;
     run_read_queue();
   }
 }
@@ -212,13 +215,13 @@ bool bfr_input_client::process_tm_info() {
 
   // What data format should we output?
   lock(__FILE__, __LINE__);
-  write.buf = NULL;
+  // write.buf = NULL;
 
-  int total_Qrows = nrowminf *
+  int total_Qrows = tm_info.nrowminf *
     ( ( tmi(nrowsper) * 60 + tmi(nsecsper)*tm_info.nrowminf - 1 )
         / (tmi(nsecsper)*tm_info.nrowminf) );
 
-  init(total_Qrows, 1, false);
+  init(total_Qrows, 1);
 
   switch (output_tm_type) {
     case TMTYPE_DATA_T1:
@@ -325,7 +328,7 @@ int bfr_input_client::data_state_T3() {
   {
     int nrrecd = write.off_queue/nbQrow;
     nrowsfree = 0;
-    nl_assert(part.nbdata == 0);
+    nl_assert(bufsize == 0);
     nl_assert(write.off_queue == nrrecd*nbQrow); // Not sure about this
 
     if (state == TM_STATE_DATA) {
@@ -340,10 +343,10 @@ int bfr_input_client::data_state_T3() {
       // copy from hdr into buf, update accordingly
       write.off_queue = sizeof(tm_hdrs_t) - write.nbhdr_rec;
       // This could actually happen, but it shouldn't
-      nl_assert( write.off_queue <= part.nbdata );
-      part.nbdata -= write.off_queue;
+      nl_assert( write.off_queue <= bufsize );
+      bufsize -= write.off_queue;
       memcpy( buf,
-              &part.hdr.raw[rw.write.nbhdr_rec],
+              &part.hdr.raw[write.nbhdr_rec],
               write.off_queue );
       buf += write.off_queue;
       write.nb_rec -= write.off_queue;
@@ -356,19 +359,22 @@ int bfr_input_client::data_state_T3() {
 
 void bfr_input_client::run_read_queue() {
   std::list<bfr_output_client*>::iterator ocbi;
-  for (lock(__FILE__,__LINE__), ocbi = all_readers.start(), unlock();
+  for (lock(__FILE__,__LINE__), ocbi = all_readers.begin(), unlock();
        ocbi != all_readers.end();
        lock(__FILE__,__LINE__), ++ocbi, unlock()) {
     bfr_output_client *ocb = *ocbi;
-    if (ocb->read.blocked) {
-      ocb->read.blocked = false;
+    if (ocb->read.ready) {
+      ocb->read.ready = false;
       read_reply(ocb);
     }
   }
   run_write_queue();
 }
 
-/* read_reply(ocb) is called when we know we have
+/** TODO: Probably want to rename this function since we are
+   writing, not replying to a read request.
+   
+   read_reply(ocb) is called when we know we have
    something to return on a read request.
    First determine either the largest complete record that is less
    than the requested size or the smallest complete record. If the
@@ -383,7 +389,7 @@ void bfr_input_client::run_read_queue() {
    queue it might have been on.
 */
 void bfr_input_client::read_reply(bfr_output_client *ocb) {
-  struct iovec iov[3];
+  // struct iovec iov[3];
   // int nb;
   
   if (! ocb->obuf_empty()) return;
@@ -409,13 +415,13 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
       // Message consists of
       //   tm_hdr_t (TMHDR_WORD, TMTYPE_INIT)
       //   tm_info_t with the current timestamp
-      SETIOV( &iov[0], &ocb->part.hdr.s.hdr,
+      SETIOV( &ocb->iov[0], &ocb->part.hdr.s.hdr,
         sizeof(ocb->part.hdr.s.hdr) );
-      SETIOV( &iov[1], &tm_info, sizeof(tm_info)-sizeof(tstamp_t) );
-      SETIOV( &iov[2], &ocb->data.tmqr->TSq->TS, sizeof(tstamp_t) );
+      SETIOV( &ocb->iov[1], &tm_info, sizeof(tm_info)-sizeof(tstamp_t) );
+      SETIOV( &ocb->iov[2], &ocb->data.tmqr->TSq->TS, sizeof(tstamp_t) );
       nb = sizeof(tm_hdr_t) + sizeof(tm_info_t);
-      do_read_reply( ocb, nb, iov, 3 );
-    } // else enqueue_read( ocb, nonblock );
+      do_read_reply( ocb, nb, ocb->iov, 3 );
+    } else ocb->read.ready = true; // enqueue_read( ocb, nonblock );
     unlock();
   } else {
     /* I've handled ocb->data.n_Qrows */
@@ -436,15 +442,11 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
                       - ocb->data.n_Qrows;
       assert( nQrows_ready >= 0 );
       if ( nQrows_ready > 0 ) {
-        // ### make sure read.maxQrows < Data_Queue.total_Qrows
-        // (it was not! fixed in io_read().
-        if ( blocked_writer == 0 && dg_opened < 2 &&
+        if ( !blocked_writer && dg_opened < 2 &&
              tmqr->next == 0 && nQrows_ready < ocb->read.maxQrows
-             && ocb->hdr.attr->node_type == TM_DCo && !nonblock ) {
-          // We want to wait for more
-          // ### reasons not to wait:
-          // ###   DG is blocked or has terminated
-          enqueue_read( ocb, nonblock );
+             && ocb->hdr.attr->node_type == TM_DCo) {
+          // enqueue_read(ocb);
+          // wait for more data
         } else {
           int XRow_Num, NMinf, Row_Num_start, n_iov;
           mfc_t MFCtr_start;
@@ -471,7 +473,7 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
             default:
               nl_error(4,"Invalid output_tm_type" );
           }
-          SETIOV( &iov[0], &ocb->part.hdr.s.hdr, Data_Queue.nbDataHdr );
+          SETIOV( &ocb->iov[0], &ocb->part.hdr.s.hdr, Data_Queue.nbDataHdr );
           Qrow_start = tmqr->starting_Qrow + ocb->data.n_Qrows -
                           tmqr->Qrows_expired;
           if ( Qrow_start > Data_Queue.total_Qrows )
@@ -480,15 +482,15 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
           nQ2 = Qrow_start + nQ1 - Data_Queue.total_Qrows;
           if ( nQ2 > 0 ) {
             nQ1 -= nQ2;
-            SETIOV( &iov[2], Data_Queue.row[0], nQ2 * Data_Queue.nbQrow );
+            SETIOV( &ocb->iov[2], Data_Queue.row[0], nQ2 * Data_Queue.nbQrow );
             n_iov = 3;
           } else n_iov = 2;
-          SETIOV( &iov[1], Data_Queue.row[Qrow_start],
+          SETIOV( &ocb->iov[1], Data_Queue.row[Qrow_start],
                       nQ1 * Data_Queue.nbQrow );
           ocb->data.n_Qrows += nQrows_ready;
           do_read_reply( ocb,
             Data_Queue.nbDataHdr + nQrows_ready * Data_Queue.nbQrow,
-            iov, n_iov );
+            ocb->iov, n_iov );
         }
         break; // out of while(tmqr)
       } else if ( tmqr->next ) {
@@ -500,19 +502,65 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
         if ( do_TS ) {
           ocb->part.hdr.s.hdr.tm_id = TMHDR_WORD;
           ocb->part.hdr.s.hdr.tm_type = TMTYPE_TSTAMP;
-          SETIOV( &iov[0], &ocb->part.hdr.s.hdr, sizeof(tm_hdr_t) );
-          SETIOV( &iov[1], &tmqr->TSq->TS, sizeof(tstamp_t) );
+          SETIOV( &ocb->iov[0], &ocb->part.hdr.s.hdr, sizeof(tm_hdr_t) );
+          SETIOV( &ocb->iov[1], &tmqr->TSq->TS, sizeof(tstamp_t) );
           do_read_reply( ocb, sizeof(tm_hdr_t)+sizeof(tstamp_t),
-            iov, 2 );
+            ocb->iov, 2 );
           break;
         } // else loop through again
       } else {
-        enqueue_read( ocb, nonblock );
+        // enqueue_read(ocb);
         break;
       }
     }
     unlock();
   }
+}
+
+void bfr_input_client::do_read_reply( RESMGR_OCB_T *ocb, int nb,
+                        struct iovec *iov, int n_parts ) {
+  nl_assert(ocb->obuf_empty());
+  ocb->iwritev(iov, n_parts);
+  // int nreq = ocb->read.nbytes;
+  // if ( nreq < nb ) {
+    // int i;
+    // char *p;
+    
+    // if ( ocb->read.buf == 0 )
+      // ocb->read.buf = new_memory(Data_Queue.pbuf_size);
+    // assert( nb <= Data_Queue.pbuf_size );
+    // p = ocb->read.buf;
+    // for ( i = 0; i < n_parts; i++ ) {
+      // int len = GETIOVLEN( &iov[i] );
+      // memcpy( p, GETIOVBASE( &iov[i] ), len );
+      // p += len;
+    // }
+    // ocb->part.dptr = ocb->read.buf;
+    // ocb->part.nbdata = nb;
+    // MsgReply( ocb->read.rcvid, nreq, ocb->part.dptr, nreq );
+    // ocb->part.dptr += nreq;
+    // ocb->part.nbdata -= nreq;
+  // } else {
+    // MsgReplyv( ocb->read.rcvid, nb, iov, n_parts );
+  // }
+}
+
+
+void bfr_input_client::run_write_queue() {
+  if ( blocked_writer ) {
+    // log_event(3);
+    int new_rows = (this->*data_state_eval)();
+    if ( bufsize > 0 ) {
+      // log_event(4);
+      ####
+      do_write(blocked_writer, 0, new_rows);
+    }
+  }
+}
+
+bool bfr_output_client::iwritten(int ntr) {
+  if (obuf_empty()) read.ready = true;
+  return false;
 }
 
 bfr_output_client::bfr_output_client(Authenticator *Auth, const char *iname, bool is_fast)
@@ -526,6 +574,7 @@ bfr_output_client::bfr_output_client(Authenticator *Auth, const char *iname, boo
   read.nbyte = 0;
   read.maxQrows = 0;
   read.rows_missing = 0;
+  read.ready = true;
   all_readers.push_back(this);
 }
 

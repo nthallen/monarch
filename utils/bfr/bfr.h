@@ -3,7 +3,10 @@
 #include <pthread.h>
 #include "dasio/tm.h"
 #include "dasio/tm_queue.h"
+#include "dasio/server.h"
 
+namespace DAS_IO {
+  
 typedef struct tsqueue {
   int ref_count;
   tstamp_t TS;
@@ -60,9 +63,11 @@ typedef struct tsqueue {
   // tmq_descriptor *last;
 // } DQD_Queue_t;
 
-typedef enum {
+enum state_t {
   TM_STATE_HDR, TM_STATE_INFO, TM_STATE_DATA
-} state_t;
+};
+
+class bfr_output_client;
 
 class bfr_input_client : public Serverside_client, public tm_queue {
   //friend class bfr_output_client;
@@ -70,19 +75,36 @@ class bfr_input_client : public Serverside_client, public tm_queue {
     bfr_input_client(Authenticator *Auth, const char *iname, bool blocking);
     ~bfr_input_client();
     static const int bfr_input_client_ibufsize = 16384;
-    static bool auth_hook(Authenticator *Auth, Subservice *SS);
+    static bool auth_hook(Authenticator *Auth, SubService *SS);
     static bool tmg_opened;
   protected:
     bool protocol_input();
     void run_read_queue();
+    void run_write_queue();
     void read_reply(bfr_output_client *ocb);
+    /**
+       Handles the actual trasmission after the message
+       has been packed into struct iovecs. It may allocate a
+       partial buffer if the request size is smaller than the
+       message size.
+       @param ocb The reading client's Serverside_client
+       @param nb Total number of bytes to write
+       @param iov The struct iovec vector
+       @param n_parts The number of elements in iov
+     */
+    void do_read_reply(bfr_output_client *ocb, int nb,
+                        struct iovec *iov, int n_parts);
     bool blocking;
-    enum state_t state;
+    state_t state;
     
     struct part_s {
       tm_hdrs_t hdr;
       // char *dptr; // pointer into other buffers
       // int nbdata; // How many bytes are still expected in this sub-transfer
+      // part.nbdata is replaced with Interface::bufsize. As received data is
+      // processed, buf is advanced and bufsize is reduced until all data is
+      // consumed. This differs from standard Interface semantics, where
+      // consume(n) shifts remaining data
     } part;
     
     struct data_s {
@@ -107,15 +129,18 @@ class bfr_input_client : public Serverside_client, public tm_queue {
 };
 
 class bfr_output_client : public Serverside_client {
-  //friend class bfr_input_client;
+  friend class bfr_input_client;
   public:
     bfr_output_client(Authenticator *Auth, const char *iname, bool is_fast);
     ~bfr_output_client();
     static const int bfr_output_client_ibufsize = 80;
     // Include whatever virtual function overrides you need here
   protected:
+    bool iwritten(int nb);
+    void enqueue_read();
     bool is_fast;
     enum state_t state;
+    struct iovec iov[3];
     
     struct part_s {
       tm_hdrs_t hdr;
@@ -134,8 +159,10 @@ class bfr_output_client : public Serverside_client {
       // int nbytes; // size of request
       int maxQrows; // max number of Qrows to be returned with this request
       int rows_missing; // cumulative count
-      //bool blocked;
+      bool ready;
     } read;
 };
+
+} // namespace DAS_IO
 
 #endif
