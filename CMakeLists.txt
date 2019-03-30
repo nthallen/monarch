@@ -34,12 +34,6 @@ endif(CMAKE_VERSION VERSION_LESS 2.8.11)
 
 endif(1) # google test
 
-set(le_das_OUI_PATH "-I${le_das_SOURCE_DIR}/libs/dasio/src \
- -I${le_das_SOURCE_DIR}/libs/nl \
- -I${le_das_SOURCE_DIR}/libs/tm \
- -I${le_das_SOURCE_DIR}/tools/oui/src")
-
-
 add_subdirectory(libs)
 add_subdirectory(tools)
 add_subdirectory(utils)

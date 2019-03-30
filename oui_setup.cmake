@@ -1,3 +1,17 @@
+# This file provides setup for compiling and linking in directories
+# under the le-dasng source root, including rules for running
+# oui. This should work for native and cross-compiling, and it
+# should also work whether included as part of the base build
+# or when building independently.
+#
+# The assumption when cross-compiling or building separately
+# from the base build is that the native build
+# and install has already been done, so oui and libraries can
+# be located in their installed locations.
+#
+# When building within the base build and not cross-compiling
+# we use the tools (currently only oui) and libraries in the
+# build tree.
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11,6 +25,20 @@ else (CMAKE_CROSSCOMPILING)
     link_directories(/usr/local/lib)
   endif (NOT DEFINED le_das_SOURCE_DIR)
 endif (CMAKE_CROSSCOMPILING)
+
+if (DEFINED le_das_SOURCE_DIR AND NOT CMAKE_CROSSCOMPILING)
+  include_directories(
+    ${le_das_SOURCE_DIR}/tools/oui/src
+    ${le_das_SOURCE_DIR}/libs/nl
+  )
+  set(OUI_EXE ${le_das_BINARY_DIR}/tools/oui/src/oui)
+  set(le_das_OUI_PATH "-I${le_das_SOURCE_DIR}/libs/dasio/src \
+   -I${le_das_SOURCE_DIR}/libs/nl \
+   -I${le_das_SOURCE_DIR}/libs/tm \
+   -I${le_das_SOURCE_DIR}/tools/oui/src")
+else (DEFINED le_das_SOURCE_DIR AND NOT CMAKE_CROSSCOMPILING)
+  set(OUI_EXE /usr/local/bin/oui)
+endif (DEFINED le_das_SOURCE_DIR AND NOT CMAKE_CROSSCOMPILING)
 
 if (CMAKE_CROSSCOMPILING OR NOT DEFINED le_das_SOURCE_DIR)
   set(OUI_EXE /usr/local/bin/oui)
