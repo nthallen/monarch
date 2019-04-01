@@ -7,13 +7,21 @@
 namespace DAS_IO {
 
 /**
- * Base class for tmq_data_ref and tmq_tstamp_ref
  * These make up part of the control structure of tm_queue.
  */
-tmq_ref::tmq_ref(tmqtype mytype) {
+tmq_ref::tmq_ref(mfc_t MFCtr, int mfrow, int Qrow_in, int nrows_in,
+        tmq_tstamp_ref *tsp)
+    : tsp(tsp) {
   next_tmqr = 0;
   ref_count = 0;
-  type = mytype;
+  nl_assert(tsp);
+  ++tsp->ref_count;
+  MFCtr_start = MFCtr_next = MFCtr;
+  row_start = row_next = mfrow;
+  Qrow = Qrow_in;
+  n_Qrows = 0;
+  Qrows_retired = 0;
+  append_rows( nrows_in );
 }
 
 /**
@@ -24,28 +32,29 @@ tmq_ref *tmq_ref::add_last(tmq_ref *tmqr) {
   return tmqr;
 }
 
-tmq_data_ref::tmq_data_ref(mfc_t MFCtr, int mfrow, int Qrow_in, int nrows_in,
-        tmq_ref *tsp)
-      : tmq_ref(tmq_data), tsp(tsp) {
-  nl_assert(tsp);
-  ++tsp->ref_count;
-  MFCtr_start = MFCtr_next = MFCtr;
-  row_start = row_next = mfrow;
-  Qrow = Qrow_in;
-  n_rows = 0;
-  append_rows( nrows_in );
-}
+// tmq_data_ref::tmq_data_ref(mfc_t MFCtr, int mfrow, int Qrow_in, int nrows_in,
+        // tmq_tstamp_ref *tsp)
+      // : tmq_ref(tmq_data), tsp(tsp) {
+  // nl_assert(tsp);
+  // ++tsp->ref_count;
+  // MFCtr_start = MFCtr_next = MFCtr;
+  // row_start = row_next = mfrow;
+  // Qrow = Qrow_in;
+  // n_rows = 0;
+  // append_rows( nrows_in );
+// }
 
-void tmq_data_ref::append_rows( int nrows ) {
+void tmq_ref::append_rows( int nrows ) {
   row_next += nrows;
   MFCtr_next += row_next/tm_info.nrowminf;
   row_next = row_next % tm_info.nrowminf;
-  n_rows += nrows;
+  n_Qrows += nrows;
 }
 
-tmq_tstamp_ref::tmq_tstamp_ref( mfc_t MFCtr, time_t time ) : tmq_ref(tmq_tstamp) {
+tmq_tstamp_ref::tmq_tstamp_ref( mfc_t MFCtr, time_t time ) {
   TS.mfc_num = MFCtr;
   TS.secs = time;
+  ref_count = 0;
 }
 
 /**
@@ -138,24 +147,23 @@ void tm_queue::commit_rows( mfc_t MFCtr, int mfrow, int nrows ) {
   // but we must lock before writing
   nl_assert( !full );
   nl_assert( last+nrows <= total_Qrows );
+  nl_assert(last_tmqr); // must commit a time stamp first
   lock(__FILE__,__LINE__);
   // We need a new tmqr if the last one is a tmq_tstamp or my MFCtr,mfrow don't match the 'next'
   // elements in the current tmqr
-  tmq_ref *cur_tstamp = 0;
-  tmq_data_ref *tmqdr = 0;
+  tmq_tstamp_ref *cur_tstamp = 0;
+  tmq_ref *tmqdr = 0;
   if (last_tmqr) {
-    if (last_tmqr->type == tmq_data ) {
-      tmqdr = (tmq_data_ref *)last_tmqr;
-      cur_tstamp = (tmq_ref *)tmqdr->tsp;
-      if ( MFCtr != tmqdr->MFCtr_next || mfrow != tmqdr->row_next )
-        tmqdr = 0;
-    } else {
-      cur_tstamp = last_tmqr;
+    tmqdr = last_tmqr;
+    cur_tstamp = tmqdr->tsp;
+    if (tmqdr->n_Qrows &&
+        (MFCtr != tmqdr->MFCtr_next || mfrow != tmqdr->row_next )) {
+      tmqdr = 0;
     }
   }
   nl_assert(cur_tstamp);
   if ( tmqdr == 0 ) {
-    tmqdr = new tmq_data_ref(MFCtr, mfrow, last, nrows, cur_tstamp); // or retrieve from the free list?
+    tmqdr = new tmq_ref(MFCtr, mfrow, last, nrows, cur_tstamp); // or retrieve from the free list?
     if ( last_tmqr )
       last_tmqr = last_tmqr->add_last(tmqdr);
     else first_tmqr = last_tmqr = tmqdr;
@@ -171,16 +179,17 @@ void tm_queue::commit_rows( mfc_t MFCtr, int mfrow, int nrows ) {
  */
 void tm_queue::commit_tstamp( mfc_t MFCtr, time_t time ) {
   tmq_tstamp_ref *tmqt = new tmq_tstamp_ref(MFCtr, time);
+  tmq_ref *tmqd = new tmq_ref(MFCtr, 0, last, 0, tmqt);
   lock(__FILE__,__LINE__);
-  if ( last_tmqr ) last_tmqr = last_tmqr->add_last(tmqt);
-  else first_tmqr = last_tmqr = tmqt;
+  if ( last_tmqr ) last_tmqr = last_tmqr->add_last(tmqd);
+  else first_tmqr = last_tmqr = tmqd;
   unlock();
 }
-void tm_queue::retire_rows(tmq_data_ref *tmqd, int n_rows ) {
+
+void tm_queue::retire_rows(tmq_ref *tmqd, int n_rows ) {
   lock(__FILE__,__LINE__);
   nl_assert( n_rows >= 0 );
-  nl_assert( tmqd == tmqd->tsp->next_tmqr );
-  nl_assert( tmqd->n_rows >= n_rows);
+  nl_assert( tmqd->n_Qrows >= n_rows);
   nl_assert( tmqd->Qrow == first );
   if ( first < last ) {
     first += n_rows;
@@ -196,20 +205,18 @@ void tm_queue::retire_rows(tmq_data_ref *tmqd, int n_rows ) {
   }
   if (n_rows > 0) full = false;
   tmqd->Qrow = first;
-  tmqd->n_rows -= n_rows;
-  if ( tmqd->n_rows == 0 && tmqd->next_tmqr ) {
+  tmqd->n_Qrows -= n_rows;
+  tmqd->Qrows_retired += n_rows;
+  if ( tmqd->n_Qrows == 0 && tmqd->next_tmqr ) {
     tmq_ref *nxt = tmqd->next_tmqr;
-    if (nxt->type == tmq_tstamp) {
-      nl_assert(tmqd->tsp == first_tmqr);
-      --tmqd->tsp->ref_count; // because tmqd is being deleted
+    --tmqd->tsp->ref_count; // because tmqd is being deleted
+    nl_assert(tmqd == first_tmqr);
+    if (nxt->tsp != tmqd->tsp) {
       nl_assert(tmqd->tsp->ref_count == 0);
-      delete(first_tmqr);
-      first_tmqr = nxt;
-    } else {
-      tmqd->tsp->next_tmqr = nxt;
-      --tmqd->tsp->ref_count;
+      delete(tmqd->tsp);
     }
     // first_tmqr = tmqd->next_tmqr;
+    first_tmqr = nxt;
     delete( tmqd );
   } else {
     tmqd->row_start += n_rows;

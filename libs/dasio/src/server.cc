@@ -66,6 +66,10 @@ namespace DAS_IO {
   Serverside_client::~Serverside_client() {
     srvr->client_removed();
   }
+
+  bool Serverside_client::srvr_has_shutdown() {
+    return srvr->has_shutdown();
+  }
   
   Authenticator::Authenticator(Server_socket *orig, const char *iname,
             int fd)
@@ -161,7 +165,8 @@ namespace DAS_IO {
 
   Server::Server(const char *service, int passive_quit_threshold) :
       Unix(0), TCP(0), active_clients(0), total_clients(0),
-      passive_exit_threshold(0), service(service)
+      passive_exit_threshold(0), service(service),
+      has_shutdown_b(false)
       { }
 
   Server::~Server() {}
@@ -178,6 +183,7 @@ namespace DAS_IO {
       ELoop.add_child(TCP);
     }
     msg(0, "%s %s Starting", AppID.fullname, AppID.rev);
+    has_shutdown_b = true;
     do {
       ELoop.event_loop();
     } while (active_clients);

@@ -37,6 +37,7 @@ tm_generator::tm_generator()
     : tm_queue(), Server("tm_gen") {
   bfr = 0;
   tmr = 0;
+  cur_tsp = 0;
   quit = false;
   started = false;
   regulated = false;
@@ -58,64 +59,56 @@ void tm_generator::init(int nQrows, int low_water, bool collection) {
   row_period_nsec_current = row_period_nsec_default;
 }
 
-void tm_generator::transmit_data( int single_row ) {
+void tm_generator::transmit_data( bool single_row ) {
   // We can read from the queue without locking
   // But we need to lock when we reference tmg_bfr_fd
-  tmq_tstamp_ref *tmqts;
-  tmq_data_ref *tmqdr;
+  tmq_ref *tmqdr;
   // msg( 0, "transmit_data(%s)", single_row ? "single" : "all" );
   int rc;
   tm_hdrs_t hdrs;
   hdrs.s.hdr.tm_id = TMHDR_WORD;
   struct iovec iov[3];
   while ( first_tmqr ) {
-    switch ( first_tmqr->type ) {
-      case tmq_tstamp:
-        tmqts = (tmq_tstamp_ref *)first_tmqr;
-        hdrs.s.hdr.tm_type = TMTYPE_TSTAMP;
-        SETIOV(&iov[0], &hdrs, sizeof(tm_hdr_t));
-        SETIOV(&iov[1], &tmqts->TS, sizeof(tmqts->TS));
-        lock(__FILE__, __LINE__);
-        if ( bfr ) {
-          bfr->iwritev(iov, 2, "transmitting tstamp");
-        }
+    if (first_tmqr->tsp != cur_tsp) {
+      cur_tsp = first_tmqr->tsp;
+      hdrs.s.hdr.tm_type = TMTYPE_TSTAMP;
+      SETIOV(&iov[0], &hdrs, sizeof(tm_hdr_t));
+      SETIOV(&iov[1], &cur_tsp->TS, sizeof(cur_tsp->TS));
+      lock(__FILE__, __LINE__);
+      if ( bfr ) {
+        bfr->iwritev(iov, 2, "transmitting tstamp");
+      }
+      unlock();
+    }
+    tmqdr = first_tmqr;
+    if (tmqdr->n_Qrows == 0) {
+      if (tmqdr->next_tmqr) retire_rows(tmqdr, 0);
+      else return;
+    } else {
+      hdrs.s.hdr.tm_type = output_tm_type;
+      int n_rows = single_row ? 1 : tmqdr->n_Qrows;
+      hdrs.s.u.dhdr.n_rows = n_rows;
+      hdrs.s.u.dhdr.mfctr = tmqdr->MFCtr_start;
+      hdrs.s.u.dhdr.rownum = tmqdr->row_start;
+      SETIOV(&iov[0], &hdrs, nbDataHdr);
+      int n_iov;
+      if ( tmqdr->Qrow + n_rows < total_Qrows ) {
+        SETIOV(&iov[1], row[tmqdr->Qrow], n_rows * nbQrow );
+        n_iov = 2;
+      } else {
+        int n_rows1 = total_Qrows - tmqdr->Qrow;
+        SETIOV(&iov[1], row[tmqdr->Qrow], n_rows1 * nbQrow );
+        int n_rows2 = n_rows - n_rows1;
+        SETIOV(&iov[2], row[0], n_rows2 * nbQrow );
+        n_iov = 3;
+      }
+      lock(__FILE__,__LINE__);
+      if ( bfr ) {
+        bfr->iwritev(iov, n_iov, "transmitting data");
         unlock();
-        // retire_tstamp(tmqts);
-        break;
-      case tmq_data:
-        tmqdr = (tmq_data_ref *)first_tmqr;
-        if (tmqdr->n_rows == 0) {
-          if (tmqdr->next_tmqr) retire_rows(tmqdr, 0);
-          else return;
-        } else {
-          hdrs.s.hdr.tm_type = output_tm_type;
-          int n_rows = single_row ? 1 : tmqdr->n_rows;
-          hdrs.s.u.dhdr.n_rows = n_rows;
-          hdrs.s.u.dhdr.mfctr = tmqdr->MFCtr_start;
-          hdrs.s.u.dhdr.rownum = tmqdr->row_start;
-          SETIOV(&iov[0], &hdrs, nbDataHdr);
-          int n_iov;
-          if ( tmqdr->Qrow + n_rows < total_Qrows ) {
-            SETIOV(&iov[1], row[tmqdr->Qrow], n_rows * nbQrow );
-            n_iov = 2;
-          } else {
-            int n_rows1 = total_Qrows - tmqdr->Qrow;
-            SETIOV(&iov[1], row[tmqdr->Qrow], n_rows1 * nbQrow );
-            int n_rows2 = n_rows - n_rows1;
-            SETIOV(&iov[2], row[0], n_rows2 * nbQrow );
-            n_iov = 3;
-          }
-          lock(__FILE__,__LINE__);
-          if ( bfr ) {
-            bfr->iwritev(iov, n_iov, "transmitting data");
-            unlock();
-          } else unlock();
-          retire_rows(tmqdr, n_rows);
-          if ( single_row ) return;
-        }
-        break;
-      default:
-        msg(MSG_EXIT_ABNORM, "Invalid type in transmit_data" );
+      } else unlock();
+      retire_rows(tmqdr, n_rows);
+      if ( single_row ) return;
     }
   }
 }

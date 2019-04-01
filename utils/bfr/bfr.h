@@ -149,8 +149,12 @@ class bfr_output_client : public Serverside_client {
     } part;
     
     struct data_s {
-      tmq_ref *tmqr; // Which tmq_ref we reference
-      int n_Qrows; // The number of Qrows in dq we have already processed
+      /** Our current timestamp */
+      tmq_tstamp_ref *tsp;
+      /** The tmq_ref we are referencing */
+      tmq_ref *tmqr;
+      //* The number of Qrows in dq we have already processed
+      int n_Qrows;
     } data;
     
     struct read_s {

@@ -16,35 +16,63 @@
 
 namespace DAS_IO {
 
-enum tmqtype { tmq_tstamp, tmq_data  };
+// enum tmqtype { tmq_tstamp, tmq_data  };
 
-class tmq_ref {
-  public:
-    tmq_ref(tmqtype mytype);
-    tmq_ref *add_last(tmq_ref *tmqr);
-    tmq_ref *next_tmqr;
-    /** Either data or timestamp */
-    tmqtype type;
-    /** Used by bfr to keep track of client references */
-    int ref_count;
-};
-
-class tmq_tstamp_ref : public tmq_ref {
+class tmq_tstamp_ref {
   public:
     tmq_tstamp_ref( mfc_t MFCtr, time_t time );
     tstamp_t TS;
+    int ref_count;
 };
 
-class tmq_data_ref : public tmq_ref {
+class tmq_ref {
   public:
-    tmq_data_ref(mfc_t MFCtr, int mfrow, int Qrow_in, int nrows_in, tmq_ref *tsp);
+    tmq_ref(mfc_t MFCtr, int mfrow, int Qrow_in, int nrows_in, tmq_tstamp_ref *tsp);
+    tmq_ref *add_last(tmq_ref *tmqr);
+    tmq_ref *next_tmqr;
+    /* Either data or timestamp */
+    // tmqtype type;
+    /** Used by bfr to keep track of client references */
+    int ref_count;
+    
     void append_rows( int nrows );
-    tmq_ref *tsp;
-    mfc_t MFCtr_start, MFCtr_next;
-    int row_start, row_next;
+    tmq_tstamp_ref *tsp;
+    /** The MFCtr corresponding to the first row
+     *  that this tmq_ref references
+     */
+    mfc_t MFCtr_start;
+    /** The MFCtr corresponding to the next row after
+     *  all the rows that this tmq_ref references
+     */
+    mfc_t MFCtr_next;
+    /** The minor frame row number of the first Qrow
+     *  0 <= row_start < nrowminf
+     */
+    int row_start;
+    /** The minor frame row number of the next row after
+     *  all the rows that this tmq_ref references.
+     */
+    int row_next;
+    /** The number of Qrows that have been retired
+     *  from this tmq_ref.
+     */
+    int Qrows_retired;
+    /** The index in tm_queue of the first Qrow */
     int Qrow;
-    int n_rows;
+    /** The number of Qrows this tmq_ref references */
+    int n_Qrows;
 };
+
+// class tmq_data_ref : public tmq_ref {
+  // public:
+    // tmq_data_ref(mfc_t MFCtr, int mfrow, int Qrow_in, int nrows_in, tmq_ref *tsp);
+    // void append_rows( int nrows );
+    // tmq_ref *tsp;
+    // mfc_t MFCtr_start, MFCtr_next;
+    // int row_start, row_next, Qrows_retired;
+    // int Qrow;
+    // int n_rows;
+// };
 
 extern void tminitfunc();
 
@@ -66,7 +94,7 @@ class tm_queue {
     int allocate_rows(unsigned char **rowp);
     void commit_rows( mfc_t MFCtr, int mfrow, int n_rows );
     void commit_tstamp( mfc_t MFCtr, time_t time );
-    void retire_rows( tmq_data_ref *tmqd, int n_rows );
+    void retire_rows( tmq_ref *tmqd, int n_rows );
     // void retire_tstamp( tmq_tstamp_ref *tmqts );
     bool next_tmqr(tmq_ref **tmqrp);
     virtual void lock(const char * by = 0, int line = -1);

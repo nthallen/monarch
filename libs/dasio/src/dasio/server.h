@@ -89,7 +89,8 @@ namespace DAS_IO {
     public:
       Serverside_client(Authenticator *orig, const char *iname, int ibufsize);
       ~Serverside_client();
-    private:
+      bool srvr_has_shutdown();
+    protected:
       Server *srvr;
   };
 
@@ -152,6 +153,10 @@ namespace DAS_IO {
        * disconnected.
        */
       void set_passive_exit_threshold(int N);
+      /**
+       * @return true if server has started and shutdown
+       */
+      inline bool has_shutdown() { return has_shutdown_b; }
       Server_socket *Unix;
       Server_socket *TCP;
       Loop ELoop;
@@ -165,6 +170,7 @@ namespace DAS_IO {
       int passive_exit_threshold;
       SubServices Subs;
       const char *service;
+      bool has_shutdown_b;
   };
 
 }

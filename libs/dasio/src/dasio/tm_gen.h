@@ -43,7 +43,8 @@ class tm_generator : public tm_queue, public Server {
     bool regulation_optional;
 
     // virtual void single_step() = 0;
-    void transmit_data(int single_row);
+    void transmit_data(bool single_row);
+    tmq_tstamp_ref *cur_tsp;
     tm_gen_bfr *bfr;
     tm_gen_tmr *tmr;
   private:

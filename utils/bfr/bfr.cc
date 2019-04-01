@@ -13,6 +13,7 @@
 #include "nl_assert.h"
 #include "dasio/msg.h"
 #include "dasio/appid.h"
+#include "dasio/tm_queue.h"
 
 using namespace DAS_IO;
 
@@ -24,7 +25,7 @@ std::list<bfr_output_client*> all_readers;
 
 // int min_reader( dq_descriptor_t *tmqr ) {
   // if ( tmqr != first_tmqr ) return 0;
-  // int min = tmqr->Qrows_expired + tmqr->n_Qrows;
+  // int min = tmqr->Qrows_retired + tmqr->n_Qrows;
   // for ( ocb = all_readers; ocb != 0; ocb = ocb->next_ocb ) {
     // if ( ocb->data.tmqr == tmqr && ocb->data.n_Qrows < min )
       // min = ocb->data.n_Qrows;
@@ -411,40 +412,50 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
       ocb->state = TM_STATE_HDR; // delete
       ocb->part.hdr.s.hdr.tm_id = TMHDR_WORD;
       ocb->part.hdr.s.hdr.tm_type = TMTYPE_INIT;
+      
+      ocb->data.tsp = ocb->data.tmqr->tsp;
 
       // Message consists of
       //   tm_hdr_t (TMHDR_WORD, TMTYPE_INIT)
       //   tm_info_t with the current timestamp
-      SETIOV( &ocb->iov[0], &ocb->part.hdr.s.hdr,
-        sizeof(ocb->part.hdr.s.hdr) );
-      SETIOV( &ocb->iov[1], &tm_info, sizeof(tm_info)-sizeof(tstamp_t) );
-      SETIOV( &ocb->iov[2], &ocb->data.tmqr->TSq->TS, sizeof(tstamp_t) );
-      nb = sizeof(tm_hdr_t) + sizeof(tm_info_t);
+      ocb->iov[0].iov_base = &ocb->part.hdr.s.hdr;
+      ocb->iov[0].iov_len = sizeof(ocb->part.hdr.s.hdr);
+      // SETIOV( &ocb->iov[0], &ocb->part.hdr.s.hdr,
+        // sizeof(ocb->part.hdr.s.hdr) );
+      ocb->iov[1].iov_base = &tm_info;
+      ocb->iov[1].iov_len = sizeof(tm_info)-sizeof(tstamp_t);
+      // SETIOV( &ocb->iov[1], &tm_info, sizeof(tm_info)-sizeof(tstamp_t) );
+      ocb->iov[2].iov_base = &ocb->data.tsp->TS; // &ocb->data.tmqr->TSq->TS;
+      ocb->iov[2].iov_len = sizeof(tstamp_t);
+      // SETIOV( &ocb->iov[2], &ocb->data.tmqr->TSq->TS, sizeof(tstamp_t) );
+      int nb = sizeof(tm_hdr_t) + sizeof(tm_info_t);
       do_read_reply( ocb, nb, ocb->iov, 3 );
     } else ocb->read.ready = true; // enqueue_read( ocb, nonblock );
     unlock();
   } else {
     /* I've handled ocb->data.n_Qrows */
-    dq_descriptor_t *tmqr = ocb->data.tmqr;
+    tmq_ref *tmqr = ocb->data.tmqr;
 
     lock(__FILE__,__LINE__);
     while (tmqr) {
       int nQrows_ready;
       
-      /* DQD has a total of tmqr->Qrows_expired + tmqr->n_Qrows */
-      if ( ocb->data.n_Qrows < tmqr->Qrows_expired ) {
+      /* DQD has a total of tmqr->Qrows_retired + tmqr->n_Qrows */
+      if ( ocb->data.n_Qrows < tmqr->Qrows_retired ) {
         // then we've missed some data: make a note and set
-        int n_missed = tmqr->Qrows_expired - ocb->data.n_Qrows;
+        int n_missed = tmqr->Qrows_retired - ocb->data.n_Qrows;
         ocb->read.rows_missing += n_missed;
-        ocb->data.n_Qrows = tmqr->Qrows_expired;
+        ocb->data.n_Qrows = tmqr->Qrows_retired;
       }
-      nQrows_ready = tmqr->n_Qrows + tmqr->Qrows_expired
+      nQrows_ready = tmqr->n_Qrows + tmqr->Qrows_retired
                       - ocb->data.n_Qrows;
       assert( nQrows_ready >= 0 );
       if ( nQrows_ready > 0 ) {
-        if ( !blocked_writer && dg_opened < 2 &&
-             tmqr->next == 0 && nQrows_ready < ocb->read.maxQrows
-             && ocb->hdr.attr->node_type == TM_DCo) {
+        if ( !blocked_writer && srvr_has_shutdown() &&
+             // dg_opened < 2 &&
+             tmqr->next_tmqr == 0 && nQrows_ready < ocb->read.maxQrows
+             // && ocb->hdr.attr->node_type == TM_DCo
+             && !ocb->is_fast) {
           // enqueue_read(ocb);
           // wait for more data
         } else {
@@ -455,13 +466,13 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
           if ( nQrows_ready > ocb->read.maxQrows )
             nQrows_ready = ocb->read.maxQrows;
           ocb->part.hdr.s.hdr.tm_id = TMHDR_WORD;
-          ocb->part.hdr.s.hdr.tm_type = Data_Queue.output_tm_type;
+          ocb->part.hdr.s.hdr.tm_type = output_tm_type;
           ocb->part.hdr.s.u.dhdr.n_rows = nQrows_ready;
-          XRow_Num = tmqr->Row_num + ocb->data.n_Qrows;
+          XRow_Num = tmqr->row_start + ocb->data.n_Qrows;
           NMinf = XRow_Num/tm_info.nrowminf;
-          MFCtr_start = tmqr->MFCtr + NMinf;
+          MFCtr_start = tmqr->MFCtr_start + NMinf;
           Row_Num_start = XRow_Num % tm_info.nrowminf;
-          switch ( Data_Queue.output_tm_type ) {
+          switch ( output_tm_type ) {
             case TMTYPE_DATA_T1: break;
             case TMTYPE_DATA_T2:
               ocb->part.hdr.s.u.dhdr.mfctr = MFCtr_start;
@@ -471,25 +482,31 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
               ocb->part.hdr.s.u.dhdr.mfctr = MFCtr_start;
               break;
             default:
-              nl_error(4,"Invalid output_tm_type" );
+              msg(4,"Invalid output_tm_type" );
           }
-          SETIOV( &ocb->iov[0], &ocb->part.hdr.s.hdr, Data_Queue.nbDataHdr );
+          //SETIOV( &ocb->iov[0], &ocb->part.hdr.s.hdr, nbDataHdr );
+          ocb->iov[0].iov_base = &ocb->part.hdr.s.hdr;
+          ocb->iov[0].iov_len  = nbDataHdr;
           Qrow_start = tmqr->starting_Qrow + ocb->data.n_Qrows -
-                          tmqr->Qrows_expired;
-          if ( Qrow_start > Data_Queue.total_Qrows )
-            Qrow_start -= Data_Queue.total_Qrows;
+                          tmqr->Qrows_retired;
+          if ( Qrow_start > total_Qrows )
+            Qrow_start -= total_Qrows;
           nQ1 = nQrows_ready;
-          nQ2 = Qrow_start + nQ1 - Data_Queue.total_Qrows;
+          nQ2 = Qrow_start + nQ1 - total_Qrows;
           if ( nQ2 > 0 ) {
             nQ1 -= nQ2;
-            SETIOV( &ocb->iov[2], Data_Queue.row[0], nQ2 * Data_Queue.nbQrow );
+            // SETIOV( &ocb->iov[2], row[0], nQ2 * nbQrow );
+            ocb->iov[2].iov_base = row[0];
+            ocb->iov[2].iov_len  = nQ2 * nbQrow;
             n_iov = 3;
           } else n_iov = 2;
-          SETIOV( &ocb->iov[1], Data_Queue.row[Qrow_start],
-                      nQ1 * Data_Queue.nbQrow );
+          // SETIOV( &ocb->iov[1], row[Qrow_start],
+                      // nQ1 * nbQrow );
+          ocb->iov[1].iov_base = row[Qrow_start];
+          ocb->iov[1].iov_len  = nQ1 * nbQrow;
           ocb->data.n_Qrows += nQrows_ready;
           do_read_reply( ocb,
-            Data_Queue.nbDataHdr + nQrows_ready * Data_Queue.nbQrow,
+            nbDataHdr + nQrows_ready * nbQrow,
             ocb->iov, n_iov );
         }
         break; // out of while(tmqr)
@@ -502,8 +519,12 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
         if ( do_TS ) {
           ocb->part.hdr.s.hdr.tm_id = TMHDR_WORD;
           ocb->part.hdr.s.hdr.tm_type = TMTYPE_TSTAMP;
-          SETIOV( &ocb->iov[0], &ocb->part.hdr.s.hdr, sizeof(tm_hdr_t) );
-          SETIOV( &ocb->iov[1], &tmqr->TSq->TS, sizeof(tstamp_t) );
+          // SETIOV( &ocb->iov[0], &ocb->part.hdr.s.hdr, sizeof(tm_hdr_t) );
+          ocb->iov[0].iov_base = &ocb->part.hdr.s.hdr;
+          ocb->iov[0].iov_len  = sizeof(tm_hdr_t);
+          //SETIOV( &ocb->iov[1], &tmqr->TSq->TS, sizeof(tstamp_t) );
+          ocb->iov[1].iov_base = &tmqr->TSq->TS;
+          ocb->iov[1].iov_len  = sizeof(tstamp_t);
           do_read_reply( ocb, sizeof(tm_hdr_t)+sizeof(tstamp_t),
             ocb->iov, 2 );
           break;
@@ -527,8 +548,8 @@ void bfr_input_client::do_read_reply( RESMGR_OCB_T *ocb, int nb,
     // char *p;
     
     // if ( ocb->read.buf == 0 )
-      // ocb->read.buf = new_memory(Data_Queue.pbuf_size);
-    // assert( nb <= Data_Queue.pbuf_size );
+      // ocb->read.buf = new_memory(pbuf_size);
+    // assert( nb <= pbuf_size );
     // p = ocb->read.buf;
     // for ( i = 0; i < n_parts; i++ ) {
       // int len = GETIOVLEN( &iov[i] );
@@ -551,9 +572,10 @@ void bfr_input_client::run_write_queue() {
     // log_event(3);
     int new_rows = (this->*data_state_eval)();
     if ( bufsize > 0 ) {
+      blocked_writer = false;
+      flags |= Fl_Read;
       // log_event(4);
-      ####
-      do_write(blocked_writer, 0, new_rows);
+      // do_write(blocked_writer, 0, new_rows);
     }
   }
 }
