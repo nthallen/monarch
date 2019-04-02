@@ -191,6 +191,7 @@ namespace DAS_IO {
   }
 
   void Server::Shutdown() {
+    msg(MSG_DEBUG, "Shutting down listening sockets");
     if (Unix) {
       ELoop.delete_child(Unix);
       Unix = 0;

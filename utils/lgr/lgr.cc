@@ -10,6 +10,7 @@
 #include "lgr.h"
 #include "dasio/tm_client.h"
 #include "dasio/appid.h"
+#include "dasio/loop.h"
 
 using namespace DAS_IO;
 
@@ -134,6 +135,11 @@ void tminitfunc() {}
 int main( int argc, char **argv ) {
   oui_init_options(argc, argv);
   tmc_lgr tmc;
+  Loop ELoop;
+  ELoop.add_child(&tmc);
+  msg(0, "Starting");
+  ELoop.event_loop();
+  msg(0, "Terminating");
   //tmc.operate(); //we eventually need to figure out a new operate() method
   return 0;
 }
