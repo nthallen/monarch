@@ -94,6 +94,18 @@ class bfr_input_client : public Serverside_client, public tm_queue {
      */
     void do_read_reply(bfr_output_client *ocb, int nb,
                         struct iovec *iov, int n_parts);
+    /**
+     * Delete unreferenced tmq_refs from the head of the chain,
+     * then identify how many, if any, Qrows can be retired and
+     * retire them.
+     */
+    void tmq_retire_check();
+    /**
+     * @param tmqr Pointer to the tmq_ref we will evaluate
+     * @return The minimum number of Qrows that have been processed
+     * by all of the bfr_output_clients in all_readers.
+     */
+    int min_reader(tmq_ref *tmqr);
     bool blocking;
     state_t state;
     

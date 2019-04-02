@@ -32,6 +32,15 @@ tmq_ref *tmq_ref::add_last(tmq_ref *tmqr) {
   return tmqr;
 }
 
+tmq_ref *tmq_ref::dereference(bool use_next) {
+  tmq_ref *rv = use_next ? next_tmqr : 0;
+  nl_assert(ref_count > 0);
+  if (rv && use_next)
+    ++rv->ref_count;
+  --ref_count;
+  return rv;
+}
+
 // tmq_data_ref::tmq_data_ref(mfc_t MFCtr, int mfrow, int Qrow_in, int nrows_in,
         // tmq_tstamp_ref *tsp)
       // : tmq_ref(tmq_data), tsp(tsp) {

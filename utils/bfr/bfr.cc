@@ -23,16 +23,6 @@ bool bfr_input_client::tmg_opened = false;
 bool blocked_writer = false;
 std::list<bfr_output_client*> all_readers;
 
-// int min_reader( dq_descriptor_t *tmqr ) {
-  // if ( tmqr != first_tmqr ) return 0;
-  // int min = tmqr->Qrows_retired + tmqr->n_Qrows;
-  // for ( ocb = all_readers; ocb != 0; ocb = ocb->next_ocb ) {
-    // if ( ocb->data.tmqr == tmqr && ocb->data.n_Qrows < min )
-      // min = ocb->data.n_Qrows;
-  // }
-  // return min;
-// }
-
 bool bfr_input_client::auth_hook(Authenticator *Auth, SubService *SS) {
   // should lock the tm_queue here:
   if (tmg_opened) return false;
@@ -338,6 +328,7 @@ int bfr_input_client::data_state_T3() {
       write.nb_rec -= nrrecd * write.nbrow_rec;
       write.off_queue += nrrecd * write.nbrow_rec;
     }
+    tmq_retire_check();
     nrowsfree = allocate_rows(&buf);
     bufsize = nrowsfree * write.nbrow_rec;
     if (nrowsfree > 0 && state == TM_STATE_HDR) {
@@ -356,6 +347,42 @@ int bfr_input_client::data_state_T3() {
   }
   unlock();
   return tot_nrrecd;
+}
+
+void bfr_input_client::tmq_retire_check() {
+  tmq_ref *tmqr = first_tmqr;
+  if (!tmqr) return;
+  nl_assert(tmqr->ref_count >= 0);
+  while (tmqr->ref_count == 0 && tmqr->next_tmqr
+       && tmqr->n_Qrows == 0) {
+    /* Can expire this tmqr */
+    tmq_ref *next_tmqr = tmqr->next_tmqr;
+    first_tmqr = next_tmqr;
+    assert(tmqr->tsp->ref_count >= 0);
+    if ( --tmqr->tsp->ref_count == 0 ) {
+      delete(tmqr->tsp);
+      tmqr->tsp = 0;
+    }
+    delete(tmqr);
+    tmqr = next_tmqr;
+  }
+  // Now look for Qrows we can retire
+  int min_Qrow = min_reader(tmqr);
+  if (min_Qrow > tmqr->Qrows_retired)
+    retire_rows(tmqr, min_Qrow - tmqr->Qrows_retired);
+  // return tmqr;
+}
+
+int bfr_input_client::min_reader( tmq_ref *tmqr ) {
+  if ( tmqr != first_tmqr ) return 0;
+  int min = tmqr->Qrows_retired + tmqr->n_Qrows;
+  std::list<bfr_output_client *>::iterator ocbp;
+  for ( ocbp = all_readers.begin(); ocbp != all_readers.end(); ++ocbp ) {
+    bfr_output_client *ocb = *ocbp;
+    if ( ocb->data.tmqr == tmqr && ocb->data.n_Qrows < min )
+      min = ocb->data.n_Qrows;
+  }
+  return min;
 }
 
 void bfr_input_client::run_read_queue() {
@@ -487,7 +514,7 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
           //SETIOV( &ocb->iov[0], &ocb->part.hdr.s.hdr, nbDataHdr );
           ocb->iov[0].iov_base = &ocb->part.hdr.s.hdr;
           ocb->iov[0].iov_len  = nbDataHdr;
-          Qrow_start = tmqr->starting_Qrow + ocb->data.n_Qrows -
+          Qrow_start = tmqr->Qrow + ocb->data.n_Qrows -
                           tmqr->Qrows_retired;
           if ( Qrow_start > total_Qrows )
             Qrow_start -= total_Qrows;
@@ -510,10 +537,10 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
             ocb->iov, n_iov );
         }
         break; // out of while(tmqr)
-      } else if ( tmqr->next ) {
-        int do_TS = tmqr->TSq != tmqr->next->TSq;
-        tmqr = dq_deref(tmqr, 1);
-        // tmqr->ref_count++;
+      } else if ( tmqr->next_tmqr ) {
+        bool do_TS = tmqr->tsp != tmqr->next_tmqr->tsp;
+        tmqr = tmqr->dereference(true);
+        nl_assert(tmqr);
         ocb->data.tmqr = tmqr;
         ocb->data.n_Qrows = 0;
         if ( do_TS ) {
@@ -523,7 +550,7 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
           ocb->iov[0].iov_base = &ocb->part.hdr.s.hdr;
           ocb->iov[0].iov_len  = sizeof(tm_hdr_t);
           //SETIOV( &ocb->iov[1], &tmqr->TSq->TS, sizeof(tstamp_t) );
-          ocb->iov[1].iov_base = &tmqr->TSq->TS;
+          ocb->iov[1].iov_base = &tmqr->tsp->TS;
           ocb->iov[1].iov_len  = sizeof(tstamp_t);
           do_read_reply( ocb, sizeof(tm_hdr_t)+sizeof(tstamp_t),
             ocb->iov, 2 );
@@ -538,7 +565,7 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
   }
 }
 
-void bfr_input_client::do_read_reply( RESMGR_OCB_T *ocb, int nb,
+void bfr_input_client::do_read_reply( bfr_output_client *ocb, int nb,
                         struct iovec *iov, int n_parts ) {
   nl_assert(ocb->obuf_empty());
   ocb->iwritev(iov, n_parts);
@@ -593,7 +620,6 @@ bfr_output_client::bfr_output_client(Authenticator *Auth, const char *iname, boo
   part.nbdata = 0;
   part.dptr = 0;
   read.buf = 0;
-  read.nbyte = 0;
   read.maxQrows = 0;
   read.rows_missing = 0;
   read.ready = true;

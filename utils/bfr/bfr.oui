@@ -1,6 +1,2 @@
 <package> TMbfr
-<include> msg
-
-<package> msghdr_default
-<vars>
-  char *msg_hdr_default = "TMbfr";
+<include> msg oui
