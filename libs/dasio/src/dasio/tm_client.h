@@ -16,9 +16,7 @@ namespace DAS_IO {
  */
 class tm_client : public DAS_IO::Client {
   public:
-    tm_client(int bufsize_in, char *srcfile, bool non_block = false);
-    tm_client(int bufsize_in, bool fast);
-    void operate(); // event loop
+    tm_client(int bufsize, bool fast);
     void resize_buffer(int bufsize_in);
     void load_tmdac(char *path);
     static unsigned int next_minor_frame, majf_row, minf_row;
@@ -30,6 +28,7 @@ class tm_client : public DAS_IO::Client {
     virtual bool process_eof();
     int bfr_fd;
     bool app_input();
+    bool app_connected();
     bool tm_quit;
     virtual const char *context();
     void tm_expect_hdr();

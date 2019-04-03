@@ -26,42 +26,41 @@ void tm_set_srcnode(char *nodename) {
   tm_client::srcnode = nodename;
 }
 
-void tm_client::init(int bufsize_in, const char *srcfile) {
-  bufsize = bufsize_in;
-  bytes_read = 0;
-  next_minor_frame = 0;
-  majf_row = 0;
-  minf_row = 0;
-  tm_expect_hdr();
-  buf = new char[bufsize];
-  tm_info_ready = false;
-  tm_quit = false;
-  if ( buf == 0)
-    report_err(/* 3, */"Memory allocation failure in tm_client::tm_client");
-  tm_msg = (tm_msg_t *)buf;
-  bool non_block = non_block ? O_NONBLOCK : false;
-  /* bfr_fd =
-    srcfile ?
-    tm_open_name( srcfile, srcnode, non_block ) :
-    -1; */
-  if (bfr_fd != -1) {
-    int nb1, nb2;
-    char *filename;
-    FILE *fp;
-    const char *Exp = getenv("Experiment");
-    if (Exp == NULL) Exp = "none";
-    nb1 = snprintf(NULL, 0, "%s/%s/%d", RUNDIR_TMC, Exp, getpid());
-    filename = (char *)new_memory(nb1+1);
-    nb2 = snprintf(filename, nb1+1, "%s/%s/%d", RUNDIR_TMC, Exp, getpid());
-    nl_assert(nb1 == nb2);
-    fp = fopen( filename, "w" );
-    if (fp) fclose(fp);
-    else msg(2,"Unable to create run file '%s'", filename);
+/**
+ * Constructor method.
+ */
+tm_client::tm_client(int bufsize, bool fast) 
+  : DAS_IO::Client("tm_client", bufsize, "tm_bfr", (fast ? "fast" : "optimized")), bufsize(bufsize) {
+    nl_assert(buf);
+    bytes_read = 0;
+    next_minor_frame = 0;
+    majf_row = 0;
+    minf_row = 0;
+    tm_expect_hdr();
+    tm_info_ready = false;
+    tm_quit = false;
+    tm_msg = (tm_msg_t *)buf;
   }
-}
 
-tm_client::tm_client(int bufsize_in, bool fast) 
-  : DAS_IO::Client("tm_client", bufsize_in, "TM", (fast ? "DCf" : "DCo")) {}
+/**
+ * Added 2019 April 3
+ * This function creates the PID file.
+ */
+bool tm_client::app_connected() {
+  int nb1, nb2;
+  char *filename;
+  FILE *fp;
+  const char *Exp = getenv("Experiment");
+  if (Exp == NULL) Exp = "none";
+  nb1 = snprintf(NULL, 0, "%s/%s/%d", RUNDIR_TMC, Exp, getpid());
+  filename = (char *)new_memory(nb1+1);
+  nb2 = snprintf(filename, nb1+1, "%s/%s/%d", RUNDIR_TMC, Exp, getpid());
+  nl_assert(nb1 == nb2);
+  fp = fopen( filename, "w" );
+  if (fp) fclose(fp);
+  else msg(2,"Unable to create run file '%s'", filename);
+  return false;
+}
 
 bool tm_client::process_eof() {
   tm_quit = true;
@@ -69,7 +68,7 @@ bool tm_client::process_eof() {
 }
 
 /** 
- *  Edited 7 March 2019 for le-dasng
+ *  Edited 2019 March 7 for le-dasng
  */
 bool tm_client::app_input() {
   if (tm_quit) return true;
@@ -99,16 +98,6 @@ bool tm_client::app_input() {
     }
   }
 }
-
-/** This is the basic operate loop for a simple extraction
- *  Edited out as of 6 March 2019 for le-dasng
- */
-/* void tm_client::operate() {
-  tminitfunc();
-  while ( !tm_quit ) {
-    read();
-  }
-} */
 
 /* *
  * Internal function to establish input_tm_type.
@@ -240,9 +229,9 @@ void tm_client::process_message() {
   }
 }
 
-void tm_client::resize_buffer( int bufsize_in ) {
+void tm_client::resize_buffer( int bufsize ) {
   delete buf;
-  bufsize = bufsize_in;
+  bufsize = bufsize;
   buf = new char[bufsize];
   if ( buf == 0)
     report_err(/* 3,
