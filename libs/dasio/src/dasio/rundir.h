@@ -1,4 +1,5 @@
 /* dasio/rundir.h */
+/* Created 2019 April 3 for RUNDIR variables */
 #ifndef DAS_IO_RUNDIR_H_INCLUDED
 #define DAS_IO_RUNDIR_H_INCLUDED
 
