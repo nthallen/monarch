@@ -24,7 +24,7 @@ tm_gen_tmr::tm_gen_tmr(tm_generator *tm_gen)
     msg(MSG_FATAL, "timerfd_create returned error %d: %s",
       errno, strerror(errno));
   }
-  flags = Fl_Read;
+  flags = 0;
   tmg->ELoop.add_child(this);
 }
 
@@ -60,6 +60,7 @@ void tm_gen_tmr::settime( int per_sec, int per_nsec ) {
   itime.it_value.tv_sec = itime.it_interval.tv_sec = per_sec;
   itime.it_value.tv_nsec = itime.it_interval.tv_nsec = per_nsec;
   timerfd_settime(fd, 0, &itime, NULL);
+  flags = (per_sec || per_nsec) ? Fl_Read : 0;
 }
 
 void tm_gen_tmr::settime( uint64_t per_nsec ) {
@@ -70,6 +71,7 @@ void tm_gen_tmr::settime( uint64_t per_nsec ) {
   // nsec2timespec( &itime.it_value, per_nsec );
   itime.it_interval = itime.it_value;
   timerfd_settime(fd, 0, &itime, NULL);
+  flags = per_nsec ? Fl_Read : 0;
 }
 
 }

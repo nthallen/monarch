@@ -434,14 +434,6 @@ void cmdif_wr_clt::Turf(const char *cmd, int cmdlen) {
 
 std::list<cmdif_rd *> rdrs;
 
-/**
- * The name_in and path_in come directly from the
- * %INTERFACE statement, so %INTERFACE <DG:DG/cmd>
- * results in cmdif_wr("DG", "DG/cmd"). The path
- * must be separated into service and subservice,
- * and since the input is const char *, we need to
- * allocate space for this.
- */
 cmdif_wr::cmdif_wr(const char *name, const char *path) {
   char *ss = nl_strdup(path);
   const char *service = (const char *)ss;
@@ -466,6 +458,7 @@ cmdif_wr::~cmdif_wr() {}
 void cmdif_wr::Setup() {
   nl_assert(DAS_IO::CmdServer != 0);
   DAS_IO::CmdServer->ELoop.add_child(client);
+  client->connect();
 }
 
 void cmdif_wr::Turf(const char *format, ...) {

@@ -147,8 +147,15 @@ class cmdif_wr_clt : public DAS_IO::Client {
  * Class to make a connection to initiate a connection
  * to a server to forward commands. This is instantiated
  * for the cmdgen '%INTERFACE <driver:service/subservice>'
- * syntax, specifically for <DG:DG/cmd>. No response
+ * syntax, specifically for <tm_gen:tm_gen/cmd>. No response
  * is expected from the server.
+ *
+ * The name_in and path_in come directly from the
+ * %INTERFACE statement, so %INTERFACE <tm_gen:tm_gen/cmd>
+ * results in cmdif_wr("tm_gen", "tm_gen/cmd"). The path
+ * must be separated into service and subservice,
+ * and since the input is const char *, we need to
+ * allocate space for this.
  */
 class cmdif_wr {
   public:

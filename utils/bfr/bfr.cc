@@ -35,7 +35,7 @@ bfr_input_client::bfr_input_client(Authenticator *Auth, const char *iname, bool 
   data.tmqr = 0;
   data.n_Qrows = 0;
   state = TM_STATE_HDR;
-  bufsize = sizeof(part.hdr);
+  bufsize = sizeof(part.hdr) + 1;
   buf = (unsigned char *)&part.hdr;
   write.nbrow_rec = 0;
   write.nbhdr_rec = 0;
@@ -68,11 +68,48 @@ bool bfr_input_client::protocol_input() {
   //   ocb->rw. with nothing. See below
   //   ocb-> replace with nothing. I mean, not 'nothing', but nothing
   //   DQD_Queue.last replace with last_tmqr
-  while ( nc > 0 && bufsize > 0 ) {
+  while ( nc > 0 && bufsize-1 > 0 ) {
     int nb_read;
-    nl_assert(nc <= bufsize);
-    nb_read = nc < bufsize ?
-      nc : bufsize;
+    nl_assert(nc <= bufsize - 1);
+    if (state == TM_STATE_HDR) {
+      if (nc >= sizeof(tm_hdr_t)) {
+        if ( part.hdr.s.hdr.tm_id != TMHDR_WORD ) {
+          msg(MSG_FATAL, "Invalid Message header" );
+          // MsgError( write.rcvid, EINVAL );
+          // Scan ahead for TMHDR_WORD
+          bufsize = sizeof( part.hdr )+1;
+          buf = (unsigned char *)&part.hdr;
+          return false;
+        }
+        switch (part.hdr.s.hdr.tm_type) {
+          case TMTYPE_INIT:
+            break;
+          case TMTYPE_TSTAMP:
+            bufsize = sizeof(tm_hdr_t) + sizeof(tstamp_t)+1;
+            break;
+          case TMTYPE_DATA_T1:
+            bufsize = sizeof(tm_hdr_t) + sizeof(tm_data_t1_t)+1;
+            break;
+          case TMTYPE_DATA_T2:
+            bufsize = sizeof(tm_hdr_t) + sizeof(tm_data_t2_t)+1;
+            break;
+          case TMTYPE_DATA_T4:
+            bufsize = sizeof(tm_hdr_t) + sizeof(tm_data_t4_t)+1;
+            break;
+          case TMTYPE_DATA_T3:
+            bufsize = sizeof(tm_hdr_t) + sizeof(tm_data_t3_t)+1;
+            break;
+          default:
+            msg(4, "Invalid bfr state %d", state);
+        }
+        state = TM_STATE_HDR2;
+      } else {
+        return false; // wait for more input
+      }
+    }
+    
+    nb_read = nc < bufsize-1 ?
+      nc : bufsize-1;
     // memcpy(buf, &buf[cp], nb_read);
     buf += nb_read;
     bufsize -= nb_read;
@@ -83,24 +120,18 @@ bool bfr_input_client::protocol_input() {
       // write.off_rec += nb_read;
       write.off_queue += nb_read;
     }
-    nl_assert(bufsize >= 0);
-    if ( bufsize == 0 ) {
+    nl_assert(bufsize-1 >= 0);
+    if ( bufsize-1 == 0 ) {
       switch ( state ) {
         case TM_STATE_HDR:
-          if ( part.hdr.s.hdr.tm_id != TMHDR_WORD ) {
-            msg(MSG_FATAL, "Invalid Message header" );
-            // MsgError( write.rcvid, EINVAL );
-            // Scan ahead for TMHDR_WORD
-            bufsize = sizeof( part.hdr );
-            buf = (unsigned char *)&part.hdr;
-            return false;
-          }
+          msg(3, "Should not see TM_STATE_HDR here");
+        case TM_STATE_HDR2:
           switch ( part.hdr.s.hdr.tm_type ) {
             case TMTYPE_INIT:
               if ( last_tmqr )
                 msg(MSG_FATAL, "Second TMTYPE_INIT received" );
               write.off_queue = sizeof(tm_hdrs_t)-sizeof(tm_hdr_t);
-              bufsize = sizeof(tm_info) - write.off_queue;
+              bufsize = sizeof(tm_info) - write.off_queue + 1;
               buf = (unsigned char *)&tm_info;
               memcpy( buf, &part.hdr.raw[sizeof(tm_hdr_t)],
                       write.off_queue );
@@ -110,33 +141,38 @@ bool bfr_input_client::protocol_input() {
             case TMTYPE_TSTAMP:
               if ( last_tmqr == 0 )
                 msg(MSG_FATAL, "TMTYPE_TSTAMP received before _INIT" );
-              lock(__FILE__, __LINE__);
-              commit_tstamp(part.hdr.s.u.ts.mfc_num, part.hdr.s.u.ts.secs);
-              unlock();
-              new_rows++;
-              state = TM_STATE_HDR; // already there!
-              bufsize = sizeof( part.hdr );
-              buf = (unsigned char *)&part.hdr;
+              if (write.off_msg >= sizeof(tm_hdr_t)+sizeof(tstamp_t)) {
+                lock(__FILE__, __LINE__);
+                commit_tstamp(part.hdr.s.u.ts.mfc_num, part.hdr.s.u.ts.secs);
+                unlock();
+                new_rows++;
+                state = TM_STATE_HDR; // already there!
+                bufsize = sizeof( part.hdr ) + 1;
+                buf = (unsigned char *)&part.hdr;
+              }
               break;
             case TMTYPE_DATA_T1:
             case TMTYPE_DATA_T2:
-            case TMTYPE_DATA_T3:
             case TMTYPE_DATA_T4:
-              if ( last_tmqr == 0 )
-                msg(MSG_FATAL, "Second TMTYPE_DATA* received before _INIT" );
-              nl_assert( data_state_eval != 0 );
-              nl_assert( part.hdr.s.hdr.tm_type == output_tm_type );
-              write.nb_rec = part.hdr.s.u.dhdr.n_rows *
-                write.nbrow_rec;
-              write.off_queue = 0;
-              new_rows += (this->*data_state_eval)();
-              // ### Make sure data_state_eval returns the number
-              // of rows that have been completely added to DQ
-              if ( write.nb_rec <= 0 ) {
-                state = TM_STATE_HDR;
-                bufsize = sizeof(part.hdr);
-                buf = (unsigned char *)&part.hdr;
-              } // else break out
+              msg(4,"This state does not exist");
+            case TMTYPE_DATA_T3:
+              if (write.off_msg >= sizeof(tm_hdr_t)+sizeof(tm_data_t3_t)) {
+                if ( last_tmqr == 0 )
+                  msg(MSG_FATAL, "Second TMTYPE_DATA* received before _INIT" );
+                nl_assert( data_state_eval != 0 );
+                nl_assert( part.hdr.s.hdr.tm_type == output_tm_type );
+                write.nb_rec = part.hdr.s.u.dhdr.n_rows *
+                  write.nbrow_rec;
+                write.off_queue = 0;
+                new_rows += (this->*data_state_eval)();
+                // ### Make sure data_state_eval returns the number
+                // of rows that have been completely added to DQ
+                if ( write.nb_rec <= 0 ) {
+                  state = TM_STATE_HDR;
+                  bufsize = sizeof(part.hdr) + 1;
+                  buf = (unsigned char *)&part.hdr;
+                } // else break out
+              }
               break;
             default:
               msg( 4, "Invalid state" );
@@ -149,14 +185,14 @@ bool bfr_input_client::protocol_input() {
           blocking = false; // nonblock;
           new_rows++;
           state = TM_STATE_HDR; //### Use state-init function?
-          bufsize = sizeof(part.hdr);
+          bufsize = sizeof(part.hdr) + 1;
           buf = (unsigned char *)&part.hdr;
           break;
         case TM_STATE_DATA:
           new_rows += (this->*data_state_eval)();
           if ( write.nb_rec <= 0 ) {
             state = TM_STATE_HDR;
-            bufsize = sizeof(part.hdr);
+            bufsize = sizeof(part.hdr) + 1;
             buf = (unsigned char *)&part.hdr;
           }
           break;
@@ -319,7 +355,7 @@ int bfr_input_client::data_state_T3() {
   {
     int nrrecd = write.off_queue/nbQrow;
     nrowsfree = 0;
-    nl_assert(bufsize == 0);
+    nl_assert(bufsize-1 == 0);
     nl_assert(write.off_queue == nrrecd*nbQrow); // Not sure about this
 
     if (state == TM_STATE_DATA) {
@@ -330,12 +366,12 @@ int bfr_input_client::data_state_T3() {
     }
     tmq_retire_check();
     nrowsfree = allocate_rows(&buf);
-    bufsize = nrowsfree * write.nbrow_rec;
+    bufsize = nrowsfree * write.nbrow_rec + 1;
     if (nrowsfree > 0 && state == TM_STATE_HDR) {
       // copy from hdr into buf, update accordingly
       write.off_queue = sizeof(tm_hdrs_t) - write.nbhdr_rec;
       // This could actually happen, but it shouldn't
-      nl_assert( write.off_queue <= bufsize );
+      nl_assert( write.off_queue <= bufsize-1 );
       bufsize -= write.off_queue;
       memcpy( buf,
               &part.hdr.raw[write.nbhdr_rec],
@@ -598,7 +634,7 @@ void bfr_input_client::run_write_queue() {
   if ( blocked_writer ) {
     // log_event(3);
     int new_rows = (this->*data_state_eval)();
-    if ( bufsize > 0 ) {
+    if ( bufsize-1 > 0 ) {
       blocked_writer = false;
       flags |= Fl_Read;
       // log_event(4);

@@ -139,7 +139,8 @@ namespace DAS_IO {
     if (cp < nc && isalpha(buf[cp])) {
       ++len;
       ++cp;
-      while (cp < nc && (isalnum(buf[cp]) || buf[cp] == '_')) {
+      while (cp < nc && (isalnum(buf[cp]) || buf[cp] == '_'
+              || buf[cp] == '-')) {
         ++len;
         ++cp;
       }

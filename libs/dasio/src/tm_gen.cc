@@ -54,6 +54,8 @@ void tm_generator::init(int nQrows, int low_water, bool collection) {
   tm_queue::init(nQrows, low_water);
   tm_gen_cmd::attach(this); // defines the subservice
   bfr = new tm_gen_bfr(collection);
+  bfr->connect();
+  ELoop.add_child(bfr);
   tmr = new tm_gen_tmr(this);
   row_period_nsec_default = tmi(nsecsper)*(uint64_t)1000000000L/tmi(nrowsper);
   row_period_nsec_current = row_period_nsec_default;

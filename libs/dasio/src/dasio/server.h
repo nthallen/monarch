@@ -23,6 +23,11 @@ namespace DAS_IO {
    * @return Pointer to a Socket subclass or zero if an error occurs.
    */
   typedef Serverside_client *(* socket_clone_t)(Authenticator *, SubService *);
+  /**
+   * Function type for determining whether to accept an inbound
+   * connection.
+   * @return True if the connection should be accepted.
+   */
   typedef bool (*Authentication_hook)(Authenticator *, SubService *);
   
   class SubService {

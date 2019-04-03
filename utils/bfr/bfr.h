@@ -64,7 +64,7 @@ typedef struct tsqueue {
 // } DQD_Queue_t;
 
 enum state_t {
-  TM_STATE_HDR, TM_STATE_INFO, TM_STATE_DATA
+  TM_STATE_HDR, TM_STATE_HDR2, TM_STATE_INFO, TM_STATE_DATA
 };
 
 class bfr_output_client;
@@ -74,7 +74,7 @@ class bfr_input_client : public Serverside_client, public tm_queue {
   public:
     bfr_input_client(Authenticator *Auth, const char *iname, bool blocking);
     ~bfr_input_client();
-    static const int bfr_input_client_ibufsize = 16384;
+    static const int bfr_input_client_ibufsize = 0; // We handle this
     static bool auth_hook(Authenticator *Auth, SubService *SS);
     static bool tmg_opened;
   protected:
