@@ -11,6 +11,7 @@
 #include "dasio/tm_client.h"
 #include "dasio/msg.h"
 #include "dasio/tm.h"
+#include "dasio/rundir.h"
 #include "nl.h"
 #include "nl_assert.h"
 
@@ -25,7 +26,7 @@ void tm_set_srcnode(char *nodename) {
   tm_client::srcnode = nodename;
 }
 
-void tm_client::init(int bufsize_in, const char *srcfile, bool non_block) {
+void tm_client::init(int bufsize_in, const char *srcfile) {
   bufsize = bufsize_in;
   bytes_read = 0;
   next_minor_frame = 0;
@@ -38,7 +39,7 @@ void tm_client::init(int bufsize_in, const char *srcfile, bool non_block) {
   if ( buf == 0)
     report_err(/* 3, */"Memory allocation failure in tm_client::tm_client");
   tm_msg = (tm_msg_t *)buf;
-  non_block = non_block ? O_NONBLOCK : false;
+  bool non_block = non_block ? O_NONBLOCK : false;
   /* bfr_fd =
     srcfile ?
     tm_open_name( srcfile, srcnode, non_block ) :
@@ -49,13 +50,13 @@ void tm_client::init(int bufsize_in, const char *srcfile, bool non_block) {
     FILE *fp;
     const char *Exp = getenv("Experiment");
     if (Exp == NULL) Exp = "none";
-    nb1 = snprintf(NULL, 0, "/var/huarp/run/%s/%d", Exp, getpid());
+    nb1 = snprintf(NULL, 0, "%s/%s/%d", RUNDIR_TMC, Exp, getpid());
     filename = (char *)new_memory(nb1+1);
-    nb2 = snprintf(filename, nb1+1, "/var/huarp/run/%s/%d", Exp, getpid());
+    nb2 = snprintf(filename, nb1+1, "%s/%s/%d", RUNDIR_TMC, Exp, getpid());
     nl_assert(nb1 == nb2);
     fp = fopen( filename, "w" );
     if (fp) fclose(fp);
-    else report_err(/*2, */"Unable to create run file '%s'", filename);
+    else msg(2,"Unable to create run file '%s'", filename);
   }
 }
 
