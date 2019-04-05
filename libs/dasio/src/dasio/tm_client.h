@@ -17,7 +17,7 @@ namespace DAS_IO {
 class tm_client : public DAS_IO::Client {
   public:
     tm_client(int bufsize, bool fast);
-    void resize_buffer(int bufsize_in);
+    // void resize_buffer(int bufsize_in);
     void load_tmdac(char *path);
     static unsigned int next_minor_frame, majf_row, minf_row;
     static char *srcnode;
@@ -41,12 +41,12 @@ class tm_client : public DAS_IO::Client {
   private:
     void process_message();
     int nQrows;
-    int bufsize;
+    // int bufsize;
     int tm_state;
     unsigned int bytes_read; /// number of bytes currently in buf
     unsigned int toread; /// number of bytes needed before next action
     bool tm_info_ready;
-    char *buf;
+    // char *buf;
     void init(int bufsize_in, const char *srcfile, bool non_block);
 };
 

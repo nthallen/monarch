@@ -653,7 +653,7 @@ bfr_output_client::bfr_output_client(Authenticator *Auth, const char *iname, boo
   part.nbdata = 0;
   part.dptr = 0;
   read.buf = 0;
-  read.maxQrows = 0;
+  read.maxQrows = 1; // We need to figure out a better solution here.
   read.rows_missing = 0;
   read.ready = true;
   all_readers.push_back(this);

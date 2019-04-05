@@ -30,7 +30,7 @@ void tm_set_srcnode(char *nodename) {
  * Constructor method.
  */
 tm_client::tm_client(int bufsize, bool fast) 
-  : DAS_IO::Client("tm_client", bufsize, "tm_bfr", (fast ? "fast" : "optimized")), bufsize(bufsize) {
+  : DAS_IO::Client("tm_client", bufsize, "tm_bfr", (fast ? "fast" : "optimized")) {
     nl_assert(buf);
     nc = 0;
     next_minor_frame = 0;
@@ -97,6 +97,7 @@ bool tm_client::app_input() {
       process_message();
     }
   }
+  return false;
 }
 
 /* *
@@ -229,14 +230,14 @@ void tm_client::process_message() {
   }
 }
 
-void tm_client::resize_buffer( int bufsize ) {
-  delete buf;
-  bufsize = bufsize;
-  buf = new char[bufsize];
-  if ( buf == 0)
-    report_err(/* 3,
-       */"Memory allocation failure in tm_client::resize_buffer");
-}
+// void tm_client::resize_buffer( int bufsize ) {
+  // delete buf;
+  // bufsize = bufsize;
+  // buf = new char[bufsize];
+  // if ( buf == 0)
+    // report_err(/* 3,
+       // */"Memory allocation failure in tm_client::resize_buffer");
+// }
 
 void tm_client::load_tmdac(char *path) {
   ::load_tmdac(path);
