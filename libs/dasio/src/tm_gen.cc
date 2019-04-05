@@ -16,10 +16,10 @@ tm_gen_bfr::~tm_gen_bfr() {}
 
 bool tm_gen_bfr::app_connected() {
   tm_hdr_t hdr = { TMHDR_WORD, TMTYPE_INIT };
-  struct iovec iov[2];
-  SETIOV(&iov[0], &hdr, sizeof(hdr));
-  SETIOV(&iov[1], &tm_info, sizeof(tm_info));
-  return iwritev( iov, 2, "Sending tm_info");
+  // struct iovec iov[2];
+  SETIOV(&bfr_iov[0], &hdr, sizeof(hdr));
+  SETIOV(&bfr_iov[1], &tm_info, sizeof(tm_info));
+  return iwritev( bfr_iov, 2, "Sending tm_info");
 }
 
 bool tm_gen_bfr::iwritev(struct iovec *iov, int nparts, const char *where) {
@@ -69,16 +69,16 @@ void tm_generator::transmit_data( bool single_row ) {
   int rc;
   tm_hdrs_t hdrs;
   hdrs.s.hdr.tm_id = TMHDR_WORD;
-  struct iovec iov[3];
+  // struct iovec iov[3];
   while ( first_tmqr ) {
     if (first_tmqr->tsp != cur_tsp) {
       cur_tsp = first_tmqr->tsp;
       hdrs.s.hdr.tm_type = TMTYPE_TSTAMP;
-      SETIOV(&iov[0], &hdrs, sizeof(tm_hdr_t));
-      SETIOV(&iov[1], &cur_tsp->TS, sizeof(cur_tsp->TS));
+      SETIOV(&pvt_iov[0], &hdrs, sizeof(tm_hdr_t));
+      SETIOV(&pvt_iov[1], &cur_tsp->TS, sizeof(cur_tsp->TS));
       lock(__FILE__, __LINE__);
       if ( bfr ) {
-        bfr->iwritev(iov, 2, "transmitting tstamp");
+        bfr->iwritev(pvt_iov, 2, "transmitting tstamp");
       }
       unlock();
     }
@@ -92,21 +92,21 @@ void tm_generator::transmit_data( bool single_row ) {
       hdrs.s.u.dhdr.n_rows = n_rows;
       hdrs.s.u.dhdr.mfctr = tmqdr->MFCtr_start;
       hdrs.s.u.dhdr.rownum = tmqdr->row_start;
-      SETIOV(&iov[0], &hdrs, nbDataHdr);
+      SETIOV(&pvt_iov[0], &hdrs, nbDataHdr);
       int n_iov;
       if ( tmqdr->Qrow + n_rows < total_Qrows ) {
-        SETIOV(&iov[1], row[tmqdr->Qrow], n_rows * nbQrow );
+        SETIOV(&pvt_iov[1], row[tmqdr->Qrow], n_rows * nbQrow );
         n_iov = 2;
       } else {
         int n_rows1 = total_Qrows - tmqdr->Qrow;
-        SETIOV(&iov[1], row[tmqdr->Qrow], n_rows1 * nbQrow );
+        SETIOV(&pvt_iov[1], row[tmqdr->Qrow], n_rows1 * nbQrow );
         int n_rows2 = n_rows - n_rows1;
-        SETIOV(&iov[2], row[0], n_rows2 * nbQrow );
+        SETIOV(&pvt_iov[2], row[0], n_rows2 * nbQrow );
         n_iov = 3;
       }
       lock(__FILE__,__LINE__);
       if ( bfr ) {
-        bfr->iwritev(iov, n_iov, "transmitting data");
+        bfr->iwritev(pvt_iov, n_iov, "transmitting data");
         unlock();
       } else unlock();
       retire_rows(tmqdr, n_rows);

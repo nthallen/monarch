@@ -19,6 +19,7 @@ class tm_gen_tmr : public Interface {
     void settime( uint64_t nsecs );
     tm_generator *tmg;
     uint64_t timer_resolution_nsec;
+    uint64_t n_expirations;
   protected:
     bool protocol_input();
 };

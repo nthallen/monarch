@@ -1,6 +1,7 @@
 #ifndef TM_GEN_H_INCLUDED
 #define TM_GEN_H_INCLUDED
 
+#include <sys/uio.h>
 #include "client.h"
 #include "server.h"
 #include "tm_queue.h"
@@ -24,6 +25,8 @@ class tm_gen_bfr : public Client {
     }
   protected:
     bool app_connected();
+  private:
+    struct iovec bfr_iov[2];
 };
 
 class tm_generator : public tm_queue, public Server {
@@ -53,6 +56,7 @@ class tm_generator : public tm_queue, public Server {
     void tm_stop();
     uint64_t row_period_nsec_default;
     uint64_t row_period_nsec_current;
+    struct iovec pvt_iov[3];
 };
 
 #define SETIOV(x,y,z) ((x)->iov_base = y, (x)->iov_len = z)

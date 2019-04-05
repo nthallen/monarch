@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
   col.init();
   col.init_senders();
   DAS_IO::tminitfunc();
-  col.ELoop.event_loop();
+  col.Start(DAS_IO::Srv_Unix);
   msg( 0, "Shutdown" );
   return 0;
 }

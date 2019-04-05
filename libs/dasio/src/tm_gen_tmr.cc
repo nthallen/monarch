@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/timerfd.h>
 #include "dasio/tm.h"
 #include "dasio/tm_gen_cmd.h"
@@ -13,7 +14,9 @@
 namespace DAS_IO {
 
 tm_gen_tmr::tm_gen_tmr(tm_generator *tm_gen)
-    : Interface("tmr", 8), tmg(tm_gen) {
+    : Interface("tmr", 0), tmg(tm_gen) {
+  buf = (unsigned char *)&n_expirations;
+  bufsize = sizeof(n_expirations)+1;
   struct timespec ts;
   if (clock_getres(CLOCK_REALTIME, &ts))
     msg(MSG_EXIT_ABNORM, "Error from clock_getres()");
@@ -23,6 +26,10 @@ tm_gen_tmr::tm_gen_tmr(tm_generator *tm_gen)
   if (fd < 0) {
     msg(MSG_FATAL, "timerfd_create returned error %d: %s",
       errno, strerror(errno));
+  }
+  if (fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK) == -1) {
+    msg(3, "fcntl() error %d: %s", errno,
+      strerror(errno));
   }
   flags = 0;
   tmg->ELoop.add_child(this);

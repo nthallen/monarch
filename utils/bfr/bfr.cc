@@ -88,16 +88,16 @@ bool bfr_input_client::protocol_input() {
             bufsize = sizeof(tm_hdr_t) + sizeof(tstamp_t)+1;
             break;
           case TMTYPE_DATA_T1:
-            bufsize = sizeof(tm_hdr_t) + sizeof(tm_data_t1_t)+1;
+            // bufsize = sizeof(tm_hdr_t) + sizeof(tm_data_t1_t)+1;
             break;
           case TMTYPE_DATA_T2:
-            bufsize = sizeof(tm_hdr_t) + sizeof(tm_data_t2_t)+1;
+            // bufsize = sizeof(tm_hdr_t) + sizeof(tm_data_t2_t)+1;
             break;
           case TMTYPE_DATA_T4:
-            bufsize = sizeof(tm_hdr_t) + sizeof(tm_data_t4_t)+1;
+            // bufsize = sizeof(tm_hdr_t) + sizeof(tm_data_t4_t)+1;
             break;
           case TMTYPE_DATA_T3:
-            bufsize = sizeof(tm_hdr_t) + sizeof(tm_data_t3_t)+1;
+            // bufsize = sizeof(tm_hdr_t) + sizeof(tm_data_t3_t)+1;
             break;
           default:
             msg(4, "Invalid bfr state %d", state);
@@ -349,40 +349,37 @@ bool bfr_input_client::process_tm_info() {
 int bfr_input_client::data_state_T3() {
   // int nrrecd = write.off_queue/write.nbrow_rec;
   // nl_assert(part.nbdata == 0); // redundant here: checked again in the loop below
-  int nrowsfree, tot_nrrecd = 0;
   lock(__FILE__,__LINE__);
   
-  {
-    int nrrecd = write.off_queue/nbQrow;
-    nrowsfree = 0;
-    nl_assert(bufsize-1 == 0);
-    nl_assert(write.off_queue == nrrecd*nbQrow); // Not sure about this
+  int nrrecd = write.off_queue/nbQrow;
+  nl_assert(bufsize-1 == 0);
+  nl_assert(write.off_queue == nrrecd*nbQrow); // Not sure about this
 
-    if (state == TM_STATE_DATA) {
-      commit_rows(part.hdr.s.u.dhdr.mfctr, 0, nrrecd);
-      part.hdr.s.u.dhdr.mfctr += nrrecd;
-      write.nb_rec -= nrrecd * write.nbrow_rec;
-      write.off_queue += nrrecd * write.nbrow_rec;
-    }
-    tmq_retire_check();
-    nrowsfree = allocate_rows(&buf);
-    bufsize = nrowsfree * write.nbrow_rec + 1;
-    if (nrowsfree > 0 && state == TM_STATE_HDR) {
-      // copy from hdr into buf, update accordingly
-      write.off_queue = sizeof(tm_hdrs_t) - write.nbhdr_rec;
-      // This could actually happen, but it shouldn't
-      nl_assert( write.off_queue <= bufsize-1 );
-      bufsize -= write.off_queue;
-      memcpy( buf,
-              &part.hdr.raw[write.nbhdr_rec],
-              write.off_queue );
-      buf += write.off_queue;
-      write.nb_rec -= write.off_queue;
-      state = TM_STATE_DATA;
-    }
+  if (state == TM_STATE_DATA) {
+    commit_rows(part.hdr.s.u.dhdr.mfctr, 0, nrrecd);
+    part.hdr.s.u.dhdr.mfctr += nrrecd;
+    // write.nb_rec -= nrrecd * write.nbrow_rec;
+    // write.off_queue += nrrecd * write.nbrow_rec;
   }
+  tmq_retire_check();
+  int nrowsfree = allocate_rows(&buf);
+  bufsize = nrowsfree * write.nbrow_rec + 1;
+  if (nrowsfree > 0 && state == TM_STATE_HDR2) {
+    // copy from hdr into buf, update accordingly
+    write.off_queue = sizeof(tm_hdrs_t) - write.nbhdr_rec;
+    // This could actually happen, but it shouldn't
+    nl_assert( write.off_queue <= bufsize-1 );
+    bufsize -= write.off_queue;
+    memcpy( buf,
+            &part.hdr.raw[write.nbhdr_rec],
+            write.off_queue );
+    buf += write.off_queue;
+    write.nb_rec -= write.off_queue;
+    state = TM_STATE_DATA;
+  }
+  bufsize = write.nb_rec + 1;
   unlock();
-  return tot_nrrecd;
+  return nrrecd;
 }
 
 void bfr_input_client::tmq_retire_check() {
