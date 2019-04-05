@@ -138,6 +138,7 @@ int main( int argc, char **argv ) {
   Loop ELoop;
   ELoop.add_child(&tmc);
   msg(0, "Starting");
+  tmc.connect();
   ELoop.event_loop();
   msg(0, "Terminating");
   //tmc.operate(); //we eventually need to figure out a new operate() method

@@ -129,8 +129,8 @@ bool Interface::iwrite_check() {
       while (ntr > 0 && n_wiov > 0) {
         if (ntr >= wiov->iov_len) {
           ntr -= wiov->iov_len;
-          ++wiov;
-          --n_wiov;
+          if (--n_wiov > 0)
+            ++wiov;
         } else {
           wiov->iov_len -= ntr;
           wiov->iov_base = (void*)(((const char *)(wiov->iov_base))+ntr);

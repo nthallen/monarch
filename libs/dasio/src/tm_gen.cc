@@ -94,7 +94,7 @@ void tm_generator::transmit_data( bool single_row ) {
       hdrs.s.u.dhdr.rownum = tmqdr->row_start;
       SETIOV(&pvt_iov[0], &hdrs, nbDataHdr);
       int n_iov;
-      if ( tmqdr->Qrow + n_rows < total_Qrows ) {
+      if ( tmqdr->Qrow + n_rows <= total_Qrows ) {
         SETIOV(&pvt_iov[1], row[tmqdr->Qrow], n_rows * nbQrow );
         n_iov = 2;
       } else {

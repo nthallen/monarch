@@ -32,7 +32,7 @@ void tm_set_srcnode(char *nodename) {
 tm_client::tm_client(int bufsize, bool fast) 
   : DAS_IO::Client("tm_client", bufsize, "tm_bfr", (fast ? "fast" : "optimized")), bufsize(bufsize) {
     nl_assert(buf);
-    bytes_read = 0;
+    nc = 0;
     next_minor_frame = 0;
     majf_row = 0;
     minf_row = 0;
@@ -75,21 +75,21 @@ bool tm_client::app_input() {
   /* int nb;
   do {
     nb = (bfr_fd == -1) ? 0 :
-        ::read( bfr_fd, buf + bytes_read, bufsize-bytes_read);
+        ::read( bfr_fd, buf + nc, bufsize-nc);
     if ( nb == -1 ) {
       if ( errno == EAGAIN ) return; // must be non-blocking
       else report_err( 1, "tm_client::read error from read(): %s",
         strerror(errno));
     }
     if (nb <= 0) {
-      bytes_read = 0;
+      nc = 0;
       tm_expect_hdr();
       // toread = sizeof(tm_hdr_t);
       if ( process_eof() ) return;
     }
     if ( tm_quit ) return; // possible if set from an outside command
   } while (nb == 0 );
-  bytes_read += nb; */
+  nc += nb; */
   if ( nc >= toread ) {
     if (tm_msg->hdr.tm_id != TMHDR_WORD) {
       seek_tmid();
@@ -146,25 +146,25 @@ void tm_client::seek_tmid() {
   tm_hdrw_t *tm_id;
   unsigned char *ubuf = (unsigned char *)buf;
   int i;
-  for (i = 1; i < bytes_read; ++i) {
+  for (i = 1; i < nc; ++i) {
     if (ubuf[i] == (TMHDR_WORD & 0xFF)) {
-      if (i+1 == bytes_read || ubuf[i+1] == ((TMHDR_WORD>>8)&0xFF)) {
+      if (i+1 == nc || ubuf[i+1] == ((TMHDR_WORD>>8)&0xFF)) {
         msg(1, "%sDiscarding %d bytes in seek_tmid()", context(), i);
-        memmove(buf, buf+i, bytes_read - i);
-        bytes_read -= i;
+        memmove(buf, buf+i, nc - i);
+        nc -= i;
         tm_expect_hdr();
         return;
       }
     }
   }
   msg(1, "%sDiscarding %d bytes (to EOB) in seek_tmid()",
-    context(), bytes_read);
-  bytes_read = 0;
+    context(), nc);
+  nc = 0;
   tm_expect_hdr();
 }
   
 void tm_client::process_message() {
-  while ( bytes_read >= toread ) {
+  while ( nc >= toread ) {
     switch ( tm_state ) {
       case TM_STATE_HDR:
         switch ( tm_msg->hdr.tm_type ) {
@@ -216,11 +216,11 @@ void tm_client::process_message() {
             process_data();
             break;
         }
-        if ( bytes_read > toread ) {
-          memmove(buf, buf+toread, bytes_read - toread);
-          bytes_read -= toread;
-        } else if ( bytes_read == toread ) {
-          bytes_read = 0;
+        if ( nc > toread ) {
+          memmove(buf, buf+toread, nc - toread);
+          nc -= toread;
+        } else if ( nc == toread ) {
+          nc = 0;
         }
         tm_expect_hdr();
         break;
