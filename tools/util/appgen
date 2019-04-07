@@ -1,0 +1,834 @@
+#! /bin/sh
+# appgen Application Generator for the
+# tmc/cmdgen/tmcalgo/etc family of compilers
+#__USAGE
+#%C	[spec file]
+#
+#	Generates an application based on the spec_file input
+#	If spec file isn't specified, appgen will look for a
+#	file of the form *.spec. If there is a unique one, it
+#	will be used.
+#	appgen automatically overwrites the Makefile, so care
+#	should be taken that it is not invoked where it is not
+#	used.
+#
+# Spec_file format:
+# # comment line
+# prefix = <prefix>  (optional: derived from spec file name)
+# extprefix = <extprefix> (optional: defaults to $prefix)
+# tmcbase = <files>
+# cmdbase = <files>
+# colbase = <files>
+# qclibase = <files>
+# swsbase = <files>
+# extbase = <files> (files to be included in genui extractions)
+# genuibase = <files>
+# var = substitution (supported vars are SRC TOOL OBJ TGT DISTRIB
+#                     SCRIPT (source to be copied to $TGTDIR/bin/$VERSION)
+#                     SRCDIST (source to be copied to $TGTDIR/bin/$VERSION/Base)
+#                     IDISTRIB (to be copied to $TGTDIR)
+#                     MNC (defaults to prefix)
+#                     TGTNODE TGTDIR
+#                     SERVER (defaults if server is generated)
+#                     SUBDIRS (passed on to Makefile)
+#                     CPPFLAGS (passed on to Makefile)
+#                     IGNORE (copied into the IGNOREFILE)
+# target : <files>
+# ...
+# %%
+# <additional Makefile contents>
+#
+# The following target types are supported:
+#   *algo   TMCBASE  dc usage
+#   *col    TMCBASE  dg usage privileged etc.
+#   *ext    TMCBASE  dc usage
+#   *disp   TMCBASE  dc usage
+#   *dispnc TMCBASE  nctable usage
+#   *clt    CMDBASE  client usage
+#   *cltnc  CMDBASE  nctable client usage
+#   *srvr   CMDBASE  privileged
+#   *doit
+#   *.dccc
+#   *.sft
+# The following source types are supported:
+#   *.edf
+#   *.cdf (same as .edf, but csv output)
+#   *.cfg
+#   *.tbl
+#   *.tma
+#   *.cyc
+#   *.tmc
+#   *.tmg
+#   *.cmd
+#   *.c
+#   *.cc
+#   *.slp (soldrv proxy) ==> .sol and something else
+#   *.oui
+#   *.doit
+#   *.DR
+tab='	'
+nl='
+'
+iu=0
+tmp=_appgen_modout.tmp
+tmpxm=_appgen_xm.tmp
+rm -f $tmpxm
+
+function nl_error {
+  echo appgen: $* >&2
+  rm -f $tmp $tmpxm
+  exit 1
+}
+
+while getopts "s" option; do
+  case $option in
+    \?) nl_error ;;
+    *) nl_error Unsupported option: -$option;;
+  esac
+done
+let sval=$OPTIND-1
+shift $sval
+
+typeset ifile
+if [ -n "$1" ]; then
+  if [ -r $1 ]; then ifile=$1
+  else nl_error Cannot find or read input file $1
+  fi
+else
+  for i in *.spec; do
+    if [ -r $i ]; then
+      if [ -n "$ifile" ]; then
+        nl_error More than one .spec file found: *.spec
+      else ifile=$i
+      fi
+    fi
+  done
+fi
+
+[ -z "$ifile" ] && nl_error No .spec file specified and none found
+
+if [ ! -f VERSION ]; then
+  echo "No VERSION file found: creating VERSION 1.0"
+  echo "1.0" >VERSION
+fi
+
+# invoke_module <module> <args>
+function invoke_module {
+  module=$1
+  shift
+  echo "# Invoking: appgen_module $module X $*"
+  /usr/local/bin/appgen_module $module X $* >$tmp ||
+    nl_error "appgen_module $module invocation failed"
+  exec 3<$tmp
+  iu=3
+}
+
+#----------------------------------------------------------------
+# Now redirect standard input and output to process the spec file
+#----------------------------------------------------------------
+exec <$ifile >Makefile
+
+typeset targets prefix tmcbase cmdbase basetargets usage LINK usefiles
+typeset extprefix
+typeset colbase swsbase qclibase ouis
+typeset extbase genuibase
+typeset specdepbase spectgtbase
+typeset SERVER
+typeset SRC TOOL SCRIPT IDISTRIB OBJ TGT MNC DISTRIB SRCDIST IGNORE
+typeset TGTNODE TGTDIR
+typeset CPPFLAGS
+typeset PHTGT
+typeset pcmfile
+
+# is_member setname member
+function is_member {
+  typeset i set
+  eval set=\"\$$1\"
+  if [ -n "$set" ]; then
+    for i in $set; do
+      if [ "$2" = "$i" ]; then return 0; fi
+    done
+  fi
+  return 1
+}
+
+# add_member setname member
+# returns true (0) if member was not in set
+# returns false (1) if member was in set
+function add_member {
+  if is_member $1 $2; then
+    return 1
+  else
+    eval $1=\"\$$1 \$2\";
+  fi
+  return 0
+}
+
+#----------------------------------------------------------------
+# set_depname turns a filename into a shell variable name by mapping
+# all [./] to _. If $kluge is the mapped name, n_$kluge is set to
+# the actual filename and depname is set to d_$kluge. This is the
+# name of the variable which will hold the dependents of this target.
+#----------------------------------------------------------------
+function set_depname {
+  typeset old prefix suffix
+  old=$1
+  while :; do
+    prefix=${old%%[./]*}
+    if [ $old = $prefix ]; then break; fi
+    eval suffix=\${old#$prefix[./]}
+    old=${prefix}_$suffix
+  done
+  eval prefix=\"\$n_$old\"
+  if [ -n "$prefix" ]; then
+    [ $prefix != $1 ] &&
+      nl_error Name kludge conflict between $1 and $prefix
+  else
+    eval n_$old=$1
+  fi
+  depname=d_$old
+}
+
+# in_this_dir file
+# returns true (0) if file is in this directory
+function in_this_dir {
+  typeset bname
+  case x$1 in
+    x-l*) return 1;;
+  esac
+  bname=`basename $1`
+  [ $bname = $1 ] && return 0
+  return 1
+}
+
+# def_target target dependents
+function def_target {
+  typeset tgt deps dtdeps
+  tgt=$1; shift
+  deps="$*"
+  in_this_dir $tgt ||
+    nl_error Target $tgt is in another directory.
+  is_member SRC $tgt &&
+    nl_error Target $tgt conflicts with previous source definition
+
+  # special case for conditional compilation
+  case $tgt in
+    *tbl.tmc) add_member PHTGT $tgt;;
+  esac
+
+  if add_member targets $tgt; then
+    [ -n "$basetargets" ] && OBJ="$OBJ $tgt"
+    set_depname $tgt
+    eval $depname=\"\$deps\"
+  else
+    set_depname $tgt
+    eval dtdeps=\"\$$depname\"
+    if [ "$dtdeps" != "$deps" ]; then
+      echo Dependencies for target $tgt conflict with previous definition >&2
+      echo First: \"$dtdeps\" >&2
+      echo Second: \"$deps\" >&2
+      exit 1
+    fi
+  fi
+}
+
+function def_source {
+  is_member targets $1 &&
+    nl_error Source File $1 previously identified as target.
+  # in_this_dir $1 &&
+  add_member SRC $1
+  case $1 in
+    *.tbl) add_member SRCDIST $1;;
+    *.tma) add_member SRCDIST $1;;
+    *.sol) add_member SRCDIST $1;;
+  esac
+}
+
+add_member IDISTRIB Experiment.config
+add_member IDISTRIB VERSION
+### add_member cmdbase /usr/local/share/huarp/root.cmd
+
+#----------------------------------------------------------------
+# This is where we read in the definitions
+#----------------------------------------------------------------
+while true; do
+  while read -u$iu tgt mode deps; do
+    case "$tgt" in
+      \#*) mode=#;;
+      Module)
+        [ $iu = 0 ] ||
+          nl_error "Unexpected 'Module' in appgen_module output"
+        invoke_module $mode $deps
+        mode='#';;
+      swsbase)
+        for i in $deps; do
+          add_member tmcbase SWData.tmc
+          add_member tmcbase SWData.h
+          add_member colbase SWData_col.tmc
+          add_member cmdbase SWData.cmd
+          add_member cmdbase SWData.h
+        done;;
+      qclibase)
+        for i in $deps; do
+          j=${i%.qcli}
+          add_member tmcbase $j.tmc
+          add_member cmdbase $j.cmd
+          add_member DISTRIB $j.out
+          add_member SRCDIST $j.m
+          add_member SRCDIST $j.qcli
+          add_member OBJ $j.cmd
+          add_member OBJ $j.out
+          add_member OBJ $j.tmc
+          add_member OBJ $j.m
+          add_member OBJ $j.log
+        done;;
+      CPPFLAGS)
+        CPPFLAGS="$CPPFLAGS $deps"
+        mode='#';;
+      %%)
+        cat <&$iu >>$tmpxm
+        mode='#';;
+      *disp) # Suppress Photon target
+        tgt=${tgt}nc;;
+      *clt) # Supporess Photon target
+        tgt=${tgt}nc;;
+    esac
+    if [ -n "$mode" ]; then
+      case "$mode" in
+        \#) : ;;
+        =) for i in $deps; do add_member $tgt $i; done;;
+        :) def_target $tgt $deps
+           case $tgt in
+             *disp) def_target ${tgt}nc $deps;;
+             *clt) def_target ${tgt}nc $deps;;
+           esac;;
+        *) echo Unknown mode $mode >&2 ;;
+      esac
+    fi
+  done
+  if [ $iu = 3 ]; then
+    exec 3<&-
+    rm -f $tmp
+    iu=0
+  else
+    break;
+  fi
+done
+
+#----------------------------------------------------------------
+# Now all the base variables are defined, so it's safe to
+# reference them:
+#----------------------------------------------------------------
+for tgt in $targets; do
+  set_depname $tgt
+  eval deps=\"\$$depname\"
+  case $tgt in
+    *algo) deps="$tmcbase $deps";;
+    *col) deps="$tmcbase $colbase $deps";;
+    *ext) deps="$tmcbase $deps";;
+    *disp) deps="$tmcbase $deps";;
+    *dispnc) deps="$tmcbase $deps";;
+    *clt) deps="$cmdbase $deps";;
+    *cltnc) deps="$cmdbase $deps";;
+    *srvr) deps="$cmdbase $deps"; SERVER=$tgt;;
+    *doit) : ;;
+    *.dccc) : ;;
+    *.sft) : ;;
+    *) : ;;
+  esac
+  for i in $deps; do
+    def_source $i
+  done
+  set_depname $tgt
+  eval $depname=\"\$deps\"
+done
+
+#----------------------------------------------------------------
+# If not otherwise defined, the following targets are implicit,
+# assuming appropriate source files are supplied in the BASE
+# definition
+#  ${prefix}clt
+#  ${prefix}srvr
+#----------------------------------------------------------------
+prefix=${prefix##* }
+if [ -z "$prefix" ]; then prefix=${ifile%%.*}; fi
+extprefix=${extprefix##* }
+[ -z "$extprefix" ] && extprefix=$prefix
+if [ -n "$tmcbase" ]; then
+  for i in $tmcbase; do add_member SRCDIST $i; done
+fi
+
+if [ -n "$cmdbase" ]; then
+  is_member targets ${prefix}cltnc || {
+    # def_target ${prefix}clt $cmdbase
+    def_target ${prefix}cltnc $cmdbase
+    for i in $cmdbase; do def_source $i; done
+  }
+  is_member targets ${prefix}srvr || {
+    def_target ${prefix}srvr $cmdbase
+    if [ -z "$SERVER" ]; then SERVER=${prefix}srvr; fi
+    for i in $cmdbase; do def_source $i; done
+  }
+fi
+
+if [ -n "$colbase" ]; then
+  is_member targets ${prefix}col || {
+    def_target ${prefix}col $tmcbase $colbase
+    for i in $colbase; do def_source $i; done
+  }
+fi
+
+if [ -n "$extbase" -o -n "$genuibase" ]; then
+  is_member targets ${extprefix}engext || {
+    def_target ${extprefix}engext $tmcbase $extbase $genuibase
+    for i in $extbase $genuibase; do def_source $i; done
+  }
+fi
+
+#----------------------------------------------------------------
+# replace_each from to rule dependents
+#   Processes the list of dependents, replacing any ending in
+#   the "from" pattern with a new dependent ending in the "to"
+#   pattern. Adds the new dependent as a target in its own right
+#   with the old dependent as a dependent.
+#   Rules starting with '-' are omitted unless the source is in
+#   a different directory.
+# Returns TRUE if the substitution was applied
+#----------------------------------------------------------------
+function replace_each {
+  typeset from to redeps rei ia new_i replaced hdeps
+
+  replaced=1
+  from=$1; to=$2; rule="$3"; shift; shift; shift
+  if [ "$1" = "-h" ]; then
+    hdeps=$2
+    shift; shift
+  fi
+  for rei in $*; do
+    ia=${rei%$from}
+    if [ $ia$from = $rei ]; then
+      new_i=${ia##*/}$to
+      irule=${rule#-}
+      if [ "$irule" != "$rule" -a "$new_i" = "$ia$to" ]; then
+        irule=""
+      fi
+      if [ -n "$irule" ]; then
+        rei="$rei$hdeps${nl}${tab}$irule $rei"
+      else
+        rei="$rei$hdeps"
+      fi
+      def_target $new_i " $rei"
+      rei=$new_i
+      replaced=0
+    fi
+    redeps="$redeps $rei"
+  done
+  deps="$redeps"
+  return $replaced
+}
+
+#----------------------------------------------------------------
+# replace_all from to rule dependents
+#  replace all files ending in the "from" pattern with a file
+#  of the name "to", suffixing the rule to the dependents list
+# Returns TRUE if the substitution was applied.
+# Redefines global variable deps
+#----------------------------------------------------------------
+function replace_all {
+  typeset from to rule rai ia ra_deps new_deps replaced
+  
+  replaced=1
+  from=$1; to=$2; rule="$3"; shift; shift; shift
+  for rai in $*; do
+    ia=${rai%$from}
+    if [ $ia$from = $rai ]; then
+      if [ -z "$ra_deps" ]; then
+        new_deps="$new_deps $to"
+      fi
+      ra_deps="$ra_deps $rai"
+    else
+      new_deps="$new_deps $rai"
+    fi
+  done
+  if [ -n "$ra_deps" ]; then
+    def_target $to "$ra_deps$rule$ra_deps"
+    replaced=0
+  fi
+  deps=$new_deps
+  return $replaced
+}
+
+#----------------------------------------------------------------
+# use_all from to rule dependents
+#  use all files ending in the "from" pattern to generate file
+#  of the name "to", suffixing the rule to the dependents list
+#  in the global variable 'deps'
+# Returns TRUE if the substitution was applied.
+#----------------------------------------------------------------
+function use_all {
+  typeset from to rule rai ia ra_deps replaced
+  
+  replaced=1
+  from=$1; to=$2; rule="$3"; shift 3
+  for rai in $*; do
+    ia=${rai%$from}
+    [ $ia$from = $rai ] && ra_deps="$ra_deps $rai"
+  done
+  if [ -n "$ra_deps" ]; then
+    def_target $to "$ra_deps$rule$ra_deps"
+    replaced=0
+    deps="$deps $to"
+  fi
+  return $replaced
+}
+
+#----------------------------------------------------------------
+# Now process the definitions:
+#  save the original targets in basetargets
+#----------------------------------------------------------------
+basetargets="$targets"
+
+for i in $basetargets; do
+  unset ouis
+  ldasio='' # will become ' -ldasio'
+  ltmph='' # will become ' -ltmph -lph'
+  ldisp='' # will become ' -ldisp -ltmph -lph' or nc equiv
+  lssp='' # will become ' -lssp -lmem -lm'
+  cxx=''
+  add_member TGT $i
+  set_depname $i
+  eval deps=\"\$$depname\"
+  use_all .edf ${i}edf.oui "${nl}${tab}\$(EDF2OUI)" $deps
+  replace_each .edf ext.tmc "\$(EDF2EXT)" $deps &&
+    lssp=' -lssp -lmem -lm'
+  case $i in
+    *engext)
+      replace_all .genui ${i}.cdf "${nl}${tab}\$(GENUI2ENG)" $deps;;
+    *jsonext)
+      replace_all .genui ${i}.cdf "${nl}${tab}\$(GENUI2JSON)" $deps;;
+    *)
+      replace_all .genui ${i}.cdf "${nl}${tab}\$(GENUI2CSV)" $deps;;
+  esac
+  use_all .cdf ${i}cdf.oui "${nl}${tab}\$(EDF2OUI)" $deps
+  replace_each .cdf cdf.tmc "\$(EDF2EXT)" $deps
+  # replace_each .cfg attr.tmc "\$(DATAATTR)" $deps
+  replace_each .cyc cyc.tmc  "\$(CYCLE)" $deps
+  case $i in
+    *disp)
+      # Go for the implicit rule
+      replace_each .tbl tbl.tmc "" $deps &&
+        ldisp=' -ltmph -lph';;
+    *dispnc)
+      replace_each .tbl tblnc.tmc "" $deps &&
+        ldisp=' -ltm -lncurses' &&
+        add_member ouis nctable;;
+    *algo)
+      replace_each .sws sws.tma "\$(COMPILE.sws)" $deps;;
+  esac
+  replace_all .tmg ${i}tmg.tmc "${nl}${tab}\$(TMG2TMC)" $deps &&
+        add_member ouis tmg
+  replace_each .DR ${i}DR.tmc 'DR2tmc >$@' $deps &&
+        add_member ouis drext
+  if replace_all .tma ${i}a.tmc " $SERVER${nl}${tab}\$(SERVER) ./$SERVER${nl}${tab}\$(TMCALGO) -V \"\`./$SERVER -R\`\"" $deps
+  then
+    [ -z "$SERVER" ] &&
+      nl_error No command server defined
+    add_member ouis tma
+  fi
+  case $i in
+    *col)
+      if replace_all .tmc $i.cc " VERSION${nl}${tab}\$(TMC.col)" $deps; then
+        pcmfile=${i%col}.pcm
+        add_member ouis collect
+        add_member ouis seteuid
+        add_member DISTRIB $pcmfile
+        add_member DISTRIB tm.dac
+        add_member SRC $pcmfile
+        add_member OBJ tm.dac
+        ldasio=' -ldasio'
+      fi;;
+    *)
+      replace_all .tmc $i.cc " VERSION${nl}${tab}\$(TMC)" $deps &&
+        add_member ouis dc && ldasio=' -ldasio';;
+  esac
+  case $i in
+    *sft)
+      replace_each .slp slp.sol "\$(SLP2SOL)" $deps;;
+    *)
+      replace_all .slp ${prefix}slp.cmd "${nl}${tab}\$(SLP2CMD)" $deps;;
+  esac
+  if replace_all .cmd ${prefix}cmd.cc "${nl}${tab}\$(CMDGEN) -d ${prefix}cmd.dat" $deps
+  then
+    add_member OBJ ${prefix}cmd.dat
+  fi
+  # Collect the h dependents, but don't consume them
+  unset hdeps
+  for dep in $deps; do
+    case "x$dep" in
+      *.h) hdeps="$hdeps $dep";;
+    esac
+  done
+  case $i in
+    *clt)
+      if replace_each cmd.cc clt.o "\$(COMPILE.clt)" -h "$hdeps" $deps; then
+        add_member ouis kbdclt
+        ltmph=' -ltmph -lph'
+        ldasio=' -ldasio'
+      else
+        nl_error Client $i with no cmd.cc files
+      fi;;
+    *cltnc)
+      if replace_each cmd.cc cltnc.o "\$(COMPILE.cltnc)" -h "$hdeps" $deps; then
+        add_member ouis kbdclt
+        add_member ouis nctable
+        ltmph=' -ltm -lncurses'
+        ldasio=' -ldasio'
+      else
+        nl_error Client $i with no cmd.cc files
+      fi;;
+    *srvr)
+      if replace_each cmd.cc srvr.o "\$(COMPILE.srvr)" -h "$hdeps" $deps
+      then
+        add_member ouis cis
+        add_member ouis seteuid
+        ldasio=' -ldasio'
+      else
+        nl_error Server $i with no cmd.cc files
+      fi;;
+  esac
+  is_member deps -lsubbus && add_member ouis subbus
+
+  #----------------------------------------------------------------
+  # We'll delay handling the rest of the .c files (and the .oui files)
+  # until we decide if these are really executable.
+  #----------------------------------------------------------------
+
+  unset LINK
+  case $i in
+    *col)   LINK=priv;;
+    *clt)   LINK=norm; cxx=CXX;;
+    *cltnc) LINK=norm; cxx=CXX;;
+    *srvr)  LINK=priv; cxx=CXX;;
+    *.dccc) por="\$(LIBSRC)/dccc.por"
+            deps="$deps $por${nl}${tab}@\$(DCCC)$deps";;
+    *.sft)  set -- $deps
+            if [ $# -gt 1 ]; then
+              deps="$deps${nl}${tab}\$(SOLFMT) $deps"
+            else
+              deps="$deps${nl}${tab}solfmt -o$i $deps"
+            fi;;
+    *doit)  def_target $i.dep "$deps${nl}${tab}mkdoit3 -M -o $i $deps${nl}-include $i.dep"
+            deps="$deps${nl}${tab}mkdoit3 -o $i $deps"
+            add_member IDISTRIB $i;;
+    *doit.dep)
+            deps="$deps${nl}${tab}mkdoit3 -M -o ${i%.dep} $deps${nl}include $i";;
+    *)      LINK=norm;;
+  esac
+
+  if [ -n "$LINK" ]; then
+    unset ouifiles ouiout hdeps cdeps
+    add_member ouis msg
+    for j in $ouis; do
+      ouifiles="$ouifiles \$(OUIDIR)/$j.oui"
+    done
+    deps="$deps$ouifiles"
+    replace_all .oui ${i}oui.cc "${nl}${tab}\$(OUI)" $deps &&
+      ouiout=${i}oui.cc
+    for dep in $deps; do
+      case "x$dep" in
+        x-l*) cdeps="$cdeps $dep";;
+        *.o) cdeps="$cdeps $dep";;
+        *.c) cdeps="$cdeps $dep";;
+        *.cc) cdeps="$cdeps $dep";;
+        *.h) hdeps="$hdeps $dep";;
+        *) nl_error Unrecognized dependent $dep;;
+      esac
+    done
+    deps=$cdeps
+    replace_each .c .o "-\$(COMPILE.c)" -h "$hdeps" $deps
+    replace_each .cc .o "-\$(COMPILE.cc)" -h "$hdeps" $deps && cxx=CXX
+    unset libs odeps
+    for dep in $deps; do
+      case "x$dep" in
+        x-l*) libs="$libs $dep";;
+        *.o) odeps="$odeps $dep";;
+        *.h) :;;
+        *) nl_error Unrecognized dependent $dep;;
+      esac
+    done
+    deps="$odeps${nl}${tab}\$(LINK.$LINK$cxx)$odeps$libs$ldisp$ltmph$ldasio -ltm$lssp -lnl"
+    [ -n "$ouiout" ] && deps="$deps${nl}${tab}\$(OUIUSE) $ouiout"
+    case $LINK in
+      priv*) deps="$deps${nl}${tab}\$(PROMOTE) $i";;
+    esac
+  fi
+
+  set_depname $i
+  eval $depname=\"\$deps\"
+done
+
+for i in $targets; do
+  case $i in
+    *tbl.tmc)
+      add_member OBJ $i.dep;;
+    *tblnc.tmc)
+      add_member OBJ $i.dep;;
+  esac
+done
+
+#----------------------------------------------------------------
+# Clean up a little
+#----------------------------------------------------------------
+unset -f replace_each replace_all
+
+# output_macro name definition
+# outputs name=definition, but adds continuation characters
+# to make it look nice
+function output_macro {
+  typeset name i line
+  name=$1; shift
+  echo -n "$name="
+  let width=${#name}+1
+  for i in $*; do
+    let width=$width+${#i}+1
+    if [ $width -ge 70 ]; then
+      echo "$line"
+      echo -n "$name+="
+      let width=${#name}+2+${#i}
+      line=$i
+    elif [ -n "$line" ]; then line="$line $i"
+    else line="$i"
+    fi
+  done
+  echo "$line"
+}
+
+#----------------------------------------------------------------
+# Add a few more.
+#----------------------------------------------------------------
+add_member TOOL $ifile
+add_member TOOL Makefile
+
+#----------------------------------------------------------------
+# Output the results
+#----------------------------------------------------------------
+echo "# Makefile Generated `date`"
+output_macro MNC ${MNC:-$prefix}
+if [ -n "$SUBDIRS" ]; then
+  output_macro SUBDIRS $SUBDIRS
+fi
+echo SPECFILE=$ifile
+[ -n "$pcmfile" ] && echo PCMFILE=$pcmfile
+output_macro SRC $SRC
+output_macro TOOL $TOOL
+output_macro SCRIPT $SCRIPT
+output_macro OBJ $OBJ
+output_macro TGT $TGT
+output_macro IGNORE $IGNORE
+output_macro DISTRIB $DISTRIB
+output_macro IDISTRIB $IDISTRIB
+output_macro SRCDIST $SRCDIST
+output_macro TMCBASE $tmcbase
+output_macro CMDBASE $cmdbase
+output_macro COLBASE $colbase
+output_macro SWSBASE $swsbase
+output_macro QCLIBASE $qclibase
+output_macro GENUIBASE $genuibase
+output_macro EXTBASE $extbase
+output_macro SPECDEPBASE $specdepbase
+output_macro SPECTGTBASE $spectgtbase
+echo 'SPECTGTMISS:=$(foreach file,$(SPECTGTBASE),$(if $(wildcard $(file)),,$(file)))'
+output_macro AG_CPPFLAGS $CPPFLAGS
+output_macro PHTGT $PHTGT
+echo 'SOURCE=$(SRC) $(TOOL) $(SCRIPT)'
+# echo 'SOURCE=$(RCS) $(NONRCS)'
+echo 'OBJECT=$(OBJ) *.err'
+echo 'TARGET=$(TGT)'
+echo 'DSTRB=$(TGT) $(DISTRIB) $(SCRIPT)'
+
+# Output selected macros if they have been defined
+if [ -n "$TGTNODE" ]; then echo TGTNODE=$TGTNODE; fi
+if [ -n "$TGTDIR" ]; then
+  echo TGTDIR=$TGTDIR
+else
+  nl_error "TGTDIR definition is required"
+fi
+
+if [ -f .cvsignore -a ! -f .gitignore ]; then
+  ignorefile=.cvsignore
+else
+  ignorefile=.gitignore
+fi
+
+###echo 'include /usr/local/share/huarp/appgen.mk'
+echo 'include appgen.mk'
+echo
+echo '.PHONY : all all-dist extdistribution distribution tidy clean clean-dist check_photon'
+echo
+echo "IGNOREFILE=$ignorefile"
+echo 'all : check_photon $(TGT) $(IGNOREFILE)'
+echo 'all-dist : all $(DSTRB) $(SRCDIST) VERSION'
+echo "Makefile \$(SPECTGTMISS) : $ifile \$(SPECDEPBASE)"
+echo "${tab}appgen $ifile"
+  echo 'VERSION=`cat VERSION`'
+  echo 'extdistribution : all-dist'
+  echo "${tab}@[ -d \$(TGTDIR)/bin ] || mkdir \$(TGTDIR)/bin"
+  echo "${tab}@[ -d \$(TGTDIR)/bin/\$(VERSION) ] || mkdir \$(TGTDIR)/bin/\$(VERSION)"
+  echo "${tab}@[ -d \$(TGTDIR)/bin/\$(VERSION)/Base ] || mkdir \$(TGTDIR)/bin/\$(VERSION)/Base"
+  ### echo "${tab}@[ -f \$(TGTDIR)/bin/\$(VERSION)/\$(PCMFILE) ] && ! cmp -s
+  echo "${tab}@[ ! -f \$(TGTDIR)/bin/\$(VERSION)/\$(PCMFILE) ] || \\"
+  echo "${tab}  cmp -s \$(TGTDIR)/bin/\$(VERSION)/\$(PCMFILE) \$(PCMFILE) || \\"
+  echo "${tab}  ( echo \"\$(PCMFILE) changed without VERSION update\"; false )"
+  echo "${tab}@distribute \$(FORCE) \$(TGTDIR)/bin/\$(VERSION) \$(DSTRB)"
+  echo "${tab}@distribute \$(FORCE) \$(TGTDIR)/bin/\$(VERSION)/Base \$(SRCDIST)"
+  echo 'distribution : extdistribution'
+  echo "${tab}@distribute \$(FORCE) \$(TGTDIR) \$(IDISTRIB)"
+  echo 'check_photon :'
+  echo 'ifeq ($(WPHOTON),YES)'
+  echo '${tab}@for tgt in $(PHTGT); do \\'
+  echo '${tab}  cmp -s $$tgt /usr/local/share/huarp/nulltbl.tmc && echo Remaking $$tgt && rm -f $$tgt; \\'
+  echo '${tab}done; true'
+  echo 'endif'
+
+for i in $targets; do
+  set_depname $i
+  eval deps=\"\$$depname\"
+  echo "$i :$deps"
+  # It would be nice to shorten long lines with continuation chars,
+  # but it's hard to do here.
+  case $i in
+    *tbl.tmc) echo "-include $i.dep";;
+    *tblnc.tmc) echo "-include $i.dep";;
+  esac
+done
+
+if [ -n "$swsbase" ]; then
+  echo "SWData.h SWData.tmc SWData_col.tmc SWData.cmd : $swsbase"
+  echo "${tab}swscomp -o SWData $swsbase"
+fi
+
+if [ -n "$qclibase" ]; then
+  for i in $qclibase; do
+    j=${i%.qcli}
+    echo "$j.cmd $j.out $j.tmc $j.m : $i"
+    echo "${tab}qclicomp -o $j.out -c $j.cmd -d $j.tmc \\"
+    echo "${tab}  -v $j.log -m $j.m $i || \\"
+    echo "${tab}  ( rm -f $j.out $j.cmd $j.tmc $j.log $j.m; false )"
+  done  
+fi
+
+echo "${nl}tidy :${nl}${tab}rm -f \$(OBJECT)"
+echo "clean : tidy${nl}${tab}rm -f \$(TARGET)"
+echo "clean-dist : clean"
+echo '$(IGNOREFILE) : Makefile'
+echo "${tab}@for i in \$(OBJECT) \$(IGNORE) \$(TARGET); do echo \"\$\$i\"; done >\$(IGNOREFILE)"
+
+# Output anything beyond the %% in the spec file
+# Note that using 'read' does not work here because it strips
+# leading whitespace, which is clearly important in Makefiles
+if [ -f $tmpxm ]; then
+  cat $tmpxm
+  rm -f $tmpxm
+fi
+exit 0
+
