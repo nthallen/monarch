@@ -13,7 +13,7 @@ subbusd_CAN_init_options() is responsible for:
 data is only useful when the cloner is shared between
 subservices.
 
-<package> AppID_init
+<package> appid_default
 <include> "dasio/appid.h"
 <include> msg
 <preceed> msg
