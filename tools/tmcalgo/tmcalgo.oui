@@ -1,4 +1,5 @@
 <package> tmcalgo
+<include> no_appid
 <include> compiler
 <include> cmd_writer
 <include> "yytype.h"
