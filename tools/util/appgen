@@ -760,8 +760,7 @@ else
   ignorefile=.gitignore
 fi
 
-###echo 'include /usr/local/share/huarp/appgen.mk'
-echo 'include appgen.mk'
+echo 'include /usr/local/share/linkeng/appgen.mk'
 echo
 echo '.PHONY : all all-dist extdistribution distribution tidy clean clean-dist check_photon'
 echo
