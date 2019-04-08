@@ -1,5 +1,6 @@
 <package> tm_client
 <include> "dasio/tm_client.h"
+<include> msg oui
 <opts> "t:"
 <sort>
 	-t <TMbfr node>
@@ -11,7 +12,5 @@
 
 <package> appid_default
 <include> "dasio/appid.h"
-<include> msg
-<preceed> msg
 <defs>
   DAS_IO::AppID_t DAS_IO::AppID("tm_clt", "TM Client", "V2.0");

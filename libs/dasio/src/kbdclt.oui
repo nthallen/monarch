@@ -4,5 +4,5 @@
   care of graceful termination, and it might provide a version
   output function..
 
-<include> cmd_writer
+<include> cmd_writer msg oui
 <follow> msg
