@@ -549,7 +549,7 @@ for i in $basetargets; do
       fi;;
     *)
       replace_all .tmc $i.cc " VERSION${nl}${tab}\$(TMC)" $deps &&
-        add_member ouis dc && ldasio=' -ldasio';;
+        add_member ouis tm_client && ldasio=' -ldasio';;
   esac
   case $i in
     *sft)
@@ -589,7 +589,7 @@ for i in $basetargets; do
     *srvr)
       if replace_each cmd.cc srvr.o "\$(COMPILE.srvr)" -h "$hdeps" $deps
       then
-        add_member ouis cis
+        add_member ouis cmd_server
         add_member ouis seteuid
         ldasio=' -ldasio'
       else

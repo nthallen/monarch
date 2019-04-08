@@ -1,0 +1,13 @@
+<package> cmd_srvr
+<include> cmd_version
+<follow> cmd_version
+<comment>
+  This is the OUI definition for data acquisition system
+  command server applications, formerly known as server.oui
+
+<package> appid_default
+<include> "dasio/appid.h"
+<include> msg oui
+<preceed> msg oui
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("srvr", "Command Server", "V3.0");

@@ -11,7 +11,7 @@
 <init>
   subbusd_init_options(argc, argv);
 
-<package> AppID_init
+<package> appid_default
 <include> "dasio/appid.h"
 <include> msg
 <preceed> msg

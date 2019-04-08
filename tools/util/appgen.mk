@@ -25,7 +25,7 @@ TMC.col=name=$@; $(TMC) -p -V $${name%col.cc}.pcm -c -D tm.dac $(COLFLAGS)
 OUIDIR=/usr/local/share/oui
 OUI=oui -o $@
 OUIUSE=echo usemsg $@
-LIBSRC=/usr/local/share/huarp
+LIBSRC=/usr/local/share/linkeng
 CMDGEN=cmdgen -o $@
 COMPILE.clt=$(COMPILE.cc) -o $@ -D CLIENT
 COMPILE.cltnc=$(COMPILE.cc) -o $@ -D CLIENT -D NCT_INTERFACE=1
@@ -71,7 +71,7 @@ ifeq ($(WPHOTON),YES)
 	{ echo -n "$@ :"; cat $@.dep.tmp; } > $@.dep
 	rm $@.dep.tmp
 else
-	cat /usr/local/share/huarp/nulltbl.tmc > $@
+	cat $(LIBSRC)/nulltbl.tmc > $@
 endif
 
 %tblnc.tmc : %.tbl

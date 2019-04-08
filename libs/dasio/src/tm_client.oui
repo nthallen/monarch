@@ -9,6 +9,9 @@
     msg(1, "-t argument coming soon!");
     break;
 
-<package> msghdr_default
-<vars>
-  const char *msg_hdr_default = "tm_client";
+<package> appid_default
+<include> "dasio/appid.h"
+<include> msg
+<preceed> msg
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("tm_clt", "TM Client", "V2.0");

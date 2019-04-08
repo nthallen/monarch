@@ -16,3 +16,10 @@
 <include> "dasio/cmd_writer.h"
 <init>
   cic_options(argc, argv);
+
+<package> appid_default
+<include> "dasio/appid.h"
+<include> msg
+<preceed> msg
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("cmd_clt", "Command Client", "V2.0");

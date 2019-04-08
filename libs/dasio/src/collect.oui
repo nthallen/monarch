@@ -1,0 +1,12 @@
+<package> collect
+<include> msg oui
+<comment>
+  This package exists mostly for bookkeeping and to
+  get the msghdr right. The old version included dg,
+  which had archaic options.
+
+<package> appid_default
+<include> "dasio/appid.h"
+<preceed> msg
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("Col", "TM Collection", "V3.0");

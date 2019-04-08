@@ -12,7 +12,8 @@ add_library(dasio interface.cc ascii_escape.cc not_parsed.cc serial.cc
   tm_gen_col.cc tm_gen.cc tm_gen_cmd.cc tm_gen_tmr.cc
   tm_queue.cc tm_client.cc tmdac.cc tm_info.cc
   cmd_writer.cc cmd_version.cc cmd_version_def.cc msg.cc
-  cic_transmit.cc cmd_server.cc quit.cc get_baud_code.cc)
+  cic_transmit.cc cmd_server.cc quit.cc get_baud_code.cc csv_file.cc
+  timetext.cc)
 target_include_directories(dasio PUBLIC
   ${dasio_src_BINARY_DIR}
   ${dasio_src_SOURCE_DIR}
@@ -26,7 +27,15 @@ install(TARGETS dasio
   ARCHIVE
   DESTINATION lib
 )
-install(FILES cmd_version.oui cmd_writer.oui msg.oui
+install(FILES
+  cmd_server.oui
+  cmd_version.oui
+  cmd_writer.oui
+  collect.oui
+  kbdclt.oui
+  msg.oui
+  no_appid.oui
+  seteuid.oui
   tm_client.oui
   DESTINATION share/oui
 )
