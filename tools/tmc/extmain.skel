@@ -62,7 +62,9 @@ int main(int argc, char **argv) {
   TM_CLIENT Ext(4096, 1, 0);
   Loop ELoop;
   ELoop.add_child(&Ext);
+  Ext.connect();
   EXTRACTION_INIT;
+  tminitfunc();
   ELoop.event_loop();
   EXTRACTION_TERM;
   msg( 0, "Shutdown" );

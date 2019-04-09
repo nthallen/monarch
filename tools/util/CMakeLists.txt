@@ -5,6 +5,7 @@ project(le_das_tools_util VERSION 2.0.0)
 install(PROGRAMS
   appgen
   appgen_module
+  distribute
   genui
   genui_chk
   DESTINATION bin)
