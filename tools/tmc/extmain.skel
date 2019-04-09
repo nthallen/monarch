@@ -44,9 +44,12 @@ using namespace DAS_IO;
   #endif
 #else
   #ifdef NCTABLE_H_INCLUDED
-    #include "DCnc.h"
+    #include "dasio/nc_tm_client.h"
     #ifndef TM_CLIENT_CLASS
       #define TM_CLIENT_CLASS nc_tm_client
+    #endif
+    #ifndef EXTRACTION_UPDATE
+      #define EXTRACTION_UPDATE nct_refresh()
     #endif
   #else
     #ifndef TM_CLIENT_CLASS
@@ -55,16 +58,20 @@ using namespace DAS_IO;
   #endif
 #endif
 typedef TM_CLIENT_CLASS TM_CLIENT;
+#ifndef EXTRACTION_UPDATE
+  #define EXTRACTION_UPDATE
+#endif
 
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   msg( 0, "Startup" );
-  TM_CLIENT Ext(4096, 1, 0);
+  TM_CLIENT Ext(4096, true);
   Loop ELoop;
   ELoop.add_child(&Ext);
   Ext.connect();
   EXTRACTION_INIT;
   tminitfunc();
+  EXTRACTION_UPDATE;
   ELoop.event_loop();
   EXTRACTION_TERM;
   msg( 0, "Shutdown" );
@@ -116,6 +123,7 @@ void TM_CLIENT::process_data() {
     ++MFCtr;
   }
   next_minor_frame = MFCtr;
+  EXTRACTION_UPDATE;
 }
 #else
   #error Data types TMTYPE_DATA_T1 and TMTYPE_DATA_T2 not implemented in extmain.skel

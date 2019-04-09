@@ -16,7 +16,7 @@ namespace DAS_IO {
  */
 class tm_client : public DAS_IO::Client {
   public:
-    tm_client(int bufsize, bool fast);
+    tm_client(int bufsize, bool fast = true);
     // void resize_buffer(int bufsize_in);
     void load_tmdac(char *path);
     static unsigned int next_minor_frame, majf_row, minf_row;
@@ -55,7 +55,7 @@ class tm_client : public DAS_IO::Client {
 
 class ext_tm_client : public tm_client {
   public:
-    inline ext_tm_client(int bufsize_in, bool fast = false, bool non_block = false) :
+    inline ext_tm_client(int bufsize_in, bool fast = false) :
       tm_client(bufsize_in, fast) {}
   protected:
     void process_data();

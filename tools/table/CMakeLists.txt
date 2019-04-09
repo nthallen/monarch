@@ -51,7 +51,7 @@ ADD_CUSTOM_COMMAND(
 )
 add_custom_target(gen_nctable ALL DEPENDS nctable.exe)
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nctable.exe
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/nctable.exe
         DESTINATION bin)
 
 endif ((ELI_EXE STREQUAL "ELI_EXE-NOTFOUND"))
