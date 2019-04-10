@@ -9,11 +9,11 @@
 class memo_client: public DAS_IO::Client {
   public:
     memo_client();
-    ~memo_client();
     bool init();
     void send(const char* msg);
     void cleanup();
   protected:
+    ~memo_client();
     bool app_connected();
     bool connect_failed();
     bool iwritten(int nb);

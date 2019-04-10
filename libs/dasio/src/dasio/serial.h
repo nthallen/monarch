@@ -23,7 +23,6 @@ class Serial : public Interface {
      * @param bufsz The input buffer size
      */
     Serial(const char *iname, int bufsz);
-    virtual ~Serial();
     /**
      * init() can be used to initialize the device if the path is
      * not known at construction.
@@ -56,6 +55,7 @@ class Serial : public Interface {
     termios termios_p;
     class Modbus;
   protected:
+    virtual ~Serial();
     /**
      * Updates the VMIN parameter in tc_setattr. This can help to minimize the
      * number of context switches required before meaningful action can occur.

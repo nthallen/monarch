@@ -19,8 +19,9 @@ namespace DAS_IO {
        * @brief Quit client via TCP
        */
       Quit(const char *hostname);
-      ~Quit();
       bool process_eof();
+    protected:
+      ~Quit();
   };
 }
 

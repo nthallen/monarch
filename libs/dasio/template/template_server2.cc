@@ -34,10 +34,10 @@ class boerf_info {
 class boerf_ssclient : public Serverside_client {
   public:
     boerf_ssclient(Authenticator *Auth, const char *iname, boerf_info *bi);
-    ~boerf_ssclient();
     static const int boerf_ssclient_ibufsize = 80;
     // Include whatever virtual function overrides you need here
   protected:
+    ~boerf_ssclient();
     boerf_info *bi;
     // Include any local data here
 };

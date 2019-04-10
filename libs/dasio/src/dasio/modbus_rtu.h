@@ -33,7 +33,6 @@ class RTU : public DAS_IO::Serial {
      * @param bufsz The input buffer size
      */
     RTU(const char *iname, int bufsz);
-    ~RTU();
         
     /**
      * @brief Thin wrapper on Interface::ProcessData() to handle update_tc_vmin()
@@ -146,6 +145,7 @@ class RTU : public DAS_IO::Serial {
     modbus_req *pending;
     
   protected:
+    ~RTU();
     /**
      * If pending is not set, checks for pending commands or polls
      * and issues the next request. Called from protocol_input() after

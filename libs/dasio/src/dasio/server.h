@@ -84,18 +84,18 @@ namespace DAS_IO {
     public:
       Server_socket(const char *iname, const char *service,
         Socket::socket_type_t socket_type, Server *srvr);
-      ~Server_socket();
       Socket *new_client(const char *iname, int fd);
     protected:
+      ~Server_socket();
       Server *srvr;
   };
   
   class Serverside_client : public Socket {
     public:
       Serverside_client(Authenticator *orig, const char *iname, int ibufsize);
-      ~Serverside_client();
       bool srvr_has_shutdown();
     protected:
+      ~Serverside_client();
       Server *srvr;
   };
 
@@ -103,7 +103,6 @@ namespace DAS_IO {
     friend class Serverside_client;
     public:
       Authenticator(Server_socket *orig, const char *iname, int fd);
-      ~Authenticator();
       /**
        * Currently processes a single line of input, and either accepts
        * or rejects.
@@ -112,6 +111,7 @@ namespace DAS_IO {
       bool protocol_input();
       inline const char *get_client_app() { return client_app; }
     protected:
+      ~Authenticator();
       bool not_word(const char *&w, int &len);
       bool not_svc(const char *&svc, int &len);
       Server *srvr;

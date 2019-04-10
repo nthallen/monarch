@@ -27,9 +27,10 @@ namespace DAS_IO {
        */
       TM_data_sndr(const char *iname, const char *hostname, const char *datum,
         const char *data, uint16_t size);
-      virtual ~TM_data_sndr();
       bool app_input(); // read nl, write data and set gflag(0)
       virtual bool app_connected();
+    protected:
+      virtual ~TM_data_sndr();
     private:
       static const int subsvc_len = 40;
       char sub_service[subsvc_len];

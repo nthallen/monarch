@@ -34,12 +34,12 @@ namespace DAS_IO {
   class TM_data_rcvr : public Serverside_client {
     public:
       TM_data_rcvr(Authenticator *auth, const char *iname, TM_data_rcvr_def *def);
-      ~TM_data_rcvr();
       static Serverside_client *new_tm_data_rcvr(Authenticator *auth, SubService *ss);
       bool protocol_input();
       void close();
       void synch();
     protected:
+      ~TM_data_rcvr();
       TM_data_rcvr_def *def;
   };
 

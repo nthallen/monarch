@@ -500,6 +500,8 @@ cmdif_dgdata::cmdif_dgdata(const char *name_in, void *data_in, int dsize_in)
     : TM_data_sndr(name_in, name_in, (const char *)data_in, dsize_in) {
 }
 
+cmdif_dgdata::~cmdif_dgdata() {}
+
 void cmdif_dgdata::Turf() {
   if (ELoop == 0) {
     nl_assert(DAS_IO::CmdServer != 0);

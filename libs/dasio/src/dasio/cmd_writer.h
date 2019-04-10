@@ -17,7 +17,6 @@ class Cmd_writer : public Client {
   public:
     Cmd_writer(const char *iname);
     Cmd_writer(const char *iname, const char *hostname);
-    ~Cmd_writer();
     bool app_input();
     bool app_connected();
 
@@ -74,6 +73,7 @@ class Cmd_writer : public Client {
     static const int CMD_VERSION_MAX = 80;
     
   protected:
+    ~Cmd_writer();
     bool version_verified;
     bool sent_quit;
     bool recd_quit;

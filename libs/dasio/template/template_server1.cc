@@ -14,11 +14,11 @@ AppID_t DAS_IO::AppID("boerfd", "boerf server", "V1.0");
 class boerf_ssclient : public Serverside_client {
   public:
     boerf_ssclient(Authenticator *Auth, const char *iname);
-    ~boerf_ssclient();
     // Specify how big the ibuf needs to be:
     static const int boerf_ssclient_ibufsize = 80;
     // Include whatever virtual function overrides you need here
   protected:
+    ~boerf_ssclient();
     // Include any local data here
 };
 

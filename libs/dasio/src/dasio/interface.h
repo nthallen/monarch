@@ -19,7 +19,6 @@ class Interface {
   friend class Authenticator;
   public:
     Interface(const char *name, int bufsz);
-    virtual ~Interface();
     /**
      * @param flag bit-mapped value indicating which event(s) triggered this call.
      * @return true if we should quit
@@ -57,7 +56,16 @@ class Interface {
     static inline int gflag(unsigned gflag_index) {
       return( 1 << (gflag_index+4) );
     }
+    /**
+     * Increment Interface's ref_count (for use when copying)
+     */
+    inline void reference() { ++ref_count; }
+    /**
+     * Decrement Interface's ref_count and delete if zero;
+     */
+    inline void dereference() { if (--ref_count == 0) delete(this); }
   protected:
+    virtual ~Interface();
     /**
      * Sets up a write of nc bytes from the buffer pointed to by str.
      * If the write cannot be accomplished immediately, the information
@@ -610,6 +618,7 @@ class Interface {
     struct iovec pvt_iov;
     struct iovec *wiov;
     int n_wiov;
+    int ref_count;
 };
 
 }

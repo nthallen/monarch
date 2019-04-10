@@ -42,6 +42,8 @@ tm_client::tm_client(int bufsize, bool fast)
     tm_msg = (tm_msg_t *)buf;
   }
 
+tm_client::~tm_client() {}
+
 /**
  * Added 2019 April 3
  * This function creates the PID file.

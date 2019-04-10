@@ -13,7 +13,6 @@ class tm_generator;
 class tm_gen_tmr : public Interface {
   public:
     tm_gen_tmr(tm_generator *tm_gen);
-    ~tm_gen_tmr();
     // void attach();
     void settime( int per_sec, int per_nsec );
     void settime( uint64_t nsecs );
@@ -21,6 +20,7 @@ class tm_gen_tmr : public Interface {
     uint64_t timer_resolution_nsec;
     uint64_t n_expirations;
   protected:
+    ~tm_gen_tmr();
     bool protocol_input();
 };
 

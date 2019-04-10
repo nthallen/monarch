@@ -58,7 +58,6 @@ class Socket : public Interface {
      */
     Socket(Socket *original, const char *iname, int ibufsize, int fd);
     
-    virtual ~Socket();
     /**
      * The flags bits consist of Fl_Read, Fl_Write, Fl_Except, Fl_Timeout and the gflag() values.
      * @param flag Bit-mapped list of events that triggered this call.
@@ -208,6 +207,7 @@ class Socket : public Interface {
         bool server_claimed;
     };
   protected:
+    virtual ~Socket();
 
     /**
      * Called upon successful connection. The library

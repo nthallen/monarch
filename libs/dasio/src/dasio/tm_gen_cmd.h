@@ -13,11 +13,12 @@ class tm_gen_cmd : public DAS_IO::Serverside_client {
   public:
     tm_gen_cmd(Authenticator *Auth, const char *iname,
               tm_generator *tm_gen);
-    ~tm_gen_cmd();
     bool protocol_input();
     bool process_eof();
     static int const tm_gen_CMD_BUFSIZE = 80;
     static void attach(tm_generator *tmgp); // add to dispatch list
+  protected:
+    ~tm_gen_cmd();
   private:
     tm_generator *tmg;
 };

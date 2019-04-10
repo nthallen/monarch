@@ -22,11 +22,12 @@ THIS FILE IS NO LONGER NEEDED
 class tm_gen_client : public DAS_IO::Serverside_client {
   public:
     tm_gen_client();
-    virtual ~tm_gen_client(); // calls detach() if necessary
     //void attach(tm_gen_dispatch *disp); // add to dispatch list
     //void detach(); // remove from dispatch list
     virtual int ready_to_quit()= 0;
     //tm_gen_dispatch *dispatch;
+  protected:
+    virtual ~tm_gen_client(); // calls detach() if necessary
 };
 
 /* class tm_gen_dispatch {

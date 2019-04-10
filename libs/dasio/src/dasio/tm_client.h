@@ -22,6 +22,7 @@ class tm_client : public DAS_IO::Client {
     static unsigned int next_minor_frame, majf_row, minf_row;
     static char *srcnode;
   protected:
+    virtual ~tm_client();
     virtual void process_data() = 0;
     virtual void process_init();
     virtual void process_tstamp();
@@ -58,6 +59,7 @@ class ext_tm_client : public tm_client {
     inline ext_tm_client(int bufsize_in, bool fast = false) :
       tm_client(bufsize_in, fast) {}
   protected:
+    virtual ~ext_tm_client();
     void process_data();
 };
 

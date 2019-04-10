@@ -30,12 +30,12 @@ class tm_gen_data : public DAS_IO::Serverside_client {
     // tm_gen_data(tm_generator *tm_gen); // perhaps I only need the dispatch
     tm_gen_data(tm_gen_dispatch *disp, const char *name, void *data,
         int data_size, int synch);
-    ~tm_gen_data();
     int ready_to_quit(); // virtual function of tm_gen_client
     //int io_write(resmgr_context_t *ctp, IOFUNC_OCB_T *ocb, int nonblock);
     void synch();
     int stale(int max_stale = SHRT_MAX);
   protected:
+    ~tm_gen_data();
     bool protocol_input();
   private:
     int dev_id;

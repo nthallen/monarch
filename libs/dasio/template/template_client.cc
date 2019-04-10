@@ -15,11 +15,12 @@ AppID_t DAS_IO::AppID("boerfc", "boerf client", "V1.0");
 class boerf_client : public Client {
   public:
     boerf_client(const char *iname = "boerfc");
-    ~boerf_client();
     // Specify the buffer size:
     static const int boerf_client_ibufsize = 80;
     // Override any relevant methods:
     bool app_connected();
+  protected:
+    ~boerf_client();
   private:
     // My private data
 };

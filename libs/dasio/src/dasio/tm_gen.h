@@ -18,12 +18,12 @@ class tm_gen_tmr;
 class tm_gen_bfr : public Client {
   public:
     tm_gen_bfr(bool collection);
-    ~tm_gen_bfr();
     inline bool iwritev(struct iovec *iov, int nparts, const char *where);
     inline bool obuf_empty() {
       return Interface::obuf_empty();
     }
   protected:
+    ~tm_gen_bfr();
     bool app_connected();
   private:
     struct iovec bfr_iov[2];

@@ -84,7 +84,7 @@ void Loop::event_loop() {
     while (!PendingDeletion.empty()) {
       Interface *P = PendingDeletion.front();
       // msg(0, "Deleting Interface %d", P->get_iname());
-      delete(P);
+      P->dereference(); // delete(P);
       PendingDeletion.pop_front();
     }
     
@@ -169,7 +169,7 @@ void Loop::set_loop_exit() {
   while (!S.empty()) {
     Interface *P = S.front();
     // msg(0, "Deleting Interface %d", P->get_iname());
-    delete(P);
+    P->dereference(); // delete(P);
     S.pop_front();
   }
 }

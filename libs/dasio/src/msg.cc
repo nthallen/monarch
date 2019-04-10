@@ -32,7 +32,7 @@
     static void msg_cleanup(void) {
       if (memo_client_instance) {
         memo_client_instance->cleanup();
-        delete(memo_client_instance);
+        memo_client_instance->dereference();
         memo_client_instance = 0;
       }
     }

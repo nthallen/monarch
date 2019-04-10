@@ -46,12 +46,12 @@ namespace DAS_IO {
   class Cmd_receiver : public Serverside_client {
     public:
       Cmd_receiver(Authenticator *auth, const char *iname);
-      ~Cmd_receiver();
       bool protocol_input();
       bool iwritten(int nb);
       static Cmd_receiver *new_cmd_receiver(Authenticator *auth,
         SubService *ss);
     protected:
+      ~Cmd_receiver();
       void process_quit();
       bool quit_recd;
       static const int OBUF_SIZE = 120;
@@ -67,7 +67,6 @@ namespace DAS_IO {
   class Cmd_turf : public Serverside_client {
     public:
       Cmd_turf(Authenticator *auth, const char *iname, cmdif_rd *ss);
-      ~Cmd_turf();
       /**
        * Checks whether next_command is ready to transmit.
        */
@@ -76,6 +75,7 @@ namespace DAS_IO {
       static Serverside_client *new_cmd_turf(Authenticator *auth,
         SubService *ss);
     protected:
+      ~Cmd_turf();
       command_out_t *next_command;
       bool written;
       cmdif_rd *ss;
@@ -139,8 +139,9 @@ class cmdif_wr_clt : public DAS_IO::Client {
   public:
     cmdif_wr_clt(const char *iname, const char *service,
       const char *subservice);
-    ~cmdif_wr_clt();
     void Turf(const char *cmd, int cmdlen);
+  protected:
+    ~cmdif_wr_clt();
 };
 
 /**
@@ -182,6 +183,8 @@ class cmdif_dgdata : public DAS_IO::TM_data_sndr {
     cmdif_dgdata(const char *name, void *data, int dsize);
     void Turf();
     void Shutdown();
+  protected:
+    ~cmdif_dgdata();
   private:
     const char *name;
     void *data;

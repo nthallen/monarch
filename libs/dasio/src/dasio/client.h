@@ -29,7 +29,6 @@ namespace DAS_IO {
        */
       Client(const char *iname, int bufsz, const char *hostname, const char *service,
                     const char *sub_service);
-      virtual ~Client();
       //bool ProcessData(int flag);
     
       /**
@@ -54,6 +53,8 @@ namespace DAS_IO {
       bool connected();
       inline bool is_negotiated() { return clt_state == Clt_negotiated; }
       inline void set_subservice(const char *subs) { sub_service = subs; }
+    protected:
+      virtual ~Client();
     private:
       static const int obufsize = 128;
       char obuf[obufsize];
