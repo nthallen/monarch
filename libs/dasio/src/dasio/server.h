@@ -141,7 +141,7 @@ namespace DAS_IO {
        * Initiates the server shutdown sequence, closing the listening
        * sockets and signaling the Loop to close all connections.
        */
-      void Shutdown();
+      void Shutdown(bool full = true);
       /** Called by Serverside_client objects on creation.
        *  Increments the client count.
        */

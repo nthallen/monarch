@@ -180,7 +180,7 @@ void tm_generator::transmit_data( bool single_row ) {
         TM Advance to MFCtr
         TM Advance to Time
  */
-int tm_generator::execute(const char *cmd) {
+bool tm_generator::execute(const char *cmd) {
   if (cmd[0] == '\0') {
     tmr->settime(0);
     lock(__FILE__,__LINE__);
@@ -192,7 +192,7 @@ int tm_generator::execute(const char *cmd) {
     //dispatch->ready_to_quit();
     msg( MSG_ERROR, "Implement Server shutdown!" );
     event(tmg_event_quit);
-    return 1;
+    return true;
   }
   if ( cmd[0] == 'T' && cmd[1] == 'M' ) {
     switch ( cmd[2] ) {
@@ -262,7 +262,7 @@ int tm_generator::execute(const char *cmd) {
         break;
     }
   } else msg(MSG_ERROR, "Invalid command in tm_generator::execute: '%s'", cmd );
-  return 0;
+  return false;
 }
 
 void tm_generator::event(enum tm_gen_event evt) {}

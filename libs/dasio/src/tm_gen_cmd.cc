@@ -25,6 +25,10 @@ bool tm_gen_cmd::protocol_input() {
   return tmg->execute((const char *)buf);
 }
 
+bool tm_gen_cmd::process_eof() {
+  return tmg->execute("");
+}
+
 tm_gen_cmd::tm_gen_cmd(Authenticator *Auth, const char *iname, tm_generator *tm_gen)
     : DAS_IO::Serverside_client(Auth, iname, tm_gen_CMD_BUFSIZE) {
   tmg = tm_gen;

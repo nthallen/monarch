@@ -176,10 +176,10 @@ class Interface {
     /**
      * Callback function called when 0 bytes are read from the interface.
      * The default returns true, but this is not appropriate in all
-     * situations. Note that closed() is not called by close(). It
+     * situations. Note that process_eof() is not called by close(). It
      * is specifically for addressing the case where the remote 
      * process closes the connection. However, close() is always called
-     * before closed() is called.
+     * before process_eof() is called.
      * 
      * @return true if the event loop should terminate.
      */
@@ -187,7 +187,7 @@ class Interface {
     
     /**
      * Shuts down the connection. Note that this function does not
-     * invoke closed().
+     * invoke process_eof().
      */
     virtual void close();
 

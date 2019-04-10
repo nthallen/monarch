@@ -34,7 +34,7 @@ class tm_generator : public tm_queue, public Server {
     tm_generator();
     virtual ~tm_generator();
     void init(int nQrows, int low_water, bool collection);
-    int execute(const char *cmd);
+    bool execute(const char *cmd);
     virtual void event(enum tm_gen_event evt);
     virtual void service_row_timer() = 0;
     static tm_generator *TM_server;
