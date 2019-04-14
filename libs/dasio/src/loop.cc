@@ -14,29 +14,26 @@ Loop::Loop() {
   loop_exit = false;
 }
 
-/**
- * Destructor should not delete children, since it does not know
- * how they were allocated
- */
-Loop::~Loop() {
-}
+Loop::~Loop() {}
 
 void Loop::add_child(Interface *P) {
   if (find_child_by_fd(P->fd) == S.end() ) {
     S.push_back(P);
     P->ELoop = this;
+    P->reference();
     children_changed = true;
   } else {
     msg( 4, "fd %d already inserted in DAS_IO::Loop::add_child", P->fd );
   }
 }
 
-bool Loop::remove_child(Interface *P) {
+bool Loop::remove_child(Interface *P, bool deref) {
   for (InterfaceList::iterator pos = S.begin(); pos != S.end(); ++pos ) {
     if (P == *pos) {
       S.erase(pos);
       children_changed = true;
       P->ELoop = 0;
+      if (deref) Interface::dereference(P);
       return true;
     }
   }
@@ -48,8 +45,17 @@ bool Loop::remove_child(Interface *P) {
 }
 
 void Loop::delete_child(Interface *P) {
-  if (remove_child(P))
+  if (P->ref_check(2))
+    msg(MSG_WARN, "%s: ref_count >= 2 in delete_child", P->get_iname());
+  if (remove_child(P, false))
     PendingDeletion.push_back(P);
+}
+
+void Loop::delete_children() {
+  while (!S.empty()) {
+    Interface *P = S.front();
+    delete_child(P);
+  }
 }
 
 InterfaceList::iterator Loop::find_child_by_fd(int fd) {
@@ -84,7 +90,7 @@ void Loop::event_loop() {
     while (!PendingDeletion.empty()) {
       Interface *P = PendingDeletion.front();
       // msg(0, "Deleting Interface %d", P->get_iname());
-      P->dereference(); // delete(P);
+      Interface::dereference(P); // delete(P);
       PendingDeletion.pop_front();
     }
     
@@ -166,12 +172,12 @@ void Loop::event_loop() {
 
 void Loop::set_loop_exit() {
   loop_exit = true;
-  while (!S.empty()) {
-    Interface *P = S.front();
-    // msg(0, "Deleting Interface %d", P->get_iname());
-    P->dereference(); // delete(P);
-    S.pop_front();
-  }
+  // while (!S.empty()) {
+    // Interface *P = S.front();
+    // // msg(0, "Deleting Interface %d", P->get_iname());
+    // P->dereference(); // delete(P);
+    // S.pop_front();
+  // }
 }
 
 /*

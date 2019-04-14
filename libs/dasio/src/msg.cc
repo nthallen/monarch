@@ -10,6 +10,7 @@
 #include "dasio/appid.h"
 #include "oui.h"
 #include "nl.h"
+#include "nl_assert.h"
 #define MSG_INTERNAL
 #include "dasio/msg.h"
 // #include "tm.h" was needed for tm_dev_name
@@ -32,7 +33,7 @@
     static void msg_cleanup(void) {
       if (memo_client_instance) {
         memo_client_instance->cleanup();
-        memo_client_instance->dereference();
+        DAS_IO::Interface::dereference(memo_client_instance);
         memo_client_instance = 0;
       }
     }
@@ -49,7 +50,9 @@
   }
   
   void memo_client::cleanup() {
-    ELoop.remove_child(this);
+    bool deref = ref_check(2);
+    if (!deref) msg(MSG_ERROR, "memo_client ref_count < 2 in cleanup");
+    ELoop.remove_child(this, deref);
     msg = nl_err;
     msgv = nl_verr;
   }
@@ -131,8 +134,10 @@ void msg_init_options(int argc, char **argv) {
   if (write_to_memo && !we_are_memo) {
     // memo_fp = fopen( tm_dev_name( "memo" ), "w" );
     // memo_fp = fopen( "memo.log", "w" );
+    nl_assert(memo_client_instance == 0);
     
     memo_client_instance = new memo_client();
+    memo_client_instance->reference(); // for memo_client_instance
     if (!memo_client_instance->init()) {
       fprintf( stderr, "Unable to contact memo\n" );
       write_to_stderr = 1;

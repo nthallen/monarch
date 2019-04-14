@@ -17,6 +17,7 @@ void collector::init() {
 }
 
 void collector::event(enum tm_gen_event evt) {
+  tm_generator::event(evt);
   if ( evt == tmg_event_start ) {
     next_minor_frame = majf_row = 0;
     minf_row = 0;

@@ -216,7 +216,7 @@ void tm_queue::retire_rows(tmq_ref *tmqd, int n_rows ) {
   tmqd->Qrow = first;
   tmqd->n_Qrows -= n_rows;
   tmqd->Qrows_retired += n_rows;
-  if ( tmqd->n_Qrows == 0 && tmqd->next_tmqr ) {
+  if ( tmqd->n_Qrows == 0 && tmqd->next_tmqr && tmqd->ref_count <= 0) {
     tmq_ref *nxt = tmqd->next_tmqr;
     --tmqd->tsp->ref_count; // because tmqd is being deleted
     nl_assert(tmqd == first_tmqr);

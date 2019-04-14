@@ -32,10 +32,14 @@ class Loop {
     
     /**
      * @param P the Interface to be removed.
+     * @param deref dereference the interface P if removed
      * Removes the specified Interface from the list of active interfaces.
+     * If deref is asserted, the interface will be dereferenced after
+     * being removed. This allows delete_child() to delay the dereference
+     * until the PendingDeletion queue is emptied.
      * @return true if the specified interface was removed.
      */
-    bool remove_child(Interface *P);
+    bool remove_child(Interface *P, bool deref = true);
     
     /**
      * @param P the Interface to be deleted.
@@ -43,6 +47,11 @@ class Loop {
      * and marks it for deletion at a later time.
      */
     void delete_child(Interface *P);
+    
+    /**
+     * Move all children onto PendingDeletion queue.
+     */
+    void delete_children();
     
     // I don't think these functions are used currently, but they may become
     // relevant in a server. In that case, though, I feel as though the interface

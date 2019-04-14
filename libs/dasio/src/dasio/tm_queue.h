@@ -22,6 +22,7 @@ class tmq_tstamp_ref {
   public:
     tmq_tstamp_ref( mfc_t MFCtr, time_t time );
     tstamp_t TS;
+    /** Counts tmq_ref references only */
     int ref_count;
 };
 
@@ -37,7 +38,7 @@ class tmq_ref {
     tmq_ref *next_tmqr;
     /* Either data or timestamp */
     // tmqtype type;
-    /** Used by bfr to keep track of client references */
+    /** Used by bfr to keep track of (output) client references */
     int ref_count;
     
     void append_rows( int nrows );

@@ -23,7 +23,7 @@ class tm_gen_bfr : public Client {
       return Interface::obuf_empty();
     }
   protected:
-    ~tm_gen_bfr();
+    virtual ~tm_gen_bfr();
     bool app_connected();
   private:
     struct iovec bfr_iov[2];

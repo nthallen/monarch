@@ -35,7 +35,8 @@ bfr_input_client::bfr_input_client(Authenticator *Auth, const char *iname, bool 
   data.tmqr = 0;
   data.n_Qrows = 0;
   state = TM_STATE_HDR;
-  bufsize = sizeof(part.hdr) + 1;
+  bufsize = sizeof(part.hdr);
+  set_binary_mode();
   buf = (unsigned char *)&part.hdr;
   write.nbrow_rec = 0;
   write.nbhdr_rec = 0;
@@ -47,6 +48,12 @@ bfr_input_client::bfr_input_client(Authenticator *Auth, const char *iname, bool 
 }
 
 bfr_input_client::~bfr_input_client() {}
+
+bool bfr_input_client::process_eof() {
+  // Ideally, we should ensure that the tm_queue has been flushed
+  srvr->Shutdown();
+  Serverside_client::process_eof();
+}
 
 bool bfr_input_client::protocol_input() {
   blocked_writer = false;
@@ -68,16 +75,16 @@ bool bfr_input_client::protocol_input() {
   //   ocb->rw. with nothing. See below
   //   ocb-> replace with nothing. I mean, not 'nothing', but nothing
   //   DQD_Queue.last replace with last_tmqr
-  while ( nc > 0 && bufsize-1 > 0 ) {
+  while ( nc > 0 && bufsize > 0 ) {
     int nb_read;
-    nl_assert(nc <= bufsize - 1);
+    nl_assert(nc <= bufsize + binary_offset);
     if (state == TM_STATE_HDR) {
       if (nc >= sizeof(tm_hdr_t)) {
         if ( part.hdr.s.hdr.tm_id != TMHDR_WORD ) {
           msg(MSG_FATAL, "Invalid Message header" );
           // MsgError( write.rcvid, EINVAL );
           // Scan ahead for TMHDR_WORD
-          bufsize = sizeof( part.hdr )+1;
+          bufsize = sizeof( part.hdr );
           buf = (unsigned char *)&part.hdr;
           return false;
         }
@@ -85,7 +92,7 @@ bool bfr_input_client::protocol_input() {
           case TMTYPE_INIT:
             break;
           case TMTYPE_TSTAMP:
-            bufsize = sizeof(tm_hdr_t) + sizeof(tstamp_t)+1;
+            bufsize = sizeof(tm_hdr_t) + sizeof(tstamp_t);
             break;
           case TMTYPE_DATA_T1:
             // bufsize = sizeof(tm_hdr_t) + sizeof(tm_data_t1_t)+1;
@@ -108,8 +115,8 @@ bool bfr_input_client::protocol_input() {
       }
     }
     
-    nb_read = nc < bufsize-1 ?
-      nc : bufsize-1;
+    nb_read = nc < bufsize ?
+      nc : bufsize;
     // memcpy(buf, &buf[cp], nb_read);
     buf += nb_read;
     bufsize -= nb_read;
@@ -120,8 +127,8 @@ bool bfr_input_client::protocol_input() {
       // write.off_rec += nb_read;
       write.off_queue += nb_read;
     }
-    nl_assert(bufsize-1 >= 0);
-    if ( bufsize-1 == 0 ) {
+    nl_assert(bufsize >= 0);
+    if ( bufsize == 0 ) {
       switch ( state ) {
         case TM_STATE_HDR:
           msg(3, "Should not see TM_STATE_HDR here");
@@ -131,7 +138,7 @@ bool bfr_input_client::protocol_input() {
               if ( last_tmqr )
                 msg(MSG_FATAL, "Second TMTYPE_INIT received" );
               write.off_queue = sizeof(tm_hdrs_t)-sizeof(tm_hdr_t);
-              bufsize = sizeof(tm_info) - write.off_queue + 1;
+              bufsize = sizeof(tm_info) - write.off_queue;
               buf = (unsigned char *)&tm_info;
               memcpy( buf, &part.hdr.raw[sizeof(tm_hdr_t)],
                       write.off_queue );
@@ -147,7 +154,7 @@ bool bfr_input_client::protocol_input() {
                 unlock();
                 new_rows++;
                 state = TM_STATE_HDR; // already there!
-                bufsize = sizeof( part.hdr ) + 1;
+                bufsize = sizeof( part.hdr );
                 buf = (unsigned char *)&part.hdr;
               }
               break;
@@ -169,7 +176,7 @@ bool bfr_input_client::protocol_input() {
                 // of rows that have been completely added to DQ
                 if ( write.nb_rec <= 0 ) {
                   state = TM_STATE_HDR;
-                  bufsize = sizeof(part.hdr) + 1;
+                  bufsize = sizeof(part.hdr);
                   buf = (unsigned char *)&part.hdr;
                 } // else break out
               }
@@ -185,14 +192,14 @@ bool bfr_input_client::protocol_input() {
           blocking = false; // nonblock;
           new_rows++;
           state = TM_STATE_HDR; //### Use state-init function?
-          bufsize = sizeof(part.hdr) + 1;
+          bufsize = sizeof(part.hdr);
           buf = (unsigned char *)&part.hdr;
           break;
         case TM_STATE_DATA:
           new_rows += (this->*data_state_eval)();
           if ( write.nb_rec <= 0 ) {
             state = TM_STATE_HDR;
-            bufsize = sizeof(part.hdr) + 1;
+            bufsize = sizeof(part.hdr);
             buf = (unsigned char *)&part.hdr;
           }
           break;
@@ -352,7 +359,7 @@ int bfr_input_client::data_state_T3() {
   lock(__FILE__,__LINE__);
   
   int nrrecd = write.off_queue/nbQrow;
-  nl_assert(bufsize-1 == 0);
+  nl_assert(bufsize == 0);
   nl_assert(write.off_queue == nrrecd*nbQrow); // Not sure about this
 
   if (state == TM_STATE_DATA) {
@@ -363,12 +370,12 @@ int bfr_input_client::data_state_T3() {
   }
   tmq_retire_check();
   int nrowsfree = allocate_rows(&buf);
-  bufsize = nrowsfree * write.nbrow_rec + 1;
+  bufsize = nrowsfree * write.nbrow_rec;
   if (nrowsfree > 0 && state == TM_STATE_HDR2) {
     // copy from hdr into buf, update accordingly
     write.off_queue = sizeof(tm_hdrs_t) - write.nbhdr_rec;
     // This could actually happen, but it shouldn't
-    nl_assert( write.off_queue <= bufsize-1 );
+    nl_assert( write.off_queue <= bufsize );
     bufsize -= write.off_queue;
     memcpy( buf,
             &part.hdr.raw[write.nbhdr_rec],
@@ -377,28 +384,32 @@ int bfr_input_client::data_state_T3() {
     write.nb_rec -= write.off_queue;
     state = TM_STATE_DATA;
   }
-  bufsize = write.nb_rec + 1;
+  bufsize = write.nb_rec;
   unlock();
   return nrrecd;
 }
 
 void bfr_input_client::tmq_retire_check() {
+  while (first_tmqr && first_tmqr->ref_count == 0 &&
+         first_tmqr->next_tmqr && first_tmqr->n_Qrows == 0) {
+    retire_rows(first_tmqr, 0);
+  }
   tmq_ref *tmqr = first_tmqr;
   if (!tmqr) return;
   nl_assert(tmqr->ref_count >= 0);
-  while (tmqr->ref_count == 0 && tmqr->next_tmqr
-       && tmqr->n_Qrows == 0) {
-    /* Can expire this tmqr */
-    tmq_ref *next_tmqr = tmqr->next_tmqr;
-    first_tmqr = next_tmqr;
-    assert(tmqr->tsp->ref_count >= 0);
-    if ( --tmqr->tsp->ref_count == 0 ) {
-      delete(tmqr->tsp);
-      tmqr->tsp = 0;
-    }
-    delete(tmqr);
-    tmqr = next_tmqr;
-  }
+  // while (tmqr->ref_count == 0 && tmqr->next_tmqr
+       // && tmqr->n_Qrows == 0) {
+    // /* Can expire this tmqr */
+    // tmq_ref *next_tmqr = tmqr->next_tmqr;
+    // first_tmqr = next_tmqr;
+    // nl_assert(tmqr->tsp->ref_count >= 0);
+    // if ( --tmqr->tsp->ref_count <= 0 ) {
+      // delete(tmqr->tsp);
+      // tmqr->tsp = 0;
+    // }
+    // delete(tmqr);
+    // tmqr = next_tmqr;
+  // }
   // Now look for Qrows we can retire
   int min_Qrow = min_reader(tmqr);
   if (min_Qrow > tmqr->Qrows_retired)
@@ -509,6 +520,10 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
       }
       nQrows_ready = tmqr->n_Qrows + tmqr->Qrows_retired
                       - ocb->data.n_Qrows;
+      if (nQrows_ready < 0) {
+        msg(MSG_ERROR, "nQrows_ready=%d (< 0)", nQrows_ready);
+        nQrows_ready = 0;
+      }
       assert( nQrows_ready >= 0 );
       if ( nQrows_ready > 0 ) {
         if ( !blocked_writer && srvr_has_shutdown() &&
@@ -575,6 +590,7 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
         tmqr = tmqr->dereference(true);
         nl_assert(tmqr);
         ocb->data.tmqr = tmqr;
+        ocb->data.tsp = tmqr->tsp;
         ocb->data.n_Qrows = 0;
         if ( do_TS ) {
           ocb->part.hdr.s.hdr.tm_id = TMHDR_WORD;
@@ -631,7 +647,7 @@ void bfr_input_client::run_write_queue() {
   if ( blocked_writer ) {
     // log_event(3);
     int new_rows = (this->*data_state_eval)();
-    if ( bufsize-1 > 0 ) {
+    if ( bufsize > 0 ) {
       blocked_writer = false;
       flags |= Fl_Read;
       // log_event(4);

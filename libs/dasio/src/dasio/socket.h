@@ -207,7 +207,7 @@ class Socket : public Interface {
         bool server_claimed;
     };
   protected:
-    virtual ~Socket();
+    ~Socket();
 
     /**
      * Called upon successful connection. The library

@@ -19,8 +19,9 @@ class tm_gen_tmr : public Interface {
     tm_generator *tmg;
     uint64_t timer_resolution_nsec;
     uint64_t n_expirations;
+    // uint64_t padding; // To prevent fillbuf from overwriting the buffer
   protected:
-    ~tm_gen_tmr();
+    virtual ~tm_gen_tmr();
     bool protocol_input();
 };
 

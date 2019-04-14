@@ -78,6 +78,7 @@ class bfr_input_client : public Serverside_client, public tm_queue {
     static bool auth_hook(Authenticator *Auth, SubService *SS);
     static bool tmg_opened;
   protected:
+    bool process_eof();
     bool protocol_input();
     void run_read_queue();
     void run_write_queue();

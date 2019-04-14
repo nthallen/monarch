@@ -63,7 +63,20 @@ class Interface {
     /**
      * Decrement Interface's ref_count and delete if zero;
      */
-    inline void dereference() { if (--ref_count == 0) delete(this); }
+    static void dereference(Interface *P);
+    /**
+     * @param n Expected minimum ref_count value
+     * @return true if ref_count is greater than or equal to n
+     */
+    inline bool ref_check(int n) { return ref_count >= n; }
+    /**
+     * Specifies that reads should use the entire bufsize and
+     * fillbuf() should not add a NUL byte after the read.
+     */
+    inline void set_binary_mode() {
+      binary_offset = 0;
+      binary_mode = true;
+    }
   protected:
     virtual ~Interface();
     /**
@@ -597,6 +610,10 @@ class Interface {
     // unsigned int ocp;
     /** Timeout object */
     Timeout TO;
+    /** Used to determine read size. Set to -1 for ASCII mode, 0 for binary */
+    int binary_offset;
+    /** true if we are in binary mode */
+    bool binary_mode;
   private:
     /**
      * @brief Look ahead in buf

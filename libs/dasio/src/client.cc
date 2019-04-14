@@ -12,7 +12,7 @@ namespace DAS_IO {
     clt_state = Clt_connecting;
   }
   
-  Client::~Client() {}
+  // Client::~Client() {}
   
   bool Client::protocol_input() {
     if (is_negotiated()) return app_input();

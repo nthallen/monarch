@@ -41,10 +41,14 @@ Interface::Interface(const char *name, int bufsz) {
   qerr_threshold = 5;
   wiov = 0;
   n_wiov = 0;
+  ref_count = 0;
+  binary_offset = -1;
+  binary_mode = false;
   set_ibufsize(bufsz);
 }
 
 Interface::~Interface() {
+  // msg(0, "Destructing Interface %s", iname);
   if (fd >= 0) {
     close();
   }
@@ -81,6 +85,12 @@ bool Interface::ProcessData(int flag) {
     flags &= ~Fl_Timeout;
   }
   return false;
+}
+
+void Interface::dereference(Interface *P) {
+  if (--P->ref_count == 0) {
+    delete(P);
+  }
 }
 
 bool Interface::iwritev(struct iovec *iov, int nparts) {
@@ -233,9 +243,9 @@ bool Interface::fillbuf(int N, int flag) {
   if (N > bufsize)
     msg(4, "Ser_Sel::fillbuf(N) N > bufsize: %d > %d",
       N, bufsize);
-  if (nc > N-1) return false;
+  if (nc >= N+binary_offset) return false;
   ++n_fills;
-  nb_read = read( fd, &buf[nc], N - 1 - nc );
+  nb_read = read( fd, &buf[nc], N + binary_offset - nc );
   if ( nb_read < 0 ) {
     if ( errno == EAGAIN ) {
       ++n_eagain;
@@ -250,7 +260,7 @@ bool Interface::fillbuf(int N, int flag) {
     return process_eof();
   }
   nc += nb_read;
-  buf[nc] = '\0';
+  if (!binary_mode) buf[nc] = '\0';
   return false;
 }
 

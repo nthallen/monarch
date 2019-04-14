@@ -22,7 +22,9 @@ static tm_gen_cmd *Cmd;
 bool tm_gen_cmd::protocol_input() {
   // In arp_das, we replied to the sender, presumably to unblock it.
   // I don't think the sender will be blocked here, so I won't reply
-  return tmg->execute((const char *)buf);
+  bool rv = tmg->execute((const char *)buf);
+  report_ok(nc);
+  return rv;
 }
 
 bool tm_gen_cmd::process_eof() {

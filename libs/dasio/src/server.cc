@@ -175,11 +175,13 @@ namespace DAS_IO {
   void Server::Start(Server::Srv_type which) {
     if (which & Srv_Unix) {
       Unix = new Server_socket("Unix", service, Socket::Socket_Unix, this);
+      Unix->reference();
       Unix->connect();
       ELoop.add_child(Unix);
     }
     if (which & Srv_TCP) {
       TCP = new Server_socket("TCP", service, Socket::Socket_TCP, this);
+      TCP->reference();
       TCP->connect();
       ELoop.add_child(TCP);
     }
@@ -187,19 +189,37 @@ namespace DAS_IO {
     has_shutdown_b = true;
     do {
       ELoop.event_loop();
-    } while (active_clients);
+    } while (!ready_to_quit());
     msg(0, "Terminating");
   }
 
+  bool Server::ready_to_quit() {
+    return active_clients == 0;
+  }
+  
   void Server::Shutdown(bool full) {
     msg(MSG_DEBUG, "Shutting down listening sockets");
     if (Unix) {
+      if (!Unix->ref_check(2)) {
+        msg(MSG_ERROR, "Unix ref_count <2 in Shutdown");
+      } else {
+        Interface::dereference(Unix);
+      }
       ELoop.delete_child(Unix);
       Unix = 0;
     }
     if (TCP) {
+      if (!TCP->ref_check(2)) {
+        msg(MSG_ERROR, "TCP ref_count <2 in Shutdown");
+      } else {
+        Interface::dereference(TCP);
+      }
       ELoop.delete_child(TCP);
       TCP = 0;
+    }
+    if (full) {
+      ELoop.set_loop_exit();
+      ELoop.delete_children();
     }
   }
 

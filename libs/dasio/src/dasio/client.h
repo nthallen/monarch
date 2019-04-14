@@ -54,7 +54,7 @@ namespace DAS_IO {
       inline bool is_negotiated() { return clt_state == Clt_negotiated; }
       inline void set_subservice(const char *subs) { sub_service = subs; }
     protected:
-      virtual ~Client();
+      // virtual ~Client();
     private:
       static const int obufsize = 128;
       char obuf[obufsize];

@@ -14,7 +14,7 @@ CXXLINK=$(CXX)
 
 # AG_LDFLAGS=-L/usr/local/lib -Wl,-rpath -Wl,/usr/local/lib -L/usr/pkg/lib -Wl,-rpath -Wl,/usr/pkg/lib
 AG_LDFLAGS=-L/usr/local/lib
-LINK.args=$(CPPFLAGS) $(CFLAGS) $(AG_LDFLAGS) $(LDFLAGS) -o $@
+LINK.args=$(CPPFLAGS) $(CXXFLAGS) $(AG_LDFLAGS) $(LDFLAGS) -o $@
 LINK.norm=$(CC) $(LINK.args)
 LINK.priv=/bin/rm -f $@; $(LINK.norm)
 LINK.normCXX=$(CXXLINK) $(LINK.args)

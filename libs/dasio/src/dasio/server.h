@@ -167,6 +167,16 @@ namespace DAS_IO {
       Loop ELoop;
       inline const char *get_service() { return service; }
     protected:
+      /**
+       * @return true if the application is ready to terminate.
+       * Called from the Server::Start outer event loop. Note that
+       * Loop::event_loop() must exit first, which either means
+       * a constituent Interface returned true from one of its
+       * callbacks (e.g. protocol_input() when a 'Quit' command
+       * is received), or Loop::set_loop_exit() has been called.
+       * The default condition is active_clients == 0
+       */
+      virtual bool ready_to_quit();
       /** The number of currently connected clients */
       int active_clients;
       /** The total number of clients that have connected */

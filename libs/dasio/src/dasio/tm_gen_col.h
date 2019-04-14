@@ -34,7 +34,7 @@ class collector : public tm_generator {
     static unsigned short majf_row, minf_row;
     unsigned short next_minor_frame;
   private:
-    std::list<TM_data_rcvr *> data_clients;
+    // std::list<TM_data_rcvr *> data_clients;
 };
 
 /**

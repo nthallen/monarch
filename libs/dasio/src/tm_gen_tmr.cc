@@ -10,13 +10,15 @@
 #include "dasio/tm_gen_cmd.h"
 #include "dasio/tm_gen_tmr.h"
 #include "nl.h"
+#include "nl_assert.h"
 
 namespace DAS_IO {
 
 tm_gen_tmr::tm_gen_tmr(tm_generator *tm_gen)
     : Interface("tmr", 0), tmg(tm_gen) {
   buf = (unsigned char *)&n_expirations;
-  bufsize = sizeof(n_expirations)+1;
+  bufsize = sizeof(n_expirations);
+  set_binary_mode();
   struct timespec ts;
   if (clock_getres(CLOCK_REALTIME, &ts))
     msg(MSG_EXIT_ABNORM, "Error from clock_getres()");
@@ -32,11 +34,14 @@ tm_gen_tmr::tm_gen_tmr(tm_generator *tm_gen)
       strerror(errno));
   }
   flags = 0;
+  nl_assert(tmg);
   tmg->ELoop.add_child(this);
 }
 
 tm_gen_tmr::~tm_gen_tmr() {
-  msg( 0, "Destructing tm_gen_tmr object" );
+  // msg( 0, "Destructing tm_gen_tmr %s", iname );
+  bufsize = 0; // avoid freeing buf
+  buf = 0;
 }
 
 bool tm_gen_tmr::protocol_input() {

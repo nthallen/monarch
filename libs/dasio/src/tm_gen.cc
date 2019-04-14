@@ -23,10 +23,12 @@ bool tm_gen_bfr::app_connected() {
 }
 
 bool tm_gen_bfr::iwritev(struct iovec *iov, int nparts, const char *where) {
-  nl_assert(is_negotiated());
-  bool rv = Interface::iwritev(iov, nparts);
-  if (!obuf_empty()) {
-    msg(MSG_FATAL, "%s: Incomplete write %s", iname, where);
+  bool rv = true;
+  if (is_negotiated()) {
+    rv = Interface::iwritev(iov, nparts);
+    if (!obuf_empty()) {
+      msg(MSG_FATAL, "%s: Incomplete write %s", iname, where);
+    }
   }
   return rv;
 }
@@ -54,9 +56,11 @@ void tm_generator::init(int nQrows, int low_water, bool collection) {
   tm_queue::init(nQrows, low_water);
   tm_gen_cmd::attach(this); // defines the subservice
   bfr = new tm_gen_bfr(collection);
+  bfr->reference();
   bfr->connect();
   ELoop.add_child(bfr);
   tmr = new tm_gen_tmr(this);
+  tmr->reference();
   row_period_nsec_default = tmi(nsecsper)*(uint64_t)1000000000L/tmi(nrowsper);
   row_period_nsec_current = row_period_nsec_default;
 }
@@ -182,15 +186,7 @@ void tm_generator::transmit_data( bool single_row ) {
  */
 bool tm_generator::execute(const char *cmd) {
   if (cmd[0] == '\0') {
-    tmr->settime(0);
-    lock(__FILE__,__LINE__);
-    started = false;
-    quit = true;
-    bfr->close();
-    unlock();
     msg( MSG_DEBUG, "Received Quit" );
-    //dispatch->ready_to_quit();
-    msg( MSG_ERROR, "Implement Server shutdown!" );
     event(tmg_event_quit);
     return true;
   }
@@ -265,7 +261,24 @@ bool tm_generator::execute(const char *cmd) {
   return false;
 }
 
-void tm_generator::event(enum tm_gen_event evt) {}
+void tm_generator::event(enum tm_gen_event evt) {
+  if (evt == tmg_event_quit) {
+    tmr->settime(0);
+    lock(__FILE__,__LINE__);
+    started = false;
+    quit = true;
+    unlock();
+    if (bfr) {
+      Interface::dereference(bfr);
+      bfr = 0;
+    }
+    if (tmr) {
+      Interface::dereference(tmr);
+      tmr = 0;
+    }
+    Shutdown();
+  } 
+}
 
 void tm_generator::tm_start(int lock_needed) {
   if (lock_needed) lock(__FILE__,__LINE__);

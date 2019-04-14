@@ -18,7 +18,7 @@ class tm_gen_cmd : public DAS_IO::Serverside_client {
     static int const tm_gen_CMD_BUFSIZE = 80;
     static void attach(tm_generator *tmgp); // add to dispatch list
   protected:
-    ~tm_gen_cmd();
+    virtual ~tm_gen_cmd();
   private:
     tm_generator *tmg;
 };

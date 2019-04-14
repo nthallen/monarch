@@ -172,7 +172,7 @@ namespace DAS_IO {
     msg( -2, "Processing Quit" );
     quit_received = quit_recd = true;
     iwrite("Q\n");
-    ELoop->delete_child(this);
+    // ELoop->delete_child(this);
     cis_interfaces_close();
     cmdif_rd::all_closed();
   }
