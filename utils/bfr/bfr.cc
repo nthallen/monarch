@@ -272,7 +272,7 @@ bool bfr_input_client::process_tm_info() {
     case TMTYPE_DATA_T3:
       write.nbhdr_rec = TM_HDR_SIZE_T3;
       write.nbrow_rec = tmi(nbrow) - 4;
-      data_state_eval = data_state_T3;
+      data_state_eval = &DAS_IO::bfr_input_client::data_state_T3;
       break;
     default:
       msg(4,"Invalid output_tm_type");
