@@ -16,7 +16,7 @@
 %token KW_ADDRESS
 %token KW_CALIBRATION
 %token <l.pretext> KW_CASE
-%token <l.pretext> KW_CHAR
+/* %token <l.pretext> KW_CHAR */
 %token KW_COLLECT
 %token KW_CONVERT
 %token KW_ICONVERT
@@ -32,15 +32,18 @@
 %token KW_HZ
 %token <l.pretext> KW_IF
 %token KW_INITFUNC
-%token <l.pretext> KW_INT
+/* %token <l.pretext> KW_INT */
+%token <l.pretext> KW_INT8
+%token <l.pretext> KW_INT16
+%token <l.pretext> KW_INT32
 %token KW_INVALIDATE
-%token <l.pretext> KW_LONG
+/* %token <l.pretext> KW_LONG */
 %token KW_MAXCOLS
 %token KW_MINCOLS
 %token KW_ON
 %token KW_ONCE
 %token <l.pretext> KW_RETURN
-%token <l.pretext> KW_SHORT
+/* %token <l.pretext> KW_SHORT */
 %token <l.pretext> KW_SIGNED
 %token KW_STATE
 %token <l.pretext> KW_STRUCT
@@ -51,7 +54,10 @@
 %token KW_TM
 %token <l.pretext> KW_TYPEDEF
 %token <l.pretext> KW_UNION
-%token <l.pretext> KW_UNSIGNED
+/* %token <l.pretext> KW_UNSIGNED */
+%token <l.pretext> KW_UINT8
+%token <l.pretext> KW_UINT16
+%token <l.pretext> KW_UINT32
 %token KW_VALIDATE
 %token <l.pretext> KW_WHILE
 %token <l.pretext> TK_CHAR_CONST
@@ -104,7 +110,7 @@
 %type <typeparts> typeparts
 %type <struct_union> struct_union
 %type <typeparts> integertypes
-%type <typeparts> integertype
+/* %type <typeparts> integertype */
 %type <sttval> statedef
 %type <plval> pairs
 %type <doubval> pair_num
@@ -139,12 +145,14 @@ progitem : nontm_decl {
         decl->typeparts = $$;
         
         inttype = decl->type;
+        /*
         if ( TYPE_INTEGRAL(inttype) &&
               ! (inttype & (INTTYPE_CHAR|INTTYPE_SHORT|INTTYPE_LONG)
               ) )
           compile_error( 1,
             "TM frame definition not 32-bit safe"
             );
+        */
         
         /* Move size and rate into the tmalloc for each declrtor */
         for (decl = $3.first->u.decls; decl != NULL; decl = decl->next) {
@@ -849,6 +857,7 @@ struct_union : KW_STRUCT {
         decl_type = start_st_un(&$$, $1, INTTYPE_UNION, decl_type);
       }
     ;
+/*
 integertypes : integertype { $$ = $1; }
     | integertypes integertype {
         $$.stat = $1.stat;
@@ -863,6 +872,15 @@ integertype : KW_CHAR { int_type(&$$, $1, INTTYPE_CHAR); }
     | KW_SIGNED { int_type(&$$, $1, 0); }
     | KW_UNSIGNED { int_type(&$$, $1, INTTYPE_UNSIGNED); }
     ;
+*/
+integertypes : KW_INT8 { int_type(&$$, $1, INTTYPE_CHAR); }
+    | KW_UINT8 { int_type(&$$, $1, INTTYPE_CHAR|INTTYPE_UNSIGNED); }
+    | KW_INT16 { int_type(&$$, $1, INTTYPE_INT); }
+    | KW_UINT16 { int_type(&$$, $1, INTTYPE_INT|INTTYPE_UNSIGNED); }
+    | KW_INT32 { int_type(&$$, $1, INTTYPE_LONG); }
+    | KW_UINT32 { int_type(&$$, $1, INTTYPE_LONG|INTTYPE_UNSIGNED); }
+    ;
+    
 pairs : pair_num ',' pair_num {
         $$.pairs = NULL;
         add_pair(&$$, $1, $3);

@@ -55,13 +55,17 @@
   static void copy_text(void);
   static void discard_text(void);
   static void swallow_comment(void);
+  /* CHAR ret_tok(KW_CHAR); */
+  /* INT ret_tok(KW_INT); */
+  /* LONG ret_tok(KW_LONG); */
+  /* SHORT ret_tok(KW_SHORT); */
+  /* UNSIGNED ret_tok(KW_UNSIGNED); */
 
 %}
 %%
 ADDRESS ret_notxt(KW_ADDRESS);
 CALIBRATION ret_notxt(KW_CALIBRATION);
 CASE ret_tok(KW_CASE);
-CHAR ret_tok(KW_CHAR);
 COLLECT ret_ptxt(KW_COLLECT);
 CONVERT ret_notxt(KW_CONVERT);
 ICONVERT ret_notxt(KW_ICONVERT);
@@ -76,16 +80,16 @@ FOR ret_tok(KW_FOR);
 GROUP ret_notxt(KW_GROUP);
 HZ ret_notxt(KW_HZ);
 IF ret_tok(KW_IF);
-INT ret_tok(KW_INT);
+INT8_T ret_tok(KW_INT8);
+INT16_T ret_tok(KW_INT16);
+INT32_T ret_tok(KW_INT32);
 INITFUNC ret_tok(KW_INITFUNC);
 INVALIDATE ret_notxt(KW_INVALIDATE);
-LONG ret_tok(KW_LONG);
 MAXCOLS ret_notxt(KW_MAXCOLS);
 MINCOLS ret_notxt(KW_MINCOLS);
 ON ret_notxt(KW_ON);
 ONCE ret_notxt(KW_ONCE);
 RETURN ret_tok(KW_RETURN);
-SHORT ret_tok(KW_SHORT);
 SIGNED ret_tok(KW_SIGNED);
 STATE ret_tok(KW_STATE);
 STRUCT ret_tok(KW_STRUCT);
@@ -96,7 +100,9 @@ TOLERANCE ret_notxt(KW_TOLERANCE);
 TM ret_ptxt(KW_TM);
 TYPEDEF ret_tok(KW_TYPEDEF);
 UNION ret_tok(KW_UNION);
-UNSIGNED ret_tok(KW_UNSIGNED);
+UINT8_T ret_tok(KW_UINT8);
+UINT16_T ret_tok(KW_UINT16);
+UINT32_T ret_tok(KW_UINT32);
 VALIDATE ret_notxt(KW_VALIDATE);
 WHILE ret_tok(KW_WHILE);
 HOURS? ret_notxt(UN_HOUR);

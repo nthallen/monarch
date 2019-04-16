@@ -9,6 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <math.h>
+#include <stdint.h>
 #include "nl.h"
 #include "oui.h"
 #include "dasio/tm_client.h"
