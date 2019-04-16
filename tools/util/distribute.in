@@ -46,6 +46,12 @@ fi
 
 # This is the code for 'distribute tgt_dir file ...'
 typeset tgt ans opts
+case `uname` in
+  CYGWIN*) cp_opts=vpu;;
+  QNX) cp_opts=vpn;;
+  Linux) cp_opts=vpu;;
+  *) nl_error "Unsupported operating system '`uname`'";;
+esac
 
 if [ $HAVE_SUDO = yes ]; then
   if [ `id -u` != 0 ]; then
