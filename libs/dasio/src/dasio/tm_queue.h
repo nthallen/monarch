@@ -43,7 +43,7 @@ class tmq_ref {
     
     void append_rows( int nrows );
     tmq_tstamp_ref *tsp;
-    /** The MFCtr corresponding to the first row
+    /** The MFCtr corresponding to the first unretired row
      *  that this tmq_ref references
      */
     mfc_t MFCtr_start;
@@ -51,7 +51,7 @@ class tmq_ref {
      *  all the rows that this tmq_ref references
      */
     mfc_t MFCtr_next;
-    /** The minor frame row number of the first Qrow
+    /** The minor frame row number of the first unretired Qrow
      *  0 <= row_start < nrowminf
      */
     int row_start;
@@ -65,7 +65,7 @@ class tmq_ref {
     int Qrows_retired;
     /** The index in tm_queue of the first Qrow */
     int Qrow;
-    /** The number of Qrows this tmq_ref references */
+    /** The number of unretired Qrows this tmq_ref references */
     int n_Qrows;
 };
 

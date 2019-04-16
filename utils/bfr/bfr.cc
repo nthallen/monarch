@@ -546,7 +546,7 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
           ocb->part.hdr.s.hdr.tm_id = TMHDR_WORD;
           ocb->part.hdr.s.hdr.tm_type = output_tm_type;
           ocb->part.hdr.s.u.dhdr.n_rows = nQrows_ready;
-          XRow_Num = tmqr->row_start + ocb->data.n_Qrows;
+          XRow_Num = tmqr->row_start + ocb->data.n_Qrows - tmqr->Qrows_retired;
           NMinf = XRow_Num/tm_info.nrowminf;
           MFCtr_start = tmqr->MFCtr_start + NMinf;
           Row_Num_start = XRow_Num % tm_info.nrowminf;
