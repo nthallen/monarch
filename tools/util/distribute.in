@@ -62,7 +62,7 @@ tgt=$1
 shift 1
 [ ! -d "$tgt" ] && nl_error "Target '$tgt' is not a directory"
 if [ $HAVE_SUDO = yes ]; then
-  ans=`@SUDO_EXE@ -u $SUDO_USER /bin/ksh -c "if [ -w \"$tgt\" ]; then echo yes; else echo no; fi"`
+  ans=`@SUDO_EXE@ -u $SUDO_USER @SHELL_EXE@ -c "if [ -w \"$tgt\" ]; then echo yes; else echo no; fi"`
   [ "$ans" != "yes" ] && nl_error You do not have write permission in $tgt
 fi
 /bin/cp $opts $* $tgt

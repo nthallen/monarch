@@ -11,6 +11,11 @@ else (SUDO_EXE)
 set(HAVE_SUDO no)
 endif (SUDO_EXE)
 
+find_program(SHELL_EXE NAMES ksh bash)
+if (NOT SHELL_EXE)
+  message( FATAL_ERROR "No shell located")
+endif (NOT SHELL_EXE)
+
 configure_file(distribute.in distribute)
 
 install(PROGRAMS
