@@ -47,7 +47,10 @@ bfr_input_client::bfr_input_client(Authenticator *Auth, const char *iname, bool 
   data_state_eval = 0;
 }
 
-bfr_input_client::~bfr_input_client() {}
+bfr_input_client::~bfr_input_client() {
+  bufsize = 0;
+  buf = 0;
+}
 
 bool bfr_input_client::process_eof() {
   // Ideally, we should ensure that the tm_queue has been flushed
