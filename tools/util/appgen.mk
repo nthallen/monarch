@@ -1,5 +1,4 @@
 # make include files for appgen le-das
-CPPFLAGS=-I/usr/local/include $(AG_CPPFLAGS)
 
 # CXX and CXXLINK are used for compiling and linking c++ apps
 # We need to use the same compiler that is used in building
@@ -13,7 +12,15 @@ CXXLINK=$(CXX)
 # CXXLINK=cc -lang-c++
 
 # AG_LDFLAGS=-L/usr/local/lib -Wl,-rpath -Wl,/usr/local/lib -L/usr/pkg/lib -Wl,-rpath -Wl,/usr/pkg/lib
+ifdef CROSS_COMPILE
+CPPFLAGS=-I/opt/linkeng/am335x/include $(AG_CPPFLAGS)
+AG_LDFLAGS=-L/opt/linkeng/am335x/lib
+else
+CPPFLAGS=-I/usr/local/include $(AG_CPPFLAGS)
 AG_LDFLAGS=-L/usr/local/lib
+endif
+
+CXXFLAGS+=$(CPPFLAGS)
 LINK.args=$(CPPFLAGS) $(CXXFLAGS) $(AG_LDFLAGS) $(LDFLAGS) -o $@
 LINK.norm=$(CC) $(LINK.args)
 LINK.priv=/bin/rm -f $@; $(LINK.norm)

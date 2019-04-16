@@ -140,6 +140,8 @@ typeset CPPFLAGS
 typeset PHTGT
 typeset pcmfile
 
+CPPFLAGS=-std=c++11
+
 # is_member setname member
 function is_member {
   typeset i set

@@ -11,6 +11,8 @@ function nl_error {
   exit 1
 }
 
+HAVE_SUDO=@HAVE_SUDO@
+
 # This is the code for standalone 'distribute' command
 if [ -z "$1" ]; then
   [ -f Makefile -a -f Experiment.config ] ||
@@ -44,16 +46,10 @@ fi
 
 # This is the code for 'distribute tgt_dir file ...'
 typeset tgt ans opts
-case `uname` in
-  CYGWIN*) dosudo='no'; cp_opts=vpu;;
-  QNX) dosudo='yes'; cp_opts=vpn;;
-  Linux) dosudo='yes'; cp_opts=vpu;;
-  *) nl_error "Unsupported operating system '`uname`";;
-esac
 
-if [ $dosudo = yes ]; then
+if [ $HAVE_SUDO = yes ]; then
   if [ `id -u` != 0 ]; then
-    exec /usr/pkg/bin/sudo /usr/local/bin/distribute $*
+    exec @SUDO_EXE@ /usr/local/bin/distribute $*
   fi
   [ -n "$SUDO_USER" ] || nl_error Cannot determine user
 fi
@@ -65,8 +61,8 @@ fi
 tgt=$1
 shift 1
 [ ! -d "$tgt" ] && nl_error "Target '$tgt' is not a directory"
-if [ $dosudo = yes ]; then
-  ans=`/usr/pkg/bin/sudo -u $SUDO_USER /bin/ksh -c "if [ -w \"$tgt\" ]; then echo yes; else echo no; fi"`
+if [ $HAVE_SUDO = yes ]; then
+  ans=`@SUDO_EXE@ -u $SUDO_USER /bin/ksh -c "if [ -w \"$tgt\" ]; then echo yes; else echo no; fi"`
   [ "$ans" != "yes" ] && nl_error You do not have write permission in $tgt
 fi
 /bin/cp $opts $* $tgt
