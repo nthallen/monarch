@@ -21,6 +21,7 @@ generate libs/tm
 generate libs/nl
 generate libs/dasio
 generate tools/cmdgen
+generate tools/tmc
 
 cd ../dox
 
