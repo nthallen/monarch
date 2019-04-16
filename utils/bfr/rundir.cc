@@ -25,8 +25,8 @@ void mkfltdir(const char *dir, uid_t flt_uid, gid_t flt_gid) {
     if (chmod(dir, 02775) == -1)
       msg(3, "Error on chmod(%s): %s", dir, strerror(errno));
   }
-  if ( chown( dir, flt_uid, flt_gid) == -1)
-    msg(3,"Error chowning directory %s: %s", dir, strerror(errno));
+  // if ( chown( dir, flt_uid, flt_gid) == -1)
+  //   msg(3,"Error chowning directory %s: %s", dir, strerror(errno));
 }
 
 static const char *get_runexpdir() {
