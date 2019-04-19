@@ -1,0 +1,20 @@
+<package> rdr
+<include> msg tm_client
+<include> "rdr.h"
+<follow> msg tm_client
+
+<opts> "aAP:kqF:L:"
+<sort>
+	-A autostart fast forward
+	-a autostart regulated
+	-P <path> specify base path for data files
+	-k Invoke kluge to work around lgr bug
+	-q quit when end of data is reached
+	-F starting file index
+	-L ending file index
+<init>
+  rdr_init(argc, argv);
+
+<package> msghdr_default
+<vars>
+  char *msg_hdr_default = "rdr";
