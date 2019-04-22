@@ -6,16 +6,18 @@
 #include "mlf.h"
 
 #ifdef __cplusplus
-#include "tmgcol.h"
-#include "tm_client.h"
-#include "tm_gen.h"
+#include "dasio/tm_gen_col.h"
+#include "dasio/tm_client.h"
+#include "dasio/tm_gen.h"
+
+using namespace DAS_IO;
 
 class Rdr_quit_pulse;
 
 class Reader : public tm_generator, public tm_client {
   public:
     Reader(int nQrows, int low_water, int bufsize, const char *path);
-    void event(enum dg_event evt);
+    void event(enum tm_gen_event evt);
     void *input_thread();
     void *output_thread();
     void control_loop();
@@ -23,7 +25,7 @@ class Reader : public tm_generator, public tm_client {
   protected:
     void process_tstamp();
     void process_data();
-    int  process_eof();
+    bool  process_eof();
     void lock(const char *by = 0, int line = -1);
     void unlock();
     const char *context();

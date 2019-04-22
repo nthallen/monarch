@@ -5,12 +5,16 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <unistd.h>
 #include "rdr.h"
 #include "nl.h"
 #include "oui.h"
 #include "nl_assert.h"
+#include "dasio/tm_gen.h"
 
 #define RDR_BUFSIZE 16384
+
+using namespace DAS_IO;
 
 static const char *opt_basepath = ".";
 static int opt_autostart;
@@ -34,6 +38,7 @@ static unsigned long opt_end_file = ULONG_MAX;
         -q : autoquit
 
  */
+
 void rdr_init( int argc, char **argv ) {
   int c;
 
@@ -77,13 +82,14 @@ int main( int argc, char **argv ) {
   int nQrows = RDR_BUFSIZE/tmi(nbrow);
   if (nQrows < 2) nQrows = 2;
   Reader rdr(nQrows, nQrows/2, RDR_BUFSIZE, opt_basepath );
-  rdr.tm_generator::init(0);
+  /* Added arguments: low_water=0, collection=false */
+  rdr.tm_generator::init(nQrows, 0, false);
   rdr.control_loop();
   msg(0, "Shutdown");
 }
 
 Reader::Reader(int nQrows, int low_water, int bufsize, const char *path) :
-    tm_generator(nQrows, low_water), tm_client( bufsize, 0, (char *)0 ) {
+    tm_generator(nQrows, low_water), tm_client( bufsize, false)0 ) {
   it_blocked = 0;
   ot_blocked = 0;
   if ( sem_init( &it_sem, 0, 0) || sem_init( &ot_sem, 0, 0 ) )
@@ -129,7 +135,8 @@ void Reader::control_loop() {
   }
   pt_create( ::output_thread, &ot, this );
   pt_create( ::input_thread, &it, this );
-  tm_generator::operate();
+  //must be replaced
+  //tm_generator::operate();
   pt_join( it, "input_thread" );
   pt_join( ot, "output_thread" );
 }
@@ -160,24 +167,24 @@ void Reader::service_row_timer() {
   unlock();
 }
 
-void Reader::event(enum dg_event evt) {
+void Reader::event(enum tm_gen_event evt) {
   lock(__FILE__,__LINE__);
   switch (evt) {
-    case dg_event_start:
+    case tm_gen_event_start:
       if (ot_blocked == OT_BLOCKED_STOPPED) {
         ot_blocked = 0;
         sem_post(&ot_sem);
       }
       break;
-    case dg_event_stop:
+    case tm_gen_event_stop:
       if (ot_blocked == OT_BLOCKED_TIME || ot_blocked == OT_BLOCKED_DATA) {
         ot_blocked = 0;
         sem_post(&ot_sem);
       }
       break;
-    case dg_event_quit:
+    case tm_gen_event_quit:
       msg( 0, "Quit event" );
-      tmc_quit = true;
+      tm_quit = true;
       if ( ot_blocked ) {
         ot_blocked = 0;
         sem_post(&ot_sem);
@@ -187,7 +194,7 @@ void Reader::event(enum dg_event evt) {
         sem_post(&it_sem);
       }
       break;
-    case dg_event_fast:
+    case tm_gen_event_fast:
       if ( ot_blocked == OT_BLOCKED_TIME || ot_blocked == OT_BLOCKED_STOPPED ) {
         ot_blocked = 0;
         sem_post(&ot_sem);
@@ -205,7 +212,7 @@ void *input_thread(void *Reader_ptr ) {
 }
 
 void *Reader::input_thread() {
-  while (!tmc_quit)
+  while (!tm_quit)
     read();
   return NULL;
 }
@@ -218,7 +225,7 @@ void *output_thread(void *Reader_ptr ) {
 void *Reader::output_thread() {
   for (;;) {
     lock(__FILE__,__LINE__);
-    if ( quit || tmc_quit ) {
+    if ( quit || tm_quit ) {
       unlock();
       break;
     }
@@ -235,16 +242,16 @@ void *Reader::output_thread() {
           unlock();
           sem_wait(&ot_sem);
           lock(__FILE__,__LINE__);
-          int breakout = !started || !regulated || tmc_quit;
+          int breakout = !started || !regulated || tm_quit;
           unlock();
           if (breakout) break;
           transmit_data(1); // only one row
           nr = allocate_rows(NULL);
-          // if (allocate_rows(NULL) >= dq_low_water) {
+          // if (allocate_rows(NULL) >= tmq_low_water) {
           // The problem with this is that when the
           // queue is wrapping, the largest contiguous
           // block does not change.
-          if ( (nr >= dq_low_water) ||
+          if ( (nr >= tmq_low_water) ||
                (nr > 0 && first <= last) ) {
             lock(__FILE__,__LINE__);
             if ( it_blocked == IT_BLOCKED_DATA ) {
@@ -258,7 +265,7 @@ void *Reader::output_thread() {
       } else {
         // untimed loop
         for (;;) {
-          int breakout = !started || tmc_quit || regulated;
+          int breakout = !started || tm_quit || regulated;
           if ( it_blocked == IT_BLOCKED_DATA ) {
             it_blocked = 0;
             sem_post(&it_sem);
@@ -276,10 +283,10 @@ void *Reader::output_thread() {
 }
 
 void Reader::process_tstamp() {
-  if ( tm_info.t_stmp.mfc_num == msg->body.ts.mfc_num &&
-       tm_info.t_stmp.secs == msg->body.ts.secs )
+  if ( tm_info.t_stmp.mfc_num == tm_msg->body.ts.mfc_num &&
+       tm_info.t_stmp.secs == tm_msg->body.ts.secs )
     return; // redundant tstamp (beginning of each new file)
-  tm_info.t_stmp = msg->body.ts;
+  tm_info.t_stmp = tm_msg->body.ts;
   have_tstamp = true;
   commit_tstamp( tm_info.t_stmp.mfc_num, tm_info.t_stmp.secs );
 }
@@ -300,7 +307,7 @@ void Reader::process_data() {
     msg(1, "process_data() without initialization" );
     return;
   }
-  tm_data_t3_t *data = &msg->body.data3;
+  tm_data_t3_t *data = &tm_msg->body.data3;
   unsigned char *raw = &data->data[0];
   int n_rows = data->n_rows;
   unsigned short MFCtr = data->mfctr;
@@ -336,7 +343,7 @@ void Reader::process_data() {
   while ( n_rows ) {
     unsigned char *dest;
     lock(__FILE__,__LINE__);
-    if ( tmc_quit ) {
+    if ( tm_quit ) {
       unlock();
       return;
     }
@@ -361,7 +368,7 @@ void Reader::process_data() {
 // Return non-zero where there is nothing else to read
 // This is absolutely a first cut. It will stop at the first sign of trouble (i.e. a missing file)
 // What I will want is a record of first file and last file and/or first time/last time
-int Reader::process_eof() {
+bool Reader::process_eof() {
   if ( tm_client::bfr_fd != -1 ) {
     close(tm_client::bfr_fd);
     tm_client::bfr_fd = -1;
@@ -377,14 +384,14 @@ int Reader::process_eof() {
       RQP->pulse();
     lock(__FILE__,__LINE__);
     // is dc_quit == tm_quit?
-    if ( !tmc_quit ) {
+    if ( !tm_quit ) {
       it_blocked = IT_BLOCKED_EOF;
       unlock();
       sem_wait(&it_sem);
     } else unlock();
-    return 1;
+    return true;
   }
-  return 0;
+  return false;
 }
 
 const char *Reader::context() {

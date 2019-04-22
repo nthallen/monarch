@@ -1,4 +1,4 @@
-include /usr/local/share/huarp/appgen.mk
+include /usr/local/share/linkeng/appgen.mk
 CPPFLAGS=-I/usr/local/include
 CXXFLAGS=-Wall -g
 CFLAGS=-Wall -g
