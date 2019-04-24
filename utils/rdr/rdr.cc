@@ -81,15 +81,17 @@ int main( int argc, char **argv ) {
   load_tmdac(opt_basepath);
   int nQrows = RDR_BUFSIZE/tmi(nbrow);
   if (nQrows < 2) nQrows = 2;
-  Reader rdr(nQrows, nQrows/2, RDR_BUFSIZE, opt_basepath );
+  Reader *rdr = new Reader(nQrows, nQrows/2, RDR_BUFSIZE, opt_basepath );
+  
+  rdr->Server::ELoop.add_child(rdr);
   /* Added arguments: low_water=0, collection=false */
-  rdr.tm_generator::init(nQrows, 0, false);
-  rdr.control_loop();
+  rdr->tm_generator::init(nQrows, 0, false);
+  rdr->control_loop();
   msg(0, "Shutdown");
 }
 
 Reader::Reader(int nQrows, int low_water, int bufsize, const char *path) :
-    tm_generator(nQrows, low_water), tm_client( bufsize, false)0 ) {
+    tm_client( bufsize, false) {
   it_blocked = 0;
   ot_blocked = 0;
   if ( sem_init( &it_sem, 0, 0) || sem_init( &ot_sem, 0, 0 ) )
@@ -112,14 +114,14 @@ Reader::Reader(int nQrows, int low_water, int bufsize, const char *path) :
 
 static void pt_create( void *(*func)(void *), pthread_t *thread, void *arg ) {
   int rv = pthread_create( thread, NULL, func, arg );
-  if ( rv != EOK )
+  if ( rv != 0 )
     msg(3,"pthread_create failed: %s", strerror(errno));
 }
 
 static void pt_join( pthread_t thread, const char *which ) {
   void *value;
   int rv = pthread_join(thread, &value);
-  if ( rv != EOK )
+  if ( rv != 0 )
     msg( 2, "pthread_join(%d, %s) returned %d: %s",
        thread, which, rv, strerror(rv) );
   else if ( value != 0 )
@@ -130,13 +132,14 @@ static void pt_join( pthread_t thread, const char *which ) {
 void Reader::control_loop() {
   pthread_t ot, it;
   if ( opt_autoquit ) {
-    RQP = new Rdr_quit_pulse(this);
-    RQP->attach();
+    //RQP = new Rdr_quit_pulse(this);
+    //RQP->attach();
   }
   pt_create( ::output_thread, &ot, this );
   pt_create( ::input_thread, &it, this );
   //must be replaced
   //tm_generator::operate();
+  Start(Srv_Unix);
   pt_join( it, "input_thread" );
   pt_join( ot, "output_thread" );
 }
@@ -170,21 +173,22 @@ void Reader::service_row_timer() {
 void Reader::event(enum tm_gen_event evt) {
   lock(__FILE__,__LINE__);
   switch (evt) {
-    case tm_gen_event_start:
+    case tmg_event_start:
       if (ot_blocked == OT_BLOCKED_STOPPED) {
         ot_blocked = 0;
         sem_post(&ot_sem);
       }
       break;
-    case tm_gen_event_stop:
+    case tmg_event_stop:
       if (ot_blocked == OT_BLOCKED_TIME || ot_blocked == OT_BLOCKED_DATA) {
         ot_blocked = 0;
         sem_post(&ot_sem);
       }
       break;
-    case tm_gen_event_quit:
+    case tmg_event_quit:
       msg( 0, "Quit event" );
-      tm_quit = true;
+      //commented out for compilation
+      //tm_quit = true;
       if ( ot_blocked ) {
         ot_blocked = 0;
         sem_post(&ot_sem);
@@ -194,7 +198,7 @@ void Reader::event(enum tm_gen_event evt) {
         sem_post(&it_sem);
       }
       break;
-    case tm_gen_event_fast:
+    case tmg_event_fast:
       if ( ot_blocked == OT_BLOCKED_TIME || ot_blocked == OT_BLOCKED_STOPPED ) {
         ot_blocked = 0;
         sem_post(&ot_sem);
@@ -212,8 +216,9 @@ void *input_thread(void *Reader_ptr ) {
 }
 
 void *Reader::input_thread() {
-  while (!tm_quit)
-    read();
+  //commented out for compilation
+  //while (!tm_quit)
+  //  read();
   return NULL;
 }
 
@@ -225,7 +230,8 @@ void *output_thread(void *Reader_ptr ) {
 void *Reader::output_thread() {
   for (;;) {
     lock(__FILE__,__LINE__);
-    if ( quit || tm_quit ) {
+    //commented out for compilation
+    if ( quit /* || tm_quit*/ ) {
       unlock();
       break;
     }
@@ -242,7 +248,8 @@ void *Reader::output_thread() {
           unlock();
           sem_wait(&ot_sem);
           lock(__FILE__,__LINE__);
-          int breakout = !started || !regulated || tm_quit;
+          //commented out for compilation
+          int breakout = !started || !regulated /* || tm_quit */;
           unlock();
           if (breakout) break;
           transmit_data(1); // only one row
@@ -265,7 +272,8 @@ void *Reader::output_thread() {
       } else {
         // untimed loop
         for (;;) {
-          int breakout = !started || tm_quit || regulated;
+          //commented out for compilation
+          int breakout = !started /* || tm_quit */ || regulated;
           if ( it_blocked == IT_BLOCKED_DATA ) {
             it_blocked = 0;
             sem_post(&it_sem);
@@ -343,10 +351,11 @@ void Reader::process_data() {
   while ( n_rows ) {
     unsigned char *dest;
     lock(__FILE__,__LINE__);
-    if ( tm_quit ) {
-      unlock();
-      return;
-    }
+    //commented out for compilation
+    //if ( tm_quit ) {
+    //  unlock();
+    //  return;
+    //}
     int n_room = allocate_rows(&dest);
     if ( n_room ) {
       unlock();
@@ -370,7 +379,7 @@ void Reader::process_data() {
 // What I will want is a record of first file and last file and/or first time/last time
 bool Reader::process_eof() {
   if ( tm_client::bfr_fd != -1 ) {
-    close(tm_client::bfr_fd);
+    ::close(tm_client::bfr_fd);
     tm_client::bfr_fd = -1;
   }
   if (mlf->index < opt_end_file ) {
@@ -381,14 +390,15 @@ bool Reader::process_eof() {
   // need to alter, as tm_client::bfr_fd isn't being used anymore
   if ( tm_client::bfr_fd == -1 ) {
     if ( opt_autoquit )
-      RQP->pulse();
+      //RQP->pulse();
     lock(__FILE__,__LINE__);
     // is dc_quit == tm_quit?
-    if ( !tm_quit ) {
+    //commented out for compilation
+    /* if ( !tm_quit ) {
       it_blocked = IT_BLOCKED_EOF;
       unlock();
       sem_wait(&it_sem);
-    } else unlock();
+    } else unlock(); */
     return true;
   }
   return false;

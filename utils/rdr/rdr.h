@@ -12,7 +12,7 @@
 
 using namespace DAS_IO;
 
-class Rdr_quit_pulse;
+//class Rdr_quit_pulse;
 
 class Reader : public tm_generator, public tm_client {
   public:
@@ -37,12 +37,12 @@ class Reader : public tm_generator, public tm_client {
     bool have_tstamp;
   private:
     mlf_def_t *mlf;
-    Rdr_quit_pulse *RQP;
+    //Rdr_quit_pulse *RQP;
     const char *locked_by_file;
     int locked_by_line;
 };
 
-class Rdr_quit_pulse : public tmg_dispatch_client {
+/* class Rdr_quit_pulse : public tmg_dispatch_client {
   public:
     Rdr_quit_pulse(Reader *rdr_ptr);
     ~Rdr_quit_pulse();
@@ -53,7 +53,7 @@ class Rdr_quit_pulse : public tmg_dispatch_client {
   private:
     int pulse_code;
     int coid;
-};
+}; */
 
 extern "C" {
 #endif

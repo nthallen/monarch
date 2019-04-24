@@ -6,16 +6,14 @@ LDFLAGS=-L/usr/local/lib -Wl,-rpath -Wl,/usr/local/lib
 CXX=g++
 LINK.cxx=$(CXX) $(AG_LDFLAGS) $(LDFLAGS)
 
-rdr : rdr.o rdroui.o quit_pulse.o
-	/bin/rm -f $@; $(LINK.cxx) -o $@ rdr.o rdroui.o quit_pulse.o -ltmpp -ltm -lnort
-	usemsg rdr rdroui.c
-	/usr/local/sbin/promote rdr
-rdroui.c : rdr.oui
-	$(OUI) -o rdroui.c rdr.oui
+rdr : rdr.o rdroui.o
+	/bin/rm -f $@; $(LINK.cxx) -o $@ rdr.o rdroui.o -ldasio -lnl -lpthread
+rdroui.cc : rdr.oui
+	$(OUI) -o rdroui.cc rdr.oui
 
 .PHONY : all clean install
 all : rdr
 install : rdr
-	@cp -vpn rdr /usr/local/bin
+	@cp -vpu rdr /usr/local/bin
 clean :
-	rm -f *.o rdroui.c rdr FullBuild.*
+	rm -f *.o rdroui.cc rdr FullBuild.*

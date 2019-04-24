@@ -14,7 +14,3 @@
 	-L ending file index
 <init>
   rdr_init(argc, argv);
-
-<package> msghdr_default
-<vars>
-  char *msg_hdr_default = "rdr";
