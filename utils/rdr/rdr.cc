@@ -94,7 +94,7 @@ Reader::Reader(int nQrows, int low_water, int bufsize, const char *path) :
   ot_blocked = 0;
   if ( sem_init( &it_sem, 0, 0) || sem_init( &ot_sem, 0, 0 ) )
     msg( 3, "Semaphore initialization failed" );
-  int rv = pthread_mutex_init( &dq_mutex, NULL );
+  int rv = pthread_mutex_init( &tmq_mutex, NULL );
   if ( rv )
     msg( 3, "Mutex initialization failed: %s",
             strerror(errno));
@@ -142,7 +142,7 @@ void Reader::control_loop() {
 }
 
 void Reader::lock(const char *by, int line) {
-  int rv = pthread_mutex_lock(&dq_mutex);
+  int rv = pthread_mutex_lock(&tmq_mutex);
   if (rv)
     msg( 3, "Mutex lock failed: %s",
             strerror(rv));
@@ -151,7 +151,7 @@ void Reader::lock(const char *by, int line) {
 }
 
 void Reader::unlock() {
-  int rv = pthread_mutex_unlock(&dq_mutex);
+  int rv = pthread_mutex_unlock(&tmq_mutex);
   if (rv)
     msg( 3, "Mutex unlock failed: %s",
             strerror(rv));

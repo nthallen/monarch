@@ -33,7 +33,7 @@ class Reader : public tm_generator, public tm_client {
     sem_t it_sem;
     int ot_blocked;
     sem_t ot_sem;
-    pthread_mutex_t dq_mutex;
+    pthread_mutex_t tmq_mutex;
     bool have_tstamp;
   private:
     mlf_def_t *mlf;
