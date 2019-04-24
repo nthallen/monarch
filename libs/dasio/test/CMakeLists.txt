@@ -35,16 +35,16 @@ add_executable(echosrvr echosrvr.cc)
 target_include_directories(echosrvr PUBLIC
   ../src
   ${le_das_SOURCE_DIR}/libs/nl)
-target_link_libraries(echosrvr dasio nl tm)
+target_link_libraries(echosrvr dasio nl tm pthread)
 
 add_executable(tmsrvr tmsrvr.cc)
 target_include_directories(tmsrvr PUBLIC
   ${le_das_SOURCE_DIR}/libs/dasio/src
   ${le_das_SOURCE_DIR}/libs/nl)
-target_link_libraries(tmsrvr dasio nl tm)
+target_link_libraries(tmsrvr dasio nl tm pthread)
 
 add_executable(tmclt tmclt.cc)
 target_include_directories(tmclt PUBLIC
   ${le_das_SOURCE_DIR}/libs/dasio/src
   ${le_das_SOURCE_DIR}/libs/nl)
-target_link_libraries(tmclt dasio nl tm)
+target_link_libraries(tmclt dasio nl tm pthread)

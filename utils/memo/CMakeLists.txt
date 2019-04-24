@@ -9,10 +9,10 @@ include( ../../oui_setup.cmake )
 
 OUI_FILE(memo.oui)
 add_executable(memo memo.cc memooui.cc)
-target_link_libraries(memo dasio nl)
+target_link_libraries(memo dasio nl pthread)
 
 OUI_FILE(msg_internal.oui)
 add_executable(msg msg.cc msg_internaloui.cc)
-target_link_libraries(msg dasio nl)
+target_link_libraries(msg dasio nl pthread)
 
 install(TARGETS memo msg RUNTIME DESTINATION bin)
