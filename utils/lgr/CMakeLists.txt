@@ -9,6 +9,6 @@ include( ../../oui_setup.cmake )
 
 OUI_FILE(lgr.oui)
 add_executable(lgr lgr.cc lgroui.cc)
-target_link_libraries(lgr dasio nl)
+target_link_libraries(lgr dasio nl pthread)
 
 install(TARGETS lgr RUNTIME DESTINATION bin)

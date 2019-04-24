@@ -6,7 +6,7 @@ check_include_file_cxx(linux/can.h HAVE_LINUX_CAN_H)
 configure_file (
   ${CMAKE_CURRENT_SOURCE_DIR}/CAN/subbusd_CAN_config.h.in
   ${CMAKE_CURRENT_BINARY_DIR}/subbusd_CAN_config.h )
-link_libraries(dasio nl)
+link_libraries(dasio nl pthread)
 
 add_executable(subbusd subbusd.cc subbusdoui.cc)
 add_executable(subbusd_CAN subbusd.cc subbusd_CANoui.cc CAN/subbusd_CAN.cc)

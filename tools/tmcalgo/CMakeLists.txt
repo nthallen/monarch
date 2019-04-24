@@ -58,7 +58,7 @@ target_include_directories(tmcalgo PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR})
 endif (DEFINED le_das_BINARY_DIR)
 
-target_link_libraries(tmcalgo dasio nl)
+target_link_libraries(tmcalgo dasio nl pthread)
 install(TARGETS tmcalgo RUNTIME
         DESTINATION bin)
 

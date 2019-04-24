@@ -9,6 +9,6 @@ include( ../../oui_setup.cmake )
 
 OUI_FILE(bfr.oui)
 add_executable(bfr bfr.cc bfroui.cc rundir.cc)
-target_link_libraries(bfr dasio nl)
+target_link_libraries(bfr dasio nl pthread)
 
 install(TARGETS bfr RUNTIME DESTINATION bin)
