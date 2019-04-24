@@ -639,11 +639,11 @@ static struct intcnv *find_ndr(struct calibration *cal,
         if (dmax > UINT16_MAX) dmax = UINT16_MAX; /* arbitrary limit */
       }
 
-      drbest = 2.0;
+      drbest = -1;
       for (dlast = 1; dlast <= dmax; dlast++) {
         n = floor(m*dlast + .5);
         dr = fabs((m - ((double)n)/dlast) * ddx);
-        if (dr < drbest) {
+        if (drbest < 0 || dr < drbest) {
           drbest = dr;
           nbest = n;
           dbest = dlast;
@@ -654,7 +654,13 @@ static struct intcnv *find_ndr(struct calibration *cal,
       else break;
     }
     if (drbest >= 2.0)
-      compile_error(3, "Unable to derive ratio: drbest = %.1lf", drbest);
+      /* compile_error(3, "Unable to derive ratio: drbest = %.1lf", drbest); */
+      compile_error(3, "(%s => %s)\n"
+                   "Unable to derive rational expression for:\n"
+                   "  Y = %gX%+g  where %d <= X <= %d\n"
+                   "  drbest = %.1lf",
+                   cal->type[0]->name, cal->type[1]->name,
+                   m, b, x0, x1, drbest);
     /* Now see how far this gets us */
     n = nbest; d = dbest;
     y = floor(m*x0+b);

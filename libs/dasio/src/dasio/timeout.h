@@ -33,9 +33,11 @@ class TimeoutAccumulator {
     void Set( Timeout * );
     void Set_Min( Timeout * );
     struct timeval *timeout_val();
+    struct timespec *timeout_val_ns();
   private:
     struct timespec when;
     struct timeval how_soon;
+    struct timespec how_soon_ns;
 };
 
 }

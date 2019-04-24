@@ -7,6 +7,7 @@
 #include <string>
 #include <list>
 #include <atomic>
+#include <signal.h>
 #include "interface.h"
 #include "timeout.h"
 
@@ -82,6 +83,20 @@ class Loop {
      * Causes event_loop() to exit on each iteration
      */
     void set_loop_exit();
+    /**
+     * Setup to process signals during pselect().
+     * @param sig The signal number
+     * @param func The function handler
+     */
+    void signal(int sig, void (*func)(int sig));
+    /**
+     * @return A pointer to the sigset_t struct defining the
+     * signals that should be blocked outside of pselect.
+     * If application is multi-threaded, threads that are not
+     * running the event_loop() should block these signals to
+     * ensure that they are handled by the event_loop() thread.
+     */
+    inline sigset_t *get_blockset() { return &blockset; }
   private:
     /** The list of child interfaces */
     InterfaceList S;
@@ -110,6 +125,8 @@ class Loop {
      */
     virtual Timeout *GetTimeout();
     bool loop_exit;
+    sigset_t blockset;
+    sigset_t runset;
 };
 
 }

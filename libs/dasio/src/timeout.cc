@@ -112,4 +112,29 @@ struct timeval *TimeoutAccumulator::timeout_val() {
   return &how_soon;
 }
 
+/**
+ * \returns struct timespect pointer appropriate for pselect().
+ * If no timeout is specified, returns 0. If the timeout has passed,
+ * timeout is set at zero.
+ */
+struct timespec *TimeoutAccumulator::timeout_val_ns() {
+  struct timespec now;
+  clock_gettime(CLOCK_REALTIME, &now);
+  if ( when.tv_sec == 0 && when.tv_nsec == 0 ) {
+    return NULL;
+  } else if ( ( now.tv_sec > when.tv_sec ) ||
+       ( now.tv_sec == when.tv_sec && now.tv_nsec > when.tv_nsec ) ) {
+    how_soon_ns.tv_sec = 0L;
+    how_soon_ns.tv_nsec = 0L;
+  } else {
+    how_soon_ns.tv_nsec = (when.tv_nsec - now.tv_nsec);
+    how_soon_ns.tv_sec = (when.tv_sec - now.tv_sec);
+    if (how_soon_ns.tv_nsec < 0) {
+      --how_soon_ns.tv_sec;
+      how_soon_ns.tv_nsec += 1000000000L;
+    }
+  }
+  return &how_soon_ns;
+}
+
 }

@@ -1,4 +1,5 @@
 /** @file loop.cc */
+#include <string.h>
 #include <errno.h>
 #include <sys/select.h>
 #include "dasio/loop.h"
@@ -12,6 +13,8 @@ Loop::Loop() {
   children_changed = false;
   gflags = 0;
   loop_exit = false;
+  pthread_sigmask(SIG_SETMASK, 0, &blockset);
+  pthread_sigmask(SIG_SETMASK, 0, &runset);
 }
 
 Loop::~Loop() {}
@@ -118,7 +121,8 @@ void Loop::event_loop() {
       }
       if (P->flags & P->Fl_Timeout) TA.Set_Min( P->GetTimeout() );
     }
-    rc = select(width, &readfds, &writefds, &exceptfds, TA.timeout_val());
+    // rc = select(width, &readfds, &writefds, &exceptfds, TA.timeout_val());
+    rc = pselect(width, &readfds, &writefds, &exceptfds, TA.timeout_val_ns(), &runset);
     if ( rc == 0 ) {
       if ( ProcessTimeout() )
         keep_going = 0;
@@ -193,5 +197,19 @@ void Loop::set_loop_exit() {
 
 int Loop::ProcessTimeout() { return 0; }
 Timeout *Loop::GetTimeout() { return 0; }
+
+void Loop::signal(int sig, void (*handler)(int)) {
+  sigaddset(&blockset, sig);
+  pthread_sigmask(SIG_SETMASK, &blockset, 0);
+  sigdelset(&runset, sig);
+  
+  struct sigaction sa;
+  sa.sa_handler = handler;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+  
+  if (sigaction(sig, &sa, 0) < 0)
+    msg(2, "sigaction(%d) error %d: %s", sig, errno, strerror(errno));
+}
 
 }
