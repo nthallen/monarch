@@ -1,0 +1,41 @@
+#! @SHELL_EXE@
+# distribute_check target-version-dir pcmfile
+# It will create the target-version-dir and a Base subdirectory if
+# they do not already exist. If target-version-dir is on a remote
+# system, will invoke distribute_check on the remote system via ssh
+# to perform this operation.
+# Subsequently, will check for the existence of the pcmfile in the
+# target-version-dir, and if present, compare it to the local copy.
+# If they are different, an error will be reported and the distribution
+# will be aborted
+opt_r=no
+if [ "x$1" = "x-r" ]; then
+  opt_r=yes
+  shift 1
+fi
+
+function nl_error {
+  if [ $opt_r = yes ]; then
+    echo "FAIL: $*" >&2
+  else
+    echo "distribute_check: $*" >&2
+  fi
+  exit 1
+}
+
+tgt_ver_dir=$1
+pcmfile=$2
+[ -n "$pcmfile" ] || nl_error "Must specify pcmfile argument"
+rhost=${tgt_ver_dir%:*}
+rdir=${tgt_ver_dir#*:}
+# if there are no colons, this is a local operation
+# if there are any colons, there should be only one, and hence
+# $rhost:$dir should equal $tgt_ver_dir. Also both $rhost and $rdir
+# must be non-empty.
+if [ "$rhost" = "$tgt_ver_dir" -a "$rdir" = "$tgt_ver_dir" ]; then
+  echo "Local copy: $tgt_ver_dir"
+elif [ "$rhost:$dir" != "$tgt_ver_dir" -o -z "$rhost" -o -z "$rdir" ]; then
+  nl_error "Invalid remote syntax: '$tgt_ver_dir'"
+else
+  echo "Remote copy: $rhost $rdir"
+fi
