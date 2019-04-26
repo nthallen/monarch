@@ -773,13 +773,14 @@ echo "Makefile \$(SPECTGTMISS) : $ifile \$(SPECDEPBASE)"
 echo "${tab}appgen $ifile"
   echo 'VERSION=`cat VERSION`'
   echo 'extdistribution : all-dist'
-  echo "${tab}@[ -d \$(TGTDIR)/bin ] || mkdir \$(TGTDIR)/bin"
-  echo "${tab}@[ -d \$(TGTDIR)/bin/\$(VERSION) ] || mkdir \$(TGTDIR)/bin/\$(VERSION)"
-  echo "${tab}@[ -d \$(TGTDIR)/bin/\$(VERSION)/Base ] || mkdir \$(TGTDIR)/bin/\$(VERSION)/Base"
+# echo "${tab}@[ -d \$(TGTDIR)/bin ] || mkdir \$(TGTDIR)/bin"
+# echo "${tab}@[ -d \$(TGTDIR)/bin/\$(VERSION) ] || mkdir \$(TGTDIR)/bin/\$(VERSION)"
+# echo "${tab}@[ -d \$(TGTDIR)/bin/\$(VERSION)/Base ] || mkdir \$(TGTDIR)/bin/\$(VERSION)/Base"
   ### echo "${tab}@[ -f \$(TGTDIR)/bin/\$(VERSION)/\$(PCMFILE) ] && ! cmp -s
-  echo "${tab}@[ ! -f \$(TGTDIR)/bin/\$(VERSION)/\$(PCMFILE) ] || \\"
-  echo "${tab}  cmp -s \$(TGTDIR)/bin/\$(VERSION)/\$(PCMFILE) \$(PCMFILE) || \\"
-  echo "${tab}  ( echo \"\$(PCMFILE) changed without VERSION update\"; false )"
+# echo "${tab}@[ ! -f \$(TGTDIR)/bin/\$(VERSION)/\$(PCMFILE) ] || \\"
+# echo "${tab}  cmp -s \$(TGTDIR)/bin/\$(VERSION)/\$(PCMFILE) \$(PCMFILE) || \\"
+# echo "${tab}  ( echo \"\$(PCMFILE) changed without VERSION update\"; false )"
+  echo "${tab}@distribute_check \$(TGTDIR)/bin/\$(VERSION) \$(PCMFILE)"
   echo "${tab}@distribute \$(FORCE) \$(TGTDIR)/bin/\$(VERSION) \$(DSTRB)"
   echo "${tab}@distribute \$(FORCE) \$(TGTDIR)/bin/\$(VERSION)/Base \$(SRCDIST)"
   echo 'distribution : extdistribution'
