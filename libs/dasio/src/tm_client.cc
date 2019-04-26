@@ -60,7 +60,7 @@ bool tm_client::app_connected() {
   nl_assert(nb1 == nb2);
   fp = fopen( filename, "w" );
   if (fp) fclose(fp);
-  else msg(2,"Unable to create run file '%s'", filename);
+  else msg(MSG_ERROR,"Unable to create run file '%s'", filename);
   return false;
 }
 
@@ -125,7 +125,7 @@ void tm_client::init_tm_type() {
 
 void tm_client::process_init() {
   if ( memcmp( &tm_info, &tm_msg->body.init.tm, sizeof(tm_dac_t) ) )
-    report_err(/*3, */"tm_dac differs");
+    msg(MSG_FATAL, "tm_dac differs");
   tm_info.nrowminf = tm_msg->body.init.nrowminf;
   tm_info.max_rows = tm_msg->body.init.max_rows;
   tm_info.t_stmp = tm_msg->body.init.t_stmp;
@@ -152,7 +152,7 @@ void tm_client::seek_tmid() {
   for (i = 1; i < nc; ++i) {
     if (ubuf[i] == (TMHDR_WORD & 0xFF)) {
       if (i+1 == nc || ubuf[i+1] == ((TMHDR_WORD>>8)&0xFF)) {
-        msg(1, "%sDiscarding %d bytes in seek_tmid()", context(), i);
+        msg(MSG_WARN, "%sDiscarding %d bytes in seek_tmid()", context(), i);
         memmove(buf, buf+i, nc - i);
         nc -= i;
         tm_expect_hdr();
@@ -160,7 +160,7 @@ void tm_client::seek_tmid() {
       }
     }
   }
-  msg(1, "%sDiscarding %d bytes (to EOB) in seek_tmid()",
+  msg(MSG_WARN, "%sDiscarding %d bytes (to EOB) in seek_tmid()",
     context(), nc);
   nc = 0;
   tm_expect_hdr();
@@ -173,12 +173,12 @@ void tm_client::process_message() {
         switch ( tm_msg->hdr.tm_type ) {
           case TMTYPE_INIT:
             if ( tm_info_ready )
-              msg(3, "%sReceived redundant TMTYPE_INIT", context());
+              msg(MSG_FATAL, "%sReceived redundant TMTYPE_INIT", context());
             toread += sizeof(tm_info);
             break;
           case TMTYPE_TSTAMP:
             if ( !tm_info_ready )
-              msg( 3, "%sExpected TMTYPE_INIT, received TMTYPE_TSTAMP", context());
+              msg( MSG_FATAL, "%sExpected TMTYPE_INIT, received TMTYPE_TSTAMP", context());
             toread += sizeof(tstamp_t);
             break;
           case TMTYPE_DATA_T1:
@@ -186,22 +186,22 @@ void tm_client::process_message() {
           case TMTYPE_DATA_T3:
           case TMTYPE_DATA_T4:
             if ( !tm_info_ready )
-              msg(3, "%sExpected TMTYPE_INIT, received TMTYPE_DATA_Tn",
+              msg(MSG_FATAL, "%sExpected TMTYPE_INIT, received TMTYPE_DATA_Tn",
                 context());
             if ( tm_msg->hdr.tm_type != input_tm_type )
-              msg(3, "%sInvalid data type: %04X", context(),
+              msg(MSG_FATAL, "%sInvalid data type: %04X", context(),
                 tm_msg->hdr.tm_type );
             toread = nbDataHdr + nbQrow * tm_msg->body.data1.n_rows;
             break;
           default:
-            msg(2, "%sInvalid TMTYPE: %04X", context(),
+            msg(MSG_ERROR, "%sInvalid TMTYPE: %04X", context(),
               tm_msg->hdr.tm_type );
             seek_tmid();
             return;
         }
         tm_state = tm_state_DATA;
         if ( toread > bufsize )
-          msg( 3, "%sRecord size %d exceeds allocated buffer size %d",
+          msg( MSG_FATAL, "%sRecord size %d exceeds allocated buffer size %d",
             context(), toread, bufsize );
         break;
       case tm_state_DATA:
@@ -227,7 +227,7 @@ void tm_client::process_message() {
         }
         tm_expect_hdr();
         break;
-      default: msg(4, "%sInvalid tm_state %d", context(), tm_state);
+      default: msg(MSG_EXIT_ABNORM, "%sInvalid tm_state %d", context(), tm_state);
     }
   }
 }

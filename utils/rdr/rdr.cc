@@ -70,7 +70,7 @@ void rdr_init( int argc, char **argv ) {
         opt_end_file = strtoul(optarg, NULL, 10);
         break;
       case '?':
-        msg(3, "Unrecognized Option -%c", optopt);
+        msg(MSG_FATAL, "Unrecognized Option -%c", optopt);
     }
   }
 }
@@ -95,10 +95,10 @@ Reader::Reader(int nQrows, int low_water, int bufsize, const char *path) :
   it_blocked = 0;
   ot_blocked = 0;
   if ( sem_init( &it_sem, 0, 0) || sem_init( &ot_sem, 0, 0 ) )
-    msg( 3, "Semaphore initialization failed" );
+    msg( MSG_FATAL, "Semaphore initialization failed" );
   int rv = pthread_mutex_init( &tmq_mutex, NULL );
   if ( rv )
-    msg( 3, "Mutex initialization failed: %s",
+    msg( MSG_FATAL, "Mutex initialization failed: %s",
             strerror(errno));
   init_tm_type();
   nl_assert(input_tm_type == TMTYPE_DATA_T3);
@@ -115,18 +115,18 @@ Reader::Reader(int nQrows, int low_water, int bufsize, const char *path) :
 static void pt_create( void *(*func)(void *), pthread_t *thread, void *arg ) {
   int rv = pthread_create( thread, NULL, func, arg );
   if ( rv != 0 )
-    msg(3,"pthread_create failed: %s", strerror(errno));
+    msg(MSG_FATAL,"pthread_create failed: %s", strerror(errno));
 }
 
 static void pt_join( pthread_t thread, const char *which ) {
   void *value;
   int rv = pthread_join(thread, &value);
   if ( rv != 0 )
-    msg( 2, "pthread_join(%d, %s) returned %d: %s",
+    msg( MSG_ERROR, "pthread_join(%d, %s) returned %d: %s",
        thread, which, rv, strerror(rv) );
   else if ( value != 0 )
-    msg( 2, "pthread_join(%s) returned non-zero value", which );
-  else msg( -2, "%s shutdown", which );
+    msg( MSG_ERROR, "pthread_join(%s) returned non-zero value", which );
+  else msg( MSG_DEBUG, "%s shutdown", which );
 }
 
 void Reader::control_loop() {
@@ -147,7 +147,7 @@ void Reader::control_loop() {
 void Reader::lock(const char *by, int line) {
   int rv = pthread_mutex_lock(&tmq_mutex);
   if (rv)
-    msg( 3, "Mutex lock failed: %s",
+    msg( MSG_FATAL, "Mutex lock failed: %s",
             strerror(rv));
   locked_by_file = by;
   locked_by_line = line;
@@ -156,7 +156,7 @@ void Reader::lock(const char *by, int line) {
 void Reader::unlock() {
   int rv = pthread_mutex_unlock(&tmq_mutex);
   if (rv)
-    msg( 3, "Mutex unlock failed: %s",
+    msg( MSG_FATAL, "Mutex unlock failed: %s",
             strerror(rv));
 }
 
@@ -312,7 +312,7 @@ void Reader::process_data() {
   static unsigned short frac_MFCtr;
 
   if ( ! have_tstamp ) {
-    msg(1, "process_data() without initialization" );
+    msg(MSG_WARN, "process_data() without initialization" );
     return;
   }
   tm_data_t3_t *data = &tm_msg->body.data3;

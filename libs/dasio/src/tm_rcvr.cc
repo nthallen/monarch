@@ -6,15 +6,13 @@
 #include "dasio/tm_rcvr.h"
 
 /*
-To be copied:
-tm_client::process_message()?
-tm_client::seek_tmid()?
-tm_client::app_input()?
+To be copied?:
+  tm_client::process_message()?
+  tm_client::seek_tmid()?
+  tm_client::app_input()?
 
-Reader::process_data() / tm_client::process_message() ?
-Reader::context() / tm_client::context() ?
-
-
+  Reader::process_data() / tm_client::process_message() ?
+  Reader::context() / tm_client::context() ?
 */
 
 tm_rcvr::process_raw_tm() {
