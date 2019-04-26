@@ -33,9 +33,32 @@ rdir=${tgt_ver_dir#*:}
 # $rhost:$dir should equal $tgt_ver_dir. Also both $rhost and $rdir
 # must be non-empty.
 if [ "$rhost" = "$tgt_ver_dir" -a "$rdir" = "$tgt_ver_dir" ]; then
-  echo "Local copy: $tgt_ver_dir"
-elif [ "$rhost:$dir" != "$tgt_ver_dir" -o -z "$rhost" -o -z "$rdir" ]; then
+  # echo "Local copy: $tgt_ver_dir"
+  if [ ! -d $rdir/Base ]; then
+    /bin/mkdir -p "$rdir/Base" || nl_error "Unable to create directories"
+    [ -d "$rdir/Base" ] || nl_error "Directories not created"
+  fi
+
+  if [ -f $rdir/$pcmfile ]; then
+    echo "OK:YES"
+  else
+    echo "OK:NO"
+  fi
+elif [ "$rhost:$rdir" != "$tgt_ver_dir" -o -z "$rhost" -o -z "$rdir" ]; then
   nl_error "Invalid remote syntax: '$tgt_ver_dir'"
 else
   echo "Remote copy: $rhost $rdir"
+  chk=`ssh $rhost /usr/local/bin/distribute_check -r $rdir $pcmfile 2>&1`
+  case $chk in
+    OK:YES)
+      scp $tgt_ver_dir/$pcmfile ./$pcmfile.tmp
+      [ -f ./$pcmfile.tmp ] || nl_error "Failed to copy $pcmfile from target"
+      VER_OK=yes
+      cmp --silent $pcmfile $pcmfile.tmp || VER_OK=no
+      rm -f $pcmfile.tmp
+      [ $VER_OK = yes ] ||
+        nl_error "Telemetry format changed without VERSION change";;
+    OK:NO) ;;
+    *) nl_error "failed: '$chk'";;
+  esac
 fi
