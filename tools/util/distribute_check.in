@@ -39,11 +39,9 @@ if [ "$rhost" = "$tgt_ver_dir" -a "$rdir" = "$tgt_ver_dir" ]; then
     [ -d "$rdir/Base" ] || nl_error "Directories not created"
   fi
 
-  if [ -f $rdir/$pcmfile ]; then
-    echo "OK:YES"
-  else
-    echo "OK:NO"
-  fi
+  [ -f $rdir/$pcmfile ] &&
+    ! cmp --silent $rdir/$pcmfile $pcmfile &&
+    nl_error "Telemetry format changed without VERSION change"
 elif [ "$rhost:$rdir" != "$tgt_ver_dir" -o -z "$rhost" -o -z "$rdir" ]; then
   nl_error "Invalid remote syntax: '$tgt_ver_dir'"
 else
@@ -62,3 +60,4 @@ else
     *) nl_error "failed: '$chk'";;
   esac
 fi
+true

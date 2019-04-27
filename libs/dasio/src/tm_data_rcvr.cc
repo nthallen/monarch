@@ -70,6 +70,7 @@ namespace DAS_IO {
   }
   
   TM_data_rcvr_def *collector::receive(const char *name, void *data, int data_size, int synch) {
+    TM_data_rcvr_def *def = new TM_data_rcvr_def(name, data, data_size);
     int svclen = snprintf(0, 0, "%s/data/%s",
       get_service(), name);
     char *subservice = (char *)new_memory(svclen+1);
@@ -79,8 +80,9 @@ namespace DAS_IO {
       new SubService(
         subservice,
         TM_data_rcvr::new_tm_data_rcvr,
-        new TM_data_rcvr_def(name, data, data_size)
+        def
       )
     );
+    return def;
   }
 }
