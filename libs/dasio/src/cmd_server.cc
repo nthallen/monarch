@@ -133,9 +133,9 @@ namespace DAS_IO {
             return true;
           case 2: /* Report Syntax Error */
             if ( nl_response ) {
-              msg( 2, "%s: Syntax Error", mnemonic );
-              msg( 2, "%*.*s", len, len, cmd);
-              msg( 2, "%*s", rv - CMDREP_SYNERR, "^");
+              msg( MSG_ERROR, "%s: Syntax Error", mnemonic );
+              msg( MSG_ERROR, "%*.*s", len, len, cmd);
+              msg( MSG_ERROR, "%*s", rv - CMDREP_SYNERR, "^");
             }
             len = snprintf(obuf, OBUF_SIZE, "S%d: Syntax Error at column %d\n",
               rv - CMDREP_SYNERR, rv - CMDREP_SYNERR);
@@ -169,7 +169,7 @@ namespace DAS_IO {
   }
 
   void Cmd_receiver::process_quit() {
-    msg( -2, "Processing Quit" );
+    msg( MSG_DEBUG, "Processing Quit" );
     quit_received = quit_recd = true;
     iwrite("Q\n");
     // ELoop->delete_child(this);
@@ -279,7 +279,7 @@ cmdif_rd::cmdif_rd(const char *name)
  * could handle that, since it already has the position)
  */
 cmdif_rd::~cmdif_rd() {
-  msg( -2, "Shutting down reader %s", name);
+  msg( MSG_DEBUG, "Shutting down reader %s", name);
   nl_assert(turfs.empty());
   if (DAS_IO::CmdServer)
     DAS_IO::CmdServer->rm_subservice(svcsname);
@@ -320,7 +320,7 @@ void cmdif_rd::Turf(const char *format, ...) {
   nb = vsnprintf( cmd->command, CMD_MAX_COMMAND_OUT, format, arglist );
   va_end( arglist );
   if ( nb >= CMD_MAX_COMMAND_OUT ) {
-    msg( 2, "%s: Output buffer overflow", svcsname.c_str());
+    msg( MSG_ERROR, "%s: Output buffer overflow", svcsname.c_str());
     cmd->command[0] = '\0';
   } else {
     cmd->cmdlen = nb;
@@ -466,7 +466,7 @@ void cmdif_wr::Turf(const char *format, ...) {
   int nb;
 
   if (client == 0 || client->fd < 0) {
-    msg(2, "%s: Cannot forward command while disconnected",
+    msg(MSG_ERROR, "%s: Cannot forward command while disconnected",
       client->get_iname());
     return;
   }
@@ -478,7 +478,7 @@ void cmdif_wr::Turf(const char *format, ...) {
   nb = vsnprintf( obuf, CMD_MAX_COMMAND_OUT, format, arglist );
   va_end( arglist );
   if ( nb >= CMD_MAX_COMMAND_OUT ) {
-    msg( 2, "%s: Output buffer overflow", client->get_iname());
+    msg( MSG_ERROR, "%s: Output buffer overflow", client->get_iname());
   } else if (nb == 0) {
     if (client->ELoop)
       client->ELoop->delete_child(client);

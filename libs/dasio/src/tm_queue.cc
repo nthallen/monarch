@@ -203,13 +203,13 @@ void tm_queue::retire_rows(tmq_ref *tmqd, int n_rows ) {
   if ( first < last ) {
     first += n_rows;
     if ( first > last )
-      msg( 4, "Underflow in retire_rows" );
+      msg( MSG_EXIT_ABNORM, "Underflow in retire_rows" );
   } else {
     first += n_rows;
     if ( first >= total_Qrows ) {
       first -= total_Qrows;
       if ( first > last )
-        msg( 4, "Underflow after wrap in retire_rows" );
+        msg( MSG_EXIT_ABNORM, "Underflow after wrap in retire_rows" );
     }
   }
   if (n_rows > 0) full = false;

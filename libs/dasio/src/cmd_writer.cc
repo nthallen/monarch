@@ -20,7 +20,7 @@ const char *Cmd_writer::CmdServerNode;
 Cmd_writer::Cmd_writer(const char *iname)
       : Client(iname, 128, "cmd", "server") {
   if (Cmd) {
-    msg(3, "%s: More than one Cmd_writer instance", iname);
+    msg(MSG_FATAL, "%s: More than one Cmd_writer instance", iname);
   } else {
     Cmd = this;
   }
@@ -68,7 +68,7 @@ bool Cmd_writer::app_input() {
         return true;
         // leave ret_code as NOREPLY
       } else {
-        msg(2, "%s: Syntax error at column %d", iname, code);
+        msg(MSG_ERROR, "%s: Syntax error at column %d", iname, code);
         ret_code = CMDREP_SYNERR+code;
       }
       break;
@@ -81,7 +81,7 @@ bool Cmd_writer::app_input() {
         return true;
         // leave ret_code as NOREPLY
       } else {
-        msg(2, "%s: %s", iname, buf+cp);
+        msg(MSG_ERROR, "%s: %s", iname, buf+cp);
         ret_code = CMDREP_EXECERR+code;
       }
       break;
@@ -142,7 +142,7 @@ int Cmd_writer::sendcmd(CI_Cmd_Mode mode, const char *cmdtext) {
   clen = snprintf( buf, CMD_MAX_COMMAND_IN+1, "[%s%s]%s",
     AppID.name, cmdopts, cmdtext );
   if ( clen > CMD_MAX_COMMAND_IN ) {
-    msg( 2, "Command too long" );
+    msg( MSG_ERROR, "Command too long" );
     return true;
   }
   iwrite(buf, clen);
@@ -192,7 +192,7 @@ void cic_options(int argcc, char **argvv) {
         DAS_IO::Cmd_writer::playback = 1;
         break;
       case '?':
-        msg(3, "Unknown option -%c", optopt);
+        msg(MSG_FATAL, "Unknown option -%c", optopt);
       default:
         break;
     }

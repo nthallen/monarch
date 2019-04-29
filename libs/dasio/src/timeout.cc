@@ -15,7 +15,7 @@ Timeout::Timeout() {
 void Timeout::Set( time_t secs, long msecs ) {
   int whole_secs;
   int rv = clock_gettime(CLOCK_REALTIME, &when);
-  if ( rv == -1 ) msg(3, "Error from clock_gettime(); '%s'", strerror(errno) );
+  if ( rv == -1 ) msg(MSG_FATAL, "Error from clock_gettime(); '%s'", strerror(errno) );
   when.tv_nsec += msecs*1000000L;
   when.tv_sec += secs;
   whole_secs = when.tv_nsec/1000000000L;

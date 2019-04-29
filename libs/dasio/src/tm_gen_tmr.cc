@@ -30,7 +30,7 @@ tm_gen_tmr::tm_gen_tmr(tm_generator *tm_gen)
       errno, strerror(errno));
   }
   if (fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK) == -1) {
-    msg(3, "fcntl() error %d: %s", errno,
+    msg(MSG_FATAL, "fcntl() error %d: %s", errno,
       strerror(errno));
   }
   flags = 0;

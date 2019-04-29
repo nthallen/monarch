@@ -192,6 +192,6 @@ int tm_gen_data::ready_to_quit() {
     dev_id = -1;
   }
   if ( data_attr.attr.count )
-    msg( -2, "Still waiting for tm_gen/data/%s", name );
+    msg( MSG_DEBUG, "Still waiting for tm_gen/data/%s", name );
   return data_attr.attr.count == 0;
 }
