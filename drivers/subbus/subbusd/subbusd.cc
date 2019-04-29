@@ -78,6 +78,7 @@ bool subbusd_client::protocol_input() {
       nb_exp = 0; break;
     case SBC_QUIT:
       SB_Shutdown = 1;
+      subbusd_core::subbusd->srvr.ELoop.set_loop_exit();
       nb_exp = 0; break;
     case SBC_INTATT:
       nb_exp = sizeof(subbusd_req_data2); break;
@@ -146,6 +147,7 @@ void subbusd_core::Start(Server::Srv_type type) {
 
 static void sigint_handler( int sig ) {
   SB_Shutdown = 1;
+  subbusd_core::subbusd->srvr.ELoop.set_loop_exit();
 }
 
 void subbusd_init_options(int argc, char **argv) {
