@@ -45,9 +45,11 @@ bool subbuspp::app_input() {
 }
 
 int subbuspp::send_to_subbusd( uint16_t command, void *data,
-		int data_size, uint16_t exp_type ) {
-  if (fd < 0)
-    msg( 4, "Attempt to access subbusd before initialization" );
+                int data_size, uint16_t exp_type ) {
+  if (fd < 0) {
+    msg( MSG_DBG(0), "Attempt to access subbusd before initialization" );
+    return SBS_NOT_CONNECTED;
+  }
   nl_assert(obuf_empty());
   expected_type = exp_type;
   int n_iov = 1;
@@ -66,6 +68,7 @@ int subbuspp::send_to_subbusd( uint16_t command, void *data,
   if (!iwritev(sb_iov, n_iov)) {
     ELoop->event_loop();
   }
+  if (fd < 0) return SBS_NOT_CONNECTED;
   nl_assert( nc >= sizeof(subbusd_rep_hdr_t) );
   if ( sb_reply->hdr.status < 0 ) 
     exp_type = SBRT_NONE;
@@ -142,9 +145,10 @@ int subbuspp::read_ack( uint16_t addr, uint16_t *data ) {
   switch ( rv ) {
     case SBS_ACK: rc = 1; break;
     case -ETIMEDOUT:
+    case SBS_NOT_CONNECTED:
     case SBS_NOACK: rc = 0; break;
     default:
-      msg( 4, "Invalid status response to read_ack(): %d",	rv );
+      msg( 4, "Invalid status response to read_ack(): %d", rv );
   }
   return rc;
 }
@@ -167,10 +171,11 @@ int subbuspp::write_ack(uint16_t addr, uint16_t data) {
   switch (rv ) {
     case SBS_ACK: rc = 1; break;
     case -ETIMEDOUT:
+    case SBS_NOT_CONNECTED:
     case SBS_NOACK: rc = 0; break;
     default:
       msg( 4, "Invalid status response to write_ack(): %d",
-	rv );
+          rv );
   }
   return rc;
 }

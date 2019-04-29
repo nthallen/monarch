@@ -55,9 +55,9 @@ unset zbase cfile
 export Experiment
 
 #----------------------------------------------------------------
-# saverun isn't legal when DG is running:
+# saverun isn't legal when collection is running:
 #----------------------------------------------------------------
-[ -e /net/$FlightNode/dev/huarp/$Experiment/DG/cmd ] &&
+[ -e /var/run/linkeng/$Experiment/tm_gen ] &&
   sv_error dg for Experiment $Experiment currently active
 
 #----------------------------------------------------------------
