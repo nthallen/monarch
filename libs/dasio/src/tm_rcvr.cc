@@ -1,5 +1,5 @@
 /** @file tm_rcvr.cc 
- *  To abstract some functionality from tm_client.
+ *  To abstract some functionality from tm_client and rdr.
  *  @date 2019-04-26
  */
 
