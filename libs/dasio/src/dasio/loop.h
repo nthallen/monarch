@@ -54,13 +54,13 @@ class Loop {
      */
     void delete_children();
     
-    // I don't think these functions are used currently, but they may become
-    // relevant in a server. In that case, though, I feel as though the interface
-    // should have an opportunity to cleanup before the child is deleted.
-    // I'll defer the definition until I come across the application.
-    // void delete_child(int fd_in);
-    // int update_flags(int fd_in, int flag);
-
+    /**
+     * dereference() all Interfaces on the PendingDeletion queue.
+     * @param final If asserted, will report an error if any queued
+     * Interface has a non-zero reference count.
+     */
+    void clear_delete_queue(bool final=false);
+    
     /**
      * Sets a bit in the global flags word. Selectees can set
      * a corresponding bit in their flags word to request

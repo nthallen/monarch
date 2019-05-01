@@ -167,7 +167,9 @@ namespace DAS_IO {
   Server::Server(const char *service, int passive_quit_threshold) :
       Unix(0), TCP(0), active_clients(0), total_clients(0),
       passive_exit_threshold(0), service(service),
-      has_shutdown_b(false)
+      has_shutdown_b(false),
+      shutdown_requested(false),
+      full_shutdown_requested(false)
       { }
 
   Server::~Server() {}
@@ -186,7 +188,6 @@ namespace DAS_IO {
       ELoop.add_child(TCP);
     }
     msg(0, "%s %s Starting", AppID.fullname, AppID.rev);
-    has_shutdown_b = true;
     do {
       ELoop.event_loop();
     } while (!ready_to_quit());
@@ -194,10 +195,21 @@ namespace DAS_IO {
   }
 
   bool Server::ready_to_quit() {
+    if (shutdown_requested && !has_shutdown_b) {
+      do_shutdown(full_shutdown_requested);
+      if (!full_shutdown_requested)
+        return true;
+    }
     return active_clients == 0;
   }
   
   void Server::Shutdown(bool full) {
+    shutdown_requested = true;
+    full_shutdown_requested = full;
+    ELoop.set_loop_exit();
+  }
+  
+  void Server::do_shutdown(bool full) {
     msg(MSG_DEBUG, "Shutting down listening sockets");
     if (Unix) {
       if (!Unix->ref_check(2)) {
@@ -217,10 +229,11 @@ namespace DAS_IO {
       ELoop.delete_child(TCP);
       TCP = 0;
     }
+    has_shutdown_b = true;
     if (full) {
-      ELoop.set_loop_exit();
       ELoop.delete_children();
     }
+    ELoop.set_loop_exit();
   }
 
   void Server::client_added() {
