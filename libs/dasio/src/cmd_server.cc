@@ -274,12 +274,12 @@ cmdif_rd::cmdif_rd(const char *name)
 }
 
 /**
- * Called from cmdif_rd::all_closed(). Needs to remove SubService
+ * Since the cmdif_rd interfaces are statically defined, this destructor
+ * is called during exit() processing. Needs to remove SubService
  * from CmdServer and also from the rdrs list (or cmdif_rd::all_closed()
  * could handle that, since it already has the position)
  */
 cmdif_rd::~cmdif_rd() {
-  msg( -2, "Shutting down reader %s", name);
   nl_assert(turfs.empty());
   if (DAS_IO::CmdServer)
     DAS_IO::CmdServer->rm_subservice(svcsname);
