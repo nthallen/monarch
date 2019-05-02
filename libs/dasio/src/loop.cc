@@ -98,9 +98,6 @@ void Loop::event_loop() {
   do {
     TimeoutAccumulator TA;
     InterfaceList::const_iterator Sp;
-
-    // msg(0, "Loop: %sempty, %d children", S.empty() ? "" : "not ", S.size());
-    clear_delete_queue();
     
     FD_ZERO(&readfds);
     FD_ZERO(&writefds);
@@ -176,6 +173,7 @@ void Loop::event_loop() {
         }
       }
     }
+    clear_delete_queue();
   } while (keep_going && !loop_exit);
   clear_delete_queue();
 }
