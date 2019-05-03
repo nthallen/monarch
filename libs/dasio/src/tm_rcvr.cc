@@ -3,7 +3,9 @@
  *  @date 2019-04-26
  */
 
+#include <string.h>
 #include "dasio/tm_rcvr.h"
+#include "nl.h"
 
 namespace DAS_IO {
   
@@ -13,7 +15,7 @@ namespace DAS_IO {
   unsigned int tm_rcvr::majf_row;
 
   /* Constructor method */
-  tm_rcvr::tm_rcvr(DAS_IO::Interace* interface) : interface(interface) {
+  tm_rcvr::tm_rcvr(Interface* interface) : interface(interface) {
     tm_expect_hdr();
     tm_info_ready = false;
     tm_msg = (tm_msg_t *)interface->buf;
@@ -65,12 +67,12 @@ namespace DAS_IO {
               seek_tmid();
               return;
           }
-          tm_state = tm_state_DATA;
-          if ( toread > bufsize )
+          tm_state = TM_STATE_DATA;
+          if ( toread > interface->bufsize )
             msg( MSG_FATAL, "%sRecord size %d exceeds allocated buffer size %d",
-              context(), toread, bufsize );
+              context(), toread, interface->bufsize );
           break;
-        case tm_state_DATA:
+        case TM_STATE_DATA:
           switch ( tm_msg->hdr.tm_type ) {
             case TMTYPE_INIT:
               process_init();
@@ -133,7 +135,7 @@ namespace DAS_IO {
 
   void tm_rcvr::seek_tmid() {
     tm_hdrw_t *tm_id;
-    unsigned char *ubuf = (unsigned char *)buf;
+    unsigned char *ubuf = (unsigned char *)interface->buf;
     int i;
     for (i = 1; i < nc; ++i) {
       if (ubuf[i] == (TMHDR_WORD & 0xFF)) {

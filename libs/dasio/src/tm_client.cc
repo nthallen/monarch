@@ -28,9 +28,9 @@ void tm_set_srcnode(char *nodename) {
  * Constructor method.
  */
 tm_client::tm_client(int bufsize, bool fast) 
-  : DAS_IO::Client("tm_client", bufsize, "tm_bfr", (fast ? "fast" : "optimized")) {
+  : DAS_IO::Client("tm_client", bufsize, "tm_bfr", (fast ? "fast" : "optimized")), tm_rcvr(this) {
     nl_assert(buf);
-    nc = 0;
+    // nc = 0;
     // tm_quit = false;
   }
 
@@ -55,7 +55,7 @@ bool tm_client::app_connected() {
 }
 
 bool tm_client::process_eof() {
-  tm_quit = true;
+  // tm_quit = true;
   return true;
 }
 
@@ -63,32 +63,7 @@ bool tm_client::process_eof() {
  *  Edited 2019 March 7 for le-dasng
  */
 bool tm_client::app_input() {
-  if (tm_quit) return true;
-  /* int nb;
-  do {
-    nb = (bfr_fd == -1) ? 0 :
-        ::read( bfr_fd, buf + nc, bufsize-nc);
-    if ( nb == -1 ) {
-      if ( errno == EAGAIN ) return; // must be non-blocking
-      else report_err( 1, "tm_client::read error from read(): %s",
-        strerror(errno));
-    }
-    if (nb <= 0) {
-      nc = 0;
-      tm_expect_hdr();
-      // toread = sizeof(tm_hdr_t);
-      if ( process_eof() ) return;
-    }
-    if ( tm_quit ) return; // possible if set from an outside command
-  } while (nb == 0 );
-  nc += nb; */
-  if ( nc >= toread ) {
-    if (tm_msg->hdr.tm_id != TMHDR_WORD) {
-      seek_tmid();
-    } else {
-      process_message();
-    }
-  }
+  process_message();
   return false;
 }
 

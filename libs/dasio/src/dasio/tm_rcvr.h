@@ -5,13 +5,14 @@
 #include "tm.h"
 #include "interface.h"
 
-class tm_rcvr {
+class DAS_IO::tm_rcvr {
   public:
     tm_rcvr(DAS_IO::Interface* interface);
     virtual ~tm_rcvr();
     void load_tmdac(char *path);
     tm_msg_t *tm_msg;
     static unsigned int next_minor_frame, majf_row, minf_row;
+    enum tm_state_t {TM_STATE_HDR, TM_STATE_DATA};
   protected:
     void process_message();
     virtual void process_init();
@@ -29,11 +30,11 @@ class tm_rcvr {
     DAS_IO::Interface* interface;
     int nQrows;
     // int bufsize;
-    int tm_state;
+    tm_state_t tm_state;
     unsigned int bytes_read; /// number of bytes currently in buf
     unsigned int toread; /// number of bytes needed before next action
     bool tm_info_ready;
     // char *buf;
     // void init(int bufsize_in, const char *srcfile, bool non_block);
     
-}
+};

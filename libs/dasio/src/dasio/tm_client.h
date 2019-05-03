@@ -5,8 +5,8 @@
 #define TM_CLIENT_H_INCLUDED
 #include <stdio.h>
 #include "tm.h"
-#include "client.h"
 #include "tm_rcvr.h"
+#include "client.h"
 
 #ifdef __cplusplus
 
@@ -27,9 +27,6 @@ class tm_client : public DAS_IO::Client, public DAS_IO::tm_rcvr {
     // bool tm_quit;
     virtual bool process_eof();
 };
-
-#define TM_STATE_HDR 0
-#define tm_state_DATA 1
 
 class ext_tm_client : public tm_client {
   public:
