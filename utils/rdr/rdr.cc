@@ -86,10 +86,11 @@ int main( int argc, char **argv ) {
   if (nQrows < 2) nQrows = 2;
   Reader *rdr = new Reader(nQrows, nQrows/2, RDR_BUFSIZE, opt_basepath );
   
-  rdr->Server::ELoop.add_child(rdr);
+  rdr->ELoop.add_child(rdr);
   /* Added arguments: low_water=0, collection=false */
-  rdr->tm_generator::init(nQrows, 0, false);
-  rdr->control_loop();
+  rdr->init(nQrows, 0, false);
+  // rdr->control_loop();
+  rdr->Start(Server::Srv_Unix);
   msg(0, "Shutdown");
 }
 
@@ -113,15 +114,18 @@ Reader::Reader(int nQrows, int low_water, int bufsize, const char *path) :
   autostart = opt_autostart;
   locked_by_file = 0;
   locked_by_line = 0;
+  if (process_eof()) {
+    msg( MSG_FATAL, "No input data found." );
+  }
 }
 
-static void pt_create( void *(*func)(void *), pthread_t *thread, void *arg ) {
+/* static void pt_create( void *(*func)(void *), pthread_t *thread, void *arg ) {
   int rv = pthread_create( thread, NULL, func, arg );
   if ( rv != 0 )
     msg(MSG_FATAL,"pthread_create failed: %s", strerror(errno));
-}
+} */
 
-static void pt_join( pthread_t thread, const char *which ) {
+/* static void pt_join( pthread_t thread, const char *which ) {
   void *value;
   int rv = pthread_join(thread, &value);
   if ( rv != 0 )
@@ -130,7 +134,7 @@ static void pt_join( pthread_t thread, const char *which ) {
   else if ( value != 0 )
     msg( MSG_ERROR, "pthread_join(%s) returned non-zero value", which );
   else msg( MSG_DEBUG, "%s shutdown", which );
-}
+} */
 
 void Reader::control_loop() {
   pthread_t ot, it;
@@ -381,17 +385,17 @@ void Reader::process_data() {
 // This is absolutely a first cut. It will stop at the first sign of trouble (i.e. a missing file)
 // What I will want is a record of first file and last file and/or first time/last time
 bool Reader::process_eof() {
-  if ( tm_client::bfr_fd != -1 ) {
-    ::close(tm_client::bfr_fd);
-    tm_client::bfr_fd = -1;
+  if ( fd != -1 ) {
+    ::close(fd);
+    fd = -1;
   }
   if (mlf->index < opt_end_file ) {
     int nlrl = set_response(0);
-    tm_client::bfr_fd = mlf_next_fd( mlf );
+    fd = mlf_next_fd( mlf );
     set_response(nlrl);
   }
   // need to alter, as tm_client::bfr_fd isn't being used anymore
-  if ( tm_client::bfr_fd == -1 ) {
+  if ( fd == -1 ) {
     if ( opt_autoquit )
       //RQP->pulse();
     lock(__FILE__,__LINE__);
@@ -409,7 +413,7 @@ bool Reader::process_eof() {
 
 const char *Reader::context() {
   static char buf[80];
-  if (tm_client::bfr_fd == -1) return "";
+  if (fd == -1) return "";
   snprintf(buf, 80, "%s: ", mlf->fpath);
   return &buf[0];
 }
