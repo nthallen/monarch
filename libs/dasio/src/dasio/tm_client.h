@@ -5,7 +5,8 @@
 #define TM_CLIENT_H_INCLUDED
 #include <stdio.h>
 #include "tm.h"
-#include "dasio/client.h"
+#include "client.h"
+#include "tm_rcvr.h"
 
 #ifdef __cplusplus
 
@@ -18,11 +19,9 @@ class tm_client : public DAS_IO::Client, public DAS_IO::tm_rcvr {
   public:
     tm_client(int bufsize, bool fast = true);
     // void resize_buffer(int bufsize_in);
-    void load_tmdac(char *path);
     static char *srcnode;
   protected:
-    virtual ~tm_client();
-    int bfr_fd;
+    // int bfr_fd;
     bool app_input();
     bool app_connected();
     // bool tm_quit;
@@ -37,7 +36,6 @@ class ext_tm_client : public tm_client {
     inline ext_tm_client(int bufsize_in, bool fast = false) :
       tm_client(bufsize_in, fast) {}
   protected:
-    virtual ~ext_tm_client();
     void process_data();
 };
 

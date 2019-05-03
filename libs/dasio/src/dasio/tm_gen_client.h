@@ -7,7 +7,7 @@ THIS FILE IS NO LONGER NEEDED
 //#include <sys/dispatch.h> //QNX
 //#include <sys/resmgr.h> //QNX
 #include <list>
-#include "dasio/server.h"
+#include "server.h"
 
 /**
   tm_gen_client is a virtual base class for clients of tm_gen_dispatch. The main service provided is quit coordination.

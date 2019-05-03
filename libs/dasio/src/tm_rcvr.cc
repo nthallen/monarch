@@ -1,20 +1,30 @@
 /** @file tm_rcvr.cc 
- *  To abstract some functionality from tm_client and rdr.
+ *  To abstract some functionality from tm_client and rdr, among others.
  *  @date 2019-04-26
  */
 
 #include "dasio/tm_rcvr.h"
 
 namespace DAS_IO {
+  
   /* Use currently ambiguous. */
   unsigned int tm_rcvr::next_minor_frame;
   unsigned int tm_rcvr::minf_row;
   unsigned int tm_rcvr::majf_row;
 
   /* Constructor method */
-  tm_rcvr::tm_rcvr(DAS_IO::Interace* interface) : interface(interface) {}
+  tm_rcvr::tm_rcvr(DAS_IO::Interace* interface) : interface(interface) {
+    tm_expect_hdr();
+    tm_info_ready = false;
+    tm_msg = (tm_msg_t *)interface->buf;
+  }
 
   tm_rcvr::~tm_rcvr() {}
+
+  void tm_rcvr::load_tmdac(char *path) {
+    ::load_tmdac(path);
+    init_tm_type();
+  }
 
   void tm_rcvr::process_message() {
     nc = interface->nc;

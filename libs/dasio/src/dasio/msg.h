@@ -3,8 +3,8 @@
 
 #include <stdarg.h>
 #include "nl.h"
-#include "dasio/client.h"
-#include "dasio/loop.h"
+#include "client.h"
+#include "loop.h"
 
 class memo_client: public DAS_IO::Client {
   public:

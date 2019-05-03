@@ -1,5 +1,6 @@
 /** \file tm_client.cc
- * TM Client Clases
+ * TM Client Classes
+ * @date 2019-05-03 (date gutted)
  */
 #include <fcntl.h>
 #include <unistd.h>
@@ -30,13 +31,8 @@ tm_client::tm_client(int bufsize, bool fast)
   : DAS_IO::Client("tm_client", bufsize, "tm_bfr", (fast ? "fast" : "optimized")) {
     nl_assert(buf);
     nc = 0;
-    tm_expect_hdr();
-    tm_info_ready = false;
-    tm_quit = false;
-    tm_msg = (tm_msg_t *)buf;
+    // tm_quit = false;
   }
-
-tm_client::~tm_client() {}
 
 /**
  * Added 2019 April 3
@@ -104,10 +100,5 @@ bool tm_client::app_input() {
     // report_err(/* 3,
        // */"Memory allocation failure in tm_client::resize_buffer");
 // }
-
-void tm_client::load_tmdac(char *path) {
-  ::load_tmdac(path);
-  init_tm_type();
-}
 
 }

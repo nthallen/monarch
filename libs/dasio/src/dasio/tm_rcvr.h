@@ -2,10 +2,14 @@
  * @file tm_rcvr.h
  */
 
+#include "tm.h"
+#include "interface.h"
+
 class tm_rcvr {
   public:
     tm_rcvr(DAS_IO::Interface* interface);
     virtual ~tm_rcvr();
+    void load_tmdac(char *path);
     tm_msg_t *tm_msg;
     static unsigned int next_minor_frame, majf_row, minf_row;
   protected:
