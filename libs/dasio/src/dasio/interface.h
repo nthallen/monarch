@@ -12,11 +12,13 @@ namespace DAS_IO {
   
 class Loop;
 class Authenticator;
+class tm_rcvr;
 
 /**
  */
 class Interface {
   friend class Authenticator;
+  friend class tm_rcvr;
   public:
     Interface(const char *name, int bufsz);
     /**
