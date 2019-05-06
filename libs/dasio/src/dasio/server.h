@@ -138,8 +138,13 @@ namespace DAS_IO {
        */
       void Start(Srv_type which);
       /**
-       * Initiates the server shutdown sequence, closing the listening
-       * sockets and signaling the Loop to close all connections.
+       * Initiates the server shutdown sequence in a signal-safe way.
+       * Processing is delayed until the event loop exits, at which time
+       * do_shutdown() is called. If full is asserted, all Interfaces in
+       * the event loop will be deleted. Otherwise Server::Start() will
+       * exit without emptying the event loop. That can be useful when
+       * applications wish to more carefully manage the cleanup process.
+       * @param full 
        */
       void Shutdown(bool full = true);
       /** Called by Serverside_client objects on creation.
@@ -177,6 +182,13 @@ namespace DAS_IO {
        * The default condition is active_clients == 0
        */
       virtual bool ready_to_quit();
+      /**
+       * Performs actual shutdown processes requested via Shutdown().
+       * Closes all open listening sockets and optionally closes all
+       * interfaces in the Loop.
+       * @param full Deletes all Loop Interfaces if true.
+       */
+      void do_shutdown(bool full);
       /** The number of currently connected clients */
       int active_clients;
       /** The total number of clients that have connected */
@@ -186,6 +198,8 @@ namespace DAS_IO {
       SubServices Subs;
       const char *service;
       bool has_shutdown_b;
+      bool shutdown_requested;
+      bool full_shutdown_requested;
   };
 
 }

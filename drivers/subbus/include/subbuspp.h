@@ -109,11 +109,13 @@ class subbuspp : Client {
      * written into the array pointed to by the data argument.
      * If the request returns more data than requested, and error
      * will be reported (MSG_ERROR).
-     * @return Zero on success. If return value is negative, it is the
+     * @return The return value from send_to_subbusd().
+     * If return value is negative, it is the
      * error code returned by the subbusd driver and no values are reported.
-     * If it is positive (SBS_NOACK), it indicates that although the
+     * If it is positive SBS_NOACK (2), it indicates that although the
      * requested number of values are reported, at least one of the
      * values did not have an acknowledge, and a zero value was reported.
+     * SBS_ACK(1) means everything is fine.
      */
     int mread_subbus_nw(subbus_mread_req *req, uint16_t *data,
                           uint16_t *nwords);

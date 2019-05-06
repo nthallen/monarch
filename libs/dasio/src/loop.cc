@@ -79,6 +79,16 @@ void Loop::set_gflag( unsigned gflag_index ) {
   gflags |= Interface::gflag(gflag_index);
 }
 
+void Loop::clear_delete_queue(bool final) {
+  while (!PendingDeletion.empty()) {
+    Interface *P = PendingDeletion.front();
+    if (P->ref_check(2))
+      msg(MSG_ERROR,"%s: ref_count > 1 in clear_delete_queue(final)", P->get_iname());
+    Interface::dereference(P); // delete(P);
+    PendingDeletion.pop_front();
+  }
+}
+
 void Loop::event_loop() {
   int keep_going = 1;
   int width = 0;
@@ -88,14 +98,6 @@ void Loop::event_loop() {
   do {
     TimeoutAccumulator TA;
     InterfaceList::const_iterator Sp;
-
-    // msg(0, "Loop: %sempty, %d children", S.empty() ? "" : "not ", S.size());
-    while (!PendingDeletion.empty()) {
-      Interface *P = PendingDeletion.front();
-      // msg(0, "Deleting Interface %d", P->get_iname());
-      Interface::dereference(P); // delete(P);
-      PendingDeletion.pop_front();
-    }
     
     FD_ZERO(&readfds);
     FD_ZERO(&writefds);
@@ -171,7 +173,9 @@ void Loop::event_loop() {
         }
       }
     }
-  } while (!PendingDeletion.empty() || (keep_going && !loop_exit));
+    clear_delete_queue();
+  } while (keep_going && !loop_exit);
+  clear_delete_queue();
 }
 
 void Loop::set_loop_exit() {

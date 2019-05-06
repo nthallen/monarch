@@ -662,13 +662,15 @@ subbusd_CAN::~subbusd_CAN() {}
 void subbusd_CAN::init_subbus() {
   // setup socket
   CAN = new CAN_socket();
+  CAN->reference();
   CAN->setup();
   subbusd_core::subbusd->srvr.ELoop.add_child(CAN);
 }
 
 void subbusd_CAN::shutdown_subbus() {
   // teardown socket
-  subbusd_core::subbusd->srvr.ELoop.delete_child(CAN);
+  Interface::dereference(CAN);
+  // subbusd_core::subbusd->srvr.ELoop.delete_child(CAN);
   CAN = 0;
 }
 

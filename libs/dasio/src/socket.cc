@@ -133,8 +133,8 @@ void Socket::connect() {
           if (::connect(fd, (struct sockaddr *)&local,
                 SUN_LEN(&local)) < 0) {
             if (errno != EINPROGRESS) {
-              msg(MSG_ERROR, "connect() failure in DAS_IO::Socket(%s): %s", iname,
-                std::strerror(errno));
+              msg(MSG_ERROR, "connect() failure in DAS_IO::Socket(%s):%s: %s", iname,
+                unix_name->get_svc_name(), std::strerror(errno));
               if (reset()) {
                 msg(MSG_FATAL, "%s: Connect failure fatal after all retries", iname);
               }
