@@ -92,6 +92,7 @@ namespace DAS_IO {
           } else if ( nc == toread ) {
             interface->consume(nc);
           }
+          nc = interface->nc;
           tm_expect_hdr();
           break;
         default: msg(MSG_EXIT_ABNORM, "%sInvalid tm_state %d", context(), tm_state);

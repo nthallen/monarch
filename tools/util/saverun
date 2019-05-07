@@ -63,35 +63,35 @@ export Experiment
 #----------------------------------------------------------------
 # Look for the flight node
 #----------------------------------------------------------------
-typeset FN=$FlightNode date run
-unset FlightDir
-[ ! -d /net/$FN/ ] && FN=""
-if [ -z "$FN" ]; then
-  if [ -d "$AltDir" ]; then
-    FlightDir=$AltDir
-  else
-    #----------------------------------------------------------------
-    # Wait for the flight node
-    #----------------------------------------------------------------
-    echo "saverun: Waiting for flight computer '$FlightNode' to boot"
-    while [ ! -d /net/$FlightNode/ ]; do
-      waitfor /net/$FlightNode/ 2>/dev/null
-    done
-  fi
-fi
-unset FN
-[ -z "$FlightDir" ] && FlightDir=/net/$FlightNode$HomeDir
+# typeset FN=$FlightNode date run
+# unset FlightDir
+# [ ! -d /net/$FN/ ] && FN=""
+# if [ -z "$FN" ]; then
+  # if [ -d "$AltDir" ]; then
+    # FlightDir=$AltDir
+  # else
+    # #----------------------------------------------------------------
+    # # Wait for the flight node
+    # #----------------------------------------------------------------
+    # echo "saverun: Waiting for flight computer '$FlightNode' to boot"
+    # while [ ! -d /net/$FlightNode/ ]; do
+      # waitfor /net/$FlightNode/ 2>/dev/null
+    # done
+  # fi
+# fi
+# unset FN
+# [ -z "$FlightDir" ] && FlightDir=/net/$FlightNode$HomeDir
 
-[ -d $FlightDir ] ||
-  sv_error Unable to locate flight directory $FlightDir
+# [ -d $FlightDir ] ||
+  # sv_error Unable to locate flight directory $FlightDir
 
-if [ ! -w $FlightDir -o ! -x $FlightDir ]; then
-  echo "saverun: Insufficient permissions for flight directory $FlightDir" >&2
-  ls -ld $FlightDir >&2
-  exit 1
-fi
-cd $FlightDir
-OLDDIR=~-
+# if [ ! -w $FlightDir -o ! -x $FlightDir ]; then
+  # echo "saverun: Insufficient permissions for flight directory $FlightDir" >&2
+  # ls -ld $FlightDir >&2
+  # exit 1
+# fi
+# cd $FlightDir
+# OLDDIR=~-
 
 #----------------------------------------------------------------
 # Fix the disk if required
@@ -121,27 +121,27 @@ fi
 # Ask about RunType [FPCJ]
 if [ -n "$RunType" ]; then
   case "$RunType" in
-	raw/flight) : ;;
-	raw/preflt) : ;;
-	raw/cal) : ;;
-	raw/data) : ;;
-	raw/junk) : ;;
-	*) RunType='ask';;
+    raw/flight) : ;;
+    raw/preflt) : ;;
+    raw/cal) : ;;
+    raw/data) : ;;
+    raw/junk) : ;;
+    *) RunType='ask';;
   esac
   if [ "$RunType" = "ask" ]; then
-	echo "Run Type (Flight/Preflight/Calibration/Data/Junk) [Data]: \\c"
-	read j
-	case $j in
-	  [Ff]*) RunType='raw/flight'
-	         [ "$Dircksum" = no ] || Dircksum=yes;;
-	  [Pp]*) RunType='raw/preflt';;
-	  [Cc]*) RunType='raw/cal';;
-	  [Jj]*) RunType='raw/junk';;
-	  *) RunType='raw/data';;
-	esac
+    echo "Run Type (Flight/Preflight/Calibration/Data/Junk) [Data]: \\c"
+    read j
+    case $j in
+      [Ff]*) RunType='raw/flight'
+             [ "$Dircksum" = no ] || Dircksum=yes;;
+      [Pp]*) RunType='raw/preflt';;
+      [Cc]*) RunType='raw/cal';;
+      [Jj]*) RunType='raw/junk';;
+      *) RunType='raw/data';;
+    esac
   fi
   [ -d $RunType ] || mkdir -p $RunType ||
-	nl_error "Unable to create directory '$RunType'"
+    sv_error "Unable to create directory '$RunType'"
   unset j
 else
   RunType='.'
@@ -159,7 +159,7 @@ fi
 while true; do
   found=no
   for dir in . raw/flt raw/preflt raw/cal raw/data raw/junk; do
-	[ -d $dir/$date.$run ] && found=yes
+    [ -d $dir/$date.$run ] && found=yes
   done
   [ $found = no ] && break;
   let run=$run+1
@@ -176,7 +176,7 @@ else
   mv -v $logdirs $RunDir
   [ -n "$LogFiles" ] || LogFiles="*.log"
   for i in $LogFiles; do
-	[ -f $i ] && mv -v $i $RunDir
+    [ -f $i ] && mv -v $i $RunDir
   done
 fi
 unset tocopy
@@ -190,16 +190,16 @@ VERSION=1.0
 [ ! -d "bin/$VERSION/" ] && VERSION=crnt
 for i in '*.pcm' tm.dac VERSION; do
   for j in $i bin/$VERSION/$i; do
-	[ -f $j ] && tocopy="$tocopy $j" && break;
+    [ -f $j ] && tocopy="$tocopy $j" && break;
   done
 done
 if [ -n "$SaveFiles" ]; then
   for i in $SaveFiles; do
-	if [ -f $i ]; then
-	  tocopy="$tocopy $i"
-	else
-	  echo saverun: Unable to locate SaveFiles $i >&2
-	fi
+    if [ -f $i ]; then
+      tocopy="$tocopy $i"
+    else
+      echo saverun: Unable to locate SaveFiles $i >&2
+    fi
   done
 fi
 if [ -n "$tocopy" ]; then
@@ -209,41 +209,41 @@ unset tocopy i
 
 # Source files: two possible locations. Probably only one will
 # be used.
-[ -d SaveSrc ] && cp -crv SaveSrc $RunDir/SaveSrc
-[ -d bin/$VERSION/Base ] && cp -crv bin/$VERSION/Base $RunDir/Base
+# [ -d SaveSrc ] && cp -rv SaveSrc $RunDir/SaveSrc
+[ -d bin/$VERSION/Base ] && cp -rv bin/$VERSION/Base $RunDir/Base
 
 # Handle RunLog
 if [ -n "$RunLog" ]; then
   if [ -f "$RunDir/$RunLog" ]; then
-	RunDesc=`cat $RunDir/$RunLog`
+    RunDesc=`cat $RunDir/$RunLog`
   else
-	echo "\nPlease enter a description of this run/flight,"
-	echo "terminated with a single '.' or end of file:"
-	RunDesc=''
-	echo ">> \c"
-	while read j; do
-	  [ "$j" = "." ] && break
-	  RunDesc="$RunDesc$j\n"
-	  echo ">> \c"
-	done
-	echo "\n"
-	echo "$RunDesc\c" >$RunDir/$RunLog
+    echo "\nPlease enter a description of this run/flight,"
+    echo "terminated with a single '.' or end of file:"
+    RunDesc=''
+    echo ">> \c"
+    while read j; do
+      [ "$j" = "." ] && break
+      RunDesc="$RunDesc$j\n"
+      echo ">> \c"
+    done
+    echo "\n"
+    echo "$RunDesc\c" >$RunDir/$RunLog
   fi
   if [ "$WebLog" = "yes" ]; then
-	RunLog newrun $RunDir $RunDesc
+    RunLog newrun $RunDir $RunDesc
   fi
 fi
 
 case $Dircksum in
   maybe)
-	echo "Should we run dircksum? [n/y]: \\c"
-	read j
-	case $j in
-	  [yY]*) Dircksum=yes;;
-	esac;;
+    echo "Should we run dircksum? [n/y]: \\c"
+    read j
+    case $j in
+      [yY]*) Dircksum=yes;;
+    esac;;
 esac
 [ "$Dircksum" = "yes" ] && dircksum -wv $RunDir
 
-cd $OLDDIR
-unset OLDDIR hascrntrun date run
+# cd $OLDDIR
+# unset OLDDIR hascrntrun date run
 unset -f sv_error
