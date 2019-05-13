@@ -19,6 +19,7 @@ class tm_gen_bfr : public Client {
   public:
     tm_gen_bfr(bool collection);
     inline bool iwritev(struct iovec *iov, int nparts, const char *where);
+    /** 2019-05-13 This override exists to make this function public */
     inline bool obuf_empty() {
       return Interface::obuf_empty();
     }

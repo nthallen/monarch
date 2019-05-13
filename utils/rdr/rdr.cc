@@ -42,6 +42,52 @@ static unsigned long opt_end_file = ULONG_MAX;
 
  */
 
+rdr_mlf::rdr_mlf(Reader* rdr_ptr) : DAS_IO::Interface("rdr", 4096*3), rdr_ptr(rdr_ptr) {
+  set_binary_mode();
+  char mlf_base[PATH_MAX];
+  snprintf(mlf_base, PATH_MAX, "%s/LOG", path );
+  mlf = mlf_init( 3, 60, 0, mlf_base, "dat", NULL );
+  mlf_set_index( mlf, opt_start_file );
+}
+
+void rdr_mlf::setup() {
+  
+}
+
+// Return non-zero where there is nothing else to read
+// This is absolutely a first cut. It will stop at the first sign of trouble (i.e. a missing file)
+// What I will want is a record of first file and last file and/or first time/last time
+bool rdr_mlf::process_eof() {
+  if ( fd != -1 ) {
+    ::close(fd);
+    fd = -1;
+  }
+  if (mlf->index < opt_end_file ) {
+    int nlrl = set_response(0);
+    fd = mlf_next_fd( mlf );
+    set_response(nlrl);
+  }
+  // need to alter, as tm_client::bfr_fd isn't being used anymore
+  if ( fd == -1 ) {
+    if ( opt_autoquit )
+      //RQP->pulse();
+    lock(__FILE__,__LINE__);
+    // is dc_quit == tm_quit?
+    //commented out for compilation
+    /* if ( !tm_quit ) {
+      it_blocked = IT_BLOCKED_EOF;
+      unlock();
+      sem_wait(&it_sem);
+    } else unlock(); */
+    return true;
+  }
+  return false;
+}
+
+bool Reader::ready_to_quit() {
+  
+}
+
 void rdr_init( int argc, char **argv ) {
   int c;
 
@@ -95,7 +141,7 @@ int main( int argc, char **argv ) {
 }
 
 Reader::Reader(int nQrows, int low_water, int bufsize, const char *path) :
-    tm_client( bufsize, false) {
+    tm_rcvr(this) {
   it_blocked = 0;
   ot_blocked = 0;
   if ( sem_init( &it_sem, 0, 0) || sem_init( &ot_sem, 0, 0 ) )
@@ -106,10 +152,6 @@ Reader::Reader(int nQrows, int low_water, int bufsize, const char *path) :
             strerror(errno));
   init_tm_type();
   nl_assert(input_tm_type == TMTYPE_DATA_T3);
-  char mlf_base[PATH_MAX];
-  snprintf(mlf_base, PATH_MAX, "%s/LOG", path );
-  mlf = mlf_init( 3, 60, 0, mlf_base, "dat", NULL );
-  mlf_set_index( mlf, opt_start_file );
   regulated = opt_regulate;
   autostart = opt_autostart;
   locked_by_file = 0;
@@ -136,20 +178,20 @@ Reader::Reader(int nQrows, int low_water, int bufsize, const char *path) :
   else msg( MSG_DEBUG, "%s shutdown", which );
 } */
 
-void Reader::control_loop() {
-  pthread_t ot, it;
-  if ( opt_autoquit ) {
-    //RQP = new Rdr_quit_pulse(this);
-    //RQP->attach();
-  }
-  pt_create( ::output_thread, &ot, this );
-  pt_create( ::input_thread, &it, this );
-  //must be replaced
-  //tm_generator::operate();
-  Start(Srv_Unix);
-  pt_join( it, "input_thread" );
-  pt_join( ot, "output_thread" );
-}
+// void Reader::control_loop() {
+  // pthread_t ot, it;
+  // if ( opt_autoquit ) {
+    // //RQP = new Rdr_quit_pulse(this);
+    // //RQP->attach();
+  // }
+  // pt_create( ::output_thread, &ot, this );
+  // pt_create( ::input_thread, &it, this );
+  // //must be replaced
+  // //tm_generator::operate();
+  // Start(Srv_Unix);
+  // pt_join( it, "input_thread" );
+  // pt_join( ot, "output_thread" );
+// }
 
 void Reader::lock(const char *by, int line) {
   int rv = pthread_mutex_lock(&tmq_mutex);
@@ -217,17 +259,17 @@ void Reader::event(enum tm_gen_event evt) {
   unlock();
 }
 
-void *input_thread(void *Reader_ptr ) {
-  Reader *DGr = (Reader *)Reader_ptr;
-  return DGr->input_thread();
-}
+// void *input_thread(void *Reader_ptr ) {
+  // Reader *DGr = (Reader *)Reader_ptr;
+  // return DGr->input_thread();
+// }
 
-void *Reader::input_thread() {
-  //commented out for compilation
-  //while (!tm_quit)
-  //  read();
-  return NULL;
-}
+// void *Reader::input_thread() {
+  // //commented out for compilation
+  // //while (!tm_quit)
+  // //  read();
+  // return NULL;
+// }
 
 void *output_thread(void *Reader_ptr ) {
   Reader *DGr = (Reader *)Reader_ptr;
@@ -238,7 +280,7 @@ void *Reader::output_thread() {
   for (;;) {
     lock(__FILE__,__LINE__);
     //commented out for compilation
-    if ( quit /* || tm_quit*/ ) {
+    if ( quit /* || tm_quit */ ) {
       unlock();
       break;
     }
@@ -379,36 +421,6 @@ void Reader::process_data() {
       sem_wait(&it_sem);
     }
   }
-}
-
-// Return non-zero where there is nothing else to read
-// This is absolutely a first cut. It will stop at the first sign of trouble (i.e. a missing file)
-// What I will want is a record of first file and last file and/or first time/last time
-bool Reader::process_eof() {
-  if ( fd != -1 ) {
-    ::close(fd);
-    fd = -1;
-  }
-  if (mlf->index < opt_end_file ) {
-    int nlrl = set_response(0);
-    fd = mlf_next_fd( mlf );
-    set_response(nlrl);
-  }
-  // need to alter, as tm_client::bfr_fd isn't being used anymore
-  if ( fd == -1 ) {
-    if ( opt_autoquit )
-      //RQP->pulse();
-    lock(__FILE__,__LINE__);
-    // is dc_quit == tm_quit?
-    //commented out for compilation
-    /* if ( !tm_quit ) {
-      it_blocked = IT_BLOCKED_EOF;
-      unlock();
-      sem_wait(&it_sem);
-    } else unlock(); */
-    return true;
-  }
-  return false;
 }
 
 const char *Reader::context() {

@@ -14,7 +14,18 @@ using namespace DAS_IO;
 
 //class Rdr_quit_pulse;
 
-class Reader : public tm_generator, public tm_client {
+class rdr_mlf : public Interface {
+  public:
+    rdr_mlf(Reader* rdr_ptr); //TBD
+    void setup(); //TBD
+  protected:
+    Reader* rdr_ptr;
+    bool protocol_input();
+    bool process_eof();
+    mlf_def_t *mlf;
+};
+
+class Reader : public tm_generator, public tm_rcvr {
   public:
     Reader(int nQrows, int low_water, int bufsize, const char *path);
     void event(enum tm_gen_event evt);
@@ -25,7 +36,7 @@ class Reader : public tm_generator, public tm_client {
   protected:
     void process_tstamp();
     void process_data();
-    bool  process_eof();
+    bool process_eof();
     void lock(const char *by = 0, int line = -1);
     void unlock();
     const char *context();
@@ -35,11 +46,12 @@ class Reader : public tm_generator, public tm_client {
     sem_t ot_sem;
     pthread_mutex_t tmq_mutex;
     bool have_tstamp;
+    bool ready_to_quit();
   private:
-    mlf_def_t *mlf;
     //Rdr_quit_pulse *RQP;
     const char *locked_by_file;
     int locked_by_line;
+    rdr_mlf* mlf;
 };
 
 /* class Rdr_quit_pulse : public tmg_dispatch_client {
