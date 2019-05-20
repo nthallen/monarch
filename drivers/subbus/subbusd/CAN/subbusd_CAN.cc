@@ -397,7 +397,11 @@ void CAN_socket::setup() {
 }
 
 bool CAN_socket::iwritten(int nb) {
-  if (obuf_empty()) process_requests();
+  if (obuf_empty()) {
+    process_requests();
+  } else {
+    msg(MSG_DBG(1), "%s: CAN_socket obuf not empty", iname);
+  }
 }
 
 const char *CAN_socket::ascii_escape() {
