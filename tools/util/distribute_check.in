@@ -39,9 +39,11 @@ if [ "$rhost" = "$tgt_ver_dir" -a "$rdir" = "$tgt_ver_dir" ]; then
     [ -d "$rdir/Base" ] || nl_error "Directories not created"
   fi
 
-  [ -f $rdir/$pcmfile ] &&
-    ! cmp --silent $rdir/$pcmfile $pcmfile &&
-    nl_error "Telemetry format changed without VERSION change"
+  if [ -f $rdir/$pcmfile ]; then
+    echo "OK:YES"
+  else
+    echo "OK:NO"
+  fi
 elif [ "$rhost:$rdir" != "$tgt_ver_dir" -o -z "$rhost" -o -z "$rdir" ]; then
   nl_error "Invalid remote syntax: '$tgt_ver_dir'"
 else
@@ -52,7 +54,7 @@ else
       scp $tgt_ver_dir/$pcmfile ./$pcmfile.tmp
       [ -f ./$pcmfile.tmp ] || nl_error "Failed to copy $pcmfile from target"
       VER_OK=yes
-      cmp --silent $pcmfile $pcmfile.tmp || VER_OK=no
+      cmp -s $pcmfile $pcmfile.tmp || VER_OK=no
       rm -f $pcmfile.tmp
       [ $VER_OK = yes ] ||
         nl_error "Telemetry format changed without VERSION change";;

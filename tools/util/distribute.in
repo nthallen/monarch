@@ -73,7 +73,7 @@ case $tgt in
   *)[ ! -d "$tgt" ] && nl_error "Target '$tgt' is not a directory"
     if [ $HAVE_SUDO = yes ]; then
       if [ `id -u` != 0 ]; then
-        exec @SUDO_EXE@ /usr/local/bin/distribute $*
+        exec @SUDO_EXE@ /usr/local/bin/distribute $tgt $*
       fi
       [ -n "$SUDO_USER" ] || nl_error Cannot determine user
       ans=`@SUDO_EXE@ -u $SUDO_USER @SHELL_EXE@ -c "if [ -w \"$tgt\" ]; then echo yes; else echo no; fi"`
