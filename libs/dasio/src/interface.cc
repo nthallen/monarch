@@ -164,6 +164,10 @@ bool Interface::iwrite(const char *str) {
   return iwrite(str, strlen(str));
 }
 
+void Interface::iwrite_cancel() {
+  n_wiov = 0;
+}
+
 /**
  * The default implementation does nothing.
  */
