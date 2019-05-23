@@ -604,9 +604,8 @@ void CAN_socket::process_requests() {
       : "reqs.empty()");
     return;
   }
-  can_request req;
   request_processing = true;
-  req = reqs.front();
+  can_request req = reqs.front();
   /* A single request might require multiple packets */
   while (!request_pending && obuf_empty()) {
     uint8_t req_seq_no = req.msg->sb_can_seq;
