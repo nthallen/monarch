@@ -397,10 +397,8 @@ void CAN_socket::setup() {
 }
 
 bool CAN_socket::iwritten(int nb) {
-  if (obuf_empty()) {
+  if (obuf_empty() && !request_pending) {
     process_requests();
-  } else {
-    msg(MSG_DBG(1), "%s: CAN_socket obuf not empty", iname);
   }
 }
 
@@ -606,11 +604,9 @@ void CAN_socket::process_requests() {
       : "reqs.empty()");
     return;
   }
-  can_request req = reqs.front();
   request_processing = true;
-  if (!request_pending && !obuf_empty()) {
-    msg(MSG_DBG(0), "process_requests() with !request_pending && !obuf_empty()");
-  }
+  can_request req = reqs.front();
+  /* A single request might require multiple packets */
   while (!request_pending && obuf_empty()) {
     uint8_t req_seq_no = req.msg->sb_can_seq;
     uint16_t offset = req_seq_no ? (req_seq_no*7 - 1) : 0;
@@ -647,10 +643,22 @@ void CAN_socket::process_requests() {
     }
     #ifdef HAVE_LINUX_CAN_H
       iwrite((const char *)&reqfrm, CAN_MTU);
+      if (!obuf_empty()) {
+        report_err("%s: process_requests() !obuf_empty() after iwrite", iname);
+        iwrite_cancel();
+        reqs.pop_front();
+        memset(req.msg->buf, 0, req.msg->bufsz-rep_recd);
+        req.clt->request_complete(SBS_NOACK, req.msg->bufsz);
+        // req.clt->request_complete(SBS_TIMEOUT, 0);
+        request_processing = false;
+        return;
+      }
       if (request_pending) {
         msg(MSG_DBG(1), "%s: Setting timeout", iname);
         TO.Set(0,10);
         flags |= DAS_IO::Interface::Fl_Timeout;
+      } else {
+        msg(MSG_DBG(1), "%s: Request resolved immediately", iname);
       }
     #else
       // This is development/debugging code
