@@ -587,6 +587,7 @@ bool CAN_socket::closed() {
 void CAN_socket::enqueue_request(can_msg_t *can_msg, uint8_t *rep_buf, int buflen,
         subbusd_CAN_client *clt) {
   nl_assert(can_msg);
+  msg(MSG_DBG(0), "enqueuing: %d", reqs.size());
   reqs.push_back(can_request(can_msg, rep_buf, buflen, clt));
   process_requests();
 }
@@ -599,9 +600,17 @@ void CAN_socket::enqueue_request(can_msg_t *can_msg, uint8_t *rep_buf, int bufle
  *    may be required (req.msg->sb_can_seq > 0)
  */
 void CAN_socket::process_requests() {
-  if (request_pending || request_processing || reqs.empty()) return;
+  if (request_pending || request_processing || reqs.empty()) {
+    msg(MSG_DBG(0), "process_requests() no action: %s",
+      request_pending ? "pending" : request_processing ? "processing"
+      : "reqs.empty()");
+    return;
+  }
   can_request req = reqs.front();
   request_processing = true;
+  if (!request_pending && !obuf_empty()) {
+    msg(MSG_DBG(0), "process_requests() with !request_pending && !obuf_empty()");
+  }
   while (!request_pending && obuf_empty()) {
     uint8_t req_seq_no = req.msg->sb_can_seq;
     uint16_t offset = req_seq_no ? (req_seq_no*7 - 1) : 0;
