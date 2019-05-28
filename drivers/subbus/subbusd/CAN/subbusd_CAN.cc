@@ -650,6 +650,7 @@ void CAN_socket::process_requests() {
         memset(req.msg->buf, 0, req.msg->bufsz-rep_recd);
         req.clt->request_complete(SBS_NOACK, req.msg->bufsz);
         // req.clt->request_complete(SBS_TIMEOUT, 0);
+        request_pending = false;
         request_processing = false;
         return;
       }
