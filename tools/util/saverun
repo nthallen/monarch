@@ -210,8 +210,8 @@ unset tocopy i
 
 # Source files: two possible locations. Probably only one will
 # be used.
-[ -d SaveSrc ] && cp -crv SaveSrc $RunDir/SaveSrc
-[ -d bin/$VERSION/Base ] && cp -crv bin/$VERSION/Base $RunDir/Base
+[ -d SaveSrc ] && cp -rv SaveSrc $RunDir/SaveSrc
+[ -d bin/$VERSION/Base ] && cp -rv bin/$VERSION/Base $RunDir/Base
 
 # Handle RunLog
 if [ -n "$RunLog" ]; then
