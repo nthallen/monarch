@@ -27,6 +27,7 @@ install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/distribute_check
   genui
   genui_chk
+  saverun
   DESTINATION bin)
 
 install(FILES
