@@ -121,6 +121,11 @@ class Interface {
      */
     bool iwritev(struct iovec *iov, int nparts);
     /**
+     * Cancels a pending iwrite() request, allowing the caller to free
+     * the output buffer.
+     */
+    void iwrite_cancel();
+    /**
      * @brief Called whenever enqueued data is written to the interface.
      * @param nb The number of bytes written
      * @return true if the event loop should terminate.

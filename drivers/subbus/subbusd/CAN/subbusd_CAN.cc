@@ -397,7 +397,9 @@ void CAN_socket::setup() {
 }
 
 bool CAN_socket::iwritten(int nb) {
-  if (obuf_empty()) process_requests();
+  if (obuf_empty() && !request_pending) {
+    process_requests();
+  }
 }
 
 const char *CAN_socket::ascii_escape() {
@@ -583,6 +585,7 @@ bool CAN_socket::closed() {
 void CAN_socket::enqueue_request(can_msg_t *can_msg, uint8_t *rep_buf, int buflen,
         subbusd_CAN_client *clt) {
   nl_assert(can_msg);
+  msg(MSG_DBG(0), "enqueuing: %d", reqs.size());
   reqs.push_back(can_request(can_msg, rep_buf, buflen, clt));
   process_requests();
 }
@@ -595,9 +598,15 @@ void CAN_socket::enqueue_request(can_msg_t *can_msg, uint8_t *rep_buf, int bufle
  *    may be required (req.msg->sb_can_seq > 0)
  */
 void CAN_socket::process_requests() {
-  if (request_pending || request_processing || reqs.empty()) return;
-  can_request req = reqs.front();
+  if (request_pending || request_processing || reqs.empty()) {
+    msg(MSG_DBG(0), "process_requests() no action: %s",
+      request_pending ? "pending" : request_processing ? "processing"
+      : "reqs.empty()");
+    return;
+  }
   request_processing = true;
+  can_request req = reqs.front();
+  /* A single request might require multiple packets */
   while (!request_pending && obuf_empty()) {
     uint8_t req_seq_no = req.msg->sb_can_seq;
     uint16_t offset = req_seq_no ? (req_seq_no*7 - 1) : 0;
@@ -634,10 +643,23 @@ void CAN_socket::process_requests() {
     }
     #ifdef HAVE_LINUX_CAN_H
       iwrite((const char *)&reqfrm, CAN_MTU);
+      if (!obuf_empty()) {
+        report_err("%s: process_requests() !obuf_empty() after iwrite", iname);
+        iwrite_cancel();
+        reqs.pop_front();
+        memset(req.msg->buf, 0, req.msg->bufsz-rep_recd);
+        req.clt->request_complete(SBS_NOACK, req.msg->bufsz);
+        // req.clt->request_complete(SBS_TIMEOUT, 0);
+        request_pending = false;
+        request_processing = false;
+        return;
+      }
       if (request_pending) {
         msg(MSG_DBG(1), "%s: Setting timeout", iname);
         TO.Set(0,10);
         flags |= DAS_IO::Interface::Fl_Timeout;
+      } else {
+        msg(MSG_DBG(1), "%s: Request resolved immediately", iname);
       }
     #else
       // This is development/debugging code

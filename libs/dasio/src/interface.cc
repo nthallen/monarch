@@ -130,7 +130,7 @@ bool Interface::iwrite_check() {
   bool rv = false;
   if (!obuf_empty()) {
     int ntr = writev(fd, wiov, n_wiov);
-    if (ntr < 0 && errno != EAGAIN) {
+    if (ntr < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
       flags &= ~Fl_Write;
       return(iwrite_error(errno));
     }
@@ -162,6 +162,10 @@ bool Interface::iwrite(const std::string &s) {
 
 bool Interface::iwrite(const char *str) {
   return iwrite(str, strlen(str));
+}
+
+void Interface::iwrite_cancel() {
+  n_wiov = 0;
 }
 
 /**

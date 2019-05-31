@@ -67,31 +67,32 @@ export Experiment
 # unset FlightDir
 # [ ! -d /net/$FN/ ] && FN=""
 # if [ -z "$FN" ]; then
-  # if [ -d "$AltDir" ]; then
-    # FlightDir=$AltDir
-  # else
-    # #----------------------------------------------------------------
-    # # Wait for the flight node
-    # #----------------------------------------------------------------
-    # echo "saverun: Waiting for flight computer '$FlightNode' to boot"
-    # while [ ! -d /net/$FlightNode/ ]; do
-      # waitfor /net/$FlightNode/ 2>/dev/null
-    # done
-  # fi
+#   if [ -d "$AltDir" ]; then
+#     FlightDir=$AltDir
+#   else
+#     #----------------------------------------------------------------
+#     # Wait for the flight node
+#     #----------------------------------------------------------------
+#     echo "saverun: Waiting for flight computer '$FlightNode' to boot"
+#     while [ ! -d /net/$FlightNode/ ]; do
+#       waitfor /net/$FlightNode/ 2>/dev/null
+#     done
+#   fi
 # fi
 # unset FN
 # [ -z "$FlightDir" ] && FlightDir=/net/$FlightNode$HomeDir
-
+# 
 # [ -d $FlightDir ] ||
-  # sv_error Unable to locate flight directory $FlightDir
-
+#   sv_error Unable to locate flight directory $FlightDir
+# 
 # if [ ! -w $FlightDir -o ! -x $FlightDir ]; then
-  # echo "saverun: Insufficient permissions for flight directory $FlightDir" >&2
-  # ls -ld $FlightDir >&2
-  # exit 1
+#   echo "saverun: Insufficient permissions for flight directory $FlightDir" >&2
+#   ls -ld $FlightDir >&2
+#   exit 1
 # fi
 # cd $FlightDir
 # OLDDIR=~-
+OLDDIR=.
 
 #----------------------------------------------------------------
 # Fix the disk if required
@@ -129,7 +130,7 @@ if [ -n "$RunType" ]; then
     *) RunType='ask';;
   esac
   if [ "$RunType" = "ask" ]; then
-    echo "Run Type (Flight/Preflight/Calibration/Data/Junk) [Data]: \\c"
+    echo -n "Run Type (Flight/Preflight/Calibration/Data/Junk) [Data]: "
     read j
     case $j in
       [Ff]*) RunType='raw/flight'
@@ -209,7 +210,7 @@ unset tocopy i
 
 # Source files: two possible locations. Probably only one will
 # be used.
-# [ -d SaveSrc ] && cp -rv SaveSrc $RunDir/SaveSrc
+[ -d SaveSrc ] && cp -rv SaveSrc $RunDir/SaveSrc
 [ -d bin/$VERSION/Base ] && cp -rv bin/$VERSION/Base $RunDir/Base
 
 # Handle RunLog
@@ -217,17 +218,18 @@ if [ -n "$RunLog" ]; then
   if [ -f "$RunDir/$RunLog" ]; then
     RunDesc=`cat $RunDir/$RunLog`
   else
-    echo "\nPlease enter a description of this run/flight,"
+    echo
+    echo "Please enter a description of this run/flight,"
     echo "terminated with a single '.' or end of file:"
     RunDesc=''
-    echo ">> \c"
+    echo -n ">> "
     while read j; do
       [ "$j" = "." ] && break
       RunDesc="$RunDesc$j\n"
-      echo ">> \c"
+      echo -n ">> "
     done
-    echo "\n"
-    echo "$RunDesc\c" >$RunDir/$RunLog
+    echo
+    echo -n "$RunDesc" | sed -e 's/\\n/\n/g' >$RunDir/$RunLog
   fi
   if [ "$WebLog" = "yes" ]; then
     RunLog newrun $RunDir $RunDesc
@@ -236,7 +238,7 @@ fi
 
 case $Dircksum in
   maybe)
-    echo "Should we run dircksum? [n/y]: \\c"
+    echo -n "Should we run dircksum? [n/y]: "
     read j
     case $j in
       [yY]*) Dircksum=yes;;
