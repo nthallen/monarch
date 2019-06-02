@@ -13,37 +13,39 @@
 using namespace DAS_IO;
 
 //class Rdr_quit_pulse;
+class Reader;
 
 class rdr_mlf : public Interface {
   public:
-    rdr_mlf(Reader* rdr_ptr); //TBD
-    void setup(); //TBD
-  protected:
-    Reader* rdr_ptr;
-    bool protocol_input();
+    rdr_mlf(const char *path);
+    inline void set_reader(Reader *rdr) { rdr_ptr = rdr; }
     bool process_eof();
+  protected:
+    bool protocol_input();
+    Reader* rdr_ptr;
     mlf_def_t *mlf;
 };
 
 class Reader : public tm_generator, public tm_rcvr {
+  friend class rdr_mlf;
   public:
-    Reader(int nQrows, int low_water, int bufsize, const char *path);
+    Reader(int nQrows, int low_water, int bufsize, rdr_mlf *mlf);
     void event(enum tm_gen_event evt);
-    void *input_thread();
-    void *output_thread();
-    void control_loop();
     void service_row_timer();
+    // void *input_thread();
+    // void *output_thread();
+    // void control_loop();
   protected:
     void process_tstamp();
     void process_data();
-    bool process_eof();
+    inline void process_message() { tm_rcvr::process_message(); }
     void lock(const char *by = 0, int line = -1);
     void unlock();
-    const char *context();
-    int it_blocked;
-    sem_t it_sem;
-    int ot_blocked;
-    sem_t ot_sem;
+    // const char *context();
+    // int it_blocked;
+    // sem_t it_sem;
+    // int ot_blocked;
+    // sem_t ot_sem;
     pthread_mutex_t tmq_mutex;
     bool have_tstamp;
     bool ready_to_quit();
@@ -70,18 +72,18 @@ class Reader : public tm_generator, public tm_rcvr {
 extern "C" {
 #endif
 
-  void *input_thread(void *Reader_ptr);
-  void *output_thread(void *Reader_ptr);
+  // void *input_thread(void *Reader_ptr);
+  // void *output_thread(void *Reader_ptr);
   void rdr_init( int argc, char **argv );
 
 #ifdef __cplusplus
 };
 #endif
 
-#define OT_BLOCKED_STOPPED 1
-#define OT_BLOCKED_TIME 2
-#define OT_BLOCKED_DATA 3
-#define IT_BLOCKED_DATA 1
-#define IT_BLOCKED_EOF 2
+// #define OT_BLOCKED_STOPPED 1
+// #define OT_BLOCKED_TIME 2
+// #define OT_BLOCKED_DATA 3
+// #define IT_BLOCKED_DATA 1
+// #define IT_BLOCKED_EOF 2
 
 #endif

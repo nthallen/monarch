@@ -1,0 +1,9 @@
+#! /bin/bash
+touch looping
+while [ -f looping ]; do
+  make CXXFLAGS=-fdiagnostics-color=always 2>&1 | less -R
+  [ ${PIPESTATUS[0]} == 0 ] && break
+done
+rm -f looping
+
+
