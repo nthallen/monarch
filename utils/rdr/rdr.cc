@@ -78,6 +78,8 @@ bool rdr_mlf::process_eof() {
       return true;
     }
     flags = 0;
+  } else {
+    flags = Interface::Fl_Read;
   }
   return false;
 }
@@ -138,12 +140,13 @@ int main( int argc, char **argv ) {
   
   /* Added arguments: low_water=0, collection=false */
   rdr->init(nQrows, 0, false);
-  rdr->Start(Server::Srv_Unix);
+  rdr->start();
   msg(0, "Shutdown");
 }
 
-Reader::Reader(int nQrows, int low_water, int bufsize, rdr_mlf *mlf) :
-    tm_rcvr(mlf) {
+Reader::Reader(int nQrows, int low_water, int bufsize, rdr_mlf *mlf)
+    : tm_rcvr(mlf),
+      mlf(mlf) {
   // it_blocked = 0;
   // ot_blocked = 0;
   // if ( sem_init( &it_sem, 0, 0) || sem_init( &ot_sem, 0, 0 ) )
@@ -216,6 +219,11 @@ void Reader::unlock() {
 
 void Reader::service_row_timer() {
   if (regulated) transmit_data(true);
+}
+
+void Reader::start() {
+  if (autostart) execute("TMc");
+  Start(Srv_Unix);
 }
 
 void Reader::event(enum tm_gen_event evt) {

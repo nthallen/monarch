@@ -1,6 +1,6 @@
 include /usr/local/share/linkeng/appgen.mk
 CPPFLAGS=-I/usr/local/include
-CXXFLAGS=-Wall -g
+CXXFLAGS+=-Wall -g
 CFLAGS=-Wall -g
 LDFLAGS=-L/usr/local/lib -Wl,-rpath -Wl,/usr/local/lib
 CXX=g++

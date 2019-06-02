@@ -32,6 +32,8 @@ class Reader : public tm_generator, public tm_rcvr {
     Reader(int nQrows, int low_water, int bufsize, rdr_mlf *mlf);
     void event(enum tm_gen_event evt);
     void service_row_timer();
+    /** Handles autostart and then calls Start(Srv_Unix) */
+    void start();
     // void *input_thread();
     // void *output_thread();
     // void control_loop();
