@@ -12,7 +12,10 @@ typedef enum { Cmd_Send, Cmd_Test, Cmd_Send_Quiet } CI_Cmd_Mode;
 #include "cmdalgo.h"
 
 namespace DAS_IO {
-  
+
+/**
+ * @brief Class for command server clients
+ */
 class Cmd_writer : public Client {
   public:
     Cmd_writer(const char *iname);
