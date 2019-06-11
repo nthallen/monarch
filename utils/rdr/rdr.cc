@@ -147,10 +147,6 @@ int main( int argc, char **argv ) {
 Reader::Reader(int nQrows, int low_water, int bufsize, rdr_mlf *mlf)
     : tm_rcvr(mlf),
       mlf(mlf) {
-  // it_blocked = 0;
-  // ot_blocked = 0;
-  // if ( sem_init( &it_sem, 0, 0) || sem_init( &ot_sem, 0, 0 ) )
-    // msg( MSG_FATAL, "Semaphore initialization failed" );
   int rv = pthread_mutex_init( &tmq_mutex, NULL );
   if ( rv )
     msg( MSG_FATAL, "Mutex initialization failed: %s",
@@ -168,38 +164,6 @@ Reader::Reader(int nQrows, int low_water, int bufsize, rdr_mlf *mlf)
   }
   ELoop.add_child(mlf);
 }
-
-/* static void pt_create( void *(*func)(void *), pthread_t *thread, void *arg ) {
-  int rv = pthread_create( thread, NULL, func, arg );
-  if ( rv != 0 )
-    msg(MSG_FATAL,"pthread_create failed: %s", strerror(errno));
-} */
-
-/* static void pt_join( pthread_t thread, const char *which ) {
-  void *value;
-  int rv = pthread_join(thread, &value);
-  if ( rv != 0 )
-    msg( MSG_ERROR, "pthread_join(%d, %s) returned %d: %s",
-       thread, which, rv, strerror(rv) );
-  else if ( value != 0 )
-    msg( MSG_ERROR, "pthread_join(%s) returned non-zero value", which );
-  else msg( MSG_DEBUG, "%s shutdown", which );
-} */
-
-// void Reader::control_loop() {
-  // pthread_t ot, it;
-  // if ( opt_autoquit ) {
-    // //RQP = new Rdr_quit_pulse(this);
-    // //RQP->attach();
-  // }
-  // pt_create( ::output_thread, &ot, this );
-  // pt_create( ::input_thread, &it, this );
-  // //must be replaced
-  // //tm_generator::operate();
-  // Start(Srv_Unix);
-  // pt_join( it, "input_thread" );
-  // pt_join( ot, "output_thread" );
-// }
 
 void Reader::lock(const char *by, int line) {
   int rv = pthread_mutex_lock(&tmq_mutex);
@@ -252,86 +216,6 @@ void Reader::event(enum tm_gen_event evt) {
   }
   unlock();
 }
-
-// void *input_thread(void *Reader_ptr ) {
-  // Reader *DGr = (Reader *)Reader_ptr;
-  // return DGr->input_thread();
-// }
-
-// void *Reader::input_thread() {
-  // //commented out for compilation
-  // //while (!tm_quit)
-  // //  read();
-  // return NULL;
-// }
-
-// void *output_thread(void *Reader_ptr ) {
-  // Reader *DGr = (Reader *)Reader_ptr;
-  // return DGr->output_thread();
-// }
-
-// void *Reader::output_thread() {
-  // for (;;) {
-    // lock(__FILE__,__LINE__);
-    // //commented out for compilation
-    // if ( quit /* || tm_quit */ ) {
-      // unlock();
-      // break;
-    // }
-    // if ( ! started ) {
-      // ot_blocked = OT_BLOCKED_STOPPED;
-      // unlock();
-      // sem_wait(&ot_sem);
-    // } else {
-      // if ( regulated ) {
-        // // timed loop
-        // for (;;) {
-          // int nr;
-          // ot_blocked = OT_BLOCKED_TIME;
-          // unlock();
-          // sem_wait(&ot_sem);
-          // lock(__FILE__,__LINE__);
-          // //commented out for compilation
-          // int breakout = !started || !regulated /* || tm_quit */;
-          // unlock();
-          // if (breakout) break;
-          // transmit_data(1); // only one row
-          // nr = allocate_rows(NULL);
-          // // if (allocate_rows(NULL) >= tmq_low_water) {
-          // // The problem with this is that when the
-          // // queue is wrapping, the largest contiguous
-          // // block does not change.
-          // if ( (nr >= tmq_low_water) ||
-               // (nr > 0 && first <= last) ) {
-            // lock(__FILE__,__LINE__);
-            // if ( it_blocked == IT_BLOCKED_DATA ) {
-              // it_blocked = 0;
-              // sem_post(&it_sem);
-            // }
-            // unlock();
-          // }
-          // lock(__FILE__,__LINE__); /* needed in the inner loop */
-        // }
-      // } else {
-        // // untimed loop
-        // for (;;) {
-          // //commented out for compilation
-          // int breakout = !started /* || tm_quit */ || regulated;
-          // if ( it_blocked == IT_BLOCKED_DATA ) {
-            // it_blocked = 0;
-            // sem_post(&it_sem);
-          // }
-          // unlock();
-          // if (breakout) break;
-          // transmit_data(0);
-          // lock(__FILE__,__LINE__);
-        // }
-      // }
-    // }
-  // }
-  // // signal parent thread that we are quitting
-  // return NULL;
-// }
 
 void Reader::process_tstamp() {
   if ( tm_info.t_stmp.mfc_num == tm_msg->body.ts.mfc_num &&
@@ -394,11 +278,6 @@ void Reader::process_data() {
   while ( n_rows ) {
     unsigned char *dest;
     lock(__FILE__,__LINE__);
-    //commented out for compilation
-    //if ( tm_quit ) {
-    //  unlock();
-    //  return;
-    //}
     int n_room = allocate_rows(&dest);
     if ( n_room ) {
       unlock();
@@ -410,19 +289,10 @@ void Reader::process_data() {
       n_rows -= n_room;
       MFCtr += n_room;
     } else {
-      // it_blocked = IT_BLOCKED_DATA;
       unlock();
-      // sem_wait(&it_sem);
     }
     if (!regulated) transmit_data(false);
   }
 }
-
-// const char *Reader::context() {
-  // static char buf[80];
-  // if (mlf->fd == -1) return "";
-  // snprintf(buf, 80, "%s: ", mlf->fpath);
-  // return &buf[0];
-// }
 
 void tminitfunc() {}
