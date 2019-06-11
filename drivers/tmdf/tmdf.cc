@@ -3,28 +3,18 @@
 #include <fcntl.h>
 #include <sys/statvfs.h>
 #include <time.h>
-#include "SerSelector.h"
-#include "nortlib.h"
+#include "nl.h"
 #include "oui.h"
 #include "tmdf.h"
 #include "tmdf_int.h"
 
+using namespace DAS_IO;
+
+DAS_IO::AppID_t DAS_IO::AppID("tmdf", "TMDF", "V1.0");
+
 const char *df_path = "/";
 const char *tmdf_name = "TMDF";
 TMDF_t TMDF;
-
-class TMDF_Selectee : public TM_Selectee {
-  public:
-    TMDF_Selectee( unsigned seconds, const char *name, void *data,
-	  unsigned short size );
-    ~TMDF_Selectee();
-    int ProcessData(int flag);
-  private:
-    int fd;
-    unsigned secs;
-    time_t next;
-    void report_size();
-};
 
 TMDF_Selectee::TMDF_Selectee( unsigned seconds, const char *name,
 	void *data, unsigned short size )
@@ -33,8 +23,7 @@ TMDF_Selectee::TMDF_Selectee( unsigned seconds, const char *name,
   next = 0;
   secs = seconds;
   if (fd < 0) {
-    nl_error( 2, "Error opening %s: %s", df_path,
-      strerror(errno) );
+    msg( MSG_ERROR, "Error opening %s: %s", df_path, strerror(errno) );
   } else {
     report_size();
   }
@@ -49,7 +38,7 @@ void TMDF_Selectee::report_size() {
   if (fd >= 0) {
     struct statvfs buf;
     if (fstatvfs(fd, &buf) ) {
-      nl_error(2, "fstatvfs reported %s", strerror(errno));
+      msg(MSG_ERROR, "fstatvfs reported %s", strerror(errno));
     } else {
       double fdsize = buf.f_blocks * buf.f_frsize;
       double used = buf.f_blocks - buf.f_bavail;
@@ -65,13 +54,13 @@ void TMDF_Selectee::report_size() {
         fdsize /= 1024;
         units = "KB";
       }
-      nl_error(0, "Drive '%s' total size: %.1lf %s: In use: %.1lf %%",
+      msg(0, "Drive '%s' total size: %.1lf %s: In use: %.1lf %%",
         df_path, fdsize, units, used);
     }
   }
 }
 
-int TMDF_Selectee::ProcessData(int flag) {
+bool TMDF_Selectee::tm_sync() {
   time_t now = time(NULL);
   if ( next == 0 || now >= next ) {
     next = now + secs;
@@ -80,29 +69,28 @@ int TMDF_Selectee::ProcessData(int flag) {
     if (fd >= 0) {
       struct statvfs buf;
       if (fstatvfs(fd, &buf) ) {
-	nl_error(2, "fstatvfs reported %s", strerror(errno));
-	TMDF.usage = 65535;
+        msg(MSG_ERROR, "fstatvfs reported %s", strerror(errno));
+        TMDF.usage = 65535;
       } else {
-	double blks;
-	blks = (buf.f_blocks - buf.f_bavail);
-	blks = blks * 65534. / buf.f_blocks;
-	TMDF.usage = (blks > 65534) ? 65534 :
-	  ((unsigned short)blks);
-	nl_error(-2, "f_blocks = %d  f_bavail = %d",
-	  buf.f_blocks, buf.f_bavail );
+        double blks;
+        blks = (buf.f_blocks - buf.f_bavail);
+        blks = blks * 65534. / buf.f_blocks;
+        TMDF.usage = (blks > 65534) ? 65534 : ((unsigned short)blks);
+        msg(MSG_DEBUG, "f_blocks = %d  f_bavail = %d", buf.f_blocks, buf.f_bavail );
       }
     } else {
       TMDF.usage = 65535;
     }
   } else {
-    nl_error(-3, "next: %lu  now: %lu", next, now );
+    //msg(-3, "next: %lu  now: %lu", next, now );
+    msg(MSG_DBG(3), "next: %lu  now: %lu", next, now );
   }
-  return TM_Selectee::ProcessData(flag);
+  return false;
 }
 
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
-  nl_error(0, "Startup");
+  msg(0, "Startup");
   { Selector S;
     Cmd_Selectee QC;
     TMDF_Selectee TM( 60, tmdf_name, &TMDF, sizeof(TMDF));
@@ -110,6 +98,5 @@ int main(int argc, char **argv) {
     S.add_child(&TM);
     S.event_loop();
   }
-  nl_error(0, "Terminating");
+  msg(0, "Terminating");
 }
-
