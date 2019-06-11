@@ -35,7 +35,7 @@ void csv_col::dsval_resize(int newsize) {
   dsval_size = newsize;
   newbuf = (char *)realloc(dsval, dsval_size);
   if (newbuf == NULL) {
-    msg(3, "Memory allocation failure in csv_col::set(double)");
+    msg(MSG_FATAL, "Memory allocation failure in csv_col::set(double)");
   }
   dsval = newbuf;
 }
@@ -82,7 +82,7 @@ void csv_col::set(const char *tval) {
     is_num = false;
   if (!is_num) {
     if (!warned) {
-      msg(1,"Column '%s' reported at least one non-numeric value: '%s'",
+      msg(MSG_WARN,"Column '%s' reported at least one non-numeric value: '%s'",
         cname, tval);
       warned = true;
     }
@@ -118,7 +118,7 @@ void csv_file::init() {
   } else {
     fp = fopen( filename, "w" );
     if (fp == NULL)
-      msg(3, "Cannot open output file %s", filename);
+      msg(MSG_FATAL, "Cannot open output file %s", filename);
   }
 }
 
@@ -141,11 +141,11 @@ csv_file::~csv_file() {
 void csv_file::init_col(unsigned int col_num, const char *colname,
           const char *fmt) {
   if (time_set)
-    msg(3, "csv_file::init_col() after time_set");
+    msg(MSG_FATAL, "csv_file::init_col() after time_set");
   if (col_num >= cols.size())
-    msg(3, "col_num %d out of range in csv_file::init_col", col_num);
+    msg(MSG_FATAL, "col_num %d out of range in csv_file::init_col", col_num);
   if (cols[col_num])
-    msg(3, "Illegal redefinition of column %d in csv_file::init_col",
+    msg(MSG_FATAL, "Illegal redefinition of column %d in csv_file::init_col",
       col_num);
   if (col_num == 0 && fmt == 0) fmt = "%.0lf";
   cols[col_num] = new csv_col(colname, fmt);
@@ -207,16 +207,16 @@ void csv_file::flush_row() {
  */
 void csv_file::set_col(unsigned int col_num, double dval) {
   if (col_num < 1 || col_num >= cols.size()) {
-    msg(3, "col_num %u out of range in csv_file::set_col", col_num);
+    msg(MSG_FATAL, "col_num %u out of range in csv_file::set_col", col_num);
   } else if (cols[col_num] == NULL) {
-    msg(3, "column %u undefined in csv_file::set_col", col_num);
+    msg(MSG_FATAL, "column %u undefined in csv_file::set_col", col_num);
   } else cols[col_num]->set(dval);
 }
 
 void csv_file::set_col(unsigned int col_num, const char *sval) {
   if (col_num < 1 || col_num >= cols.size()) {
-    msg(3, "col_num %u out of range in csv_file::set_col", col_num);
+    msg(MSG_FATAL, "col_num %u out of range in csv_file::set_col", col_num);
   } else if (cols[col_num] == NULL) {
-    msg(3, "column %u undefined in csv_file::set_col", col_num);
+    msg(MSG_FATAL, "column %u undefined in csv_file::set_col", col_num);
   } else cols[col_num]->set(sval);
 }

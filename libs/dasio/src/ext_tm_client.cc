@@ -3,6 +3,6 @@
 
 namespace DAS_IO {
 
-ext_tm_client::~ext_tm_client() {}
+// ext_tm_client::~ext_tm_client() {}
 
 }

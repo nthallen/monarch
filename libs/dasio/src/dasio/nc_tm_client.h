@@ -4,7 +4,7 @@
  * Header file for ncurses TM clients
  */
 
-#include "dasio/tm_client.h"
+#include "tm_client.h"
 
 namespace DAS_IO {
   

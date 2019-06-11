@@ -1,7 +1,7 @@
 <package> rdr
-<include> msg tm_client
+<include> msg oui
 <include> "rdr.h"
-<follow> msg tm_client
+<follow> msg
 
 <opts> "aAP:kqF:L:"
 <sort>

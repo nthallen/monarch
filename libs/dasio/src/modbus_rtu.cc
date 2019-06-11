@@ -59,7 +59,7 @@ namespace DAS_IO { namespace Modbus {
           msg(0, "%s: Request was: %s", iname, pending->ascii_escape());
         consume(nc);
       } else if (!crc_ok(buf, pending->rep_sz)) {
-        msg(2, "%s: %s on reply", iname,
+        msg(MSG_ERROR, "%s: %s on reply", iname,
           nc > pending->rep_sz ? "CRC error + extra chars" : "CRC error");
         msg(0, "%s: Request was: %s", iname, pending->ascii_escape());
         consume(nc);
@@ -156,7 +156,7 @@ namespace DAS_IO { namespace Modbus {
     uint8_t devID = dev->get_devID();
     modbus_device *other = find_device(devID);
     if (other) {
-      msg(3, "%s: Device with ID %d already exists", iname, devID);
+      msg(MSG_FATAL, "%s: Device with ID %d already exists", iname, devID);
     } else {
       devices.push_back(dev);
       dev->set_MB(this);
@@ -317,7 +317,7 @@ namespace DAS_IO { namespace Modbus {
         req_sz = 8;
         rep_sz = 8;
         if (count != 1) {
-          msg(1, "%s: Invalid count %d for function code %d: must be 1",
+          msg(MSG_WARN, "%s: Invalid count %d for function code %d: must be 1",
             device->get_iname(), count, function_code);
           this->count = 1;
         }
@@ -335,14 +335,14 @@ namespace DAS_IO { namespace Modbus {
           case 14:
             if ((address == 0 && count == 0) ||
                 (address != 0 && count != 1)) {
-              msg(2, "%s: Invalid count/data for Func/Sub 8/%d",
+              msg(MSG_ERROR, "%s: Invalid count/data for Func/Sub 8/%d",
                 device->get_iname(), address);
               req_state = Req_invalid;
               return;
             }
             break;
           default:
-            msg(2, "%s: Invalid subfunction code %d for function 8",
+            msg(MSG_ERROR, "%s: Invalid subfunction code %d for function 8",
               device->get_iname(), address);
             req_state = Req_invalid;
             return;
@@ -369,7 +369,7 @@ namespace DAS_IO { namespace Modbus {
         rep_count = 0;
         break;
       default:
-        msg(2, "%s: modbus_req::setup: Unsupported function code: %d", function_code);
+        msg(MSG_ERROR, "%s: modbus_req::setup: Unsupported function code: %d", function_code);
         req_state = Req_unconfigured;
         return;
     }
@@ -380,7 +380,7 @@ namespace DAS_IO { namespace Modbus {
   void RTU::modbus_req::setup_data(uint8_t *data) {
     if (req_state == Req_invalid) return;
     if (req_state != Req_addressed) {
-      msg(2, "%s: setup_data(): Invalid input state %d", device->get_iname(), req_state);
+      msg(MSG_ERROR, "%s: setup_data(): Invalid input state %d", device->get_iname(), req_state);
     } else {
       uint8_t function_code = req_buf[1];
       uint8_t byte_count;
@@ -389,13 +389,13 @@ namespace DAS_IO { namespace Modbus {
         case 2:
         case 3:
         case 4:
-          msg(2, "%s: setup_data() invalid for read functions", device->get_iname());
+          msg(MSG_ERROR, "%s: setup_data() invalid for read functions", device->get_iname());
           break;
         case 5:
         case 6:
         case 8:
         case 16:
-          msg(2,
+          msg(MSG_ERROR,
             "%s: setup_data(uint8_t) incorrect data type for function_code %d",
             device->get_iname(), function_code);
           req_state = Req_invalid;
@@ -407,7 +407,7 @@ namespace DAS_IO { namespace Modbus {
           crc_set();
           return;
         default:
-          msg(2, "%s: setup_data() Invalid function %d",
+          msg(MSG_ERROR, "%s: setup_data() Invalid function %d",
             device->get_iname(), function_code);
           break;
       }
@@ -419,7 +419,7 @@ namespace DAS_IO { namespace Modbus {
   void RTU::modbus_req::setup_data(uint16_t *data) {
     if (req_state == Req_invalid) return;
     if (req_state != Req_addressed) {
-      msg(2, "%s/%s: setup_data(): Invalid input state %d",
+      msg(MSG_ERROR, "%s/%s: setup_data(): Invalid input state %d",
           device->get_iname(), device->get_dev_name(), req_state);
     } else {
       uint8_t function_code = req_buf[1];
@@ -430,7 +430,7 @@ namespace DAS_IO { namespace Modbus {
         case 2:
         case 3:
         case 4:
-          msg(2, "%s/%s: setup_data() invalid for read functions",
+          msg(MSG_ERROR, "%s/%s: setup_data() invalid for read functions",
             device->get_iname(), device->get_dev_name());
           req_state = Req_invalid;
           return;
@@ -452,12 +452,12 @@ namespace DAS_IO { namespace Modbus {
           crc_set();
           return;
         case 15:
-          msg(2,
+          msg(MSG_ERROR,
             "%s/%s: setup_data(uint8_t) incorrect data type for function_code %d",
             device->get_iname(), device->get_dev_name(), function_code);
           break;
         default:
-          msg(2, "%s/%s: setup_data() Invalid function %d",
+          msg(MSG_ERROR, "%s/%s: setup_data() Invalid function %d",
             device->get_iname(), device->get_dev_name(), function_code);
           break;
       }
@@ -507,7 +507,7 @@ namespace DAS_IO { namespace Modbus {
       req_buf[req_sz-1] = (crc_calc>>8) & 0xFF;
       req_state = Req_ready;
     } else if (req_state != Req_invalid) {
-      msg(2, "%s: Incomplete request in crc_set(): %d", device->get_iname(),
+      msg(MSG_ERROR, "%s: Incomplete request in crc_set(): %d", device->get_iname(),
         req_state);
       req_state = Req_unconfigured;
     }
@@ -590,7 +590,7 @@ namespace DAS_IO { namespace Modbus {
       const char *dev_name, uint8_t devID)
       : dev_name(dev_name), devID(devID) {
     if (!dev_name) {
-      msg(3, "Invalid modbus_device construction");
+      msg(MSG_FATAL, "Invalid modbus_device construction");
     }
     MB = 0;
   }

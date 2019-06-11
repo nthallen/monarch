@@ -27,7 +27,7 @@ void lgr_init( int argc, char **argv ) {
         tmc_lgr::mlf_config = optarg;
         break;
       case '?':
-        msg(3, "Unrecognized Option -%c", optopt);
+        msg(MSG_FATAL, "Unrecognized Option -%c", optopt);
     }
   }
 }
@@ -45,7 +45,7 @@ tmc_lgr::tmc_lgr() : tm_client( 4096, false) {
 // will be happy.
 void tmc_lgr::process_init() {
   memcpy(&tm_info, &tm_msg->body.init.tm, sizeof(tm_dac_t));
-  tm_client::process_init();
+  tm_rcvr::process_init();
 }
 
 void tmc_lgr::process_tstamp() {
@@ -63,18 +63,18 @@ void tmc_lgr::process_tstamp() {
 
 void tmc_lgr::lgr_write(void *buf, int nb, const char *where ) {
   if ( fwrite( buf, nb, 1, ofp ) < 1 )
-    msg( 3, "Error %s: %s", where, strerror(errno) );
+    msg( MSG_FATAL, "Error %s: %s", where, strerror(errno) );
   fflush(ofp);
   nb_out += nb;
 }
 
 void tmc_lgr::next_file() {
   if ( ofp != NULL && fclose(ofp) ) {
-    msg( 2, "Error closing file: %s", strerror(errno) );
+    msg( MSG_ERROR, "Error closing file: %s", strerror(errno) );
   }
   ofp = mlf_next_file(mlf);
   if ( ofp == NULL )
-    msg( 3, "Unable to open output file" );
+    msg( MSG_FATAL, "Unable to open output file" );
   nb_out = 0;
   write_tstamp();
 }
@@ -123,7 +123,7 @@ void tmc_lgr::process_data() {
   switch ( input_tm_type ) {
     case TMTYPE_DATA_T1:
     case TMTYPE_DATA_T2:
-      msg(3,"Data type not implemented" );
+      msg(MSG_FATAL,"Data type not implemented" );
     case TMTYPE_DATA_T3:
       process_data_t3();
       break;

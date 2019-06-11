@@ -47,12 +47,12 @@ tm_gen_dispatch::~tm_gen_dispatch() {
 void tm_gen_dispatch::Loop() {
     single_ctp = dispatch_context_alloc(dpp);
   if ( single_ctp == NULL )
-    msg(3, "dispatch_context_alloc failed: errno %d", errno );
+    msg(MSG_FATAL, "dispatch_context_alloc failed: errno %d", errno );
   dispatch_context_t *ctp = single_ctp;
   while (1) {
     ctp = dispatch_block(ctp);
     if ( ctp == NULL )
-      msg( 3, "Block error: %d", errno );
+      msg( MSG_FATAL, "Block error: %d", errno );
     dispatch_handler(ctp);
     if ( quit_received && ctp->resmgr_context.rcvid == 0
       && all_closed() )
@@ -72,7 +72,7 @@ int tm_gen_dispatch::all_closed() {
       ++pos;
     }
   }
-  if ( not_ready ) msg( -2, "Waiting on %d clients", not_ready );
+  if ( not_ready ) msg( MSG_DEBUG, "Waiting on %d clients", not_ready );
   return ready;
 }
 

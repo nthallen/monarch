@@ -27,7 +27,7 @@ void cic_transmit(char *buf, int n_chars, int transmit) {
     }
     cmdbuf[curpos++] = c;
     if (curpos > CMD_INTERP_MAX)
-      msg(3, "Maximum transmissable command length exceeded");
+      msg(MSG_FATAL, "Maximum transmissable command length exceeded");
   }
   if (transmit) {
     cmdbuf[curpos] = '\0';

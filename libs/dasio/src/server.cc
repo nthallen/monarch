@@ -21,7 +21,7 @@ namespace DAS_IO {
     std::pair<std::map<std::string,SubService *>::iterator,bool> ret;
     ret = subs.insert( std::pair<std::string,SubService *>(def->name, def));
     if (!ret.second) {
-      msg(2, "SubService %s already defined", def->name.c_str());
+      msg(MSG_ERROR, "SubService %s already defined", def->name.c_str());
     }
     return ret.second;
   }
@@ -85,8 +85,8 @@ namespace DAS_IO {
         not_word(clt_app, clt_app_len) ||
         not_str(" ") ||
         not_svc(svc, svc_len)) { // Can also check for CRC
-      msg(2, "%s: Rejecting client connection at column %d", iname, cp);
-      msg(2, "%s: Auth string was '%s'", ascii_escape());
+      msg(MSG_ERROR, "%s: Rejecting client connection at column %d", iname, cp);
+      msg(MSG_ERROR, "%s: Auth string was '%s'", ascii_escape());
       close();
       if (ELoop)
         ELoop->delete_child(this);
@@ -115,13 +115,13 @@ namespace DAS_IO {
       client_app = (const char *)clt_app_tmp;
       Socket *clone = ssvc->func(this, ssvc);
       if (clone == 0) {
-        msg(2, "%s: clone function failed, rejecting connection from %s", iname, client_app);
+        msg(MSG_ERROR, "%s: clone function failed, rejecting connection from %s", iname, client_app);
         close();
         if (ELoop)
           ELoop->delete_child(this);
         return false;
       }
-      msg(-2, "%s: Accepted connection from %s for %s", iname,
+      msg(MSG_DEBUG, "%s: Accepted connection from %s for %s", iname,
           client_app, subservice.c_str());
       this->fd = -1;
       if (ELoop) {

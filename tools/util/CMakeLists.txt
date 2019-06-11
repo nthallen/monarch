@@ -27,6 +27,7 @@ install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/distribute_check
   genui
   genui_chk
+  mlf_find
   saverun
   DESTINATION bin)
 
@@ -43,6 +44,8 @@ else (NOT CMAKE_CROSSCOMPILING)
 
 install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/distribute_check
+  mlf_find
+  saverun
   DESTINATION bin)
 
 endif (NOT CMAKE_CROSSCOMPILING)

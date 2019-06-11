@@ -26,7 +26,7 @@ void Loop::add_child(Interface *P) {
     P->reference();
     children_changed = true;
   } else {
-    msg( 4, "fd %d already inserted in DAS_IO::Loop::add_child", P->fd );
+    msg( MSG_EXIT_ABNORM, "fd %d already inserted in DAS_IO::Loop::add_child", P->fd );
   }
 }
 
@@ -41,9 +41,9 @@ bool Loop::remove_child(Interface *P, bool deref) {
     }
   }
   if (P->ELoop)
-    msg(2, "remove_child(%s,%d) failed, but ELoop != 0", P->get_iname(), P->fd);
+    msg(MSG_ERROR, "remove_child(%s,%d) failed, but ELoop != 0", P->get_iname(), P->fd);
   else
-    msg(1, "remove_child Interface(%s,%d) not found", P->get_iname(), P->fd);
+    msg(MSG_WARN, "remove_child Interface(%s,%d) not found", P->get_iname(), P->fd);
   return false;
 }
 
@@ -148,10 +148,10 @@ void Loop::event_loop() {
           }
         }
         if (!handled) {
-          msg(3, "DAS_IO::Loop::event_loop(): Unhandled EBADF or EHOSTDOWN");
+          msg(MSG_FATAL, "DAS_IO::Loop::event_loop(): Unhandled EBADF or EHOSTDOWN");
         }
       } else {
-        msg(3,
+        msg(MSG_FATAL,
           "DAS_IO::Loop::event_loop(): Unexpected error from select: %d", errno);
       }
     } else {
@@ -213,7 +213,7 @@ void Loop::signal(int sig, void (*handler)(int)) {
   sa.sa_flags = 0;
   
   if (sigaction(sig, &sa, 0) < 0)
-    msg(2, "sigaction(%d) error %d: %s", sig, errno, strerror(errno));
+    msg(MSG_ERROR, "sigaction(%d) error %d: %s", sig, errno, strerror(errno));
 }
 
 }

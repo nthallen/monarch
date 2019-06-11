@@ -114,7 +114,7 @@ bool Interface::iwritev(struct iovec *iov, int nparts) {
  */
 bool Interface::iwrite(const char *str, unsigned int nc, unsigned int cp) {
   if (fd < 0) {
-    msg(4, "%s: Connection closed unexpectedly", iname);
+    msg(MSG_EXIT_ABNORM, "%s: Connection closed unexpectedly", iname);
   }
   nl_assert(obuf_empty());
   pvt_iov.iov_base = (void *)(str+cp);
@@ -177,7 +177,7 @@ bool Interface::iwritten(int nb) { return false; }
  * The default implementation returns true.
  */
 bool Interface::iwrite_error(int my_errno) {
-  msg(2, "%s: write error %d: %s", iname, my_errno, strerror(my_errno));
+  msg(MSG_ERROR, "%s: write error %d: %s", iname, my_errno, strerror(my_errno));
   return true;
 }
 
@@ -185,7 +185,7 @@ bool Interface::iwrite_error(int my_errno) {
  * The default function returns true.
  */
 bool Interface::read_error(int my_errno) {
-  msg(2, "%s: read error %d: %s", iname, my_errno, strerror(my_errno));
+  msg(MSG_ERROR, "%s: read error %d: %s", iname, my_errno, strerror(my_errno));
   return true;
 }
 
@@ -243,9 +243,9 @@ void Interface::set_ibufsize(int bufsz) {
 
 bool Interface::fillbuf(int N, int flag) {
   int nb_read;
-  if (!buf) msg(4, "Ser_Sel::fillbuf with no buffer");
+  if (!buf) msg(MSG_EXIT_ABNORM, "Ser_Sel::fillbuf with no buffer");
   if (N > bufsize)
-    msg(4, "Ser_Sel::fillbuf(N) N > bufsize: %d > %d",
+    msg(MSG_EXIT_ABNORM, "Ser_Sel::fillbuf(N) N > bufsize: %d > %d",
       N, bufsize);
   if (nc >= N+binary_offset) return false;
   ++n_fills;
@@ -296,13 +296,13 @@ void Interface::report_err( const char *fmt, ... ) {
     va_list args;
 
     va_start(args, fmt);
-    msgv( 2, fmt, args );
+    msgv( MSG_ERROR, fmt, args );
     va_end(args);
     if (nc)
-      msg(2, "%s: Input was: '%s'", iname, ascii_escape() );
+      msg(MSG_ERROR, "%s: Input was: '%s'", iname, ascii_escape() );
   } else {
     if ( !n_suppressed )
-      msg(2, "%s: Error threshold reached: suppressing errors", iname);
+      msg(MSG_ERROR, "%s: Error threshold reached: suppressing errors", iname);
     ++n_suppressed;
     ++total_suppressed;
   }

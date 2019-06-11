@@ -54,7 +54,7 @@ void Serial::setup( int baud, int bits, char par, int stopbits,
 
   if ( fd < 0 ) return;
   if ( termios_init == false && tcgetattr( fd, &termios_p) ) {
-    msg( 2, "Error on tcgetattr: %s", strerror(errno) );
+    msg( MSG_ERROR, "Error on tcgetattr: %s", strerror(errno) );
     return;
   }
   termios_init = true;
@@ -68,7 +68,7 @@ void Serial::setup( int baud, int bits, char par, int stopbits,
     case 7: bitsflag = CS7; break;
     case 8: bitsflag = CS8; break;
     default:
-      msg( 3, "Invalid bits value: %d", bits );
+      msg( MSG_FATAL, "Invalid bits value: %d", bits );
   }
   termios_p.c_cflag |= bitsflag;
   switch (par) {
@@ -80,27 +80,27 @@ void Serial::setup( int baud, int bits, char par, int stopbits,
     case 's': bitsflag = PARENB|STICK_OPT; break;
 #endif
     default:
-      msg( 3, "Invalid parity selector: '%c'", par );
+      msg( MSG_FATAL, "Invalid parity selector: '%c'", par );
   }
   termios_p.c_cflag |= bitsflag;
   switch (stopbits) {
     case 1: break;
     case 2: termios_p.c_cflag |= CSTOPB; break;
     default:
-      msg(3, "Invalid number of stop bits: %d", stopbits );
+      msg( MSG_FATAL, "Invalid number of stop bits: %d", stopbits );
   }
   cfsetispeed(&termios_p, get_baud_code(baud));
   cfsetospeed(&termios_p, get_baud_code(baud));
   termios_p.c_cc[VMIN] = min;
   termios_p.c_cc[VTIME] = time;
   if ( tcsetattr(fd, TCSANOW, &termios_p) )
-    msg( 2, "Error on tcsetattr: %s", strerror(errno) );
+    msg( MSG_ERROR, "Error on tcsetattr: %s", strerror(errno) );
 }
 
 void Serial::update_tc_vmin(int new_vmin) {
   if (! termios_init) {
     if (tcgetattr(fd, &termios_p)) {
-      msg(2, "Error from tcgetattr: %s",
+      msg( MSG_ERROR, "Error from tcgetattr: %s",
         strerror(errno));
     }
     termios_init = true;
@@ -109,7 +109,7 @@ void Serial::update_tc_vmin(int new_vmin) {
   if (new_vmin != termios_p.c_cc[VMIN]) {
     termios_p.c_cc[VMIN] = new_vmin;
     if (tcsetattr(fd, TCSANOW, &termios_p)) {
-      msg(2, "Error from tcsetattr: %s",
+      msg( MSG_ERROR, "Error from tcsetattr: %s",
         strerror(errno));
     }
   }
