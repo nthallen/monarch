@@ -248,15 +248,12 @@ bool DAS_IO::Interface::not_alt(const char *alt1, const char *alt2,
 
 bool DAS_IO::Interface::not_any(const char *alternatives) {
   if (cp < nc) {
-	//printf("\n");
     for (const char *alt = alternatives; *alt; ++alt) {
-	  //printf(" >>%d == %d?\n",buf[cp],*alt);
       if (buf[cp] == *alt) {
         ++cp;
         return false;
       }
     }
-	//printf("\n");
     report_err("%s: No match for alternatives '%s' at column %d", iname, alternatives, cp);
   }
   return true;
@@ -321,8 +318,8 @@ bool DAS_IO::Interface::not_uint16(uint16_t &output_val) {
     return true;
   }
   if (val > 65535) {
-	report_err("%s: value exceeds uint16_t range at col %d", iname, cp--);
-	return true;
+    report_err("%s: value exceeds uint16_t range at col %d", iname, cp--);
+    return true;
   }
   output_val = val;
   return false;
@@ -374,7 +371,6 @@ bool DAS_IO::Interface::not_nfloat(float *value, float NaNval) {
 }
 
 bool DAS_IO::Interface::not_uint8(uint8_t &val) {
-  printf(">the entire buffer is %s.\n", buf);
   uint16_t sval;
   if (not_uint16(sval)) return true;
   if (sval > 255) {
