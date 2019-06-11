@@ -22,7 +22,8 @@ class DAS_IO::tm_rcvr {
     void seek_tmid();
     void tm_expect_hdr();
     virtual const char *context();
-    unsigned int nc;
+    unsigned int ncc;
+    unsigned int cp;
     int nbQrow; // may differ from nbrow if stripping MFCtr & Synch
     int nbDataHdr;
     tm_hdrw_t input_tm_type;

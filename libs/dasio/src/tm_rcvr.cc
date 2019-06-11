@@ -18,7 +18,8 @@ namespace DAS_IO {
   tm_rcvr::tm_rcvr(Interface* interface) : interface(interface) {
     tm_expect_hdr();
     tm_info_ready = false;
-    tm_msg = (tm_msg_t *)interface->buf;
+    cp = 0;
+    tm_msg = (tm_msg_t *)&interface->buf[cp];
   }
 
   tm_rcvr::~tm_rcvr() {}
@@ -29,13 +30,13 @@ namespace DAS_IO {
   }
 
   void tm_rcvr::process_message() {
-    nc = interface->nc;
-    if ( nc >= toread ) {
+    ncc = interface->nc - cp;
+    if ( ncc >= toread ) {
       if (tm_msg->hdr.tm_id != TMHDR_WORD) {
         seek_tmid();
       }
     }
-    while ( nc >= toread ) {
+    while ( ncc >= toread ) {
       switch ( tm_state ) {
         case TM_STATE_HDR:
           switch ( tm_msg->hdr.tm_type ) {
@@ -87,16 +88,26 @@ namespace DAS_IO {
               process_data();
               break;
           }
-          if ( nc > toread ) {
-            interface->consume(toread);
-          } else if ( nc == toread ) {
-            interface->consume(nc);
+          if ( ncc > toread ) {
+            cp += toread;
+            // ncc -= toread;
+            // interface->consume(toread);
+          } else if ( ncc == toread ) {
+            interface->consume(interface->nc);
+            cp = 0;
           }
-          nc = interface->nc;
+          tm_msg = (tm_msg_t *)&interface->buf[cp];
+          ncc = interface->nc - cp;
           tm_expect_hdr();
           break;
         default: msg(MSG_EXIT_ABNORM, "%sInvalid tm_state %d", context(), tm_state);
       }
+    }
+    if (cp > 0) {
+      interface->consume(cp);
+      cp = 0;
+      tm_msg = (tm_msg_t *)&interface->buf[cp];
+      ncc = interface->nc - cp;
     }
   }
 
@@ -138,20 +149,25 @@ namespace DAS_IO {
     tm_hdrw_t *tm_id;
     unsigned char *ubuf = (unsigned char *)interface->buf;
     int i;
-    for (i = 1; i < nc; ++i) {
+    for (i = cp+1; i < interface->nc; ++i) {
       if (ubuf[i] == (TMHDR_WORD & 0xFF)) {
-        if (i+1 == nc || ubuf[i+1] == ((TMHDR_WORD>>8)&0xFF)) {
-          msg(MSG_WARN, "%sDiscarding %d bytes in seek_tmid()", context(), i);
+        if (i+1 == ncc || ubuf[i+1] == ((TMHDR_WORD>>8)&0xFF)) {
+          msg(MSG_WARN, "%sDiscarding %d bytes in seek_tmid()", context(), i-cp);
           interface->consume(i);
           tm_expect_hdr();
+          cp = 0;
+          tm_msg = (tm_msg_t*)&interface->buf[cp];
+          ncc = interface->nc - cp;
           return;
         }
       }
     }
     msg(MSG_WARN, "%sDiscarding %d bytes (to EOB) in seek_tmid()",
-      context(), nc);
-    interface->consume(nc);
+      context(), interface->nc - cp);
+    interface->consume(interface->nc);
     tm_expect_hdr();
+    tm_msg = (tm_msg_t*)interface->buf;
+    ncc = interface->nc - cp;
   }
 
   void tm_rcvr::tm_expect_hdr() {
