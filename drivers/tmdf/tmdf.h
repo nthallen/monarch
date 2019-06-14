@@ -15,7 +15,6 @@ class TMDF_Selectee : public TM_data_sndr {
   public:
     TMDF_Selectee( unsigned seconds, const char *name, void *data, unsigned short size );
     ~TMDF_Selectee();
-    int ProcessData(int flag);
     bool tm_sync();
   private:
     int fd;

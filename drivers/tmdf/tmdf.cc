@@ -1,12 +1,16 @@
 #include <errno.h>
-#include <strings.h>
 #include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <strings.h>
 #include <sys/statvfs.h>
 #include <time.h>
+#include <unistd.h>
 #include "nl.h"
 #include "oui.h"
 #include "tmdf.h"
 #include "tmdf_int.h"
+#include "dasio/appid.h"
 
 using namespace DAS_IO;
 
@@ -18,7 +22,8 @@ TMDF_t TMDF;
 
 TMDF_Selectee::TMDF_Selectee( unsigned seconds, const char *name,
 	void *data, unsigned short size )
-    : TM_Selectee(name, data, size ) {
+  // is this legal? (const char *)data
+    : TM_data_sndr("iname", name, (const char *)data, size ) {
   fd = open(df_path, O_RDONLY);
   next = 0;
   secs = seconds;
@@ -92,7 +97,7 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   msg(0, "Startup");
   { Selector S;
-    Cmd_Selectee QC;
+    DAS_IO::Client QC("cmd", 5, "cmd", "cmd", "quit");
     TMDF_Selectee TM( 60, tmdf_name, &TMDF, sizeof(TMDF));
     S.add_child(&QC);
     S.add_child(&TM);
