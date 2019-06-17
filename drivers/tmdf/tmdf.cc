@@ -36,7 +36,7 @@ TMDF_Selectee::TMDF_Selectee( unsigned seconds, const char *name,
 
 TMDF_Selectee::~TMDF_Selectee() {
   report_size();
-  if (fd >= 0) close(fd);
+  if (fd >= 0) close(/*fd*/);
 }
 
 void TMDF_Selectee::report_size() {
@@ -96,12 +96,23 @@ bool TMDF_Selectee::tm_sync() {
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   msg(0, "Startup");
-  { Selector S;
+  
+  DAS_IO::Client QC("cmd", 5, "cmd", "cmd", "quit");
+  TMDF_Selectee TM( 60, tmdf_name, &TMDF, sizeof(TMDF) );
+  
+  if (TM.ELoop) {
+    TM.ELoop->add_child(&QC);
+    TM.ELoop->add_child(&TM);
+    TM.ELoop->event_loop();
+  }
+  
+  /* { Selector S;
     DAS_IO::Client QC("cmd", 5, "cmd", "cmd", "quit");
     TMDF_Selectee TM( 60, tmdf_name, &TMDF, sizeof(TMDF));
     S.add_child(&QC);
     S.add_child(&TM);
     S.event_loop();
-  }
+  } */
+  
   msg(0, "Terminating");
 }
