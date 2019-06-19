@@ -3,6 +3,9 @@
 
 #include <stdarg.h>
 #include "nl.h"
+
+#ifdef __cplusplus
+
 #include "client.h"
 #include "loop.h"
 
@@ -22,7 +25,8 @@ class memo_client: public DAS_IO::Client {
 };
 
 extern "C" {
-  
+#endif
+
 extern void msg_init_options(int argc, char **argv);
 extern int msg_func(int level, const char *s, ...);
 extern int msgv_func(int level, const char *s, va_list args);
@@ -32,6 +36,8 @@ extern int msg_internal(int level, const char *msgbuf, int nb);
 extern void set_we_are_memo(void);
 #endif
 
+#ifdef __cplusplus
 };
+#endif
 
 #endif
