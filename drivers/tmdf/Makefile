@@ -2,7 +2,7 @@ LDFLAGS=-Wl,-rpath -Wl,/usr/local/lib -L/usr/local/lib
 CPPFLAGS=-I/usr/local/include
 CXXFLAGS=-Wall -g
 CFLAGS=-Wall -g
-LIBS=-lnl -ldasio
+LIBS=-ldasio -lnl
 BINDIR=/usr/local/bin
 HUARPDIR=/usr/local/share/huarp
 INCDIR=/usr/local/include
@@ -14,12 +14,11 @@ all : tmdf
 
 tmdf : $(OBJ)
 	$(LINK.cc) -o tmdf $(OBJ) $(LIBS)
-	usemsg tmdf tmdfoui.c
-tmdfoui.c : tmdf.oui
-	oui -o tmdfoui.c tmdf.oui
+tmdfoui.cc : tmdf.oui
+	oui -o tmdfoui.cc tmdf.oui
 
 clean :
-	@rm -f *.o tmdfoui.c tmdf FullBuild*
+	@rm -f *.o tmdfoui.cc tmdf FullBuild*
 
 install : tmdf tmdf.tmc tmdf_col.tmc
 	@cp -vn tmdf $(BINDIR)

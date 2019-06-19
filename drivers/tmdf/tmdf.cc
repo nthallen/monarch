@@ -11,6 +11,7 @@
 #include "tmdf.h"
 #include "tmdf_int.h"
 #include "dasio/appid.h"
+#include "dasio/loop.h"
 
 using namespace DAS_IO;
 
@@ -97,7 +98,7 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   msg(0, "Startup");
   
-  DAS_IO::Client QC("cmd", 5, "cmd", "cmd", "quit");
+  DAS_IO::Client QC("cmd", 5, "cmd", "quit");
   TMDF_Selectee TM( 60, tmdf_name, &TMDF, sizeof(TMDF) );
   
   if (TM.ELoop) {
