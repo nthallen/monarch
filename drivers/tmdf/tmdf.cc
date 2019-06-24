@@ -18,13 +18,12 @@ using namespace DAS_IO;
 DAS_IO::AppID_t DAS_IO::AppID("tmdf", "TMDF", "V1.0");
 
 const char *df_path = "/";
-const char *tmdf_name = "TMDF";
+const char *tmdf_name = "tmdf_driver";
 TMDF_t TMDF;
 
 TMDF_Selectee::TMDF_Selectee( unsigned seconds, const char *name,
 	void *data, unsigned short size )
-  // is this legal? (const char *)data
-    : TM_data_sndr("iname", name, (const char *)data, size ) {
+    : TM_data_sndr("TM", name, data, size ) {
   fd = open(df_path, O_RDONLY);
   next = 0;
   secs = seconds;
@@ -33,6 +32,7 @@ TMDF_Selectee::TMDF_Selectee( unsigned seconds, const char *name,
   } else {
     report_size();
   }
+  flags |= gflag(0) | Fl_Read;
 }
 
 TMDF_Selectee::~TMDF_Selectee() {
@@ -98,14 +98,16 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   msg(0, "Startup");
   
-  DAS_IO::Client QC("cmd", 5, "cmd", "quit");
+  DAS_IO::Client QC("cmd", 5, "cmd", "Quit");
+  QC.flags = Interface::Fl_Read;
   TMDF_Selectee TM( 60, tmdf_name, &TMDF, sizeof(TMDF) );
+  QC.connect();
+  TM.connect();
   
-  if (TM.ELoop) {
-    TM.ELoop->add_child(&QC);
-    TM.ELoop->add_child(&TM);
-    TM.ELoop->event_loop();
-  }
+  Loop ELoop;
+  ELoop.add_child(&QC);
+  ELoop.add_child(&TM);
+  ELoop.event_loop();
   
   /* { Selector S;
     DAS_IO::Client QC("cmd", 5, "cmd", "cmd", "quit");

@@ -16,3 +16,4 @@ endif (${CMAKE_CROSSCOMPILING})
 endif (NOT DEFINED le_das_SOURCE_DIR)
 
 add_subdirectory(subbus)
+add_subdirectory(tmdf)

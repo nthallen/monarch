@@ -17,7 +17,7 @@ const char *opt_string = "vo:mV";
 class myTMclt : public TM_data_sndr {
   public:
     inline myTMclt(const char *iname, const char *datum, const char *data, uint16_t size)
-      : TM_data_sndr(iname, datum, data, size) {}
+      : TM_data_sndr(iname, datum, (void *)data, size) {}
     inline ~myTMclt() {}
     bool app_connected() override;
     bool tm_sync() override;

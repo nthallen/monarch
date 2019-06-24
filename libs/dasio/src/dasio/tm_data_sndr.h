@@ -15,7 +15,7 @@ namespace DAS_IO {
        * @param data Pointer to the data structure
        * @param size The size of the data structure
        */
-      TM_data_sndr(const char *iname, const char *datum, const char *data, uint16_t size);
+      TM_data_sndr(const char *iname, const char *datum, void *data, uint16_t size);
       /**
        * Connects to the DG service on the specified host, subservice
        * data/<datum>
@@ -26,7 +26,7 @@ namespace DAS_IO {
        * @param size The size of the data structure
        */
       TM_data_sndr(const char *iname, const char *hostname, const char *datum,
-        const char *data, uint16_t size);
+        void *data, uint16_t size);
       bool app_input(); // read nl, write data and set gflag(0)
       virtual bool app_connected();
     protected:
@@ -34,7 +34,7 @@ namespace DAS_IO {
     private:
       static const int subsvc_len = 40;
       char sub_service[subsvc_len];
-      const char *data;
+      void *data;
       uint16_t data_len;
   };
 

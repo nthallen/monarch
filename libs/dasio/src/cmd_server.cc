@@ -497,7 +497,7 @@ void cmdif_wr::Shutdown() {
 }
 
 cmdif_dgdata::cmdif_dgdata(const char *name_in, void *data_in, int dsize_in)
-    : TM_data_sndr(name_in, name_in, (const char *)data_in, dsize_in) {
+    : TM_data_sndr(name_in, name_in, data_in, dsize_in) {
 }
 
 cmdif_dgdata::~cmdif_dgdata() {}
