@@ -3,6 +3,8 @@
 
 #include "dasio/tm_data_sndr.h"
 
+using namespace DAS_IO;
+
 extern const char *df_path;
 extern const char *tmdf_name;
 
