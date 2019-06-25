@@ -35,6 +35,10 @@ TMDF_Selectee::TMDF_Selectee( unsigned seconds, const char *name,
   flags |= gflag(0) | Fl_Read;
 }
 
+bool TMDF_Selectee::app_connected() {
+  return false;
+}
+
 TMDF_Selectee::~TMDF_Selectee() {
   report_size();
   if (fd >= 0) close(/*fd*/);

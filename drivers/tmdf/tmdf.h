@@ -21,6 +21,8 @@ class TMDF_Selectee : public TM_data_sndr {
     unsigned secs;
     time_t next;
     void report_size();
+  protected:
+    bool app_connected();
 };
 
 #endif
