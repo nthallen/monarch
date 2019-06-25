@@ -8,8 +8,8 @@
 #include <unistd.h>
 #include "nl.h"
 #include "oui.h"
-#include "tmdf.h"
 #include "tmdf_int.h"
+#include "tmdf.h"
 #include "dasio/appid.h"
 #include "dasio/loop.h"
 
@@ -21,7 +21,7 @@ const char *df_path = "/";
 const char *tmdf_name = "tmdf_driver";
 TMDF_t TMDF;
 
-TMDF_Selectee::TMDF_Selectee( unsigned seconds, const char *name,
+TMDF_data_sndr::TMDF_data_sndr( unsigned seconds, const char *name,
 	void *data, unsigned short size )
     : TM_data_sndr("TM", name, data, size ) {
   fd = open(df_path, O_RDONLY);
@@ -35,16 +35,17 @@ TMDF_Selectee::TMDF_Selectee( unsigned seconds, const char *name,
   flags |= gflag(0) | Fl_Read;
 }
 
-bool TMDF_Selectee::app_connected() {
+bool TMDF_data_sndr::app_connected() {
+  flags |= gflag(0);
   return false;
 }
 
-TMDF_Selectee::~TMDF_Selectee() {
+TMDF_data_sndr::~TMDF_data_sndr() {
   report_size();
   if (fd >= 0) close(/*fd*/);
 }
 
-void TMDF_Selectee::report_size() {
+void TMDF_data_sndr::report_size() {
   if (fd >= 0) {
     struct statvfs buf;
     if (fstatvfs(fd, &buf) ) {
@@ -70,7 +71,7 @@ void TMDF_Selectee::report_size() {
   }
 }
 
-bool TMDF_Selectee::tm_sync() {
+bool TMDF_data_sndr::tm_sync() {
   time_t now = time(NULL);
   if ( next == 0 || now >= next ) {
     next = now + secs;
@@ -104,7 +105,7 @@ int main(int argc, char **argv) {
   
   DAS_IO::Client QC("cmd", 5, "cmd", "Quit");
   QC.flags = Interface::Fl_Read;
-  TMDF_Selectee TM( 60, tmdf_name, &TMDF, sizeof(TMDF) );
+  TMDF_data_sndr TM( 60, tmdf_name, &TMDF, sizeof(TMDF) );
   QC.connect();
   TM.connect();
   
@@ -115,7 +116,7 @@ int main(int argc, char **argv) {
   
   /* { Selector S;
     DAS_IO::Client QC("cmd", 5, "cmd", "cmd", "quit");
-    TMDF_Selectee TM( 60, tmdf_name, &TMDF, sizeof(TMDF));
+    TMDF_data_sndr TM( 60, tmdf_name, &TMDF, sizeof(TMDF));
     S.add_child(&QC);
     S.add_child(&TM);
     S.event_loop();
