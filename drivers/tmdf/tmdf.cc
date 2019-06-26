@@ -18,7 +18,7 @@ using namespace DAS_IO;
 DAS_IO::AppID_t DAS_IO::AppID("tmdf", "TMDF", "V1.0");
 
 const char *df_path = "/";
-const char *tmdf_name = "tmdf_driver";
+const char *tmdf_name = "tmdf";
 TMDF_t TMDF;
 
 TMDF_data_sndr::TMDF_data_sndr( unsigned seconds, const char *name,
