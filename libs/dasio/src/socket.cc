@@ -1,4 +1,6 @@
 /** @file socket.cc */
+#include <stdio.h>
+#include <strings.h>
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
@@ -343,6 +345,91 @@ bool Socket::readSockError(int *sock_err) {
     msg(MSG_ERROR, "%s: Error from getsockopt() %d: %s", iname, errno, strerror(errno));
     return false;
   }
+  return true;
+}
+
+const char *Socket::get_version_string() {
+  static char version[20]; // arbitrary string length
+  FILE *fp = fopen("VERSION", "r");
+  if (fp == 0) {
+    msg(MSG_ERROR, "%s: VERSION file not found: defaulting to 1.0", iname);
+    return "1.0";
+  }
+  if (fgets(version, 20, fp) == 0) {
+    msg(MSG_ERROR, "%s: error %d reading VERSION file: %s: defaulting to 1.0",
+      iname, errno, strerror(errno));
+    fclose(fp);
+    return "1.0";
+  }
+  fclose(fp);
+  int i;
+  for (i = strlen(version)-1; i >= 0 && isspace(version[i]); --i) {
+    version[i] = '\0';
+  }
+  if (i < 0) {
+    msg(MSG_ERROR, "%s: VERSION string is empty: defaulting to 1.0", iname);
+    return "1.0";
+  }
+  return version;
+}
+
+bool Socket::get_service_port(const char *service, char *port) {
+  if (isdigit(service[0])) {
+    int i;
+    for (i = 0; i < 5 && isdigit(service[i]); ++i)
+      port[i] = service[i];
+    if (isdigit(service[i])) {
+      msg(MSG_ERROR, "%s: numeric service value out of range: '%s'", iname, service);
+      return true;
+    }
+    port[i] = '\0';
+    return false;
+  }
+  FILE *fp;
+  char svcs_filename[80]; // arbitrary path length
+  if (snprintf(svcs_filename, 80, "bin/%s/services", get_version_string()) >= 80) {
+    msg(MSG_EXIT_ABNORM, "%s: Unexpected overflow in snprintf", iname);
+    return true;
+  }
+  fp = fopen(svcs_filename, "r");
+  if (fp == 0) {
+    msg(MSG_ERROR, "%s: get_service_port() unable to open services file %s",
+      iname, svcs_filename);
+    return true;
+  }
+  char svcline[80];
+  int line_number = 0;
+  while (fgets(svcline, 80, fp)) {
+    ++line_number;
+    int svclen = strlen(service);
+    if (strncasecmp(service, svcline, svclen) == 0 && isspace(svcline[svclen])) {
+      int i;
+      for (i = svclen; isspace(svcline[i]); ++i);
+      if (isdigit(svcline[i])) {
+        int j;
+        for (j =0; j < 5 && isdigit(svcline[i+j]); ++j) {
+          port[j] = svcline[i+j];
+        }
+        if (isdigit(svcline[i+j])) {
+          msg(MSG_ERROR, "%s: %s:%d: port number overflow for service %s",
+            iname, svcs_filename, line_number, service);
+          fclose(fp);
+          return true;
+        }
+        port[j] = '\0';
+        fclose(fp);
+        return false;
+      } else {
+        msg(MSG_ERROR, "%s: %s:%d: syntax error for service %s",
+            iname, svcs_filename, line_number, service);
+        fclose(fp);
+        return true;
+      }
+    }
+  }
+  msg(MSG_ERROR, "%s: service %s not found in %s",
+    iname, service, svcs_filename);
+  fclose(fp);
   return true;
 }
 

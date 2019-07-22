@@ -246,6 +246,22 @@ class Socket : public Interface {
      * from ELoop if defined and possible preserve the object for reuse.
      */
     virtual Socket *new_client();
+    
+    /**
+     * This function could be moved to a more widely available location if necessary.
+     * @return The VERSION string read from the VERSION file with any whitespace
+     * stripped. If the file does not exist or there are errors reading from it,
+     * returns "1.0".
+     */
+    const char *get_version_string();
+
+    /**
+     * @return true on error
+     * @param service The service name or number
+     * @param port The port number is written here as a string. It is guaranteed to 
+     * require no more than 6 characters, including the terminating NUL.
+     */
+    bool get_service_port(const char *service, char *port);
 
     unix_name_t *unix_name;
     const char *hostname;
