@@ -199,6 +199,11 @@ int msgv_func( int level, const char *fmt, va_list args ) {
   clock_gettime(clk_id, &timespec);
   
   int milliseconds = ((timespec.tv_nsec+500000)/1000000);
+  if (milliseconds >= 1000) {
+    milliseconds -= 1000;
+    timespec.tv_sec += 1;
+  }
+  
   char *tbuf = asctime(gmtime(&timespec.tv_sec));
   
   //Below lies second-time
