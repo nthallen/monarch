@@ -66,6 +66,7 @@ typedef TM_CLIENT_CLASS TM_CLIENT;
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   msg( 0, "Startup" );
+  signal(SIGWINCH, SIG_IGN);
   TM_CLIENT *Ext = new TM_CLIENT(4096, true);
   Loop ELoop;
   ELoop.add_child(Ext);

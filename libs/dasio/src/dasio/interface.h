@@ -35,6 +35,15 @@ class Interface {
     int fd;
     /** Bit-mapped register to indicate which events this interface is sensitive to. */
     int flags;
+    /** Bit-mapped register to indicate which signals this interface is sensitive to. */
+    uint32_t signals;
+    
+    /**
+     * @return true if it terminates.
+     * The default implementation returns true.
+     */
+    virtual bool serialized_signal_handler(uint32_t signals_seen);
+    
     static const int Fl_Read = 1;
     static const int Fl_Write = 2;
     static const int Fl_Except = 4;
@@ -80,6 +89,7 @@ class Interface {
       binary_mode = true;
     }
   protected:
+    void signal(int signum, bool handle);
     virtual ~Interface();
     /**
      * Sets up a write of nc bytes from the buffer pointed to by str.
