@@ -12,8 +12,12 @@ namespace DAS_IO {
     public:
       inline nc_tm_client(int bufsize, bool fast = true) : tm_client(bufsize, fast) {}
       void process_data();
+      bool serialized_signal_handler(uint32_t signals_seen);
+      void adopted();
   };
 
 }
+
+void nc_display_redraw(void);
 
 #endif

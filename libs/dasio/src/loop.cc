@@ -24,6 +24,7 @@ void Loop::add_child(Interface *P) {
     S.push_back(P);
     P->ELoop = this;
     P->reference();
+    P->adopted();
     children_changed = true;
   } else {
     msg( MSG_EXIT_ABNORM, "fd %d already inserted in DAS_IO::Loop::add_child", P->fd );

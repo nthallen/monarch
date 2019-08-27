@@ -59,7 +59,7 @@ Interface::~Interface() {
 }
 
 bool Interface::serialized_signal_handler(uint32_t signals_seen) {
-  msg(MSG, "received signal: %u", signals_seen);
+  msg(MSG, "received signals: %08X", signals_seen);
   return true;
 }
 
@@ -94,6 +94,8 @@ bool Interface::ProcessData(int flag) {
   }
   return false;
 }
+
+void Interface::adopted() {}
 
 void Interface::dereference(Interface *P) {
   if (--P->ref_count == 0) {

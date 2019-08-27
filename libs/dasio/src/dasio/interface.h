@@ -26,6 +26,7 @@ class Interface {
      * @return true if we should quit
      */
     virtual bool ProcessData(int flag);
+    virtual void adopted();
     /**
      * @return a pointer to a Timeout object or zero if no timeout is required.
      * The default implementation returns a pointer to the TO member.
@@ -89,8 +90,8 @@ class Interface {
       binary_mode = true;
     }
   protected:
-    void signal(int signum, bool handle);
     virtual ~Interface();
+    void signal(int signum, bool handle);
     /**
      * Sets up a write of nc bytes from the buffer pointed to by str.
      * If the write cannot be accomplished immediately, the information

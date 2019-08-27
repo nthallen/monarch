@@ -66,7 +66,6 @@ typedef TM_CLIENT_CLASS TM_CLIENT;
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   msg( 0, "Startup" );
-  signal(SIGWINCH, SIG_IGN);
   TM_CLIENT *Ext = new TM_CLIENT(4096, true);
   Loop ELoop;
   ELoop.add_child(Ext);
@@ -79,6 +78,14 @@ int main(int argc, char **argv) {
   msg( 0, "Shutdown" );
   return 0;
 }
+
+#ifdef NCTABLE_H_INCLUDED
+bool DAS_IO::nc_tm_client::serialized_signal_handler(uint32_t signals_seen) {
+  msg(MSG_DEBUG, "received signals: %08X", signals_seen);
+  display_redraw();
+  return false;
+}
+#endif
 
 %main_program%
 
