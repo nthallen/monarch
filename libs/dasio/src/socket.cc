@@ -10,6 +10,7 @@
 #include <sys/un.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <netdb.h>
 #include "dasio/socket.h"
 #include "dasio/loop.h"
 #include "dasio/msg.h"
@@ -22,38 +23,52 @@
 
 namespace DAS_IO {
 
+// UDP Socket
 Socket::Socket(const char *iname, int bufsz, const char *service) :
     Interface(iname, bufsz),
-    service(service),
     hostname(0),
+    service(service),
     is_server(false),
     socket_state(Socket_disconnected),
     socket_type(Socket_Unix)  
 {
   common_init();
-  // connect();
 }
 
+// TCP Socket
+Socket::Socket(const char *iname, int bufsz, const char *hostname,
+                        const char *service) :
+    Interface(iname, bufsz),
+    hostname(hostname),
+    service(service),
+    is_server(false),
+    socket_state(Socket_disconnected),
+    socket_type(Socket_TCP)
+{
+  common_init();
+}
+
+// Server Socket
 Socket::Socket(const char *iname, const char *service,
         socket_type_t socket_type) :
     Interface(iname, 0),
     service(service),
-    hostname(0),
+    hostname("0.0.0.0"),
     is_server(true),
     socket_state(Socket_disconnected),
     socket_type(socket_type)  
 {
   common_init();
-  // connect();
 }
 
+// Clone Socket
 Socket::Socket(Socket *S, const char *iname, int bufsize, int fd) :
-  Interface(iname, bufsize),
-  service(S->service),
-  hostname(0),
-  is_server(false),
-  socket_state(Socket_connected),
-  socket_type(S->socket_type)
+    Interface(iname, bufsize),
+    service(S->service),
+    hostname(0),
+    is_server(false),
+    socket_state(Socket_connected),
+    socket_type(S->socket_type)
 {
   common_init();
   this->fd = fd;
@@ -137,6 +152,83 @@ void Socket::connect() {
             if (errno != EINPROGRESS) {
               msg(MSG_ERROR, "connect() failure in DAS_IO::Socket(%s):%s: %s", iname,
                 unix_name->get_svc_name(), std::strerror(errno));
+              if (reset()) {
+                msg(MSG_FATAL, "%s: Connect failure fatal after all retries", iname);
+              }
+              return;
+            }
+          }
+          socket_state = Socket_connecting;
+          flags = Fl_Write;
+        }
+        flags |= Fl_Read | Fl_Except;
+      }
+      break;
+    case Socket_TCP:
+      { nl_assert(iname != 0 && service != 0);
+        char portname[6];
+        
+        if (get_service_port(service, portname)) {
+          msg(MSG_FATAL, "%s: Unable to determine service port", iname);
+        }
+        
+        fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (fd < 0)
+          msg(MSG_EXIT_ABNORM, "socket() failure in DAS_IO::Socket(%s): %s", iname,
+            std::strerror(errno));
+
+        if (fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK) == -1) {
+          msg(MSG_FATAL, "fcntl() failure in DAS_IO::Socket(%s): %s", iname,
+            std::strerror(errno));
+        }
+
+        // ### use hints to resolve portname even for server
+        // ### refer to test/network/getaddrinfo.c for example code
+        // struct sockaddr_in localAddr, srvrAddr;
+        struct addrinfo hints;
+        memset(&hints,0,sizeof(hints));
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_protocol = 0;
+        hints.ai_flags = AI_ADDRCONFIG;
+        struct addrinfo *res = 0;
+        int err = getaddrinfo(hostname, portname, &hints, &res);
+        if (err < 0) {
+          msg(MSG_FATAL, "%s: getaddrinfo(%s, %s) failed with error %d: %s",
+            iname, hostname, portname, errno, std::strerror(errno));
+        }
+        if (res == 0) {
+          msg(MSG_FATAL, "%s: getaddrinfo(%s, %s) provided no result",
+            iname, hostname, portname);
+        }
+
+        if (is_server) {
+          if (bind(fd, res->ai_addr, sizeof(struct sockaddr_in)) < 0) {
+            msg(MSG_FATAL, "%s: bind(%s, %s) failed with error %d: %s",
+              iname, hostname, portname, errno, std::strerror(errno));
+          }
+
+          if (listen(fd, MAXPENDING) < 0) {
+            msg(MSG_FATAL, "%s: listen() failure in DAS_IO::Socket(): %s", iname,
+              std::strerror(errno));
+          }
+          socket_state = Socket_listening;
+          flags = 0;
+        } else {
+          /* Establish the connection to the server */
+          struct sockaddr_in *addr = (struct sockaddr_in *)res->ai_addr;
+          if (::connect(fd, (struct sockaddr *)(addr),
+                sizeof(struct sockaddr_in)) < 0) {
+            if (errno != EINPROGRESS) {
+              msg(MSG_ERROR,
+                "%s: DAS_IO::Socket::connect() failure:%s(%d.%d.%d.%d):%s: %s",
+                iname, hostname,
+                (addr->sin_addr.s_addr>>0)&0xFF,
+                (addr->sin_addr.s_addr>>8)&0xFF,
+                (addr->sin_addr.s_addr>>16)&0xFF,
+                (addr->sin_addr.s_addr>>24)&0xFF,
+                portname,
+                std::strerror(errno));
               if (reset()) {
                 msg(MSG_FATAL, "%s: Connect failure fatal after all retries", iname);
               }
@@ -432,18 +524,5 @@ bool Socket::get_service_port(const char *service, char *port) {
   fclose(fp);
   return true;
 }
-
-/**
- * Create a TCP connection to the specified hostname and service/port.
- */
-//Socket::Socket(const char *iname, int bufsz, const char *hostname, const char *service);
-/**
- * Called by server when creating client interfaces after accept().
- * @param iname The interface name
- * @param bufsz Size of the input buffer
- * @fd The socket
- */
-//Socket::Socket(const char *iname, int bufsz, int fd);
-//Socket::~Socket();
 
 }

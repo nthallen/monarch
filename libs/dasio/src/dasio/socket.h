@@ -35,22 +35,28 @@ class Socket : public Interface {
     typedef enum { Socket_Unix, Socket_TCP, Socket_UDP, Socket_CAN }
                          socket_type_t;
 
-                         // Socket(const char *iname, int bufsz);
     /**
      * Create to a Unix Domain socket client using the service name
+     * @param iname Interface name (for debugging)
+     * @param bufsz The initial input buffer size
+     * @param service String representing the service name
      */
     Socket(const char *iname, int bufsz, const char *service);
+    
+    /**
+     * Create a TCP client connection to the specified hostname and service/port.
+     * @param iname Interface name (for debugging)
+     * @param bufsz The initial input buffer size
+     * @param hostname Hostname ofthe remote system
+     * @param service String representing the service name or port number
+     */
+    Socket(const char *iname, int bufsz, const char *hostname, const char *service);
     
     /**
      * Create a socket server
      */
     Socket(const char *iname, const char *service,
         socket_type_t socket_type);
-    
-    /**
-     * Create a TCP client connection to the specified hostname and service/port.
-     */
-    Socket(const char *iname, int bufsz, const char *hostname, const char *service);
     
     /**
      * Initializes this Socket to match the original, making sure to
