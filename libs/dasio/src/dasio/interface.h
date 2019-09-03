@@ -26,6 +26,10 @@ class Interface {
      * @return true if we should quit
      */
     virtual bool ProcessData(int flag);
+    /** 
+     * Called after interface is added as a child to the Loop.
+     */
+    virtual void adopted();
     /**
      * @return a pointer to a Timeout object or zero if no timeout is required.
      * The default implementation returns a pointer to the TO member.
@@ -35,6 +39,15 @@ class Interface {
     int fd;
     /** Bit-mapped register to indicate which events this interface is sensitive to. */
     int flags;
+    /** Bit-mapped register to indicate which signals this interface is sensitive to. */
+    uint32_t signals;
+    
+    /**
+     * @return true if it terminates.
+     * The default implementation returns true.
+     */
+    virtual bool serialized_signal_handler(uint32_t signals_seen);
+    
     static const int Fl_Read = 1;
     static const int Fl_Write = 2;
     static const int Fl_Except = 4;
@@ -81,6 +94,13 @@ class Interface {
     }
   protected:
     virtual ~Interface();
+    /**
+     * @param signum the signal number.
+     * @param handle true to handle the specified signal.
+     * When the signal is observed the serialized_signal_handler()
+     * method will be called for the interface.
+     */
+    void signal(int signum, bool handle);
     /**
      * Sets up a write of nc bytes from the buffer pointed to by str.
      * If the write cannot be accomplished immediately, the information
