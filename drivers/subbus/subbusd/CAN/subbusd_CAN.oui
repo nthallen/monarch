@@ -10,8 +10,6 @@
 <comment>
 subbusd_CAN_init_options() is responsible for:
   subbusd_core::subbusd->register_flavor(my_instance);
-data is only useful when the cloner is shared between
-subservices.
 
 <package> appid_default
 <include> "dasio/appid.h"

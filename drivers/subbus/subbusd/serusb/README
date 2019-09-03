@@ -1,0 +1,54 @@
+This is an informal definition of the protocol we will use
+on the serial usb connection to the system controller on
+the DACS.
+
+<hex16> : [0-9A-F]{4}
+<addr> : <hex16>
+<data> : <hex16>
+<subfunc> : <digit>
+<features> : <hex16>
+<cmdline> : <cmd> '\n'
+<bit> : '0' | '1'
+<cmd> :
+    R <addr>    // Read: response codes: RrE
+    W <addr> : <data>  // Write: response codes: WwE
+    C <bit>    // CMDENBL: response codes: CE
+    S <bit>    // CMDSTRB: response codes: SE
+    V          // Board Revision: response codes VE
+    B          // Board Logical Reset: response: B
+    i <digit> : <addr> // Define and enable Interrupt: response: i
+    u <addr>   // Undefine and disable Interrupt: response: u
+    ''         // NOP: response code: 0
+    D          // Read switches: response: D<data> | E<digit> (no switches)
+    F <data>   // Set failure: response: F | E
+    f          // Read failure: response f <data> | E
+    T          // Tick to reset 2-minute timeout: No response
+    A          // Disarm reboot timer (if present): A response
+
+Responses:
+    B '\n'         // Board logical reset
+    R <data> '\n'  // Read data with acknowledge asserted
+    r <data> '\n'  // Read data without acknowledge asserted
+    W '\n'         // Write with acknowledge
+    w '\n'         // Write without acknowledge
+    C       '\n'   // CMDENBL
+    S       '\n'   // CMDSTRB
+    F       '\n'   // Write Failure
+    V <subfunc>:<features>:<version> '\n' // Version string
+    I <data> '\n'  // Interrupt string
+    i <digit> '\n' // Acknowledge Interrupt config/enable command
+    u <addr> '\n'  // Acknowledge Interrupt disable
+    0 '\n'         // NOP
+    D <data> '\n'  // Switch data
+    E <digit> '\n' // Error--not obviously associated with a specific request
+    f <data> '\n'  // Read Failure data
+    A '\n'         // Disarm
+
+B - Board Logical Reset: issue hardware reset to syscon, disable all interrupts.
+    Does *not* reset the two-minute timer. (that's what "tick" does.) The reason for
+    making the distinction is that the board reset will be issued when subbusd
+    starts up, whereas tick will be issued by the actual data acquisition
+    functions, indicating that the entire instrument is up and running. There
+    is a lot that can go wrong between those two events, including spontaneous
+    reboots, and we don't want the startup of subbusd to prematurely indicate
+    that all is well.

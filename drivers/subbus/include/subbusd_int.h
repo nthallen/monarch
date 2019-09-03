@@ -28,13 +28,42 @@ class subbusd_client : public DAS_IO::Serverside_client {
   public:
     subbusd_client(DAS_IO::Authenticator *orig);
     ~subbusd_client();
+    /**
+     * Performs sanity checks on the incoming request from the client,
+     * then calls incoming_sbreq() to process the request in a
+     * flavor-specific way.
+     * @return true if the event loop should terminate.
+     */
     bool protocol_input();
+    /**
+     * Marks request as complete when the reply has been fully transmitted.
+     * @return true if event loop should terminate. Always returns false.
+     */
     bool iwritten(int nb);
+    /**
+     * Incoming request is a subbusd_req_t in the underlying Interface's buf
+     * and also pointed to by req.
+     * 
+     * @return true if event loop should exit.
+     */
     virtual bool incoming_sbreq();
   protected:
+    /**
+     * Utility function to return the reply structure along with the
+     * specified return code.
+     */
     bool status_return(uint16_t err_code);
+    /**
+     * True if a request from this client is not complete.
+     */
     bool request_pending;
+    /**
+     * Pointer to the client's request, contained in buf.
+     */
     subbusd_req_t *req;
+    /**
+     * The reply data structure.
+     */
     subbusd_rep_t rep;
 };
 

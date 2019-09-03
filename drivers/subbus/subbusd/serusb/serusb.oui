@@ -1,0 +1,51 @@
+<package> serusb
+<include> subbusd
+<follow> subbusd
+
+<opts> "p:b:N:"
+<sort>
+	-p <port> Serial port (/dev/serusb2)
+	-b <baud> Baud rate (57600)
+	-N <devname> subservice name (serusb)
+
+<init>
+  serusb_init_options(argc, argv);
+
+<defs>
+<include> <stdlib.h>
+<include> "subbusd_serusb.h"
+
+static const char *serusb_port = "/dev/serusb2";
+static int serusb_baud_rate = 57600;
+
+static void serusb_init_options(
+    int argc, char **argv ) {
+  int optltr;
+
+  optind = OPTIND_RESET;
+  opterr = 0;
+  while ((optltr = getopt(argc, argv, opt_string)) != -1) {
+    switch (optltr) {
+      case 'p':
+        serusb_port = optarg;
+        break;
+      case 'b':
+        serusb_baud_rate = atoi(optarg);
+        break;
+      case 'N':
+        subbusd_devname = optarg;
+        break;
+      case '?':
+        nl_error(3, "Unrecognized Option -%c", optopt);
+      default:
+        break;
+    }
+  }
+  subbusd_serusb *serusb = new subbusd_serusb(serusb_port, serusb_baud_rate);
+  nl_assert(subbusd_core::subbusd);
+  subbusd_core::subbusd->register_flavor(serusb);
+}
+
+<package> msghdr_default
+<vars>
+  const char *msg_hdr_default = "SB/DACS";
