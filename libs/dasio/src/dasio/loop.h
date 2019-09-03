@@ -97,6 +97,15 @@ class Loop {
      * ensure that they are handled by the event_loop() thread.
      */
     inline sigset_t *get_blockset() { return &blockset; }
+    
+    /** 
+     * A bitmapped register indicating which signals have been 
+     * seen by asynchronous signal-handlers. event_loop uses
+     * this field to determine which interfaces to route the
+     * serialized signal to.
+     */
+    static uint32_t signals_seen;
+    
   private:
     /** The list of child interfaces */
     InterfaceList S;
@@ -129,6 +138,10 @@ class Loop {
     sigset_t runset;
 };
 
+}
+
+extern "C" {
+  void loop_signal_handler(int sig);
 }
 
 #endif
