@@ -26,6 +26,9 @@ class Interface {
      * @return true if we should quit
      */
     virtual bool ProcessData(int flag);
+    /** 
+     * Called after interface is added as a child to the Loop.
+     */
     virtual void adopted();
     /**
      * @return a pointer to a Timeout object or zero if no timeout is required.
@@ -91,6 +94,12 @@ class Interface {
     }
   protected:
     virtual ~Interface();
+    /**
+     * @param signum the signal number.
+     * @param handle true to handle the specified signal.
+     * When the signal is observed the serialized_signal_handler()
+     * method will be called for the interface.
+     */
     void signal(int signum, bool handle);
     /**
      * Sets up a write of nc bytes from the buffer pointed to by str.

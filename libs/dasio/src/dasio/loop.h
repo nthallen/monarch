@@ -98,6 +98,12 @@ class Loop {
      */
     inline sigset_t *get_blockset() { return &blockset; }
     
+    /** 
+     * A bitmapped register indicating which signals have been 
+     * seen by asynchronous signal-handlers. event_loop uses
+     * this field to determine which interfaces to route the
+     * serialized signal to.
+     */
     static uint32_t signals_seen;
     
   private:

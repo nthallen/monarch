@@ -18,6 +18,4 @@ namespace DAS_IO {
 
 }
 
-void nc_display_redraw(void);
-
 #endif
