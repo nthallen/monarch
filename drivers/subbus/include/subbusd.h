@@ -3,6 +3,7 @@
 // #include <sys/iomsg.h>
 // #include <sys/siginfo.h>
 #include <signal.h>
+#include <stdint.h>
 #include "subbus.h"
 
 #define SUBBUSD_MGRID_OFFSET 1
@@ -21,8 +22,8 @@
  */
 
 typedef struct __attribute__((__packed__)) {
-  unsigned short sb_kw;
-  unsigned short command;
+  uint16_t sb_kw;
+  uint16_t command;
 } subbusd_req_hdr_t;
 
 /* sb_kw value */
@@ -47,18 +48,18 @@ typedef struct __attribute__((__packed__)) {
 #define SBC_MREAD 15
 
 typedef struct __attribute__((__packed__)) {
-  unsigned short address;
-  unsigned short data;
+  uint16_t address;
+  uint16_t data;
 } subbusd_req_data0;
 
 typedef struct __attribute__((__packed__)) {
-  unsigned short data;
+  uint16_t data;
 } subbusd_req_data1;
 
 typedef struct __attribute__((__packed__)) {
   char cardID[CardID_MAX];
-  unsigned short address;
-  unsigned short region;
+  uint16_t address;
+  uint16_t region;
   struct sigevent event;
 } subbusd_req_data2;
 
@@ -78,8 +79,8 @@ typedef struct __attribute__((__packed__)) {
 } subbusd_req_t;
 
 typedef struct __attribute__((__packed__)) {
-  unsigned short subfunc;
-  unsigned short features;
+  uint16_t subfunc;
+  uint16_t features;
   char name[SUBBUS_NAME_MAX];
 } subbusd_cap_t;
 
@@ -89,19 +90,19 @@ typedef struct __attribute__((__packed__)) {
  * whether we want acknowledge info or not.
  */
 typedef struct __attribute__((__packed__)) {
-  unsigned short n_reads;
-  unsigned short rvals[2*SB_MAX_MREAD];
+  uint16_t n_reads;
+  uint16_t rvals[2*SB_MAX_MREAD];
 } subbusd_mread_t;
 
 typedef struct __attribute__((__packed__)) {
-  signed short status;
-  unsigned short ret_type;
+  int16_t status;
+  uint16_t ret_type;
 } subbusd_rep_hdr_t;
 
 typedef struct __attribute__((__packed__)) {
   subbusd_rep_hdr_t hdr;
   union {
-    unsigned short value;
+    uint16_t value;
     subbusd_cap_t capabilities;
     subbusd_mread_t mread;
   } data;
@@ -120,7 +121,7 @@ typedef struct __attribute__((__packed__)) {
 
 /* ret_type values */
 #define SBRT_NONE 0 // Just return the status
-#define SBRT_US 1   // Return unsigned short value
+#define SBRT_US 1   // Return uint16_t value
 #define SBRT_CAP 2  // Capabilities
 #define SBRT_MREAD 3 // Multi-Read
 #define SBRT_MREADACK 4 // Multi-Read w/ACK

@@ -16,27 +16,7 @@
 #define SB_SERUSB_MAX_REQUEST 256
 #define SB_SERUSB_MAX_RESPONSE 2501
 
-typedef struct {
-  int type;
-  int status;
-  int rcvid;
-  unsigned short n_reads;
-  char request[SB_SERUSB_MAX_REQUEST];
-} sbd_request_t;
-
-#define SBDR_TYPE_INTERNAL 0
-#define SBDR_TYPE_CLIENT 1
-#define SBDR_TYPE_MAX 1
-#define SBDR_STATUS_QUEUED 0
-#define SBDR_STATUS_SENT 1
-
-/* SUBBUSD_MAX_REQUESTS is the size of the request queue,
-   so it determines the number of simultaneous requests 
-   we can handle. Current usage suggests we will have
-   a small number of programs accessing the subbus
-   (col,srvr,idxr,dccc,ana104,card,digital) so 20 is
-   not an unreasonable upper bound */
-#define SUBBUSD_MAX_REQUESTS 20
+class subbusd_serusb_client;
 
 extern int int_attach(int rcvid, subbusd_req_t *req, char *sreq);
 extern int int_detach(int rcvid, subbusd_req_t *req, char *sreq);
@@ -46,7 +26,7 @@ class subbusd_serusb_client : public subbusd_client {
     subbusd_serusb_client(DAS_IO::Authenticator *auth, subbusd_serusb *fl);
     ~subbusd_serusb_client();
     bool incoming_sbreq();
-    void request_complete(int16_t status, uint16_t n_bytes);
+    void request_complete(uint16_t n_bytes);
     // static const int subbusd_serusb_max_req_size = 512;
     // static const int subbusd_serusb_max_rep_size = 512;
   private:
@@ -61,22 +41,85 @@ class subbusd_serusb_client : public subbusd_client {
     void format_mread_rd();
     subbusd_serusb *flavor;
     /** Where we assemble serusb messages */
-    uint16_t mread_word_space_remaining;
-    uint16_t mread_words_requested;
-    can_msg_t can_msg;
+    char sreq[SB_SERUSB_MAX_REQUEST];
+    /** Size of the request in sreq */
+    int req_size;
+    //uint16_t mread_word_space_remaining;
+    //uint16_t mread_words_requested;
 };
+
+#define SBDR_TYPE_INTERNAL 0
+#define SBDR_TYPE_CLIENT 1
+#define SBDR_TYPE_MAX 1
+
+/* SUBBUSD_MAX_REQUESTS is the size of the request queue,
+   so it determines the number of simultaneous requests 
+   we can handle. Current usage suggests we will have
+   a small number of programs accessing the subbus
+   (col,srvr,idxr,dccc,ana104,card,digital) so 20 is
+   not an unreasonable upper bound */
+#define SUBBUSD_MAX_REQUESTS 20
+
+class serusb_request {
+  public:
+    inline serusb_request(uint16_t type, subbusd_serusb_client *clt,
+      const char *request, subbusd_rep_t *repp,uint16_t n_reads = 0)
+      : type(type),
+        clt(clt),
+        request(request),
+        repp(repp),
+        n_reads(n_reads) {}
+    uint16_t type;
+    subbusd_serusb_client *clt;
+    const char *request;
+    /**
+     * Pointer to the client's reply buffer
+     */
+    subbusd_rep_t *repp;
+    uint16_t n_reads;
+};
+
+// typedef struct {
+  // int type;
+  // int status;
+  // int rcvid;
+  // uint16_t n_reads;
+  // char request[SB_SERUSB_MAX_REQUEST];
+// } sbd_request_t;
 
 class serusb_if : public DAS_IO::Serial {
   public:
     serusb_if(const char *port, int baud_rate);
     // ~serusb_if();
+    void enqueue_request(uint16_t type, subbusd_serusb_client *clt,
+      const char *request, subbusd_rep_t *repp, uint16 n_reads);
+    uint16_t type;
+    subbusd_serusb_client *clt;
+    uint16_t n_reads;
+    const char *request;
+  private:
     bool protocol_input();
     bool protocol_timeout();
-  private:
+    bool advance_if_char(unsigned char c);
+    bool read_hex(uint16_t &arg);
+    void process_response();
+    #ifdef SUBBUS_INTERRUPTS
+    void process_interrupt();
+    #endif
     void process_requests();
+    /**
+     * @param status Request status (SBS_* codes) returned to client
+     * @param n_args The number of arguments in the reply
+     * @param arg0 Optional uint16_t argument
+     * @param arg1 Optional uint16_t argument
+     * @param s String argument for SBRT_CAP
+     */
+    void dequeue_request(int16_t status, int n_args, uint16_t arg0,
+                         uint16_t arg1, char *s);
     std::list<serusb_request> reqs;
     bool request_pending;
     bool request_processing;
+    // Do I need reply structure here, or should it live in the flavor?
 };
 
 class subbusd_serusb : public subbusd_flavor {

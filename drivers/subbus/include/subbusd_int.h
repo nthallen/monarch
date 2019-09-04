@@ -51,6 +51,8 @@ class subbusd_client : public DAS_IO::Serverside_client {
     /**
      * Utility function to return the reply structure along with the
      * specified return code.
+     * @param err_code to send to the client.
+     * @return false
      */
     bool status_return(uint16_t err_code);
     /**
@@ -84,7 +86,7 @@ class subbusd_core {
   typedef struct carddef {
     struct carddef *next;
     char cardID[ CardID_MAX ];
-    unsigned short address;
+    uint16_t address;
     unsigned int reg_id;
     unsigned int bitno;
     struct sigevent event;
@@ -92,17 +94,17 @@ class subbusd_core {
   } card_def;
 
   typedef struct {
-    unsigned short address;
-    unsigned short bits;
+    uint16_t address;
+    uint16_t bits;
     card_def *def[8];
   } region;
   #define MAX_REGIONS 4
 
   extern card_def *carddefs;
   extern region regions[MAX_REGIONS];
-  extern int expint_attach( int rcvid, char *cardID, unsigned short address,
+  extern int expint_attach( int rcvid, char *cardID, uint16_t address,
                         int region, struct sigevent *event, card_def **card );
-  extern int expint_detach( int rcvid, char *cardID, unsigned short *addr,
+  extern int expint_detach( int rcvid, char *cardID, uint16_t *addr,
                         unsigned int *bn );
 
 #endif // SUBBUS_INTERRUPTS
@@ -110,8 +112,8 @@ class subbusd_core {
 #ifdef SUBBUS_CACHE
   extern char *cache_hw_range, *cache_sw_range;
   extern void sb_cache_init(void);
-  extern int sb_cache_write( unsigned short addr, unsigned short data );
-  extern int sb_cache_read( unsigned short addr, unsigned short *data );
+  extern int sb_cache_write( uint16_t addr, uint16_t data );
+  extern int sb_cache_read( uint16_t addr, uint16_t *data );
 #endif
 
 #endif
