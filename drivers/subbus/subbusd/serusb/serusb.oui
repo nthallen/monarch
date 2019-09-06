@@ -1,19 +1,19 @@
 <package> serusb
 <include> subbusd
 <follow> subbusd
+<include> <stdlib.h>
+<include> "subbusd_serusb.h"
+<include> "nl_assert.h"
 
 <opts> "p:b:N:"
 <sort>
 	-p <port> Serial port (/dev/serusb2)
 	-b <baud> Baud rate (57600)
-	-N <devname> subservice name (serusb)
 
 <init>
   serusb_init_options(argc, argv);
 
 <defs>
-<include> <stdlib.h>
-<include> "subbusd_serusb.h"
 
 static const char *serusb_port = "/dev/serusb2";
 static int serusb_baud_rate = 57600;
@@ -32,11 +32,8 @@ static void serusb_init_options(
       case 'b':
         serusb_baud_rate = atoi(optarg);
         break;
-      case 'N':
-        subbusd_devname = optarg;
-        break;
       case '?':
-        nl_error(3, "Unrecognized Option -%c", optopt);
+        msg(3, "Unrecognized Option -%c", optopt);
       default:
         break;
     }

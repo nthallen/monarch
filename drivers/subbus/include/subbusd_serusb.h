@@ -1,5 +1,7 @@
 #ifndef SERUSB_H_INCLUDED
 #define SERUSB_H_INCLUDED
+#include <stdint.h>
+#include "dasio/serial.h"
 #include "subbusd_int.h"
 
 /**
@@ -17,6 +19,7 @@
 #define SB_SERUSB_MAX_RESPONSE 2501
 
 class subbusd_serusb_client;
+class subbusd_serusb;
 
 extern int int_attach(int rcvid, subbusd_req_t *req, char *sreq);
 extern int int_detach(int rcvid, subbusd_req_t *req, char *sreq);
@@ -50,6 +53,7 @@ class subbusd_serusb_client : public subbusd_client {
 
 #define SBDR_TYPE_INTERNAL 0
 #define SBDR_TYPE_CLIENT 1
+#define SBDR_TYPE_UNDEF 2
 #define SBDR_TYPE_MAX 1
 
 /* SUBBUSD_MAX_REQUESTS is the size of the request queue,
@@ -62,8 +66,14 @@ class subbusd_serusb_client : public subbusd_client {
 
 class serusb_request {
   public:
+    inline serusb_request()
+      : type(SBDR_TYPE_UNDEF),
+        clt(0),
+        request(0),
+        repp(0),
+        n_reads(0) {}
     inline serusb_request(uint16_t type, subbusd_serusb_client *clt,
-      const char *request, subbusd_rep_t *repp,uint16_t n_reads = 0)
+      const char *request, subbusd_rep_t *repp, uint16_t n_reads = 0)
       : type(type),
         clt(clt),
         request(request),
@@ -89,10 +99,10 @@ class serusb_request {
 
 class serusb_if : public DAS_IO::Serial {
   public:
-    serusb_if(const char *port, int baud_rate);
+    serusb_if(const char *port);
     // ~serusb_if();
     void enqueue_request(uint16_t type, subbusd_serusb_client *clt,
-      const char *request, subbusd_rep_t *repp, uint16 n_reads);
+      const char *request, subbusd_rep_t *repp, uint16_t n_reads);
     uint16_t type;
     subbusd_serusb_client *clt;
     uint16_t n_reads;
@@ -115,7 +125,7 @@ class serusb_if : public DAS_IO::Serial {
      * @param s String argument for SBRT_CAP
      */
     void dequeue_request(int16_t status, int n_args, uint16_t arg0,
-                         uint16_t arg1, char *s);
+                         uint16_t arg1, const char *s);
     std::list<serusb_request> reqs;
     bool request_pending;
     bool request_processing;
@@ -128,9 +138,9 @@ class subbusd_serusb : public subbusd_flavor {
     ~subbusd_serusb();
     void init_subbus();
     void shutdown_subbus();
-    inline void enqueue_request(can_msg_t *can_msg, uint8_t *rep_buf,
-        int buflen, subbusd_serusb_client *clt) {
-          serusb->enqueue_request(can_msg, rep_buf, buflen, clt);
+    inline void enqueue_request(uint16_t type, subbusd_serusb_client *clt,
+      const char *request, subbusd_rep_t *repp, uint16_t n_reads) {
+          serusb->enqueue_request(type, clt, request, repp, n_reads);
       }
   private:
     // serusb sockets, states, etc.
