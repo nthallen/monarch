@@ -23,5 +23,5 @@ include_directories(
   ${le_das_SOURCE_DIR}/libs/dasio/src
 )
 
-install(TARGETS subbusd_CAN RUNTIME DESTINATION bin)
+install(TARGETS subbusd_CAN subbusd_serusb RUNTIME DESTINATION bin)
 

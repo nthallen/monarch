@@ -6,7 +6,7 @@ function nl_error {
 
 [ -d .git -a ../git -ef . ] || nl_error "Must run in source base directory"
 [ -d ../dox ] || mkdir ../dox
-for i in tags libs tools utils; do
+for i in tags libs tools utils drivers; do
   [ -d ../dox/$i ] || mkdir ../dox/$i
 done
 
@@ -22,6 +22,7 @@ generate libs/nl
 generate libs/dasio
 generate tools/cmdgen
 generate tools/tmc
+generate drivers/subbus
 
 cd ../dox
 
