@@ -49,7 +49,7 @@ bool subbusd_client::status_return(uint16_t err_code) {
 }
 
 bool subbusd_client::protocol_input() {
-  subbusd_req_t *req = (subbusd_req_t *)buf;
+  req = (subbusd_req_t *)buf;
   unsigned nb_exp;
   
   nl_assert(!request_pending);

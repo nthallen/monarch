@@ -406,7 +406,15 @@ void subbusd_serusb_client::request_complete(uint16_t n_bytes) {
 }
 
 serusb_if::serusb_if(const char *port)
-      : DAS_IO::Serial("serusb", SB_SERUSB_MAX_RESPONSE, port, O_RDWR) {}
+      : DAS_IO::Serial("serusb", SB_SERUSB_MAX_RESPONSE, port,
+            O_RDWR | O_NONBLOCK),
+        type(0),
+        // clt(0),
+        // n_reads(0),
+        // request(0),
+        request_pending(false),
+        request_processing(false)
+      {}
 
 void serusb_if::enqueue_request(uint16_t type, subbusd_serusb_client *clt,
       const char *request, subbusd_rep_t *repp, uint16_t n_reads) {

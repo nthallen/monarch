@@ -36,7 +36,7 @@ Serverside_client *new_subbusd_CAN_client(Authenticator *auth, SubService *ss) {
 bool subbusd_CAN_client::incoming_sbreq() {
   int rv, rsize;
   //uint8_t device_id, addr;
-  req = (subbusd_req_t *)&buf[0];
+  // req = (subbusd_req_t *)&buf[0];
   
   switch ( req->sbhdr.command ) {
     case SBC_READACK:

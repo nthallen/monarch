@@ -104,9 +104,9 @@ class serusb_if : public DAS_IO::Serial {
     void enqueue_request(uint16_t type, subbusd_serusb_client *clt,
       const char *request, subbusd_rep_t *repp, uint16_t n_reads);
     uint16_t type;
-    subbusd_serusb_client *clt;
-    uint16_t n_reads;
-    const char *request;
+    // subbusd_serusb_client *clt;
+    // uint16_t n_reads;
+    // const char *request;
   private:
     bool protocol_input();
     bool protocol_timeout();

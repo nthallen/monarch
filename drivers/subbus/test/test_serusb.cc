@@ -45,6 +45,7 @@ void test_mread(subbuspp *P, int nreads, const char *str) {
  */
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
+  msg(0, "%s %s (%s) Starting", DAS_IO::AppID.fullname, DAS_IO::AppID.rev, DAS_IO::AppID.Experiment);
   subbuspp *P = new subbuspp("subbusd", "serusb");
   int subfunc = P->load();
   if (subfunc) {
