@@ -1,5 +1,7 @@
 /** @file socket.cc */
 #include <stdio.h>
+#include <string>
+#include <string.h>
 #include <strings.h>
 #include <cstdlib>
 #include <cstring>
@@ -11,6 +13,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <netdb.h>
+#include <map>
 #include "dasio/socket.h"
 #include "dasio/loop.h"
 #include "dasio/msg.h"
@@ -465,64 +468,107 @@ const char *Socket::get_version_string() {
   return version;
 }
 
+/** Necessary global variables. */
+bool read = false;
+std::map<const char*, char*> name_to_port;
+const char * filename = "portslist";
+
+/** Changed by Miles on 2019-09-12 */
 bool Socket::get_service_port(const char *service, char *port) {
-  if (isdigit(service[0])) {
-    int i;
-    for (i = 0; i < 5 && isdigit(service[i]); ++i)
-      port[i] = service[i];
-    if (isdigit(service[i])) {
-      msg(MSG_ERROR, "%s: numeric service value out of range: '%s'", iname, service);
-      return true;
-    }
-    port[i] = '\0';
-    return false;
-  }
-  FILE *fp;
-  char svcs_filename[80]; // arbitrary path length
-  if (snprintf(svcs_filename, 80, "bin/%s/services", get_version_string()) >= 80) {
-    msg(MSG_EXIT_ABNORM, "%s: Unexpected overflow in snprintf", iname);
-    return true;
-  }
-  fp = fopen(svcs_filename, "r");
-  if (fp == 0) {
-    msg(MSG_ERROR, "%s: get_service_port() unable to open services file %s",
-      iname, svcs_filename);
-    return true;
-  }
-  char svcline[80];
-  int line_number = 0;
-  while (fgets(svcline, 80, fp)) {
-    ++line_number;
-    int svclen = strlen(service);
-    if (strncasecmp(service, svcline, svclen) == 0 && isspace(svcline[svclen])) {
-      int i;
-      for (i = svclen; isspace(svcline[i]); ++i);
-      if (isdigit(svcline[i])) {
-        int j;
-        for (j =0; j < 5 && isdigit(svcline[i+j]); ++j) {
-          port[j] = svcline[i+j];
+  /** First check if the file has already been read in. */
+  if (!read) {
+    /** Begin by opening and reading the file, line by line. */
+    FILE * portfile = fopen(filename, "r");
+    char current_line[128];
+    char ch;
+    
+    bool name_captured;
+    bool port_captured;
+    int port_index;
+    
+    while (fgets(current_line, 128, portfile) != NULL) {
+      name_captured = false;
+      port_captured = false;
+      port_index = 0;
+      for (std::string::size_type i = 0; i < strlen(current_line); i++) {
+        char name_accumulator[16];
+        char port_accumulator[16];
+        ch = current_line[i];
+        
+        if (ch == EOF) {
+          read = true;
+          break;
+        } else {
+          /** Capture the name of the service. */
+          if (!name_captured) {
+            if (isspace(ch)) {
+              if (i > 0) {
+                name_captured = true;
+              } else {
+                continue;
+              }
+            } else {
+              name_accumulator[i] = ch;
+            }
+          }
+          
+          /** Capture the corresponding port number. */
+          if (name_captured && !port_captured) {
+            if (isspace(ch)) {
+              if (isdigit(port_accumulator[0])) {
+                port_captured = true;
+              } else {
+                continue;
+              }
+            }
+            if (isdigit(ch)) {
+              port_accumulator[port_index] = ch;
+              port_index++;
+            } else {
+              if (isdigit(port_accumulator[0])) {
+                port_captured = true;
+              } else {
+                msg(MSG_DEBUG, "error finding port for %s", service);
+                return false;
+              }
+            }
+          }
         }
-        if (isdigit(svcline[i+j])) {
-          msg(MSG_ERROR, "%s: %s:%d: port number overflow for service %s",
-            iname, svcs_filename, line_number, service);
-          fclose(fp);
-          return true;
+        
+        /** Finally, store both in the map. */
+        if (name_captured && port_captured) {
+          name_to_port[name_accumulator] = port_accumulator;
+          for (int j = 0; j < 16; j++) {
+            name_accumulator[j] = '\0';
+            port_accumulator[j] = '\0';
+          }
+          break;
         }
-        port[j] = '\0';
-        fclose(fp);
-        return false;
-      } else {
-        msg(MSG_ERROR, "%s: %s:%d: syntax error for service %s",
-            iname, svcs_filename, line_number, service);
-        fclose(fp);
-        return true;
       }
     }
+    
+    fclose(portfile);
+    read = true;
+    port = name_to_port[service];
+    if (isdigit(port[0])) {
+      return true;
+    } else {
+      msg(MSG_DEBUG,"no port for %s!", service);
+      return false;
+    }
+  } else {
+    port = name_to_port[service];
+    if (isdigit(port[0])) {
+      return true;
+    } else {
+      msg(MSG_DEBUG,"no port for %s!", service);
+      return false;
+    }
   }
-  msg(MSG_ERROR, "%s: service %s not found in %s",
-    iname, service, svcs_filename);
-  fclose(fp);
-  return true;
+  
+  /** If we really mess up. */
+  msg(MSG_DEBUG,"no port for %s!", service);
+  return false;
 }
 
 }
