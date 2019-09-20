@@ -419,6 +419,7 @@ serusb_if::serusb_if(const char *port)
 void serusb_if::enqueue_request(uint16_t type, subbusd_serusb_client *clt,
       const char *request, subbusd_rep_t *repp, uint16_t n_reads) {
   nl_assert(type == SBDR_TYPE_INTERNAL || (clt != 0 && repp != 0));
+  msg(MSG_DBG(0), "%s: Enqueing request: '%s'", iname, ascii_esc(request));
   reqs.push_back(serusb_request(type, clt, request, repp, n_reads));
   process_requests();
 }
@@ -439,14 +440,13 @@ void serusb_if::enqueue_request(uint16_t type, subbusd_serusb_client *clt,
    terminated string.]
  */
 bool serusb_if::protocol_input() {
-  while (nc) {
-    for (int lcp = 0; lcp < nc; ++lcp) {
-      if (buf[lcp] == '\n') {
-        process_response();
-        break;
-      }
+  for (int lcp = 0; lcp < nc; ++lcp) {
+    if (buf[lcp] == '\n') {
+      process_response();
+      break;
     }
   }
+  return false;
 }
 
 bool serusb_if::protocol_timeout() {
@@ -709,7 +709,8 @@ void serusb_if::process_interrupt(unsigned int nb) {
 
 void serusb_if::process_requests() {
   if (request_pending || request_processing || reqs.empty()) {
-    msg(MSG_DBG(0), "process_requests() no action: %s",
+    msg(MSG_DBG(0), "%s: process_requests() no action: %s",
+      iname,
       request_pending ? "pending" : request_processing ? "processing"
       : "reqs.empty()");
     return;
@@ -757,7 +758,8 @@ void serusb_if::process_requests() {
         msg(4, "Invalid request type" );
     }
     cmdlen = strlen( req.request );
-    msg(-2, "Request: '%*.*s'", cmdlen-1, cmdlen-1, req.request );
+    msg(MSG_DBG(0), "%s: Sending request: '%*.*s'", iname, cmdlen-1, cmdlen-1,
+      ascii_esc(req.request));
     iwrite((const char *)req.request, cmdlen);
     if (no_response) {
       subbusd_serusb_client *clt = req.clt;
@@ -768,6 +770,7 @@ void serusb_if::process_requests() {
       TO.Set(1,0); // set_timeout(1);
     }
   }
+  request_processing = false;
   return;
 }
 
@@ -786,13 +789,18 @@ void serusb_if::dequeue_request(int16_t status, int n_args,
     uint16_t arg0, uint16_t arg1, const char *s ) {
   int rv, rsize = 0;
   subbusd_rep_t *repp;
+  subbusd_rep_t tmp_rep;
   serusb_request cur_req;
 
   nl_assert(request_pending && !reqs.empty());
   cur_req = reqs.front();
   TO.Clear();
-  if (cur_req.request[0] != 'T') {
+  if (cur_req.clt && cur_req.repp) {
     repp = cur_req.repp;
+  } else {
+    repp = &tmp_rep;
+  }
+  if (cur_req.request[0] != 'T') {
     repp->hdr.status = status;
     switch (n_args) {
       case 0:
@@ -834,17 +842,19 @@ void serusb_if::dequeue_request(int16_t status, int n_args,
         // SBS_RESP_SYNTAX, complain and return with no data
         { int n_reads = cur_req.n_reads;
           int n_parsed = 0;
-          const char *p = s;
+          // const char *p = s;
           uint16_t errval;
 
           nl_assert(n_reads > 0 && n_reads <= 500);
-          while (n_parsed  < n_reads && rsize == 0) {
-            switch ( *p ) {
+          nl_assert(cp == 1);
+          cp = 0;
+          while (n_parsed  < n_reads && rsize == 0 && cp < nc) {
+            switch ( buf[cp] ) {
               case 'm':
                 repp->hdr.status = SBS_NOACK; // No acknowledge on at least one read
                 // fall through
               case 'M':
-                ++p;
+                ++cp;
                 if (!read_hex(repp->data.mread.rvals[n_parsed++])) {
                   report_err("%s: DACS response syntax error", iname);
                   repp->hdr.status = SBS_RESP_SYNTAX; // DACS reply syntax error
@@ -854,24 +864,27 @@ void serusb_if::dequeue_request(int16_t status, int n_args,
                 }
                 continue;
               case 'U':
-                ++p;
+                ++cp;
                 if (!read_hex(errval)) {
                   report_err("%s: Invalid error in mread response", iname);
                   repp->hdr.status = SBS_RESP_SYNTAX;
                 } else {
-                  msg(2, "DACS reported error %d on mread", errval );
+                  msg(2, "%s: error %d reported on mread", iname, errval );
                   repp->hdr.status = SBS_RESP_ERROR;
                 }
                 rsize = sizeof(subbusd_rep_hdr_t);
                 repp->hdr.ret_type = SBRT_NONE;
                 break;
+              case '\n':
+                break;
               default:
+                report_err("%s: invalid character in mread at col %d", iname, cp);
                 break;
             }
             break;
           }
           if (rsize == 0) {
-            if (n_parsed > n_reads || *p != '\0' ) {
+            if (n_parsed > n_reads || cp >= nc ) {
               // Wrong number of read values returned
               report_err("Expected %d, read %d:", n_reads, n_parsed);
               repp->hdr.status = SBS_RESP_SYNTAX;
@@ -900,9 +913,8 @@ void serusb_if::dequeue_request(int16_t status, int n_args,
     default:
       msg( 4, "Invalid command type in dequeue_request" );
   }
-  { int n = strlen(cur_req.request) - 1;
-    msg( -2, "Dequeued: '%*.*s'", n, n, cur_req.request ); 
-  }
+  msg(MSG_DBG(0), "%s: Dequeued request: '%s'", iname,
+    ascii_esc(cur_req.request)); 
   reqs.pop_front();
   request_pending = false;
   process_requests(); // if one is pending...
@@ -911,8 +923,11 @@ void serusb_if::dequeue_request(int16_t status, int n_args,
 subbusd_serusb::subbusd_serusb(const char *port, int baud_rate)
     : subbusd_flavor("serusb", new_subbusd_serusb_client) {
   serusb = new serusb_if(port);
+  serusb->reference();
   serusb->setup(baud_rate, 8, 'n', 1, 1, 0);
   serusb->flush_input();
+  nl_assert(subbusd_core::subbusd);
+  subbusd_core::subbusd->srvr.ELoop.add_child(serusb);
 }
 
 subbusd_serusb::~subbusd_serusb() {
@@ -928,4 +943,6 @@ void subbusd_serusb::init_subbus() {
   enqueue_request( SBDR_TYPE_INTERNAL, 0, "V\n", 0, 0 );
 }
 
-void subbusd_serusb::shutdown_subbus(void) {}
+void subbusd_serusb::shutdown_subbus(void) {
+  DAS_IO::Interface::dereference(serusb);
+}

@@ -45,6 +45,6 @@ const char *ascii_escape(const std::string &s) {
  * have no inherent length limitation and can deal
  * with embedded NULs.
  */
-const char *ascii_escape(const char *str) {
+const char *ascii_esc(const char *str) {
   return ascii_escape(str, strlen(str));
 }
