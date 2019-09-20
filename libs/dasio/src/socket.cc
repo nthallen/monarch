@@ -27,16 +27,16 @@
 namespace DAS_IO {
 
 // UDP Socket
-Socket::Socket(const char *iname, int bufsz, const char *service) :
-    Interface(iname, bufsz),
-    hostname(0),
-    service(service),
-    is_server(false),
-    socket_state(Socket_disconnected),
-    socket_type(Socket_Unix)  
-{
-  common_init();
-}
+// Socket::Socket(const char *iname, int bufsz, const char *service) :
+    // Interface(iname, bufsz),
+    // hostname(0),
+    // service(service),
+    // is_server(false),
+    // socket_state(Socket_disconnected),
+    // socket_type(Socket_Unix)  
+// {
+  // common_init();
+// }
 
 // TCP Socket
 Socket::Socket(const char *iname, int bufsz, const char *hostname,
@@ -46,7 +46,7 @@ Socket::Socket(const char *iname, int bufsz, const char *hostname,
     service(service),
     is_server(false),
     socket_state(Socket_disconnected),
-    socket_type(Socket_TCP)
+    socket_type(hostname ? Socket_TCP : Socket_Unix)
 {
   common_init();
 }
@@ -529,6 +529,8 @@ bool Socket::get_service_port(const char *service, char *port) {
                 port_captured = true;
               } else {
                 msg(MSG_DEBUG, "error finding port for %s", service);
+                port[0] = '-';
+                port[1] = '1';
                 return false;
               }
             }
@@ -554,6 +556,8 @@ bool Socket::get_service_port(const char *service, char *port) {
       return true;
     } else {
       msg(MSG_DEBUG,"no port for %s!", service);
+      port[0] = '-';
+      port[1] = '1';
       return false;
     }
   } else {
@@ -562,12 +566,16 @@ bool Socket::get_service_port(const char *service, char *port) {
       return true;
     } else {
       msg(MSG_DEBUG,"no port for %s!", service);
+      port[0] = '-';
+      port[1] = '1';
       return false;
     }
   }
   
   /** If we really mess up. */
   msg(MSG_DEBUG,"no port for %s!", service);
+  port[0] = '-';
+  port[1] = '1';
   return false;
 }
 

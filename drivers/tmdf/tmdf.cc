@@ -21,9 +21,9 @@ const char *df_path = "/";
 const char *tmdf_name = "tmdf";
 TMDF_t TMDF;
 
-TMDF_data_sndr::TMDF_data_sndr( unsigned seconds, const char *name,
+TMDF_data_sndr::TMDF_data_sndr( unsigned seconds, const char *name, const char *hostname,
 	void *data, unsigned short size )
-    : TM_data_sndr("TM", name, data, size ) {
+    : TM_data_sndr("TM", name, hostname, data, size ) {
   fd = open(df_path, O_RDONLY);
   next = 0;
   secs = seconds;
@@ -103,9 +103,9 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   msg(0, "Startup");
   
-  DAS_IO::Client QC("cmd", 5, "cmd", "Quit");
+  DAS_IO::Client QC("cmd", 5, 0, "cmd", "Quit");
   QC.flags = Interface::Fl_Read;
-  TMDF_data_sndr TM( 60, tmdf_name, &TMDF, sizeof(TMDF) );
+  TMDF_data_sndr TM( 60, tmdf_name, 0, &TMDF, sizeof(TMDF) );
   QC.connect();
   TM.connect();
   

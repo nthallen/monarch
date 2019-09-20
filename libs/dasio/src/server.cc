@@ -9,6 +9,8 @@
 
 namespace DAS_IO {
 
+  DAS_IO::Server::Srv_type DAS_IO::Server::server_type = DAS_IO::Server::Srv_type::Srv_Unix;
+
   SubService::SubService(std::string name, socket_clone_t func, void *svc_data,
         Authentication_hook hook)
       : name(name), func(func), svc_data(svc_data), auth_hook(hook) {}

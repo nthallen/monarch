@@ -23,7 +23,7 @@
     we_are_memo = true;
   }
 
-  memo_client::memo_client() : DAS_IO::Client("memo", 1000, "memo", 0) {
+  memo_client::memo_client() : DAS_IO::Client("memo", 1000, 0, "memo", 0) {
     //do stuff
   }
   
