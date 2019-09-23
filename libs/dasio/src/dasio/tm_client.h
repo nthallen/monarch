@@ -17,7 +17,7 @@ namespace DAS_IO {
  */
 class tm_client : public DAS_IO::Client, public DAS_IO::tm_rcvr {
   public:
-    tm_client(int bufsize, bool fast = true, const char *hostname = "boerf");
+    tm_client(int bufsize, bool fast = true, const char *hostname = 0);
     // void resize_buffer(int bufsize_in);
     static char *srcnode;
     static const char *tm_client_hostname;

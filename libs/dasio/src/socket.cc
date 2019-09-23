@@ -471,14 +471,23 @@ const char *Socket::get_version_string() {
 /** Necessary global variables. */
 bool read = false;
 std::map<const char*, char*> name_to_port;
-const char * filename = "portslist";
+const char * filename = "/services";
 
 /** Changed by Miles on 2019-09-12 */
 bool Socket::get_service_port(const char *service, char *port) {
   /** First check if the file has already been read in. */
   if (!read) {
     /** Begin by opening and reading the file, line by line. */
-    FILE * portfile = fopen(filename, "r");
+    //const char *fullpath;
+    //strcpy(fullpath, getenv("tmbindir"));
+    //strcat(fullpath, filename);
+    
+    char *tmbindir = getenv("tmbindir");
+    char *fullpath = (char *) new_memory(strlen(tmbindir) + strlen(filename) + 1);
+    strcpy(fullpath, tmbindir);
+    strcat(fullpath, filename);
+    
+    FILE * portfile = fopen(fullpath, "r");
     char current_line[128];
     char ch;
     

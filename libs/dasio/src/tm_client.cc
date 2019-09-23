@@ -18,7 +18,7 @@
 
 namespace DAS_IO {
 
-const char *DAS_IO::tm_client::tm_client_hostname = "";
+const char *DAS_IO::tm_client::tm_client_hostname = 0;
 
 char *tm_client::srcnode = NULL;
 
