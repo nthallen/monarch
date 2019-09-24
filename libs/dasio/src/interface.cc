@@ -6,10 +6,12 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
 #include "dasio/interface.h"
 #include "dasio/msg.h"
 #include "nl_assert.h"
 #include "dasio/ascii_escape.h"
+#include "dasio/loop.h"
 
 namespace DAS_IO {
 
@@ -30,6 +32,7 @@ Interface::Interface(const char *name, int bufsz) {
   buf = 0;
   fd = -1;
   flags = 0;
+  signals = 0;
   ELoop = 0;
   n_fills = n_empties = n_eagain = n_eintr = 0;
   // obuf = 0;
@@ -53,6 +56,11 @@ Interface::~Interface() {
     close();
   }
   set_ibufsize(0);
+}
+
+bool Interface::serialized_signal_handler(uint32_t signals_seen) {
+  msg(MSG, "received signals: %08X", signals_seen);
+  return true;
 }
 
 /**
@@ -86,6 +94,8 @@ bool Interface::ProcessData(int flag) {
   }
   return false;
 }
+
+void Interface::adopted() {}
 
 void Interface::dereference(Interface *P) {
   if (--P->ref_count == 0) {
@@ -305,6 +315,25 @@ void Interface::report_err( const char *fmt, ... ) {
       msg(MSG_ERROR, "%s: Error threshold reached: suppressing errors", iname);
     ++n_suppressed;
     ++total_suppressed;
+  }
+}
+
+void Interface::signal(int signum, bool handle) {
+  if (ELoop == 0) {
+    msg(MSG_FATAL, "no ELoop, cannot operate");
+  }
+  if ((1 <= signum) && (signum <= 32)) {
+    if (handle) {
+      /* Set the bit in question. */
+      signals |= 1 << (signum - 1);
+      ELoop->signal(signum, loop_signal_handler);
+    } else {
+      /* Clear the bit in question. */
+      signals &= ~(1 << (signum - 1));
+      ELoop->signal(signum, SIG_DFL);
+    }
+  } else {
+    msg(MSG_FATAL, "unknown signal: %u", signum);
   }
 }
 

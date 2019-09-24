@@ -24,6 +24,7 @@ void Loop::add_child(Interface *P) {
     S.push_back(P);
     P->ELoop = this;
     P->reference();
+    P->adopted();
     children_changed = true;
   } else {
     msg( MSG_EXIT_ABNORM, "fd %d already inserted in DAS_IO::Loop::add_child", P->fd );
@@ -143,12 +144,25 @@ void Loop::event_loop() {
       }
     } else if ( rc < 0 ) {
       if ( errno == EINTR ) {
-        if (!is_memo_loop) {
-          msg(MSG_DBG(0), ": requested termination after if (errno==EINTR)");
+        //keep_going = 0;
+        for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
+          Interface *P = *Sp;
+          if (signals_seen && P->signals) {
+            if (P->serialized_signal_handler(signals_seen)) {
+              if (!is_memo_loop) {
+                msg(MSG_DBG(0), "%s: requested termination after if (errno==EINTR)", P->get_iname());
+              }
+              keep_going = 0;
+            }
+            signals_seen &= ~(P->signals);
+          }
         }
-        keep_going = 0;
-      }
-      else if (errno == EBADF || errno == EHOSTDOWN) {
+        if (signals_seen != 0) {
+          msg(MSG_ERROR, "unhandled signal in Loop: %08X", signals_seen);
+          signals_seen = 0;
+          keep_going = 0;
+        }
+      } else if (errno == EBADF || errno == EHOSTDOWN) {
         bool handled = false;
         for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
           Interface *P = *Sp;
@@ -237,4 +251,10 @@ void Loop::signal(int sig, void (*handler)(int)) {
     msg(MSG_ERROR, "sigaction(%d) error %d: %s", sig, errno, strerror(errno));
 }
 
+}
+
+uint32_t DAS_IO::Loop::signals_seen = 0;
+
+void loop_signal_handler(int sig) {
+  DAS_IO::Loop::signals_seen |= 1 << (sig - 1);
 }

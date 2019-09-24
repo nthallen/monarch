@@ -79,6 +79,14 @@ int main(int argc, char **argv) {
   return 0;
 }
 
+#ifdef NCTABLE_H_INCLUDED
+bool DAS_IO::nc_tm_client::serialized_signal_handler(uint32_t signals_seen) {
+  msg(MSG_DEBUG, "received signals: %08X", signals_seen);
+  display_redraw();
+  return false;
+}
+#endif
+
 %main_program%
 
 /* Skeleton rest of the file */
