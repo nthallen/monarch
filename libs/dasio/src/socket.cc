@@ -482,12 +482,19 @@ bool Socket::get_service_port(const char *service, char *port) {
     //strcpy(fullpath, getenv("tmbindir"));
     //strcat(fullpath, filename);
     
-    char *tmbindir = getenv("tmbindir");
+    const char *tmbindir = getenv("TMBINDIR");
+    if (tmbindir == 0) {
+      tmbindir = "bin/1.1";
+    }
     char *fullpath = (char *) new_memory(strlen(tmbindir) + strlen(filename) + 1);
     strcpy(fullpath, tmbindir);
     strcat(fullpath, filename);
     
     FILE * portfile = fopen(fullpath, "r");
+    if (portfile == 0) {
+      msg(MSG_ERROR, "Cannot access %s!", fullpath);
+      return false;
+    }
     char current_line[128];
     char ch;
     

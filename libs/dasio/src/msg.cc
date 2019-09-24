@@ -25,6 +25,7 @@
 
   memo_client::memo_client() : DAS_IO::Client("memo", 1000, 0, "memo", 0) {
     //do stuff
+    ELoop.is_memo_loop = true;
   }
   
   static memo_client *memo_client_instance;

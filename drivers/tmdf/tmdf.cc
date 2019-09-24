@@ -23,7 +23,7 @@ TMDF_t TMDF;
 
 TMDF_data_sndr::TMDF_data_sndr( unsigned seconds, const char *name, const char *hostname,
 	void *data, unsigned short size )
-    : TM_data_sndr("TM", name, hostname, data, size ) {
+    : TM_data_sndr("TM", hostname, name, data, size ) {
   fd = open(df_path, O_RDONLY);
   next = 0;
   secs = seconds;
