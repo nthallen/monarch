@@ -27,16 +27,16 @@
 namespace DAS_IO {
 
 // UDP Socket
-Socket::Socket(const char *iname, int bufsz, const char *service) :
-    Interface(iname, bufsz),
-    hostname(0),
-    service(service),
-    is_server(false),
-    socket_state(Socket_disconnected),
-    socket_type(Socket_Unix)  
-{
-  common_init();
-}
+// Socket::Socket(const char *iname, int bufsz, const char *service) :
+    // Interface(iname, bufsz),
+    // hostname(0),
+    // service(service),
+    // is_server(false),
+    // socket_state(Socket_disconnected),
+    // socket_type(Socket_Unix)  
+// {
+  // common_init();
+// }
 
 // TCP Socket
 Socket::Socket(const char *iname, int bufsz, const char *hostname,
@@ -46,7 +46,7 @@ Socket::Socket(const char *iname, int bufsz, const char *hostname,
     service(service),
     is_server(false),
     socket_state(Socket_disconnected),
-    socket_type(Socket_TCP)
+    socket_type(hostname ? Socket_TCP : Socket_Unix)
 {
   common_init();
 }
@@ -471,14 +471,30 @@ const char *Socket::get_version_string() {
 /** Necessary global variables. */
 bool read = false;
 std::map<const char*, char*> name_to_port;
-const char * filename = "portslist";
+const char * filename = "/services";
 
 /** Changed by Miles on 2019-09-12 */
 bool Socket::get_service_port(const char *service, char *port) {
   /** First check if the file has already been read in. */
   if (!read) {
     /** Begin by opening and reading the file, line by line. */
-    FILE * portfile = fopen(filename, "r");
+    //const char *fullpath;
+    //strcpy(fullpath, getenv("tmbindir"));
+    //strcat(fullpath, filename);
+    
+    const char *tmbindir = getenv("TMBINDIR");
+    if (tmbindir == 0) {
+      tmbindir = "bin/1.1";
+    }
+    char *fullpath = (char *) new_memory(strlen(tmbindir) + strlen(filename) + 1);
+    strcpy(fullpath, tmbindir);
+    strcat(fullpath, filename);
+    
+    FILE * portfile = fopen(fullpath, "r");
+    if (portfile == 0) {
+      msg(MSG_ERROR, "Cannot access %s!", fullpath);
+      return false;
+    }
     char current_line[128];
     char ch;
     
@@ -529,6 +545,8 @@ bool Socket::get_service_port(const char *service, char *port) {
                 port_captured = true;
               } else {
                 msg(MSG_DEBUG, "error finding port for %s", service);
+                port[0] = '-';
+                port[1] = '1';
                 return false;
               }
             }
@@ -554,6 +572,8 @@ bool Socket::get_service_port(const char *service, char *port) {
       return true;
     } else {
       msg(MSG_DEBUG,"no port for %s!", service);
+      port[0] = '-';
+      port[1] = '1';
       return false;
     }
   } else {
@@ -562,12 +582,16 @@ bool Socket::get_service_port(const char *service, char *port) {
       return true;
     } else {
       msg(MSG_DEBUG,"no port for %s!", service);
+      port[0] = '-';
+      port[1] = '1';
       return false;
     }
   }
   
   /** If we really mess up. */
   msg(MSG_DEBUG,"no port for %s!", service);
+  port[0] = '-';
+  port[1] = '1';
   return false;
 }
 

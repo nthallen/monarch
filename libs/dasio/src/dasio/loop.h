@@ -20,7 +20,7 @@ typedef std::list<Interface *> InterfaceList;
  */
 class Loop {
   public:
-    Loop();
+    Loop(bool is_memo = false);
     virtual ~Loop();
     
     /**
@@ -97,6 +97,7 @@ class Loop {
      * ensure that they are handled by the event_loop() thread.
      */
     inline sigset_t *get_blockset() { return &blockset; }
+    bool is_memo_loop;
     
     /** 
      * A bitmapped register indicating which signals have been 

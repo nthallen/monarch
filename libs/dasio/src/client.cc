@@ -6,11 +6,15 @@
 
 namespace DAS_IO {
 
-  Client::Client(const char *iname, int bufsz, const char *service,
-        const char *sub_service)
-    : DAS_IO::Socket(iname, bufsz, service), sub_service(sub_service) {
+  Client::Client(const char *iname, int bufsz, const char *hostname, const char *service, const char *sub_service) : DAS_IO::Socket(iname, bufsz, hostname, service), sub_service(sub_service) {
     clt_state = Clt_connecting;
   }
+
+  //Client::Client(const char *iname, int bufsz, const char *service,
+  //      const char *sub_service)
+  //  : DAS_IO::Socket(iname, bufsz, service), sub_service(sub_service) {
+  //  clt_state = Clt_connecting;
+  //}
   
   // Client::~Client() {}
   

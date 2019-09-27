@@ -9,6 +9,8 @@
 
 namespace DAS_IO {
 
+  DAS_IO::Server::Srv_type DAS_IO::Server::server_type = DAS_IO::Server::Srv_type::Srv_Unix;
+
   SubService::SubService(std::string name, socket_clone_t func, void *svc_data,
         Authentication_hook hook)
       : name(name), func(func), svc_data(svc_data), auth_hook(hook) {}
@@ -174,7 +176,7 @@ namespace DAS_IO {
 
   Server::~Server() {}
 
-  void Server::Start(Server::Srv_type which) {
+  void Server::Start(Server::Srv_type which = server_type) {
     if (which & Srv_Unix) {
       Unix = new Server_socket("Unix", service, Socket::Socket_Unix, this);
       Unix->reference();
