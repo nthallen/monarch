@@ -4,6 +4,7 @@
  * Header file for ncurses TM clients
  */
 
+#include <signal.h>
 #include "tm_client.h"
 
 namespace DAS_IO {
