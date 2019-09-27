@@ -45,14 +45,17 @@ else (CMAKE_CROSSCOMPILING OR NOT DEFINED le_das_SOURCE_DIR)
   set(OUI_EXE ${le_das_BINARY_DIR}/tools/oui/src/oui)
 endif (CMAKE_CROSSCOMPILING OR NOT DEFINED le_das_SOURCE_DIR)
 
-MACRO(OUI_FILE _filename)
+function(OUI_FILE _filename)
+    IF (ARGC LESS_EQUAL 1)
+      SET(ARGV1 cc)
+    ENDIF(ARGC LESS_EQUAL 1)
     GET_FILENAME_COMPONENT(_basename ${_filename} NAME_WE)
     ADD_CUSTOM_COMMAND(
-        OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.cc
+        OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.${ARGV1}
         COMMAND ${OUI_EXE}
-                -o${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.cc
+                -o${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.${ARGV1}
                 ${le_das_OUI_PATH}
                 ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         DEPENDS ${_filename} ${OUI_EXE} )
-ENDMACRO(OUI_FILE)
+endfunction(OUI_FILE)
