@@ -18,10 +18,11 @@ configure_file(distribute_check.in distribute_check @ONLY)
 
 if (NOT CMAKE_CROSSCOMPILING)
 
+configure_file(appgen.in appgen @ONLY)
 configure_file(distribute.in distribute)
 
 install(PROGRAMS
-  appgen
+  ${CMAKE_CURRENT_BINARY_DIR}/appgen
   appgen_module
   ${CMAKE_CURRENT_BINARY_DIR}/distribute
   ${CMAKE_CURRENT_BINARY_DIR}/distribute_check
