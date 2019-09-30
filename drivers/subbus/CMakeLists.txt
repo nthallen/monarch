@@ -9,18 +9,19 @@ else (${CMAKE_CROSSCOMPILING})
 endif (${CMAKE_CROSSCOMPILING})
 
 # reuseable cmake macro for lex
-MACRO(OUI_FILE _filename)
-    GET_FILENAME_COMPONENT(_basename ${_filename} NAME_WE)
-    ADD_CUSTOM_COMMAND(
-        OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.cc
-        COMMAND ${OUI_EXE}
-                -o${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.cc
-                -I${le_das_SOURCE_DIR}/libs/dasio/src
-                -I${le_das_SOURCE_DIR}/tools/oui/src
-                ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        DEPENDS ${_filename} $(OUI_EXE) )
-ENDMACRO(OUI_FILE)
+include ( ../../oui_setup.cmake )
+# MACRO(OUI_FILE _filename)
+    # GET_FILENAME_COMPONENT(_basename ${_filename} NAME_WE)
+    # ADD_CUSTOM_COMMAND(
+        # OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.cc
+        # COMMAND ${OUI_EXE}
+                # -o${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.cc
+                # -I${le_das_SOURCE_DIR}/libs/dasio/src
+                # -I${le_das_SOURCE_DIR}/tools/oui/src
+                # ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
+        # WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        # DEPENDS ${_filename} $(OUI_EXE) )
+# ENDMACRO(OUI_FILE)
 
 add_subdirectory(libpp)
 add_subdirectory(subbusd)

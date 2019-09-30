@@ -2,48 +2,10 @@
 #define SUBBUSD_CAN_H_INCLUDED
 #include "dasio/server.h"
 #include "subbusd_int.h"
-#ifdef HAVE_LINUX_CAN_H
-  #include <linux/can.h>
-  #include <linux/can/raw.h>
-#else
-  // placeholders for testing on unsupported platforms (cygwin)
-  struct can_frame {
-    uint32_t can_id;
-    uint8_t  can_dlc;
-    uint8_t  data[8];
-  };
-  #define CAN_MTU sizeof(struct can_frame)
-  #define CAN_SFF_MASK 0x000007FFU
-  #define CAN_EFF_FLAG 0x80000000U
-  #define CAN_RTR_FLAG 0x40000000U
-  #define CAN_ERR_FLAG 0x20000000U
-  #define CAN_ERR_MASK 0x1FFFFFFFU
-#endif
+#include "subbusd_CAN_interface.h"
 
-#define SUBBUSD_CAN_NAME "le-das CAN driver V1.0"
 extern void subbusd_CAN_init_options(int argc, char **argv);
 class subbusd_CAN;
-
-/**
- * While message is being processed, sb_can_seq will be
- * incremented. Since there are 6 bytes of data in the
- * first frame and 7 bytes in each frame after that, the
- * starting offset by sb_can_seq is:
- *   0 => 0
- *   1 => 6
- *   2 => 13
- * offset = sb_can_seq ? 7*sb_can_seq - 1 : 0;
- */
-typedef struct {
-  uint8_t device_id;
-  uint8_t sb_can_cmd;
-  uint8_t sb_can_seq;
-  uint8_t sb_nb;
-  uint8_t sb_can[256];
-  bool end_of_request;
-  uint8_t *buf;
-  int bufsz;
-} can_msg_t;
 
 class subbusd_CAN_client : public subbusd_client {
   public:
@@ -82,35 +44,7 @@ class can_request {
     subbusd_CAN_client *clt;
 };
 
-class CAN_socket : public DAS_IO::Interface {
-  public:
-    CAN_socket();
-    ~CAN_socket();
-    /** Open and setup the CAN socket */
-    void setup();
-    void enqueue_request(can_msg_t *can_msg, uint8_t *rep_buf, int buflen,
-        subbusd_CAN_client *clt);
-  protected:
-    bool iwritten(int nb);
-    const char *ascii_escape();
-    bool protocol_input();
-    bool protocol_timeout();
-    bool closed();
-  private:
-    void process_requests();
-    std::list<can_request> reqs;
-    can_frame reqfrm;
-    bool request_pending;
-    bool request_processing;
-    uint8_t seq_no; // may not be used?
-    uint8_t req_no;
-    uint8_t rep_seq_no;
-    uint16_t rep_len;
-    uint16_t rep_recd;
-    #ifndef HAVE_LINUX_CAN_H
-    uint8_t bytectr;
-    #endif
-};
+class CAN_interface;
 
 class subbusd_CAN : public subbusd_flavor {
   public:
@@ -124,7 +58,7 @@ class subbusd_CAN : public subbusd_flavor {
       }
   private:
     // CAN sockets, states, etc.
-    CAN_socket *CAN;
+    CAN_interface *CAN;
 };
 
 /* The following definitions originated in BMM can_control.h

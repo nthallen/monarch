@@ -12,7 +12,9 @@ configure_file (
 link_libraries(dasio nl pthread)
 
 add_executable(subbusd subbusd.cc subbusdoui.cc)
-add_executable(subbusd_CAN subbusd.cc subbusd_CANoui.cc CAN/subbusd_CAN.cc)
+add_executable(subbusd_CAN subbusd.cc subbusd_CANoui.cc CAN/subbusd_CAN.cc
+               CAN/subbusd_CAN_interface.cc)
+target_compile_definitions(subbusd_CAN PUBLIC USE_CAN_SOCKET)
 add_executable(subbusd_serusb subbusd.cc serusboui.cc serusb/serusb.cc)
 
 include_directories(
