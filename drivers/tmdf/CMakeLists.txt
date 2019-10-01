@@ -9,7 +9,7 @@ include( ../../oui_setup.cmake )
 
 OUI_FILE(tmdf.oui)
 add_executable(tmdf tmdf.cc tmdfoui.cc)
-target_link_libraries(tmdf dasio nl)
+target_link_libraries(tmdf dasio nl pthread)
 
 install(TARGETS tmdf RUNTIME DESTINATION bin)
 

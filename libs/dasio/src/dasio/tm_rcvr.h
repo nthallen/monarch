@@ -1,3 +1,6 @@
+#ifndef TM_RCVR_H_INCLUDED
+#define TM_RCVR_H_INCLUDED
+
 /**
  * @file tm_rcvr.h
  */
@@ -5,7 +8,9 @@
 #include "tm.h"
 #include "interface.h"
 
-class DAS_IO::tm_rcvr {
+namespace DAS_IO {
+
+class tm_rcvr {
   public:
     tm_rcvr(DAS_IO::Interface* interface);
     virtual ~tm_rcvr();
@@ -39,3 +44,8 @@ class DAS_IO::tm_rcvr {
     // void init(int bufsize_in, const char *srcfile, bool non_block);
     
 };
+
+}
+
+#endif
+
