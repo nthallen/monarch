@@ -451,6 +451,16 @@ class Interface {
      */
     bool not_ndigits(int n, int &value);
     /**
+     * @brief Matches a specific number of hexadecimal digits
+     * @param n_digits The number of digits 1 <= n_digits <= 4
+     * @param[out] value The converted value
+     *
+     * From Zeno_Ser.cc
+     * 
+     * @return false on a successful match
+     */
+    bool not_nhexdigits(int n_digits, uint16_t &value);
+    /**
      * @brief Check for ISO8601 timestamp
      * 
      * When w_hyphens is false, matches the pattern:

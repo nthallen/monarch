@@ -278,6 +278,23 @@ bool DAS_IO::Interface::not_bin(int nbits, uint16_t &word) {
   return false;
 }
 
+bool DAS_IO::Interface::not_nhexdigits(int n, uint16_t &value) {
+  int i = n;
+  value = 0;
+  while ( i > 0 && cp < nc && isxdigit(buf[cp])) {
+    uint16_t digval = isdigit(buf[cp]) ? ( buf[cp] - '0' ) :
+           ( tolower(buf[cp]) - 'a' + 10 );
+    value = value*16 + digval;
+    --i;
+  }
+  if (i > 0) {
+    if (cp < nc)
+      report_err("%s: Expected %d hex digits at column %d", iname, n, cp+i-n);
+    return true;
+  }
+  return false;
+}
+
 bool DAS_IO::Interface::not_ndigits(int n, int &value) {
   int i = n;
   value = 0;

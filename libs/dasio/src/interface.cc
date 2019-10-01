@@ -115,7 +115,7 @@ bool Interface::iwritev(struct iovec *iov, int nparts) {
  * is saved and handled transparently. The caller is
  * responsible for allocating the output buffer(s) and ensuring
  * they are not overrun.
- * The caller can check whether ocp >= onc to determine whther the
+ * The caller can check obuf_empty() to determine whether the
  * write has completed.
  * @param str Pointer to the output buffer
  * @param nc The total number of bytes in the output buffer
