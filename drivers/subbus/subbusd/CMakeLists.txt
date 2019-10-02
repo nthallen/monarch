@@ -2,8 +2,6 @@ OUI_FILE(subbusd.oui)
 OUI_FILE(CAN/subbusd_CAN.oui)
 OUI_FILE(serusb/serusb.oui)
 
-add_compile_options( -fdiagnostics-color=always )
-
 include(CheckIncludeFileCXX)
 check_include_file_cxx(linux/can.h HAVE_LINUX_CAN_H)
 configure_file (
