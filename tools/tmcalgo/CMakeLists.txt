@@ -7,6 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (NOT ${CMAKE_CROSSCOMPILING})
 
+include( ../../oui_setup.cmake )
 find_package(FLEX REQUIRED)
 find_package(BISON REQUIRED)
 
@@ -17,29 +18,7 @@ BISON_TARGET(TMAParser grammar.y ${CMAKE_CURRENT_BINARY_DIR}/grammar.c
             COMPILE_FLAGS "-ytl" )
 ADD_FLEX_BISON_DEPENDENCY(TMAScanner TMAParser)
 
-message("le_das_BINARY_DIR is ${le_das_BINARY_DIR}")
-if (DEFINED le_das_BINARY_DIR)
-  set(OUI_EXE ${le_das_BINARY_DIR}/tools/oui/src/oui)
-  set(OUI_PATH -I${le_das_SOURCE_DIR}/libs/dasio/src
-               -I${le_das_SOURCE_DIR}/libs/nl)
-
-else (DEFINED le_das_BINARY_DIR)
-  set(OUI_EXE /usr/local/bin/oui)
-endif (DEFINED le_das_BINARY_DIR)
-
-MACRO(OUI_FILE _filename)
-    GET_FILENAME_COMPONENT(_basename ${_filename} NAME_WE)
-    ADD_CUSTOM_COMMAND(
-        OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.c
-        COMMAND ${OUI_EXE}
-                -o${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.c
-                ${OUI_PATH}
-                ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        DEPENDS ${_filename} ${OUI_EXE} )
-ENDMACRO(OUI_FILE)
-
-OUI_FILE(tmcalgo.oui)
+OUI_FILE(tmcalgo.oui c)
 
 add_executable(tmcalgo tmcalgo.c states.c commands.c tmcalgooui.c dot.c
     tma_appid.cc
@@ -50,9 +29,7 @@ if (DEFINED le_das_BINARY_DIR)
 target_include_directories(tmcalgo PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${le_das_SOURCE_DIR}/libs/dasio/src
-  ${le_das_SOURCE_DIR}/libs/nl
-  ${le_das_tools_SOURCE_DIR}/cmdgen
-  ${le_das_tools_SOURCE_DIR}/oui/src)
+  ${le_das_tools_SOURCE_DIR}/cmdgen)
 else (DEFINED le_das_BINARY_DIR)
 target_include_directories(tmcalgo PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR})

@@ -10,7 +10,7 @@ extern const char *tmdf_name;
 
 class TMDF_data_sndr : public TM_data_sndr {
   public:
-    TMDF_data_sndr( unsigned seconds, const char *name, void *data, unsigned short size );
+    TMDF_data_sndr( unsigned seconds, const char *name, const char *hostname, void *data, unsigned short size );
     ~TMDF_data_sndr();
     bool tm_sync();
   private:

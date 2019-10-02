@@ -8,8 +8,8 @@
 #include "nl_assert.h"
 
 namespace DAS_IO {
-
-Loop::Loop() {
+  
+Loop::Loop(bool is_memo) : is_memo_loop(is_memo) {
   children_changed = false;
   gflags = 0;
   loop_exit = false;
@@ -127,12 +127,20 @@ void Loop::event_loop() {
     // rc = select(width, &readfds, &writefds, &exceptfds, TA.timeout_val());
     rc = pselect(width, &readfds, &writefds, &exceptfds, TA.timeout_val_ns(), &runset);
     if ( rc == 0 ) {
-      if ( ProcessTimeout() )
+      if ( ProcessTimeout() ) {
+        if (!is_memo_loop) {
+          msg(MSG_DBG(0), "Loop.ProcessTimeout() requested termination");
+        }
         keep_going = 0;
+      }
       for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
         Interface *P = *Sp;
-        if ((P->flags & P->Fl_Timeout) && P->ProcessData(P->Fl_Timeout))
+        if ((P->flags & P->Fl_Timeout) && P->ProcessData(P->Fl_Timeout)) {
+          if (!is_memo_loop) {
+            msg(MSG_DBG(0), "%s: requested termination after P->Fl_Timeout", P->get_iname());
+          }
           keep_going = 0;
+        }
       }
     } else if ( rc < 0 ) {
       if ( errno == EINTR ) {
@@ -141,6 +149,9 @@ void Loop::event_loop() {
           Interface *P = *Sp;
           if (signals_seen && P->signals) {
             if (P->serialized_signal_handler(signals_seen)) {
+              if (!is_memo_loop) {
+                msg(MSG_DBG(0), "%s: requested termination after if (errno==EINTR)", P->get_iname());
+              }
               keep_going = 0;
             }
             signals_seen &= ~(P->signals);
@@ -157,8 +168,12 @@ void Loop::event_loop() {
           Interface *P = *Sp;
           int flags = 0;
           if (P->flags & P->Fl_Except) {
-            if ( P->ProcessData(P->Fl_Except) )
+            if ( P->ProcessData(P->Fl_Except) ) {
+              if (!is_memo_loop) {
+                msg(MSG_DBG(0), "%s: requested termination after P->ProcessData(P->Fl_Except)", P->get_iname());
+              }
               keep_going = 0;
+            }
             if (children_changed) break; // Changes can occur during ProcessData
             handled = true;
           }
@@ -182,8 +197,12 @@ void Loop::event_loop() {
           if ( (P->flags & P->Fl_Except) && FD_ISSET(P->fd, &exceptfds) )
             flags |= P->Fl_Except;
           if ( flags ) {
-            if ( P->ProcessData(flags) )
+            if ( P->ProcessData(flags) ) {
+              if (!is_memo_loop) {
+                msg(MSG_DBG(0), "%s: requested termination after P->ProcessData(flagss)", P->get_iname());
+              }
               keep_going = 0;
+            }
             if (children_changed) break; // Changes can occur during ProcessData
           }
         }

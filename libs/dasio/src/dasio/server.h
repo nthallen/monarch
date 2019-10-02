@@ -171,6 +171,8 @@ namespace DAS_IO {
       Server_socket *TCP;
       Loop ELoop;
       inline const char *get_service() { return service; }
+      
+      static Srv_type server_type;
     protected:
       /**
        * @return true if the application is ready to terminate.

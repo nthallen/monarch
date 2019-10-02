@@ -6,7 +6,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 add_definitions( -D_POSIX_SOURCE=1 -D_XOPEN_SOURCE=500 )
 
-if (1)
+option(BUILD_TESTS "Builds Tests and gtest")
+
+if (BUILD_TESTS)
 # Download and unpack googletest at configure time
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
 execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
@@ -32,7 +34,7 @@ if(CMAKE_VERSION VERSION_LESS 2.8.11)
                         "${gmock_SOURCE_DIR}/include")
 endif(CMAKE_VERSION VERSION_LESS 2.8.11)
 
-endif(1) # google test
+endif(BUILD_TESTS) # google test
 
 add_subdirectory(libs)
 add_subdirectory(tools)
