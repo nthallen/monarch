@@ -131,8 +131,8 @@ class CAN_interface {
         subbusd_CAN_client *clt);
     can_request curreq();
     inline void pop_req() { reqs.pop_front(); }
-    inline void reference() { iface.reference(); }
-    inline void dereference() { DAS_IO::Interface::dereference(&iface); }
+    inline void reference() { iface->reference(); }
+    inline void dereference() { DAS_IO::Interface::dereference(iface); }
     inline DAS_IO::Interface *iface_ptr() { return iface; }
   protected:
     // bool iwritten(int nb);

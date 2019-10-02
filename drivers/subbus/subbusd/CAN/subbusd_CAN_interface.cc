@@ -17,18 +17,25 @@
 
 CAN_interface::CAN_interface() :
     request_processing(false),
-    req_no(0),
+    req_no(0)
     #ifdef USE_CAN_SOCKET
       #ifndef HAVE_LINUX_CAN_H
-        bytectr(0),
+        , bytectr(0)
       #endif
     #endif
-    iface(this) {}
+{
+  #ifdef USE_CAN_SOCKET
+    iface = new CAN_socket(this);
+  #endif
+  #ifdef USE_SLCAN
+    iface = new CAN_serial(this);
+  #endif
+}
 
 CAN_interface::~CAN_interface() {}
 
 void CAN_interface::setup() {
-  iface.setup();
+  iface->setup();
 }
 
 void CAN_interface::enqueue_request(can_msg_t *can_msg, uint8_t *rep_buf, int buflen,
@@ -52,77 +59,77 @@ can_request CAN_interface::curreq() {
  *    may be required (req.msg->sb_can_seq > 0)
  */
 void CAN_interface::process_requests() {
-  if (iface.request_pending || request_processing || reqs.empty()) {
+  if (iface->request_pending || request_processing || reqs.empty()) {
     msg(MSG_DBG(0), "process_requests() no action: %s",
-      iface.request_pending ? "pending" : request_processing ? "processing"
+      iface->request_pending ? "pending" : request_processing ? "processing"
       : "reqs.empty()");
     return;
   }
   request_processing = true;
   can_request req = reqs.front();
   /* A single request might require multiple packets */
-  while (!iface.request_pending && iface.obuf_clear()) {
+  while (!iface->request_pending && iface->obuf_clear()) {
     uint8_t req_seq_no = req.msg->sb_can_seq;
     uint16_t offset = req_seq_no ? (req_seq_no*7 - 1) : 0;
     nl_assert(offset < req.msg->sb_nb);
     uint16_t nbdata = req.msg->sb_nb - offset;
-    iface.reqfrm.can_id = CAN_REQUEST_ID(req.msg->device_id,req_no);
+    iface->reqfrm.can_id = CAN_REQUEST_ID(req.msg->device_id,req_no);
     if (req.msg->sb_can_seq) {
       if (nbdata > 7) nbdata = 7;
-      iface.reqfrm.can_dlc = nbdata+1;
-      iface.reqfrm.data[0] = CAN_CMD(req.msg->sb_can_cmd,req.msg->sb_can_seq);
-      memcpy(&iface.reqfrm.data[1], &req.msg->sb_can[offset], nbdata);
+      iface->reqfrm.can_dlc = nbdata+1;
+      iface->reqfrm.data[0] = CAN_CMD(req.msg->sb_can_cmd,req.msg->sb_can_seq);
+      memcpy(&iface->reqfrm.data[1], &req.msg->sb_can[offset], nbdata);
     } else {
-      iface.rep_recd = 0;
+      iface->rep_recd = 0;
       if (nbdata > 6) nbdata = 6;
-      iface.reqfrm.can_dlc = nbdata+2;
-      iface.reqfrm.data[0] = CAN_CMD(req.msg->sb_can_cmd,req_seq_no);
-      iface.reqfrm.data[1] = req.msg->sb_nb;
-      memcpy(&iface.reqfrm.data[2], &req.msg->sb_can[offset], nbdata);
+      iface->reqfrm.can_dlc = nbdata+2;
+      iface->reqfrm.data[0] = CAN_CMD(req.msg->sb_can_cmd,req_seq_no);
+      iface->reqfrm.data[1] = req.msg->sb_nb;
+      memcpy(&iface->reqfrm.data[2], &req.msg->sb_can[offset], nbdata);
     }
     ++req.msg->sb_can_seq;
     if (offset+nbdata >= req.msg->sb_nb) {
-      iface.request_pending = true;
+      iface->request_pending = true;
       ++req_no;
     }
-    iface.rep_seq_no = 0;
+    iface->rep_seq_no = 0;
     if (nl_debug_level <= MSG_DBG(1)) {
       char msgbuf[80];
       int nc = 0;
-      nc += snprintf(&msgbuf[nc], 80-nc, "CANout ID:x%02X Data:", iface.reqfrm.can_id);
-      for (int i = 0; i < iface.reqfrm.can_dlc; ++i) {
-        nc += snprintf(&msgbuf[nc], 80-nc, " %02X", iface.reqfrm.data[i]);
+      nc += snprintf(&msgbuf[nc], 80-nc, "CANout ID:x%02X Data:", iface->reqfrm.can_id);
+      for (int i = 0; i < iface->reqfrm.can_dlc; ++i) {
+        nc += snprintf(&msgbuf[nc], 80-nc, " %02X", iface->reqfrm.data[i]);
       }
       msg(MSG_DBG(1), "%s", msgbuf);
     }
-    if (iface.send_packet()) return;
-    if (!iface.obuf_clear()) {
-      iface.report_err("%s: process_requests() !obuf_empty() after iwrite",
-        iface.get_iname());
-      iface.iwrite_cancel();
+    if (iface->send_packet()) return;
+    if (!iface->obuf_clear()) {
+      iface->report_err("%s: process_requests() !obuf_empty() after iwrite",
+        iface->get_iname());
+      iface->iwrite_cancel();
       reqs.pop_front();
-      memset(req.msg->buf, 0, req.msg->bufsz-iface.rep_recd);
+      memset(req.msg->buf, 0, req.msg->bufsz-iface->rep_recd);
       req.clt->request_complete(SBS_NOACK, req.msg->bufsz);
       // req.clt->request_complete(SBS_TIMEOUT, 0);
-      iface.request_pending = false;
+      iface->request_pending = false;
       request_processing = false;
       return;
     }
-    if (iface.request_pending) {
-      msg(MSG_DBG(1), "%s: Setting timeout", iface.get_iname());
-      iface.TO.Set(0,10);
-      iface.flags |= DAS_IO::Interface::Fl_Timeout;
+    if (iface->request_pending) {
+      msg(MSG_DBG(1), "%s: Setting timeout", iface->get_iname());
+      iface->TO.Set(0,10);
+      iface->flags |= DAS_IO::Interface::Fl_Timeout;
     } else {
-      msg(MSG_DBG(1), "%s: Request resolved immediately", iface.get_iname());
+      msg(MSG_DBG(1), "%s: Request resolved immediately", iface->get_iname());
     }
     #ifdef USE_CAN_SOCKET
       #ifndef HAVE_LINUX_CAN_H
         // This is development/debugging code
-        if (iface.request_pending) {
+        if (iface->request_pending) {
           for (int i = 0; i < req.msg->bufsz; ++i) {
             req.msg->buf[i] = bytectr++;
           }
-          iface.request_pending = false;
+          iface->request_pending = false;
           reqs.pop_front();
           request_processing = false; // this is a hack
           req.clt->request_complete(SBS_ACK, req.msg->bufsz);
@@ -141,8 +148,6 @@ CAN_socket::CAN_socket(CAN_interface *parent)
     request_pending(false),
     parent(parent)
     {}
-
-CAN_socket::~CAN_socket() {}
 
 void CAN_socket::setup() {
   #ifdef HAVE_LINUX_CAN_H
@@ -399,8 +404,6 @@ CAN_serial::CAN_serial(CAN_interface *parent)
     request_pending(false),
     parent(parent)
     {}
-
-CAN_serial::~CAN_serial() {}
 
 void CAN_serial::setup() {
   init(port, O_RDWR | O_NONBLOCK);
