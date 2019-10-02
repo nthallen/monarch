@@ -44,10 +44,11 @@ if [ ! -d .git ]; then
   [ -d .git -a ../git -ef . ] || nl_error Unable to locate source root
   [ -f le-dasng-doxygen.css ] || nl_error Not in the correct source tree
 fi
+branch=`git rev-parse --abbrev-ref HEAD`
 if [ -n "$crname" ]; then
   crargs=" -DCMAKE_TOOLCHAIN_FILE=$relsrcroot/arm-toolchain.cmake"
+  crargs+=" -DCMAKE_STAGING_PREFIX=/opt/linkeng/am335x-$branch"
 fi
-branch=`git rev-parse --abbrev-ref HEAD`
 builddir="../build$crname-$branch$subdir"
 if [ ! -d $builddir ]; then
   msg Creating build $builddir
