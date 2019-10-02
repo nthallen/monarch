@@ -15,7 +15,7 @@ namespace DAS_IO {
        * @param data Pointer to the data structure
        * @param size The size of the data structure
        */
-      TM_data_sndr(const char *iname, const char *datum, void *data, uint16_t size);
+      //TM_data_sndr(const char *iname, const char *datum, void *data, uint16_t size);
       /**
        * Connects to the DG service on the specified host, subservice
        * data/<datum>

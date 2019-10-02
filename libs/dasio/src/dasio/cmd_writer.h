@@ -18,7 +18,6 @@ namespace DAS_IO {
  */
 class Cmd_writer : public Client {
   public:
-    Cmd_writer(const char *iname);
     Cmd_writer(const char *iname, const char *hostname);
     bool app_input();
     bool app_connected();

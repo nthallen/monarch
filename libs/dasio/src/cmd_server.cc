@@ -417,7 +417,7 @@ command_out_t *cmdif_rd::free_commands;
 
 cmdif_wr_clt::cmdif_wr_clt(const char *iname, const char *service,
         const char *subservice)
-      : DAS_IO::Client(iname, 80, service, subservice) {
+      : DAS_IO::Client(iname, 80, 0, service, subservice) {
 }
 
 std::list<cmdif_rd *> cmdif_rd::rdrs;
@@ -497,7 +497,7 @@ void cmdif_wr::Shutdown() {
 }
 
 cmdif_dgdata::cmdif_dgdata(const char *name_in, void *data_in, int dsize_in)
-    : TM_data_sndr(name_in, name_in, data_in, dsize_in) {
+    : TM_data_sndr(name_in, name_in, hostname, data_in, dsize_in) {
 }
 
 cmdif_dgdata::~cmdif_dgdata() {}

@@ -18,6 +18,8 @@
 
 namespace DAS_IO {
 
+const char *DAS_IO::tm_client::tm_client_hostname = 0;
+
 char *tm_client::srcnode = NULL;
 
 void tm_set_srcnode(char *nodename) {
@@ -27,8 +29,9 @@ void tm_set_srcnode(char *nodename) {
 /**
  * Constructor method.
  */
-tm_client::tm_client(int bufsize, bool fast) 
-  : DAS_IO::Client("tm_client", bufsize, "tm_bfr", (fast ? "fast" : "optimized")), tm_rcvr(this) {
+tm_client::tm_client(int bufsize, bool fast, const char *hostname) 
+  : DAS_IO::Client("tm_client", bufsize, hostname, "tm_bfr", (fast ? "fast" : "optimized")), tm_rcvr(this) {
+    tm_client_hostname = hostname;
     nl_assert(buf);
     // nc = 0;
     // tm_quit = false;

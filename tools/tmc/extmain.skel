@@ -66,7 +66,7 @@ typedef TM_CLIENT_CLASS TM_CLIENT;
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   msg( 0, "Startup" );
-  TM_CLIENT *Ext = new TM_CLIENT(4096, true);
+  TM_CLIENT *Ext = new TM_CLIENT(4096, true, DAS_IO::tm_client::tm_client_hostname);
   Loop ELoop;
   ELoop.add_child(Ext);
   Ext->connect();
