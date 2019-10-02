@@ -68,7 +68,6 @@ class CAN_interface;
     friend class CAN_interface;
     public:
       CAN_socket(CAN_interface *parent);
-      ~CAN_socket();
       void setup();
       bool send_packet();
       inline bool obuf_clear() { return obuf_empty(); }
@@ -94,7 +93,6 @@ class CAN_interface;
     friend class CAN_interface;
     public:
       CAN_serial(CAN_interface *parent);
-      ~CAN_serial();
       void setup();
       bool send_packet();
       inline bool obuf_clear() { return obuf_empty(); }
@@ -135,7 +133,7 @@ class CAN_interface {
     inline void pop_req() { reqs.pop_front(); }
     inline void reference() { iface.reference(); }
     inline void dereference() { DAS_IO::Interface::dereference(&iface); }
-    inline DAS_IO::Interface *iface_ptr() { return &iface; }
+    inline DAS_IO::Interface *iface_ptr() { return iface; }
   protected:
     // bool iwritten(int nb);
     // const char *ascii_escape();
@@ -150,11 +148,11 @@ class CAN_interface {
       #ifndef HAVE_LINUX_CAN_H
         uint8_t bytectr;
       #endif
-      CAN_socket iface;
+      CAN_socket *iface;
     #endif
     
     #ifdef USE_SLCAN
-      CAN_serial iface;
+      CAN_serial *iface;
     #endif
 };
 
