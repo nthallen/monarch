@@ -18,8 +18,8 @@ include_directories(
 )
 
 if (CMAKE_CROSSCOMPILING)
-  link_directories( /opt/linkeng/am335x/lib )
-  include_directories( /opt/linkeng/am335x/include )
+  link_directories( ${CMAKE_STAGING_PREFIX}/lib )
+  include_directories( ${CMAKE_STAGING_PREFIX}/include )
 else (CMAKE_CROSSCOMPILING)
   if (NOT DEFINED le_das_SOURCE_DIR)
     link_directories(/usr/local/lib)
