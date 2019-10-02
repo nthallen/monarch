@@ -23,16 +23,19 @@ typedef struct {
 
 void identify_board(subbuspp *P, uint8_t bdid) {
   uint16_t bdid_hi = bdid<<8;
-  msg(0,"read_ack(0x%02X03)", bdid);
+  msg(0,"read_ack(0x%02X02)", bdid);
   uint16_t value;
-  if (! P->read_ack(bdid_hi | 0x03, &value)) {
+  if (! P->read_ack(bdid_hi | 0x02, &value)) {
     msg(2, "No acknowledge from board %d", bdid);
     return;
   }
-  msg(0, "  Board Type: %d", value>>8);
-  msg(0, "  Board S/N:  %d", value & 0xFF);
-  value = P->read_subbus(bdid_hi | 0x02);
+  msg(0, "  Board ID: %u", value);
+  value = P->read_subbus(bdid_hi | 0x04);
+  msg(0, "  Board S/N:  %u", value);
+  value = P->read_subbus(bdid_hi | 0x03);
   msg(0, "  Build No:   %u", value);
+  value = P->read_subbus(bdid_hi | 0x05);
+  msg(0, "  Inst ID:  %u", value);
   
   char mreqstr[30];
   snprintf(mreqstr, 30, "%X|28@%X", bdid_hi|6, bdid_hi|7);

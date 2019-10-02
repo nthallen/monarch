@@ -3,6 +3,7 @@
  */
 #include <string.h>
 #include <fcntl.h>
+#include "subbusd_CAN_config.h"
 #include "subbusd_CAN.h"
 #include "nl.h"
 #include "nl_assert.h"
@@ -126,6 +127,7 @@ void CAN_interface::process_requests() {
       #ifndef HAVE_LINUX_CAN_H
         // This is development/debugging code
         if (iface->request_pending) {
+          msg(MSG_DBG(1), "No CAN auto response");
           for (int i = 0; i < req.msg->bufsz; ++i) {
             req.msg->buf[i] = bytectr++;
           }

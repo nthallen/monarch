@@ -16,4 +16,4 @@ subbusd_CAN_init_options() is responsible for:
 <include> msg
 <preceed> msg
 <defs>
-  DAS_IO::AppID_t DAS_IO::AppID("CAN", "Subbus CAN Driver", "V1.0");
+  DAS_IO::AppID_t DAS_IO::AppID("CAN", "Subbus CAN Driver", "V1.1");
