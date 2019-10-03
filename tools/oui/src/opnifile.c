@@ -49,6 +49,7 @@ FILE *open_input_file(char *filename) {
   }
   
   if (partname[0] == '/') {
+    msg(MSG_DBG(0), "  Opening absolute path '%s'", partname);
     fp = fopen(partname, "r");
   } else {
     /* Code that Miles added, 27th February 2019, 14:20 */
@@ -59,7 +60,7 @@ FILE *open_input_file(char *filename) {
       strncpy(buffer_2, "\0", PATH_MAX);
       strncpy(fullname, "\0", PATH_MAX);
       
-      //printf(">%s\n", current->text);
+      msg(MSG_DBG(1),"  Path Entry: '%s'", current->text);
       if (current->text[strlen(current->text)-1] != '/') {
         strncpy(buffer_1, current->text, strlen(current->text));
         buffer_1[strlen(buffer_1)] = '/';
@@ -71,7 +72,7 @@ FILE *open_input_file(char *filename) {
         strncpy(&buffer_1[strlen(current->text)], partname, strlen(partname));
         strncpy(fullname, buffer_1, strlen(buffer_1));
       }
-      //printf(" >>Trying %s ...\n", fullname);
+      msg(MSG_DBG(0), "  Trying '%s'", fullname);
       fp = fopen( fullname, "r" );
       if (fp != 0) break;
     }

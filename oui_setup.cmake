@@ -45,6 +45,8 @@ else (CMAKE_CROSSCOMPILING OR NOT DEFINED le_das_SOURCE_DIR)
   set(OUI_EXE ${le_das_BINARY_DIR}/tools/oui/src/oui)
 endif (CMAKE_CROSSCOMPILING OR NOT DEFINED le_das_SOURCE_DIR)
 
+set(OUI_VERBOSITY "" CACHE STRING "Verbosity level for OUI: set to '-v' or higher")
+
 function(OUI_FILE _filename)
     IF (NOT ARGC GREATER 1)
       SET(ARGV1 cc)
@@ -54,7 +56,7 @@ function(OUI_FILE _filename)
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.${ARGV1}
         COMMAND ${OUI_EXE}
                 -o${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.${ARGV1}
-                ${le_das_OUI_PATH}
+                ${le_das_OUI_PATH} ${OUI_VERBOSITY}
                 ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         DEPENDS ${_filename} ${OUI_EXE} )
