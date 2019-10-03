@@ -7,8 +7,8 @@
 
 <opts> "d:V"
 <sort>
-    -V Include verbose information
-    -d filename  Write data structures to this file
+	-V Include verbose information
+	-d filename  Write data structures to this file
 
 <unsort>
 <blank>

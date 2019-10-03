@@ -5,8 +5,8 @@
 
 <opts> "s:q"
 <sort>
-  -s <service> Specify service name
-  -q Connect to cmd/Quit for shutdown
+	-s <service> Specify service name
+	-q Connect to cmd/Quit for shutdown
 
 <init>
   subbusd_init_options(argc, argv);

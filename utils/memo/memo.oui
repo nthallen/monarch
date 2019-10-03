@@ -7,7 +7,7 @@
 <opts> "l:"
 
 <sort>
-  -l <n> Sets the quit threshold value (default 1)
+	-l <n> Sets the quit threshold value (default 1)
 
 <init>
 	memo_init_options(argc, argv);

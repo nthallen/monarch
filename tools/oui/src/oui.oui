@@ -3,7 +3,7 @@
 
 <opts> "h"
 <sort>
-  -h Print usage message
+	-h Print usage message
 
 <switch>
   case 'h':
