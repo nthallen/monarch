@@ -69,6 +69,7 @@ class CAN_interface;
     public:
       CAN_socket(CAN_interface *parent);
       void setup();
+      inline void cleanup() {}
       bool send_packet();
       inline bool obuf_clear() { return obuf_empty(); }
       bool request_pending;
@@ -94,6 +95,8 @@ class CAN_interface;
     public:
       CAN_serial(CAN_interface *parent);
       void setup();
+      void cleanup();
+      void issue_init();
       bool send_packet();
       inline bool obuf_clear() { return obuf_empty(); }
       bool request_pending;
@@ -111,6 +114,10 @@ class CAN_interface;
       uint16_t rep_recd;
       can_frame reqfrm;
       CAN_interface *parent;
+      enum { st_init, st_init_retry, st_operate } slcan_state;
+      // int n_init;
+      // static const int n_init_strings = 1;
+      // static const char *init_strings[n_init_strings];
   };
 
 #endif
@@ -127,6 +134,7 @@ class CAN_interface {
     ~CAN_interface();
     /** Open and setup the CAN socket */
     void setup();
+    inline void cleanup() { if (iface) iface->cleanup(); }
     void enqueue_request(can_msg_t *can_msg, uint8_t *rep_buf, int buflen,
         subbusd_CAN_client *clt);
     can_request curreq();

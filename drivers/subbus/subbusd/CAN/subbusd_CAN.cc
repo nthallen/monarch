@@ -336,16 +336,17 @@ void subbusd_CAN::init_subbus() {
   // setup socket
   CAN = new CAN_interface();
   CAN->reference();
-  CAN->setup();
   subbusd_core::subbusd->srvr.ELoop.add_child(CAN->iface_ptr());
+  CAN->setup();
 }
 
 void subbusd_CAN::shutdown_subbus() {
   // teardown socket
-  CAN->dereference();
-  // Interface::dereference(CAN);
-  // subbusd_core::subbusd->srvr.ELoop.delete_child(CAN);
-  CAN = 0;
+  if (CAN) {
+    CAN->cleanup();
+    CAN->dereference();
+    CAN = 0;
+  }
 }
 
 void subbusd_CAN_init_options(int argc, char **argv) {

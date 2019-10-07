@@ -97,7 +97,7 @@ void Serial::setup( int baud, int bits, char par, int stopbits,
     msg( MSG_ERROR, "Error on tcsetattr: %s", strerror(errno) );
 }
 
-void Serial::update_tc_vmin(int new_vmin) {
+void Serial::update_tc_vmin(int new_vmin, int new_vtime) {
   if (! termios_init) {
     if (tcgetattr(fd, &termios_p)) {
       msg( MSG_ERROR, "Error from tcgetattr: %s",
@@ -105,9 +105,11 @@ void Serial::update_tc_vmin(int new_vmin) {
     }
     termios_init = true;
   }
-  if (new_vmin < 1) new_vmin = 1;
-  if (new_vmin != termios_p.c_cc[VMIN]) {
+  if (new_vmin < 1) new_vmin = 0;
+  if (new_vtime < 0) new_vtime = termios_p.c_cc[VTIME];
+  if (new_vmin != termios_p.c_cc[VMIN] || new_vtime != termios_p.c_cc[VTIME]) {
     termios_p.c_cc[VMIN] = new_vmin;
+    termios_p.c_cc[VTIME] = new_vtime;
     if (tcsetattr(fd, TCSANOW, &termios_p)) {
       msg( MSG_ERROR, "Error from tcsetattr: %s",
         strerror(errno));

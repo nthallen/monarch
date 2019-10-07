@@ -285,7 +285,7 @@ bool DAS_IO::Interface::not_nhexdigits(int n, uint16_t &value) {
     uint16_t digval = isdigit(buf[cp]) ? ( buf[cp] - '0' ) :
            ( tolower(buf[cp]) - 'a' + 10 );
     value = value*16 + digval;
-    --i;
+    --i; ++cp;
   }
   if (i > 0) {
     if (cp < nc)

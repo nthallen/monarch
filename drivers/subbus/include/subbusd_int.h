@@ -81,6 +81,12 @@ class subbusd_core {
     std::list<subbusd_flavor*> devs;
 };
 
+class subbus_sigif : public DAS_IO::Interface {
+  public:
+    inline subbus_sigif() : DAS_IO::Interface("SigIF", 0) {}
+    void setup();
+};
+
 #ifdef SUBBUS_INTERRUPTS
 
   typedef struct carddef {

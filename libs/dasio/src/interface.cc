@@ -79,6 +79,7 @@ bool Interface::ProcessData(int flag) {
   if ((flags&Fl_Read) && (flags&flag&(Fl_Read|Fl_Timeout))) {
     if (fillbuf(bufsize, flag)) return true;
     if (fd < 0) return false;
+    cp = 0;
     if (protocol_input()) return true;
   }
   if ((flags & flag & Fl_Write) && iwrite_check())
@@ -203,7 +204,6 @@ bool Interface::read_error(int my_errno) {
  * The default reports unexpected input and returns false;
  */
 bool Interface::protocol_input() {
-  cp = 0;
   if (nc > 0)
     report_err("Unexpected input");
   return false;

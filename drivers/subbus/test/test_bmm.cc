@@ -97,6 +97,6 @@ int main(int argc, char **argv) {
   // test_ack(P, 0x0121);
   // test_nack(P, 0x0140);
 
-  // P->subbus_quit();
+  P->subbus_quit();
   return 0;
 }

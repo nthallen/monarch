@@ -147,9 +147,13 @@ void subbusd_core::Start(Server::Srv_type type) {
   subbusd->srvr.ELoop.clear_delete_queue(true);
 }
 
-static void sigint_handler( int sig ) {
-  SB_Shutdown = 1;
-  subbusd_core::subbusd->srvr.ELoop.set_loop_exit();
+// static void sigint_handler( int sig ) {
+  // SB_Shutdown = 1;
+  // subbusd_core::subbusd->srvr.ELoop.set_loop_exit();
+// }
+void subbus_sigif::setup() {
+  signal(SIGINT, true);
+  signal(SIGHUP, true);
 }
 
 void subbusd_init_options(int argc, char **argv) {
@@ -183,9 +187,12 @@ int main(int argc, char **argv) {
     subbusd_core::subbusd->srvr.ELoop.add_child(q);
     q->connect();
   }
-
-  signal( SIGINT, sigint_handler );
-  signal( SIGHUP, sigint_handler );
+  { subbus_sigif *sigif = new subbus_sigif();
+    subbusd_core::subbusd->srvr.ELoop.add_child(sigif);
+    sigif->setup();
+  }
+  // signal( SIGINT, sigint_handler );
+  // signal( SIGHUP, sigint_handler );
 
   subbusd_core::subbusd->Start(Server::Srv_Unix);
   return 0;

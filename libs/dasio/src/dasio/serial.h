@@ -63,7 +63,7 @@ class Serial : public Interface {
      * number of input characters desired before select() will flag the device
      * ready for reading..
      */
-    void update_tc_vmin(int vmin);
+    void update_tc_vmin(int vmin, int vtime = -1);
     /** Flag to indicate whether or not termios_p has been setup */
     bool termios_init;
 };
