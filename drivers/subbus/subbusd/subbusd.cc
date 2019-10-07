@@ -156,6 +156,12 @@ void subbus_sigif::setup() {
   signal(SIGHUP, true);
 }
 
+bool subbus_sigif::serialized_signal_handler(uint32_t signals_seen) {
+  msg(0, "%s: Signal(s) %08X observed", iname, signals_seen);
+  subbusd_core::subbusd->srvr.Shutdown(false);
+  return true;
+}
+
 void subbusd_init_options(int argc, char **argv) {
 	int c;
 

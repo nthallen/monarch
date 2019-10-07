@@ -85,6 +85,7 @@ class subbus_sigif : public DAS_IO::Interface {
   public:
     inline subbus_sigif() : DAS_IO::Interface("SigIF", 0) {}
     void setup();
+    bool serialized_signal_handler(uint32_t signals_seen);
 };
 
 #ifdef SUBBUS_INTERRUPTS
