@@ -171,7 +171,8 @@ namespace DAS_IO {
       passive_exit_threshold(0), service(service),
       has_shutdown_b(false),
       shutdown_requested(false),
-      full_shutdown_requested(false)
+      full_shutdown_requested(false),
+      sigif(0)
       { }
 
   Server::~Server() {}
@@ -206,6 +207,10 @@ namespace DAS_IO {
   }
   
   void Server::Shutdown(bool full) {
+    if (sigif) {
+      Interface::dereference(sigif);
+      sigif = 0;
+    }
     shutdown_requested = true;
     full_shutdown_requested = full;
     ELoop.set_loop_exit();
@@ -255,4 +260,18 @@ namespace DAS_IO {
     passive_exit_threshold = N;
   }
 
+  void Server::signal(int signum) {
+    if (!sigif) {
+      sigif = new server_sigif(this);
+      ELoop.add_child(sigif);
+      sigif->reference();
+    }
+    sigif->signal(signum);
+  }
+
+  bool server_sigif::serialized_signal_handler(uint32_t signals_seen) {
+    msg(0, "%s: Signal(s) %08X observed", iname, signals_seen);
+    srvr->Shutdown(false);
+    return true;
+  }
 }

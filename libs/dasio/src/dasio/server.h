@@ -13,6 +13,7 @@ namespace DAS_IO {
   class Authenticator;
   class Server;
   class Serverside_client;
+  class server_sigif;
   
   /**
    * Defines a function type for switching interface classes after
@@ -167,6 +168,14 @@ namespace DAS_IO {
        * @return true if server has started and shutdown
        */
       inline bool has_shutdown() { return has_shutdown_b; }
+      /**
+       * @param signum The signal number
+       * Cause Server to terminate gracefully upon receiving the
+       * specified signal number. If another action is required,
+       * you should probably consider using DAS_IO::Interface::signal()
+       * directly.
+       */
+      void signal(int signum);
       Server_socket *Unix;
       Server_socket *TCP;
       Loop ELoop;
@@ -197,6 +206,8 @@ namespace DAS_IO {
       int total_clients;
       /** See set_passive_exit_threshold() */
       int passive_exit_threshold;
+      /** The Interface to handle signals */
+      server_sigif *sigif;
       SubServices Subs;
       const char *service;
       bool has_shutdown_b;
@@ -204,6 +215,14 @@ namespace DAS_IO {
       bool full_shutdown_requested;
   };
 
+  class server_sigif : public Interface {
+    public:
+      inline server_sigif(Server *srvr)
+        : Interface("SrvSig",0), srvr(srvr) {}
+      bool serialized_signal_handler(uint32_t signals_seen);
+    private:
+      Server *srvr;
+  };
 }
 
 #endif

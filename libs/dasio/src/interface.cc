@@ -320,7 +320,7 @@ void Interface::report_err( const char *fmt, ... ) {
 
 void Interface::signal(int signum, bool handle) {
   if (ELoop == 0) {
-    msg(MSG_FATAL, "no ELoop, cannot operate");
+    msg(MSG_FATAL, "%s: signal() called before Loop::add_child()", iname);
   }
   if ((1 <= signum) && (signum <= 32)) {
     if (handle) {

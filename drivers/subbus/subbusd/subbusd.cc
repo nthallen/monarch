@@ -9,20 +9,6 @@
 #include "nl_assert.h"
 #include "oui.h"
 
-// #include <errno.h>
-// #include <stdio.h>
-// #include <stddef.h>
-// #include <stdlib.h>
-// #include <string.h>
-// #include <unistd.h>
-// #include <sys/iofunc.h>
-// #include <sys/dispatch.h>
-// #include <fcntl.h>
-// #include <ctype.h>
-// #include <signal.h>
-// #include "company.h"
-// #include "tm.h"
-
 using namespace DAS_IO;
 
 static int SB_Shutdown = 0;
@@ -147,21 +133,6 @@ void subbusd_core::Start(Server::Srv_type type) {
   subbusd->srvr.ELoop.clear_delete_queue(true);
 }
 
-// static void sigint_handler( int sig ) {
-  // SB_Shutdown = 1;
-  // subbusd_core::subbusd->srvr.ELoop.set_loop_exit();
-// }
-void subbus_sigif::setup() {
-  signal(SIGINT, true);
-  signal(SIGHUP, true);
-}
-
-bool subbus_sigif::serialized_signal_handler(uint32_t signals_seen) {
-  msg(0, "%s: Signal(s) %08X observed", iname, signals_seen);
-  subbusd_core::subbusd->srvr.Shutdown(false);
-  return true;
-}
-
 void subbusd_init_options(int argc, char **argv) {
 	int c;
 
@@ -193,12 +164,8 @@ int main(int argc, char **argv) {
     subbusd_core::subbusd->srvr.ELoop.add_child(q);
     q->connect();
   }
-  { subbus_sigif *sigif = new subbus_sigif();
-    subbusd_core::subbusd->srvr.ELoop.add_child(sigif);
-    sigif->setup();
-  }
-  // signal( SIGINT, sigint_handler );
-  // signal( SIGHUP, sigint_handler );
+  subbusd_core::subbusd->srvr.signal(SIGINT);
+  subbusd_core::subbusd->srvr.signal(SIGHUP);
 
   subbusd_core::subbusd->Start(Server::Srv_Unix);
   return 0;

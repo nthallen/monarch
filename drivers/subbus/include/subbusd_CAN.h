@@ -13,8 +13,6 @@ class subbusd_CAN_client : public subbusd_client {
     ~subbusd_CAN_client();
     bool incoming_sbreq();
     void request_complete(int16_t status, uint16_t n_bytes);
-    // static const int subbusd_CAN_max_req_size = 512;
-    // static const int subbusd_CAN_max_rep_size = 512;
   private:
     /**
      * Sets up the framework for processing an mread request, then calls process_mread().
@@ -26,8 +24,6 @@ class subbusd_CAN_client : public subbusd_client {
     void process_mread();
     void format_mread_rd();
     subbusd_CAN *flavor;
-    /** Where we assemble CAN messages */
-    // struct can_frame frame;
     uint16_t mread_word_space_remaining;
     uint16_t mread_words_requested;
     can_msg_t can_msg;

@@ -115,9 +115,6 @@ class CAN_interface;
       can_frame reqfrm;
       CAN_interface *parent;
       enum { st_init, st_init_retry, st_operate } slcan_state;
-      // int n_init;
-      // static const int n_init_strings = 1;
-      // static const char *init_strings[n_init_strings];
   };
 
 #endif
@@ -143,13 +140,10 @@ class CAN_interface {
     inline void dereference() { DAS_IO::Interface::dereference(iface); }
     inline DAS_IO::Interface *iface_ptr() { return iface; }
   protected:
-    // bool iwritten(int nb);
-    // const char *ascii_escape();
   private:
     void process_requests();
     std::list<can_request> reqs;
     bool request_processing;
-    // uint8_t seq_no; // may not be used?
     uint8_t req_no;
     
     #ifdef USE_CAN_SOCKET

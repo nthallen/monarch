@@ -92,15 +92,16 @@ class Interface {
       binary_offset = 0;
       binary_mode = true;
     }
-  protected:
-    virtual ~Interface();
     /**
      * @param signum the signal number.
      * @param handle true to handle the specified signal.
      * When the signal is observed the serialized_signal_handler()
-     * method will be called for the interface.
+     * method will be called for the interface. Must be called
+     * after the Interface has been added to the Loop.
      */
-    void signal(int signum, bool handle);
+    void signal(int signum, bool handle = true);
+  protected:
+    virtual ~Interface();
     /**
      * Sets up a write of nc bytes from the buffer pointed to by str.
      * If the write cannot be accomplished immediately, the information

@@ -427,11 +427,6 @@ void CAN_serial::cleanup() {
   }
 }
 
-// const char *CAN_serial::init_strings[CAN_serial::n_init_strings] = {
-// //  "C\r", "S2\r", "O\r", "V\r"
-  // "C\rS2\rO\rV\r"
-// };
-
 void CAN_serial::issue_init() {
   msg(MSG_DBG(1),"%s: Sending init string", iname);
   iwrite("C\rS2\rO\rV\r");
@@ -456,50 +451,6 @@ bool CAN_serial::iwritten(int nb) {
     parent->process_requests();
   }
 }
-
-// const char *CAN_serial::ascii_escape() {
-  // static char abuf[128];
-  // unsigned int anc = 0;
-  // for (unsigned lcp = 0; lcp < nc; lcp += CAN_MTU) {
-    // struct can_frame *repfrm = (struct can_frame*)&buf[lcp];
-    // unsigned int nb = nc-lcp;
-    // if (nb < CAN_MTU)
-      // anc += snprintf(&abuf[anc], 128-anc-1, "Short(%d):", nb);
-    // unsigned int dlc_offset = (&(repfrm->can_dlc) - &buf[lcp]);
-    // if (nb >= dlc_offset) {
-      // anc += snprintf(&abuf[anc], 128-anc-1, " ID:%02X", repfrm->can_id);
-      // if (nb > dlc_offset) {
-        // unsigned dlc = repfrm->can_dlc;
-        // anc += snprintf(&abuf[anc], 128-anc-1, " DLC:%u%s",
-          // dlc, dlc>8 ? "!" : "");
-        // if (dlc > 8) dlc = 8;
-        // unsigned int data_offset =
-          // (&(repfrm->data[0]) - &buf[lcp]);
-        // if (nb > data_offset) {
-          // if (nb < data_offset+dlc)
-            // dlc = nb-data_offset;
-          // anc += snprintf(&abuf[anc], 128-anc-1, " [");
-          // for (int i = 0; i < dlc; ++i) {
-            // anc += snprintf(&abuf[anc], 128-anc-1, "%s%02X",
-              // i ? " " : "", repfrm->data[i]);
-          // }
-          // anc += snprintf(&abuf[anc], 128-anc-1, "]");
-          // if (nb > CAN_MTU) {
-            // anc += snprintf(&abuf[anc], 128-anc-1, "\n");
-          // }
-        // }
-      // }
-    // } else {
-      // anc += snprintf(&abuf[anc], 128-anc-1, "[");
-      // for (int i = 0; i < nb; ++i) {
-        // anc += snprintf(&abuf[anc], 128-anc-1, "%s%02X",
-          // i ? " " : "", buf[lcp+i]);
-      // }
-      // anc += snprintf(&abuf[anc], 128-anc-1, "]");
-    // }
-  // }
-  // return abuf;
-// }
 
 bool CAN_serial::protocol_input() {
   struct can_frame rep_frame;
@@ -541,12 +492,6 @@ bool CAN_serial::protocol_input() {
     update_tc_vmin(1); // we've received everything we need
     
     // reassemble longer response as necessary
-    // if (nc < CAN_MTU) return false;
-    // if (nc != CAN_MTU) {
-      // msg(0, "%s: read %d, expected %d with can_dlc=%d",
-        // iname, nc, CAN_MTU, repfrm->can_dlc);
-      // // This could happen if the frame is shortened with less data
-    // }
     if (!request_pending) {
       report_err("%s: Unexpected input", iname);
       consume(nc);
@@ -675,23 +620,13 @@ bool CAN_serial::protocol_timeout() {
     request_pending = false;
     parent->process_requests();
   } else if (slcan_state == st_init) {
-    // if (n_init < n_init_strings) {
-      // issue_init();
-    // } else if (n_init == n_init_strings) {
-      // update_tc_vmin(0,0);
-      // TO.Set(0,10);
-      // ++n_init;
-    // } else {
     msg(1, "%s: Init Timeout: nc=%d '%s'", iname, nc,
       ::ascii_escape((const char *)buf, nc));
     TO.Set(4,0);
-    // flags |= DAS_IO::Interface::Fl_Timeout;
     slcan_state = st_init_retry;
     consume(nc);
-    // }
   } else if (slcan_state == st_init_retry) {
     slcan_state = st_init;
-    // n_init = 0;
     issue_init();
   } else {
     msg(1, "%s: Timeout without request_pending", iname);
