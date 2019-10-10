@@ -492,17 +492,20 @@ bool Socket::get_service_port(const char *service, char *port) {
     
     FILE * portfile = fopen(fullpath, "r");
     if (portfile == 0) {
-      msg(MSG_ERROR, "Cannot access %s!", fullpath);
+      port[0] = '-';
+      port[1] = '1';
+      port[2] = '\0';
+      msg(MSG_FATAL, "Cannot access %s!", fullpath);
       return false;
     }
-    char current_line[128];
+    char current_line[16];
     char ch;
     
     bool name_captured;
     bool port_captured;
     int port_index;
     
-    while (fgets(current_line, 128, portfile) != NULL) {
+    while (fgets(current_line, 16, portfile) != NULL) {
       name_captured = false;
       port_captured = false;
       port_index = 0;
@@ -520,6 +523,7 @@ bool Socket::get_service_port(const char *service, char *port) {
             if (isspace(ch)) {
               if (i > 0) {
                 name_captured = true;
+                name_accumulator[strlen(name_accumulator)] = '\0';
               } else {
                 continue;
               }
@@ -533,6 +537,7 @@ bool Socket::get_service_port(const char *service, char *port) {
             if (isspace(ch)) {
               if (isdigit(port_accumulator[0])) {
                 port_captured = true;
+                port_accumulator[strlen(port_accumulator)] = '\0';
               } else {
                 continue;
               }
@@ -543,10 +548,12 @@ bool Socket::get_service_port(const char *service, char *port) {
             } else {
               if (isdigit(port_accumulator[0])) {
                 port_captured = true;
+                port_accumulator[strlen(port_accumulator)] = '\0';
               } else {
-                msg(MSG_DEBUG, "error finding port for %s", service);
+                msg(MSG_FATAL, "error finding port for %s", service);
                 port[0] = '-';
                 port[1] = '1';
+                port[2] = '\0';
                 return false;
               }
             }
@@ -556,6 +563,8 @@ bool Socket::get_service_port(const char *service, char *port) {
         /** Finally, store both in the map. */
         if (name_captured && port_captured) {
           name_to_port[name_accumulator] = port_accumulator;
+          
+          /** Return to zeroes. */
           for (int j = 0; j < 16; j++) {
             name_accumulator[j] = '\0';
             port_accumulator[j] = '\0';
@@ -571,9 +580,10 @@ bool Socket::get_service_port(const char *service, char *port) {
     if (isdigit(port[0])) {
       return true;
     } else {
-      msg(MSG_DEBUG,"no port for %s!", service);
+      msg(MSG_FATAL,"no port for %s!", service);
       port[0] = '-';
       port[1] = '1';
+      port[2] = '\0';
       return false;
     }
   } else {
@@ -581,17 +591,19 @@ bool Socket::get_service_port(const char *service, char *port) {
     if (isdigit(port[0])) {
       return true;
     } else {
-      msg(MSG_DEBUG,"no port for %s!", service);
+      msg(MSG_FATAL,"no proper port number for %s!", service);
       port[0] = '-';
       port[1] = '1';
+      port[2] = '\0';
       return false;
     }
   }
   
   /** If we really mess up. */
-  msg(MSG_DEBUG,"no port for %s!", service);
+  msg(MSG_FATAL,"no port found for %s!", service);
   port[0] = '-';
   port[1] = '1';
+  port[2] = '\0';
   return false;
 }
 
