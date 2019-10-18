@@ -470,17 +470,15 @@ const char *Socket::get_version_string() {
 
 /** Necessary global variables. */
 bool read = false;
-std::map<const char*, char*> name_to_port;
+std::map<std::string, std::string> name_to_port;
 const char * filename = "/services";
 
 /** Changed by Miles on 2019-09-12 */
+/** Returns true on error. */
 bool Socket::get_service_port(const char *service, char *port) {
   /** First check if the file has already been read in. */
   if (!read) {
     /** Begin by opening and reading the file, line by line. */
-    //const char *fullpath;
-    //strcpy(fullpath, getenv("tmbindir"));
-    //strcat(fullpath, filename);
     
     const char *tmbindir = getenv("TMBINDIR");
     if (tmbindir == 0) {
@@ -496,7 +494,7 @@ bool Socket::get_service_port(const char *service, char *port) {
       port[1] = '1';
       port[2] = '\0';
       msg(MSG_FATAL, "Cannot access %s!", fullpath);
-      return false;
+      return true;
     }
     char current_line[16];
     char ch;
@@ -509,9 +507,10 @@ bool Socket::get_service_port(const char *service, char *port) {
       name_captured = false;
       port_captured = false;
       port_index = 0;
+      char name_accumulator[80];
+      char port_accumulator[8];
+      
       for (std::string::size_type i = 0; i < strlen(current_line); i++) {
-        char name_accumulator[16];
-        char port_accumulator[16];
         ch = current_line[i];
         
         if (ch == EOF) {
@@ -520,10 +519,13 @@ bool Socket::get_service_port(const char *service, char *port) {
         } else {
           /** Capture the name of the service. */
           if (!name_captured) {
+            if (i >= 80) {
+              msg(MSG_FATAL, "arbitrary service name limit exceeded!");
+            }
             if (isspace(ch)) {
               if (i > 0) {
                 name_captured = true;
-                name_accumulator[strlen(name_accumulator)] = '\0';
+                name_accumulator[i] = '\0';
               } else {
                 continue;
               }
@@ -537,24 +539,28 @@ bool Socket::get_service_port(const char *service, char *port) {
             if (isspace(ch)) {
               if (isdigit(port_accumulator[0])) {
                 port_captured = true;
-                port_accumulator[strlen(port_accumulator)] = '\0';
+                port_accumulator[port_index] = '\0';
               } else {
                 continue;
               }
             }
             if (isdigit(ch)) {
-              port_accumulator[port_index] = ch;
-              port_index++;
+              if (port_index >= 5) {
+                msg(MSG_FATAL, "maximum port length exceeded!");
+              } else {
+                port_accumulator[port_index] = ch;
+                port_index++;
+              }
             } else {
               if (isdigit(port_accumulator[0])) {
                 port_captured = true;
-                port_accumulator[strlen(port_accumulator)] = '\0';
+                port_accumulator[port_index] = '\0';
               } else {
                 msg(MSG_FATAL, "error finding port for %s", service);
                 port[0] = '-';
                 port[1] = '1';
                 port[2] = '\0';
-                return false;
+                return true;
               }
             }
           }
@@ -562,13 +568,18 @@ bool Socket::get_service_port(const char *service, char *port) {
         
         /** Finally, store both in the map. */
         if (name_captured && port_captured) {
-          name_to_port[name_accumulator] = port_accumulator;
+          printf("%8s: %s\n", name_accumulator, port_accumulator);
           
-          /** Return to zeroes. */
-          for (int j = 0; j < 16; j++) {
-            name_accumulator[j] = '\0';
-            port_accumulator[j] = '\0';
-          }
+          // TODO
+          // make permanent std::string out of name_accumulator and port_accumulator
+          // and then fill the map with those
+          
+          std::string name_string(name_accumulator);
+          std::string port_string(port_accumulator);
+          
+          name_to_port[name_string] = port_string;
+          memset(name_accumulator, 0, sizeof(name_accumulator));
+          memset(port_accumulator, 0, sizeof(port_accumulator));
           break;
         }
       }
@@ -576,26 +587,39 @@ bool Socket::get_service_port(const char *service, char *port) {
     
     fclose(portfile);
     read = true;
-    port = name_to_port[service];
+    
+    //TODO
+    //make std::string for service just for lookup
+    std::string service_string(service);
+    std::string port_result = name_to_port[service_string];
+    
+    const char *port_c_str = port_result.c_str();
+    strcpy(port, port_c_str);
+    
     if (isdigit(port[0])) {
-      return true;
+      return false;
     } else {
       msg(MSG_FATAL,"no port for %s!", service);
       port[0] = '-';
       port[1] = '1';
       port[2] = '\0';
-      return false;
+      return true;
     }
   } else {
-    port = name_to_port[service];
+    std::string service_string(service);
+    std::string port_result = name_to_port[service_string];
+    
+    const char *port_c_str = port_result.c_str();
+    strcpy(port, port_c_str);
+    
     if (isdigit(port[0])) {
-      return true;
+      return false;
     } else {
       msg(MSG_FATAL,"no proper port number for %s!", service);
       port[0] = '-';
       port[1] = '1';
       port[2] = '\0';
-      return false;
+      return true;
     }
   }
   
@@ -604,7 +628,7 @@ bool Socket::get_service_port(const char *service, char *port) {
   port[0] = '-';
   port[1] = '1';
   port[2] = '\0';
-  return false;
+  return true;
 }
 
 }
