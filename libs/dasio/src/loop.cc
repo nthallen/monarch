@@ -199,7 +199,7 @@ void Loop::event_loop() {
           if ( flags ) {
             if ( P->ProcessData(flags) ) {
               if (!is_memo_loop) {
-                msg(MSG_DBG(0), "%s: requested termination after P->ProcessData(flagss)", P->get_iname());
+                msg(MSG_DBG(0), "%s: requested termination after P->ProcessData(flags)", P->get_iname());
               }
               keep_going = 0;
             }
