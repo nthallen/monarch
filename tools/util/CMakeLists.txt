@@ -22,6 +22,8 @@ if (NOT CMAKE_CROSSCOMPILING)
 
 configure_file(appgen.in appgen @ONLY)
 configure_file(distribute.in distribute)
+configure_file(mlf_find.in mlf_find @ONLY)
+configure_file(saverun.in saverun @ONLY)
 
 install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/appgen
