@@ -1,25 +1,24 @@
 <package> server
 <include> "dasio/server.h"
 <include> "strings.h"
+<follow> msg
+
 <include> msg oui
 <opts> "s:"
 <sort>
-	-s <server type>
+  -s <Unix, TCP, or both>
 <switch>
   case 's':
-    if (strcasecmp(optarg, "Unix")) {
+    if (strcasecmp(optarg, "Unix") == 0) {
       DAS_IO::Server::server_type = DAS_IO::Server::Srv_Unix;
-      break;
-    } else if (strcasecmp(optarg, "TCP")) {
+    } else if (strcasecmp(optarg, "TCP") == 0) {
       DAS_IO::Server::server_type = DAS_IO::Server::Srv_TCP;
-      break;
-    } else if (strcasecmp(optarg, "Both")) {
+    } else if (strcasecmp(optarg, "Both") == 0) {
       DAS_IO::Server::server_type = DAS_IO::Server::Srv_Both;
-      break;
     } else {
-      msg(-1, "Invalid argument %s to DAS_IO::server", optarg);
-      break;
+      msg(-1, "Invalid argument %s to DAS_IO::Server", optarg);
     }
+    break;
 
 <package> appid_default
 <include> "dasio/appid.h"

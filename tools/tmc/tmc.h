@@ -55,6 +55,7 @@ void print_st_valid(struct nm *nr); /* states.c */
 #ifdef _TMCSTR_H
   extern struct statpc *program; /* parsfunc.c */
   extern struct sttmnt initprog; /* parsfunc.c */
+  extern struct sttmnt redrawprog; /* parsfunc.c */
   struct statpc *newstpc(unsigned int type); /* parsfunc.c */
   struct statpc *newstpctext(char *text); /* parsfunc.c */
   struct statpc *common_stat(struct statpc *sp); /* parsfunc.c */

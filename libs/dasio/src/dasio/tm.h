@@ -230,6 +230,10 @@ extern char *TM_buf;
 
 /* Function prototypes: */
 #ifdef __cplusplus
+namespace DAS_IO {
+  extern void tminitfunc();
+  extern void tmredrawfunc();
+}
   extern "C" {
 #endif
 

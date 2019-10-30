@@ -1,4 +1,4 @@
-#! /bin/sh
+#! @SHELL_EXE@
 #__USAGE
 #%C	[-f] [base]
 # Script to locate existing log files stored in mlf order.

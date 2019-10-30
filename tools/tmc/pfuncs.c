@@ -385,10 +385,19 @@ void print_funcs(void) {
   int need_nfunc;
   
   /* output tminitfunc always */
-  fprintf(ofile, "\nvoid DAS_IO::tminitfunc(void) {");
+  fprintf(ofile, "\nvoid DAS_IO::tminitfunc() {");
   if (initprog.first != NULL) {
     adjust_indent(2);
     print_stat(initprog.first);
+    adjust_indent(-2);
+  }
+  print_indent("}\n");
+  
+  /* output tmredrawfunc always */
+  fprintf(ofile, "\nvoid DAS_IO::tmredrawfunc() {");
+  if (redrawprog.first != NULL) {
+    adjust_indent(2);
+    print_stat(redrawprog.first);
     adjust_indent(-2);
   }
   print_indent("}\n");

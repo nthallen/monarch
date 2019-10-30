@@ -17,8 +17,6 @@
 
 using namespace DAS_IO;
 
-AppID_t DAS_IO::AppID("bfr", "bfr server", "V1.0");
-
 bool bfr_input_client::tmg_opened = false;
 bool blocked_writer = false;
 std::list<bfr_output_client*> all_readers;

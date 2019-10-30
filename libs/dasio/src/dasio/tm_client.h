@@ -37,8 +37,6 @@ class ext_tm_client : public tm_client {
     void process_data();
 };
 
-extern void tminitfunc();
-
 }
 
 extern "C" {

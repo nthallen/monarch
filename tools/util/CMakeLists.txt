@@ -15,6 +15,8 @@ if (NOT SHELL_EXE)
 endif (NOT SHELL_EXE)
 
 configure_file(distribute_check.in distribute_check @ONLY)
+configure_file(mlf_find.in mlf_find @ONLY)
+configure_file(saverun.in saverun @ONLY)
 
 if (NOT CMAKE_CROSSCOMPILING)
 
@@ -28,8 +30,8 @@ install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/distribute_check
   genui
   genui_chk
-  mlf_find
-  saverun
+  ${CMAKE_CURRENT_BINARY_DIR}/mlf_find
+  ${CMAKE_CURRENT_BINARY_DIR}/saverun
   DESTINATION bin)
 
 install(FILES
@@ -45,8 +47,8 @@ else (NOT CMAKE_CROSSCOMPILING)
 
 install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/distribute_check
-  mlf_find
-  saverun
+  ${CMAKE_CURRENT_BINARY_DIR}/mlf_find
+  ${CMAKE_CURRENT_BINARY_DIR}/saverun
   DESTINATION bin)
 
 endif (NOT CMAKE_CROSSCOMPILING)
