@@ -28,12 +28,12 @@ namespace DAS_IO {
 
 // UDP Socket
 // Socket::Socket(const char *iname, int bufsz, const char *service) :
-    // Interface(iname, bufsz),
-    // hostname(0),
-    // service(service),
-    // is_server(false),
-    // socket_state(Socket_disconnected),
-    // socket_type(Socket_Unix)  
+  // Interface(iname, bufsz),
+  // hostname(0),
+  // service(service),
+  // is_server(false),
+  // socket_state(Socket_disconnected),
+  // socket_type(Socket_Unix)  
 // {
   // common_init();
 // }
@@ -41,12 +41,12 @@ namespace DAS_IO {
 // TCP Socket
 Socket::Socket(const char *iname, int bufsz, const char *hostname,
                         const char *service) :
-    Interface(iname, bufsz),
-    hostname(hostname),
-    service(service),
-    is_server(false),
-    socket_state(Socket_disconnected),
-    socket_type(hostname ? Socket_TCP : Socket_Unix)
+  Interface(iname, bufsz),
+  hostname(hostname),
+  service(service),
+  is_server(false),
+  socket_state(Socket_disconnected),
+  socket_type(hostname ? Socket_TCP : Socket_Unix)
 {
   common_init();
 }
@@ -54,24 +54,24 @@ Socket::Socket(const char *iname, int bufsz, const char *hostname,
 // Server Socket
 Socket::Socket(const char *iname, const char *service,
         socket_type_t socket_type) :
-    Interface(iname, 0),
-    service(service),
-    hostname("0.0.0.0"),
-    is_server(true),
-    socket_state(Socket_disconnected),
-    socket_type(socket_type)  
+  Interface(iname, 0),
+  service(service),
+  hostname("0.0.0.0"),
+  is_server(true),
+  socket_state(Socket_disconnected),
+  socket_type(socket_type)  
 {
   common_init();
 }
 
 // Clone Socket
 Socket::Socket(Socket *S, const char *iname, int bufsize, int fd) :
-    Interface(iname, bufsize),
-    service(S->service),
-    hostname(0),
-    is_server(false),
-    socket_state(Socket_connected),
-    socket_type(S->socket_type)
+  Interface(iname, bufsize),
+  service(S->service),
+  hostname(0),
+  is_server(false),
+  socket_state(Socket_connected),
+  socket_type(S->socket_type)
 {
   common_init();
   this->fd = fd;
