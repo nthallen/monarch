@@ -199,6 +199,24 @@ void Socket::connect() {
         if (err < 0) {
           msg(MSG_FATAL, "%s: getaddrinfo(%s, %s) failed with error %d: %s",
             iname, hostname, portname, errno, std::strerror(errno));
+        } else {
+          
+          
+          /** Added in by Miles from getaddrinfo.c, 2019-11-01 */
+          struct addrinfo *resi = res;
+          while (resi) {
+            struct sockaddr_in *addr = (struct sockaddr_in*)resi->ai_addr;
+            printf("result port = %d\n", ntohs(addr->sin_port));
+            printf("result addr = %d.%d.%d.%d\n",
+              (addr->sin_addr.s_addr>>0)&0xFF,
+              (addr->sin_addr.s_addr>>8)&0xFF,
+              (addr->sin_addr.s_addr>>16)&0xFF,
+              (addr->sin_addr.s_addr>>24)&0xFF);
+            resi = resi->ai_next;
+          }
+          /** End added code from getaddrinfo.c */
+          
+          
         }
         if (res == 0) {
           msg(MSG_FATAL, "%s: getaddrinfo(%s, %s) provided no result",

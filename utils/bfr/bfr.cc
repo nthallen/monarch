@@ -706,6 +706,6 @@ int main(int argc, char **argv) {
   
   Server S("tm_bfr");
   add_subservices(&S);
-  S.Start(Server::Srv_Unix);
+  S.Start(Server::server_type);
   return 0;
 }
