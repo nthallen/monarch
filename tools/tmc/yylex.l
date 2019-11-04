@@ -55,14 +55,15 @@
   static void copy_text(void);
   static void discard_text(void);
   static void swallow_comment(void);
-  /* CHAR ret_tok(KW_CHAR); */
-  /* INT ret_tok(KW_INT); */
-  /* LONG ret_tok(KW_LONG); */
-  /* SHORT ret_tok(KW_SHORT); */
-  /* UNSIGNED ret_tok(KW_UNSIGNED); */
 
 %}
 %%
+CHAR ret_tok(KW_CHAR);
+INT ret_tok(KW_INT);
+LONG ret_tok(KW_LONG);
+SHORT ret_tok(KW_SHORT);
+UNSIGNED ret_tok(KW_UNSIGNED);
+
 ADDRESS ret_notxt(KW_ADDRESS);
 CALIBRATION ret_notxt(KW_CALIBRATION);
 CASE ret_tok(KW_CASE);
