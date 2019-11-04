@@ -43,25 +43,6 @@ typedef struct tsqueue {
    redefined. After that, progress simply involves updating
    starting_Qrow, n_Qrows and Qrows_expired.
 */
-// class tmq_descriptor {
-  // public:
-    // tmq_descriptor();
-  // protected:
-    // tmq_descriptor *next;
-    // int ref_count;
-    // int starting_Qrow;
-    // int n_Qrows;
-    // int Qrows_expired;
-    // int min_reader;
-    // TS_queue_t *TSq;
-    // mfc_t MFCtr;
-    // int Row_num;
-// };
-
-// typedef struct {
-  // tmq_descriptor *first;
-  // tmq_descriptor *last;
-// } DQD_Queue_t;
 
 enum state_t {
   TM_STATE_HDR, TM_STATE_HDR2, TM_STATE_INFO, TM_STATE_DATA

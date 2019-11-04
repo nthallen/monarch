@@ -120,15 +120,6 @@ void tm_generator::transmit_data( bool single_row ) {
 }
 
 /**
- * Control initialization
- * This is how 
- */
-/* void tm_generator::operate() {
-  if ( autostart ) tm_start(1);
-  dispatch->Loop();
-} */
-
-/**
   Interperet data generator commands: I need to abstract the "signal handlers" operation.
   It appears that the key notifications are:
  

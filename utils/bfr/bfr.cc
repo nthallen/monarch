@@ -278,50 +278,6 @@ bool bfr_input_client::process_tm_info() {
     default:
       msg(4,"Invalid output_tm_type");
   }
-  // if ( tmi(mfc_lsb) == 0 && tmi(mfc_msb) == 1
-       // && tm_info.nrowminf == 1 ) {
-    // Data_Queue.output_tm_type = TMTYPE_DATA_T3;
-    // Data_Queue.nbQrow -= 4;
-    // Data_Queue.nbDataHdr = TM_HDR_SIZE_T3;
-		// write.nbhdr_rec = TM_HDR_SIZE_T3;
-		// write.nbrow_rec = tmi(nbrow) - 4;
-		// data_state_eval = data_state_T3;
-  // } else if ( tm_info.nrowminf == 1 ) {
-    // Data_Queue.output_tm_type = TMTYPE_DATA_T1;
-    // Data_Queue.nbDataHdr = TM_HDR_SIZE_T1;
-		// write.nbhdr_rec = TM_HDR_SIZE_T1;
-		// data_state_eval = data_state_T1;
-    // if ( tmi(nbrow) <= 4 )
-      // msg(MSG_FATAL, "TM Frame with no non-synch data not supported" );
-		// write.nbrow_rec = tmi(nbrow);
-		// data_state_eval = data_state_T1;
-  // } else {
-    // Data_Queue.output_tm_type = TMTYPE_DATA_T2;
-    // Data_Queue.nbDataHdr = TM_HDR_SIZE_T2;
-		// write.nbhdr_rec = TM_HDR_SIZE_T2;
-		// write.nbrow_rec = tmi(nbrow);
-		// data_state_eval = data_state_T2;
-  // }
-  // Data_Queue.pbuf_size = Data_Queue.nbDataHdr + Data_Queue.nbQrow;
-  // if ( Data_Queue.pbuf_size < sizeof(tm_hdr_t) + sizeof(tm_info_t) )
-    // Data_Queue.pbuf_size = sizeof(tm_hdr_t) + sizeof(tm_info_t);
-
-  // // how much buffer space to allocate?
-  // // Let's default to one minute's worth, but make sure we get
-  // // an integral number of minor frames
-  // Data_Queue.total_Qrows = tm_info.nrowminf *
-    // ( ( tmi(nrowsper) * 60 + tmi(nsecsper)*tm_info.nrowminf - 1 )
-        // / (tmi(nsecsper)*tm_info.nrowminf) );
-  // Data_Queue.total_size =
-    // Data_Queue.nbQrow * Data_Queue.total_Qrows;
-  // Data_Queue.first = Data_Queue.last = Data_Queue.full = 0;
-  // Data_Queue.raw = new_memory(Data_Queue.total_size);
-  // Data_Queue.row = new_memory(Data_Queue.total_Qrows * sizeof(char *));
-  // rowptr = Data_Queue.raw;
-  // for ( i = 0; i < Data_Queue.total_Qrows; i++ ) {
-    // Data_Queue.row[i] = rowptr;
-    // rowptr += Data_Queue.nbQrow;
-  // }
   
   commit_tstamp(tm_info.t_stmp.mfc_num, tm_info.t_stmp.secs);
   unlock();
@@ -398,19 +354,6 @@ void bfr_input_client::tmq_retire_check() {
   tmq_ref *tmqr = first_tmqr;
   if (!tmqr) return;
   nl_assert(tmqr->ref_count >= 0);
-  // while (tmqr->ref_count == 0 && tmqr->next_tmqr
-       // && tmqr->n_Qrows == 0) {
-    // /* Can expire this tmqr */
-    // tmq_ref *next_tmqr = tmqr->next_tmqr;
-    // first_tmqr = next_tmqr;
-    // nl_assert(tmqr->tsp->ref_count >= 0);
-    // if ( --tmqr->tsp->ref_count <= 0 ) {
-      // delete(tmqr->tsp);
-      // tmqr->tsp = 0;
-    // }
-    // delete(tmqr);
-    // tmqr = next_tmqr;
-  // }
   // Now look for Qrows we can retire
   int min_Qrow = min_reader(tmqr);
   if (min_Qrow > tmqr->Qrows_retired)

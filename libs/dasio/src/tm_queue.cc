@@ -41,18 +41,6 @@ tmq_ref *tmq_ref::dereference(bool use_next) {
   return rv;
 }
 
-// tmq_data_ref::tmq_data_ref(mfc_t MFCtr, int mfrow, int Qrow_in, int nrows_in,
-        // tmq_tstamp_ref *tsp)
-      // : tmq_ref(tmq_data), tsp(tsp) {
-  // nl_assert(tsp);
-  // ++tsp->ref_count;
-  // MFCtr_start = MFCtr_next = MFCtr;
-  // row_start = row_next = mfrow;
-  // Qrow = Qrow_in;
-  // n_rows = 0;
-  // append_rows( nrows_in );
-// }
-
 void tmq_ref::append_rows( int nrows ) {
   row_next += nrows;
   MFCtr_next += row_next/tm_info.nrowminf;
@@ -234,15 +222,6 @@ void tm_queue::retire_rows(tmq_ref *tmqd, int n_rows ) {
   }
   unlock();
 }
-
-// void tm_queue::retire_tstamp( tmq_tstamp_ref *tmqts ) {
-  // lock(__FILE__,__LINE__);
-  // nl_assert( tmqts == first_tmqr );
-  // first_tmqr = tmqts->next_tmqr;
-  // if ( first_tmqr == 0 ) last_tmqr = first_tmqr;
-  // unlock();
-  // delete(tmqts);
-// }
 
 /**
  * @param tmqrp Point to the current tmq_ref*
