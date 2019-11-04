@@ -467,15 +467,6 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
   
   if (! ocb->obuf_empty()) return;
   
-  // if ( ocb->part.nbdata ) {
-    // // nb = ocb->read.nbytes;
-    // if ( ocb->part.nbdata < nb )
-      // nb = ocb->part.nbdata;
-    // MsgReply( ocb->read.rcvid, nb, ocb->part.dptr, nb );
-    // ocb->part.dptr += nb;
-    // ocb->part.nbdata -= nb;
-    // // New state was already defined (or irrelevant)
-  // } else 
   if ( ocb->data.tmqr == 0 ) {
     lock(__FILE__,__LINE__);
     if (next_tmqr(&ocb->data.tmqr)) {
@@ -619,28 +610,6 @@ void bfr_input_client::do_read_reply( bfr_output_client *ocb, int nb,
                         struct iovec *iov, int n_parts ) {
   nl_assert(ocb->obuf_empty());
   ocb->iwritev(iov, n_parts);
-  // int nreq = ocb->read.nbytes;
-  // if ( nreq < nb ) {
-    // int i;
-    // char *p;
-    
-    // if ( ocb->read.buf == 0 )
-      // ocb->read.buf = new_memory(pbuf_size);
-    // assert( nb <= pbuf_size );
-    // p = ocb->read.buf;
-    // for ( i = 0; i < n_parts; i++ ) {
-      // int len = GETIOVLEN( &iov[i] );
-      // memcpy( p, GETIOVBASE( &iov[i] ), len );
-      // p += len;
-    // }
-    // ocb->part.dptr = ocb->read.buf;
-    // ocb->part.nbdata = nb;
-    // MsgReply( ocb->read.rcvid, nreq, ocb->part.dptr, nreq );
-    // ocb->part.dptr += nreq;
-    // ocb->part.nbdata -= nreq;
-  // } else {
-    // MsgReplyv( ocb->read.rcvid, nb, iov, n_parts );
-  // }
 }
 
 
