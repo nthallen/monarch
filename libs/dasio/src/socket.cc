@@ -26,18 +26,6 @@
 
 namespace DAS_IO {
 
-// UDP Socket
-// Socket::Socket(const char *iname, int bufsz, const char *service) :
-  // Interface(iname, bufsz),
-  // hostname(0),
-  // service(service),
-  // is_server(false),
-  // socket_state(Socket_disconnected),
-  // socket_type(Socket_Unix)  
-// {
-  // common_init();
-// }
-
 // TCP Socket
 Socket::Socket(const char *iname, int bufsz, const char *hostname,
                         const char *service) :
@@ -203,7 +191,7 @@ void Socket::connect() {
           
           
           /** Added in by Miles from getaddrinfo.c, 2019-11-01 */
-          struct addrinfo *resi = res;
+          /* struct addrinfo *resi = res;
           while (resi) {
             struct sockaddr_in *addr = (struct sockaddr_in*)resi->ai_addr;
             printf("result port = %d\n", ntohs(addr->sin_port));
@@ -213,7 +201,7 @@ void Socket::connect() {
               (addr->sin_addr.s_addr>>16)&0xFF,
               (addr->sin_addr.s_addr>>24)&0xFF);
             resi = resi->ai_next;
-          }
+          } */
           /** End added code from getaddrinfo.c */
           
           
