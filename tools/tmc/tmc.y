@@ -16,7 +16,7 @@
 %token KW_ADDRESS
 %token KW_CALIBRATION
 %token <l.pretext> KW_CASE
-/* %token <l.pretext> KW_CHAR */
+%token <l.pretext> KW_CHAR
 %token KW_COLLECT
 %token KW_CONVERT
 %token KW_ICONVERT
@@ -32,18 +32,19 @@
 %token KW_HZ
 %token <l.pretext> KW_IF
 %token KW_INITFUNC
-/* %token <l.pretext> KW_INT */
-%token <l.pretext> KW_INT8
-%token <l.pretext> KW_INT16
-%token <l.pretext> KW_INT32
+%token <l.pretext> KW_INT
+%token <l.pretext> KW_INT8_T
+%token <l.pretext> KW_INT16_T
+%token <l.pretext> KW_INT32_T
+%token <l.pretext> KW_INT64_T
 %token KW_INVALIDATE
-/* %token <l.pretext> KW_LONG */
+%token <l.pretext> KW_LONG
 %token KW_MAXCOLS
 %token KW_MINCOLS
 %token KW_ON
 %token KW_ONCE
 %token <l.pretext> KW_RETURN
-/* %token <l.pretext> KW_SHORT */
+%token <l.pretext> KW_SHORT
 %token <l.pretext> KW_SIGNED
 %token KW_STATE
 %token <l.pretext> KW_STRUCT
@@ -54,10 +55,11 @@
 %token KW_TM
 %token <l.pretext> KW_TYPEDEF
 %token <l.pretext> KW_UNION
-/* %token <l.pretext> KW_UNSIGNED */
-%token <l.pretext> KW_UINT8
-%token <l.pretext> KW_UINT16
-%token <l.pretext> KW_UINT32
+%token <l.pretext> KW_UNSIGNED
+%token <l.pretext> KW_UINT8_T
+%token <l.pretext> KW_UINT16_T
+%token <l.pretext> KW_UINT32_T
+%token <l.pretext> KW_UINT64_T
 %token KW_VALIDATE
 %token <l.pretext> KW_WHILE
 %token <l.pretext> TK_CHAR_CONST
@@ -110,7 +112,7 @@
 %type <typeparts> typeparts
 %type <struct_union> struct_union
 %type <typeparts> integertypes
-/* %type <typeparts> integertype */
+%type <typeparts> integertype
 %type <sttval> statedef
 %type <plval> pairs
 %type <doubval> pair_num
@@ -828,11 +830,22 @@ array_decorations : {
     ;
 typeparts : integertypes {
         static unsigned char intsizes[16] =
-          {2,1,2,0,4,0,4,0,2,0,2,0,0,0,0,0};
+          {sizeof(unsigned),sizeof(char),sizeof(int),0,
+           sizeof(long),0,sizeof(long int),0,
+           sizeof(short),0,sizeof(short int),0,
+           0,0,0,0};
         assert($1.type < 32);
         set_typpts(&$$, $1.type, intsizes[$1.type & 0xF], NULL, NULL);
         $$.stat = $1.stat;
       }
+    | KW_INT8_T { set_typpts(&$$, INTTYPE_INT8, 1, $1, NULL); }
+    | KW_UINT8_T { set_typpts(&$$, INTTYPE_UINT8, 1, $1, NULL); }
+    | KW_INT16_T { set_typpts(&$$, INTTYPE_INT16, 2, $1, NULL); }
+    | KW_UINT16_T { set_typpts(&$$, INTTYPE_UINT16, 2, $1, NULL); }
+    | KW_INT32_T { set_typpts(&$$, INTTYPE_INT32, 4, $1, NULL); }
+    | KW_UINT32_T { set_typpts(&$$, INTTYPE_UINT32, 4, $1, NULL); }
+    | KW_INT64_T { set_typpts(&$$, INTTYPE_INT64, 8, $1, NULL); }
+    | KW_UINT64_T { set_typpts(&$$, INTTYPE_UINT64, 8, $1, NULL); }
     | KW_FLOAT { set_typpts(&$$, INTTYPE_FLOAT, 4, $1, NULL); }
     | KW_DOUBLE { set_typpts(&$$, INTTYPE_DOUBLE, 8, $1, NULL); }
     | TK_TYPE_NAME {
@@ -857,7 +870,6 @@ struct_union : KW_STRUCT {
         decl_type = start_st_un(&$$, $1, INTTYPE_UNION, decl_type);
       }
     ;
-/*
 integertypes : integertype { $$ = $1; }
     | integertypes integertype {
         $$.stat = $1.stat;
@@ -871,14 +883,6 @@ integertype : KW_CHAR { int_type(&$$, $1, INTTYPE_CHAR); }
     | KW_SHORT { int_type(&$$, $1, INTTYPE_SHORT); }
     | KW_SIGNED { int_type(&$$, $1, 0); }
     | KW_UNSIGNED { int_type(&$$, $1, INTTYPE_UNSIGNED); }
-    ;
-*/
-integertypes : KW_INT8 { int_type(&$$, $1, INTTYPE_CHAR); }
-    | KW_UINT8 { int_type(&$$, $1, INTTYPE_CHAR|INTTYPE_UNSIGNED); }
-    | KW_INT16 { int_type(&$$, $1, INTTYPE_INT); }
-    | KW_UINT16 { int_type(&$$, $1, INTTYPE_INT|INTTYPE_UNSIGNED); }
-    | KW_INT32 { int_type(&$$, $1, INTTYPE_LONG); }
-    | KW_UINT32 { int_type(&$$, $1, INTTYPE_LONG|INTTYPE_UNSIGNED); }
     ;
     
 pairs : pair_num ',' pair_num {
