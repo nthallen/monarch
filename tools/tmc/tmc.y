@@ -43,6 +43,7 @@
 %token KW_MINCOLS
 %token KW_ON
 %token KW_ONCE
+%token KW_REDRAWFUNC
 %token <l.pretext> KW_RETURN
 %token <l.pretext> KW_SHORT
 %token <l.pretext> KW_SIGNED
@@ -191,6 +192,11 @@ progitem : nontm_decl {
       }
     | KW_TM TK_STRING_LITERAL TK_NAME TK_INTEGER_CONST ';' {
         add_ptr_proxy($<l.toktext>2, $<l.toktext>3, $4);
+        initstat(&$$, NULL);
+      }
+    | KW_TM KW_REDRAWFUNC tl_statement {
+        catstat(&redrawprog, &$3);
+        catstattext(&redrawprog, "\n");
         initstat(&$$, NULL);
       }
     | KW_TM KW_INITFUNC tl_statement {
@@ -870,6 +876,7 @@ struct_union : KW_STRUCT {
         decl_type = start_st_un(&$$, $1, INTTYPE_UNION, decl_type);
       }
     ;
+
 integertypes : integertype { $$ = $1; }
     | integertypes integertype {
         $$.stat = $1.stat;

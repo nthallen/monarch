@@ -30,10 +30,6 @@ Cmd_writer::Cmd_writer(const char *iname, const char *hostname)
   ci_time = 0;
 }
 
-// Cmd_writer::Cmd_writer(const char *iname, const char *hostname)
-      // : Client(iname, 128, hostname, "cmd", "server") {
-// }
-
 Cmd_writer::~Cmd_writer() {
   Cmd = 0;
 }

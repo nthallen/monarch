@@ -1,4 +1,4 @@
-#! /bin/sh
+#! @SHELL_EXE@
 #__USAGE
 #%C
 #	Saves data files, log files and other pertinent info in

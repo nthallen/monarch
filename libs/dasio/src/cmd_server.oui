@@ -1,4 +1,5 @@
-<package> cmd_srvr
+<package> cmd_server
+<include> server
 <include> cmd_version
 <follow> cmd_version
 <comment>

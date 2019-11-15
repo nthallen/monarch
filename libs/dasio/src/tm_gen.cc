@@ -10,7 +10,7 @@
 namespace DAS_IO {
 
 tm_gen_bfr::tm_gen_bfr(bool collection)
-  : Client("bfr", 80, hostname, "tm_bfr", collection ? "input-nb" : "input") {}
+  : Client("bfr", 80, 0, "tm_bfr", collection ? "input-nb" : "input") {}
 
 tm_gen_bfr::~tm_gen_bfr() {}
 
@@ -118,15 +118,6 @@ void tm_generator::transmit_data( bool single_row ) {
     }
   }
 }
-
-/**
- * Control initialization
- * This is how 
- */
-/* void tm_generator::operate() {
-  if ( autostart ) tm_start(1);
-  dispatch->Loop();
-} */
 
 /**
   Interperet data generator commands: I need to abstract the "signal handlers" operation.

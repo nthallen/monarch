@@ -23,6 +23,7 @@ File:
   "  }\n"
   "%}\n"
   "TM INITFUNC " $4 string "_init();\n"
+  "TM REDRAWFUNC " $4 string "_redraw();\n"
   $3
 
 /* PTGField(table_name,name,r,c,w,h) */

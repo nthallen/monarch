@@ -80,8 +80,6 @@ class tmq_ref {
     // int n_rows;
 // };
 
-extern void tminitfunc();
-
 /** Semantics of tm_queue
    tm_queue.first, .last are indices into row and range from
      [0..total_Qrows)

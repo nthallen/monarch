@@ -215,12 +215,6 @@ void Loop::event_loop() {
 
 void Loop::set_loop_exit() {
   loop_exit = true;
-  // while (!S.empty()) {
-    // Interface *P = S.front();
-    // // msg(0, "Deleting Interface %d", P->get_iname());
-    // P->dereference(); // delete(P);
-    // S.pop_front();
-  // }
 }
 
 /*

@@ -35,6 +35,7 @@ install(FILES
   kbdclt.oui
   msg.oui
   no_appid.oui
+  server.oui
   seteuid.oui
   tm_client.oui
   DESTINATION share/oui

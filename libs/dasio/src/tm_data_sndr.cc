@@ -13,12 +13,6 @@ TM_data_sndr::TM_data_sndr(const char *iname, const char *hostname, const char *
   set_subservice(sub_service);
 }
 
-// TM_data_sndr::TM_data_sndr(const char *iname, const char *hostname, const char *datum,
-        // const char *data, uint16_t size) {
-  // snprintf(sub_service, subsvc_len, "data/%s", datum);
-  // Client(iname, 10, hostname, "DG", sub_service);
-// }
-
 TM_data_sndr::~TM_data_sndr() {}
 
 bool TM_data_sndr::app_input() {

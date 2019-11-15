@@ -58,6 +58,12 @@
 
 %}
 %%
+CHAR ret_tok(KW_CHAR);
+INT ret_tok(KW_INT);
+LONG ret_tok(KW_LONG);
+SHORT ret_tok(KW_SHORT);
+UNSIGNED ret_tok(KW_UNSIGNED);
+
 ADDRESS ret_notxt(KW_ADDRESS);
 CALIBRATION ret_notxt(KW_CALIBRATION);
 CASE ret_tok(KW_CASE);
@@ -88,6 +94,7 @@ MAXCOLS ret_notxt(KW_MAXCOLS);
 MINCOLS ret_notxt(KW_MINCOLS);
 ON ret_notxt(KW_ON);
 ONCE ret_notxt(KW_ONCE);
+REDRAWFUNC ret_tok(KW_REDRAWFUNC);
 RETURN ret_tok(KW_RETURN);
 SHORT ret_tok(KW_SHORT);
 SIGNED ret_tok(KW_SIGNED);

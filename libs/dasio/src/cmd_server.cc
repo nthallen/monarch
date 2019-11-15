@@ -261,7 +261,7 @@ void ci_server(void) {
 
   // Call the cmdgen-generated initialization routine
   cis_interfaces();
-  DAS_IO::CmdServer->Start(DAS_IO::Server::Srv_Unix);
+  DAS_IO::CmdServer->Start(DAS_IO::Server::server_type);
   // while (!(quit_received && cmdif_rd::all_closed())) {
     // cs->ELoop.event_loop();
   // }

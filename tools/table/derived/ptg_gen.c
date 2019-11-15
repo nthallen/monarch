@@ -187,6 +187,9 @@ static void _PrPTGFile(n)
 	PTG_OUTPUT_STRING(f, "TM INITFUNC ");
 	PTG_OUTPUT_STRING(f, n->p4);
 	PTG_OUTPUT_STRING(f, "_init();\n");
+	PTG_OUTPUT_STRING(f, "TM REDRAWFUNC ");
+	PTG_OUTPUT_STRING(f, n->p4);
+	PTG_OUTPUT_STRING(f, "_redraw();\n");
 	n->p3->_print(n->p3);
 }
 

@@ -70,13 +70,4 @@ bool tm_client::app_input() {
   return false;
 }
 
-// void tm_client::resize_buffer( int bufsize ) {
-  // delete buf;
-  // bufsize = bufsize;
-  // buf = new char[bufsize];
-  // if ( buf == 0)
-    // report_err(/* 3,
-       // */"Memory allocation failure in tm_client::resize_buffer");
-// }
-
 }
