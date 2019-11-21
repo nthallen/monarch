@@ -1,17 +1,17 @@
-#include "tm.h"
-#include "tm_gen.h"
-#include "tm_client.h"
+#include "dasio/tm.h"
+#include "dasio/tm_gen.h"
+#include "dasio/tm_client.h"
 
-using namespace DAS_IO {
+using namespace DAS_IO;
+
+class tm_relay;
 
 class tm_relay : public tm_generator, public tm_client {
   public:
     tm_relay();
     ~tm_relay();
   protected:
-    virtual void process_data();
-    virtual void process_tstamp();
+    void process_data(mfc_t MFCtr, int mfrow, int nrows);
+    void process_tstamp(mfc_t MFCtr, time_t time);
   private:
-}
-
-}
+};

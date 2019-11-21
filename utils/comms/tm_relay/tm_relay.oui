@@ -1,0 +1,14 @@
+<package> tm_relay
+<include> oui
+<include> tm_client msg server
+<include> "tm_relay.h"
+<include> "dasio/tm.h"
+
+<init> tm_relay_init(argc, argv);
+
+<opts> "N:"
+<sort>
+
+<unsort>
+<blank>
+
