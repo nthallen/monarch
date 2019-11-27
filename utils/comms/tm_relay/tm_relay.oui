@@ -4,8 +4,6 @@
 <include> "tm_relay.h"
 <include> "dasio/tm.h"
 
-<init> tm_relay_init(argc, argv);
-
 <opts> "N:"
 <sort>
 
