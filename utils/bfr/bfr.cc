@@ -217,6 +217,7 @@ bool bfr_input_client::protocol_input() {
     blocked_writer = true;
     run_read_queue();
   }
+  return false;
 }
 
 /** As soon as tm_info has been received, we can decide what
