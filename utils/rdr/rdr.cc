@@ -31,14 +31,14 @@ static unsigned long opt_end_file = ULONG_MAX;
 
 /** Options we need to support:
 
-        -A : autostart without regulation
-        -a : autostart with regulation
-        -F index : Starting log file index
-        -L index : Ending log file index 
-        -T time : Starting time/Ending time
-        -P path : path to log directories
-        -k : invoke kluge to work around lgr bug
-        -q : autoquit
+  -A : autostart without regulation
+  -a : autostart with regulation
+  -F index : Starting log file index
+  -L index : Ending log file index 
+  -T time : Starting time/Ending time
+  -P path : path to log directories
+  -k : invoke kluge to work around lgr bug
+  -q : autoquit
 
  */
 
@@ -234,10 +234,6 @@ void Reader::process_tstamp() {
  checked by an assertion in Reader::Reader().
  */
 void Reader::process_data() {
-  static int nrows_full_rec = 0;
-  static int last_rec_full = 1;
-  static unsigned short frac_MFCtr;
-
   if ( ! have_tstamp ) {
     msg(MSG_WARN, "process_data() without initialization" );
     return;
@@ -246,29 +242,6 @@ void Reader::process_data() {
   unsigned char *raw = &data->data[0];
   int n_rows = data->n_rows;
   unsigned short MFCtr = data->mfctr;
-  // This is a work-around for a lgr bug which generated
-  // corrupted log files.
-  if ( opt_kluge_a ) {
-    if ( nrows_full_rec == 0 )
-      nrows_full_rec = n_rows;
-    if ( n_rows == nrows_full_rec ) {
-      last_rec_full = 1;
-    } else {
-      if ( n_rows * 2 < nrows_full_rec ||
-          ((!last_rec_full) && n_rows*2 == nrows_full_rec )) {
-        // We won't use this record, but we might record
-        // the MFCtr
-        if ( last_rec_full ) frac_MFCtr = MFCtr;
-        last_rec_full = 0;
-        return;
-      } else {
-        // We'll use this record, but may need to get
-        // MFCtr from the previous fragment
-        if ( !last_rec_full ) MFCtr = frac_MFCtr;
-        last_rec_full = 0;
-      }
-    }
-  }
 
   // Can check here for time limits
   // Given MFCtr, timestamp, we can calculate the time. We can
