@@ -488,7 +488,7 @@ bool Socket::get_service_port(const char *service, char *port) {
     
     const char *tmbindir = getenv("TMBINDIR");
     if (tmbindir == 0) {
-      tmbindir = "bin/1.1";
+      msg(MSG_FATAL, "TMBINDIR not defined!");
     }
     char *fullpath = (char *) new_memory(strlen(tmbindir) + strlen(filename) + 1);
     strcpy(fullpath, tmbindir);
