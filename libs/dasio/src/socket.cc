@@ -574,11 +574,6 @@ bool Socket::get_service_port(const char *service, char *port) {
         
         /** Finally, store both in the map. */
         if (name_captured && port_captured) {
-          //printf("%8s: %s\n", name_accumulator, port_accumulator);
-          
-          // TODO
-          // make permanent std::string out of name_accumulator and port_accumulator
-          // and then fill the map with those
           
           std::string name_string(name_accumulator);
           std::string port_string(port_accumulator);
