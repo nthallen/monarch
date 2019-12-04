@@ -20,8 +20,30 @@ tm_relay::tm_relay() : tm_generator(), tm_client(64, false, "tm_relay") {
   msg(0, "pointless message from tm_relay constructor");
 }
 
-void tm_relay::process_data(mfc_t MFCtr, int mfrow, int nrows) {
-  tm_queue::commit_rows(MFCtr, mfrow, nrows);
+void tm_relay::process_data() {
+  switch ( input_tm_type ) {
+    case TMTYPE_DATA_T1:
+    case TMTYPE_DATA_T2:
+      msg(MSG_FATAL,"Data type not implemented" );
+    case TMTYPE_DATA_T3:
+      process_data_t3();
+      break;
+  }
+}
+
+void tm_relay::process_data_t3() {
+  tm_data_t3_t *data = &tm_msg->body.data3;
+  int n_rows = data->n_rows;
+  unsigned short mfctr = data->mfctr;
+  unsigned char *wdata = &data->data[0];
+  int mfrow = 0;
+  unsigned char * rowp;
+  int n_rows_commit = allocate_rows(&rowp);
+  if (n_rows < n_rows_commit) {
+    n_rows_commit = n_rows;
+  }
+  commit_rows(mfctr, mfrow, n_rows_commit);
+  return;
 }
 
 void tm_relay::process_tstamp(mfc_t MFCtr, time_t time) {
