@@ -15,7 +15,9 @@
 
 using namespace DAS_IO;
   
-tm_relay::tm_relay() : tm_generator(), tm_client(64, false, "tm_relay") {
+tm_relay::tm_relay() : tm_generator(), tm_client(4096, false, tm_client::tm_client_hostname) {
+  autostart = true;
+  regulated = false;
   msg(0, "pointless message from tm_relay constructor");
 }
 
@@ -78,6 +80,7 @@ void tm_relay::process_data_t3() {
 void tm_relay::process_tstamp(mfc_t MFCtr, time_t time) {
   have_tstamp = true;
   tm_queue::commit_tstamp(MFCtr, time);
+  tm_rcvr::process_tstamp();
 }
 
 void tm_relay::service_row_timer() {}
@@ -85,12 +88,11 @@ void tm_relay::service_row_timer() {}
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   tm_relay *new_tm_relay = new tm_relay();
-  Loop ELoop;
-  ELoop.add_child(new_tm_relay);
+  ::load_tmdac(0);
+  new_tm_relay->tm_generator::ELoop.add_child(new_tm_relay);
   msg(0, "tm_relay starting");
   new_tm_relay->connect();
   new_tm_relay->Start(Server::server_type);
-  ELoop.event_loop();
   msg(0, "tm_relay terminating");
   return 0;
 }

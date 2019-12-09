@@ -186,7 +186,7 @@ void Socket::connect() {
         int err = getaddrinfo(hostname, portname, &hints, &res);
         if (err < 0) {
           msg(MSG_FATAL, "%s: getaddrinfo(%s, %s) failed with error %d: %s",
-            iname, hostname, portname, errno, std::strerror(errno));
+            iname, hostname, portname, err, gai_strerror(err));
         } else {
           
           
@@ -575,7 +575,7 @@ bool Socket::get_service_port(const char *service, char *port) {
         
         /** Finally, store both in the map. */
         if (name_captured && port_captured) {
-          printf("%8s: %s\n", name_accumulator, port_accumulator);
+          //printf("%8s: %s\n", name_accumulator, port_accumulator);
           
           // TODO
           // make permanent std::string out of name_accumulator and port_accumulator
