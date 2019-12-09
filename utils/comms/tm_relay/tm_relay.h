@@ -15,6 +15,7 @@ class tm_relay : public tm_generator, public tm_client {
     void process_data();
     void process_data_t3();
     void process_tstamp(mfc_t MFCtr, time_t time);
-    void service_row_timer();
+    virtual void service_row_timer();
+    bool have_tstamp;
   private:
 };

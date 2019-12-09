@@ -11,14 +11,15 @@
 #include "dasio/loop.h"
 #include "tm_relay.h"
 #include "oui.h"
+#include <string.h>
 
 using namespace DAS_IO;
-  
-DAS_IO::AppID_t DAS_IO::AppID("tm_relay", "tm_relay", "V1.0");
   
 tm_relay::tm_relay() : tm_generator(), tm_client(64, false, "tm_relay") {
   msg(0, "pointless message from tm_relay constructor");
 }
+
+tm_relay::~tm_relay() {}
 
 void tm_relay::process_data() {
   static int nrows_full_rec = 0;
@@ -33,29 +34,6 @@ void tm_relay::process_data() {
   unsigned char *raw = &data->data[0];
   int n_rows = data->n_rows;
   unsigned short MFCtr = data->mfctr;
-  // This is a work-around for a lgr bug which generated
-  // corrupted log files.
-  if ( opt_kluge_a ) {
-    if ( nrows_full_rec == 0 )
-      nrows_full_rec = n_rows;
-    if ( n_rows == nrows_full_rec ) {
-      last_rec_full = 1;
-    } else {
-      if ( n_rows * 2 < nrows_full_rec ||
-          ((!last_rec_full) && n_rows*2 == nrows_full_rec )) {
-        // We won't use this record, but we might record
-        // the MFCtr
-        if ( last_rec_full ) frac_MFCtr = MFCtr;
-        last_rec_full = 0;
-        return;
-      } else {
-        // We'll use this record, but may need to get
-        // MFCtr from the previous fragment
-        if ( !last_rec_full ) MFCtr = frac_MFCtr;
-        last_rec_full = 0;
-      }
-    }
-  }
 
   // Can check here for time limits
   // Given MFCtr, timestamp, we can calculate the time. We can
@@ -98,8 +76,11 @@ void tm_relay::process_data_t3() {
 }
 
 void tm_relay::process_tstamp(mfc_t MFCtr, time_t time) {
+  have_tstamp = true;
   tm_queue::commit_tstamp(MFCtr, time);
 }
+
+void tm_relay::service_row_timer() {}
 
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
