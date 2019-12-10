@@ -11,10 +11,8 @@ class tm_relay : public tm_generator, public tm_client {
     tm_relay();
     ~tm_relay();
   protected:
-    void process_data(mfc_t MFCtr, int mfrow, int nrows);
     void process_data();
-    void process_data_t3();
-    void process_tstamp(mfc_t MFCtr, time_t time);
+    void process_tstamp();
     virtual void service_row_timer();
     bool have_tstamp;
   private:

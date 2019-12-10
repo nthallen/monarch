@@ -14,23 +14,26 @@
 #include <string.h>
 
 using namespace DAS_IO;
-  
+
+#define TMR_BUFSIZE 16384
+
 tm_relay::tm_relay() : tm_generator(), tm_client(4096, false, tm_client::tm_client_hostname) {
   autostart = true;
   regulated = false;
+  have_tstamp = false;
   msg(0, "pointless message from tm_relay constructor");
 }
 
 tm_relay::~tm_relay() {}
 
 void tm_relay::process_data() {
+  /** Code copied from rdr.cc, 2019-12-10 */
   static int nrows_full_rec = 0;
   static int last_rec_full = 1;
   static unsigned short frac_MFCtr;
 
   if ( ! have_tstamp ) {
     msg(MSG_WARN, "process_data() without initialization" );
-    return;
   }
   tm_data_t3_t *data = &tm_msg->body.data3;
   unsigned char *raw = &data->data[0];
@@ -62,25 +65,12 @@ void tm_relay::process_data() {
   }
 }
 
-void tm_relay::process_data_t3() {
-  tm_data_t3_t *data = &tm_msg->body.data3;
-  int n_rows = data->n_rows;
-  unsigned short mfctr = data->mfctr;
-  unsigned char *wdata = &data->data[0];
-  int mfrow = 0;
-  unsigned char * rowp;
-  int n_rows_commit = allocate_rows(&rowp);
-  if (n_rows < n_rows_commit) {
-    n_rows_commit = n_rows;
-  }
-  commit_rows(mfctr, mfrow, n_rows_commit);
-  return;
-}
-
-void tm_relay::process_tstamp(mfc_t MFCtr, time_t time) {
+void tm_relay::process_tstamp() {
   have_tstamp = true;
-  tm_queue::commit_tstamp(MFCtr, time);
   tm_rcvr::process_tstamp();
+  mfc_t MFCtr = tm_info.t_stmp.mfc_num;
+  time_t time = tm_info.t_stmp.secs;
+  tm_queue::commit_tstamp(MFCtr, time);
 }
 
 void tm_relay::service_row_timer() {}
@@ -90,6 +80,11 @@ int main(int argc, char **argv) {
   tm_relay *new_tm_relay = new tm_relay();
   ::load_tmdac(0);
   new_tm_relay->tm_generator::ELoop.add_child(new_tm_relay);
+  
+  int nQrows = TMR_BUFSIZE/tmi(nbrow);
+  if (nQrows < 2) nQrows = 2;
+  
+  new_tm_relay->init(nQrows, 0, false);
   msg(0, "tm_relay starting");
   new_tm_relay->connect();
   new_tm_relay->Start(Server::server_type);
