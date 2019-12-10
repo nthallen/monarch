@@ -269,7 +269,7 @@ bool Socket::ProcessData(int flag) {
       }
       if ((flag & Fl_Write) &&
           (sock_err == EISCONN || sock_err == 0)) {
-        // msg(0, "Connected");
+        msg(0, "%s: Connected", iname);
         socket_state = Socket_connected;
         TO.Clear();
         flags &= ~(Fl_Write|Fl_Timeout);
