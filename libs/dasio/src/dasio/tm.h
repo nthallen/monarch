@@ -30,7 +30,7 @@ typedef uint32_t tmcks_t;
 typedef struct {
   tm_hdrw_t tm_id; /* 'TM' TMHDR_WORD */
   tm_hdrw_t tm_type;
-} tm_hdr_t;
+} __attribute__((packed)) tm_hdr_t;
 #define TMHDR_WORD 0x4D54
 #define TMBUFSIZE 16384
 
@@ -60,7 +60,7 @@ typedef struct {
 typedef struct {
   uint8_t version[16]; /* 1.0 etc. contents of VERSION */
   uint8_t md5[16];     /* MD5 digest of core TM frame definitions */
-} tmid_t;
+} __attribute__((packed)) tmid_t;
 
 /**
  * tm_dac_t defines the core parameters of a telemetry frame
@@ -96,7 +96,7 @@ typedef struct {
   uint16_t nrowminf;    /* number rows per minor frame */
   uint16_t max_rows;    /* maximum number of rows allowed to be sent in a message */
   tstamp_t t_stmp;          /* current time stamp */
-} tm_info_t;
+} __attribute__((packed)) tm_info_t;
 
 /**
    tm_data_t1_t applies when tmtype is TMTYPE_DATA_T1

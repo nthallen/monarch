@@ -17,13 +17,14 @@ FILE *vfile = NULL, *dacfile = NULL, *addrfile = NULL;
 #define EXTRACT_SKELETON "extmain.skel"
 
 #ifdef __USAGE
-tmc Telemetry Compiler Version 1 Revision 12
+tmc Telemetry Compiler Version 1 Revision 13
 
 %C	[options] [files]
 	-c             Generate collection rules
 	-C             Print information on Conversions
 	-d             Print Data Definitions
 	-D filename    Create dac file
+	-h             Show this help message
 	-H filename    Create .h file for addresses
 	-i             Print Steps in compilation progress
 	-k             Keep output file (.c) even on error
@@ -32,18 +33,51 @@ tmc Telemetry Compiler Version 1 Revision 12
 	-p             Print PCM (TM Format) Definition
 	-v             Produce very verbose output (-Cdps)
 	-V filename    Redirect verbose output to file
-	-q             Show this help message
 	-s             Print frame statistics
 	-w             Give error return on warnings
 	
-Copyright 2001 by the President and Fellows of Harvard College
+Copyright 2001-2019 by the President and Fellows of Harvard College
 #endif
 
-const char *opt_string = OPT_COMPILER_INIT "cCdD:H:impsV:";
+static void print_usage(int argc, char **argv) {
+  printf("tmc Telemetry Compiler Version 1 Revision 13\n\n");
+
+  printf("%s [options] [files]\n",argv[0]);
+  printf("%s\n", "  -c             Generate collection rules");
+  printf("%s\n", "  -C             Print information on Conversions");
+  printf("%s\n", "  -d             Print Data Definitions");
+  printf("%s\n", "  -D filename    Create dac file");
+  printf("%s\n", "  -h             Show this help message");
+  printf("%s\n", "  -H filename    Create .h file for addresses");
+  printf("%s\n", "  -i             Print Steps in compilation progress");
+  printf("%s\n", "  -k             Keep output file (.c) even on error");
+  printf("%s\n", "  -m             Do not generate main() function");
+  printf("%s\n", "  -o filename    Send C output to file");
+  printf("%s\n", "  -p             Print PCM (TM Format) Definition");
+  printf("%s\n", "  -v             Produce very verbose output (-Cdps)");
+  printf("%s\n", "  -V filename    Redirect verbose output to file");
+  printf("%s\n", "  -s             Print frame statistics");
+  printf("%s\n", "  -w             Give error return on warnings");
+
+  printf("\n%s\n", "Copyright 2001-2019 by the President and Fellows of Harvard College");
+}
+
+const char *opt_string = OPT_COMPILER_INIT "cCdD:hH:impsV:";
 
 static void main_args(int argc, char **argv) {
   int c;
-  
+
+  opterr = 0;
+  optind = OPTIND_RESET;
+  while ((c = getopt(argc, argv, opt_string)) != -1) {
+    switch (c) {
+      case 'h':
+        print_usage(argc, argv);
+        exit(0);
+      default:
+        break;
+    }
+  }
   compile_init_options(argc, argv, ".c");
   opterr = 0;
   optind = OPTIND_RESET;
