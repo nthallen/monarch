@@ -3,6 +3,7 @@
 #ifndef DASIO_TIMEOUT_H_INCLUDED
 #define DASIO_TIMEOUT_H_INCLUDED
 
+#include "tm.h"
 #include <time.h>
 #include <sys/select.h>
 
@@ -11,8 +12,8 @@ namespace DAS_IO {
 class Timeout {
   public:
     Timeout();
-    // Timeout( time_t secs, long msecs );
-    void Set( time_t secs, long msecs );
+    // Timeout( le_time_t secs, long msecs );
+    void Set( le_time_t secs, long msecs );
     void Clear();
   /**
    * Specifies a desired timeout relative to the current time. The event loop

@@ -69,7 +69,7 @@ void tm_relay::process_tstamp() {
   have_tstamp = true;
   tm_rcvr::process_tstamp();
   mfc_t MFCtr = tm_info.t_stmp.mfc_num;
-  time_t time = tm_info.t_stmp.secs;
+  le_time_t time = tm_info.t_stmp.secs;
   tm_queue::commit_tstamp(MFCtr, time);
 }
 
