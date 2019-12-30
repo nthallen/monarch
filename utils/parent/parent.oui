@@ -1,0 +1,19 @@
+<package> parent
+<include> <stdlib.h>
+<include> "parent.h"
+<include> msg oui
+<opts> "qt:M:"
+<sort>
+	-q Quit when childless
+	-t <seconds> Send HUP to children after specified delay
+	-M <pid> Do not invoke -t until <pid> has terminated
+
+<switch>
+  case 'M': monitor_pid = strtol(optarg, NULL, 10); break;
+  case 'q': quit_when_childless = 1; break;
+  case 't': parent_timeout = atoi(optarg); break;
+
+<package> appid_default
+<include> "dasio/appid.h"
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("parent", "parent server", "V2.0");
