@@ -117,11 +117,16 @@ bool parent_sigif::protocol_timeout() {
     msg( 3, "parent: Timed out waiting for children after INT");
   if ( handled_timeout )
     msg( 3, "parent: Timed out waiting for children after timeout");
-  msg( 0, "parent: Received timeout, calling killpg()");
-  handled_timeout = 1;
-  killpg(getpgid(getpid()), SIGHUP);
-  TO.Set(3,0);
-  return false;
+  if (have_children) {
+    msg( 0, "parent: Received timeout, calling killpg()");
+    handled_timeout = 1;
+    killpg(getpgid(getpid()), SIGHUP);
+    TO.Set(3,0);
+    return false;
+  } else {
+    msg(0, "parent: Timed out");
+    return true;
+  }
 }
 
 int main(int argc, char **argv) {
