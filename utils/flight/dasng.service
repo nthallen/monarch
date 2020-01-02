@@ -1,0 +1,8 @@
+[Unit]
+Link Engineering Data Acquisition System ng Service
+
+[Service]
+ExecStart=/usr/local/sbin/flight.sh
+
+[Install]
+WantedBy=multi-user.target
