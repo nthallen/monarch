@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 # add_auth_key
 # Reads in a public key value from stdin and appends it to ~/.ssh/authorized_keys
 function nl_error {

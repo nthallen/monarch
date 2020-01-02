@@ -1,0 +1,10 @@
+[Unit]
+Description=Link Engineering Data Acquisition System ng run setup Service
+
+[Service]
+ExecStart=/usr/local/share/linkeng/setup/dasng-run.sh
+User=root
+
+[Install]
+WantedBy=multi-user.target
+

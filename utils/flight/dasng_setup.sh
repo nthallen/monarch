@@ -16,9 +16,7 @@ fi
 # setup the /home/flight directory 
 if [ ! -d /home/flight ]; then
   mkdir -p /home/flight/.ssh
-  mkdir -p /home/flight/.config/systemd/user
   
-  cp /usr/local/share/linkeng/setup/dasng.service /home/flight/.config/systemd/user/
   if [ -f ~/.ssh/authorized_keys ]; then
     cp ~/.ssh/authorized_keys /home/flight/.ssh/
   else
@@ -30,3 +28,12 @@ if [ ! -d /home/flight ]; then
 else
   echo "dasng_setup.sh: /home/flight already exists"
 fi
+
+service=/usr/local/share/linkeng/setup/dasng.service 
+if [ -f $service ]; then
+  cp $service /lib/systemd/system
+  echo "dasng_setup.sh: Copied dasng.service into /lib/systemd/system"
+else
+  echo "dasng_setup.sh: Skipping systemd configuration"
+fi
+
