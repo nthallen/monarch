@@ -1,13 +1,14 @@
 [Unit]
 Description=Link Engineering Data Acquisition System ng Service
+Requires=dasng-run.service
+After=dasng-run.service
 
 [Service]
 ExecStart=/usr/local/sbin/flight.sh
 User=flight
+WorkingDirectory=~
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
-Requires=dasng-run.service
-After=dasng-run.service
 
