@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 # Flight instrument script
 # The operation of this script is determined by the
 # contents of Experiment.config. In most configurations
@@ -33,7 +33,8 @@ if [ "x$1" != "xteed" ]; then
   echo "Cannot write to flight.sh.log"
   exec 4>&1
 fi
-echo "\nRunning flight.sh: \c"; date
+echo
+echo -n "Running flight.sh: "; date
 
 #----------------------------------------------------------------
 # This is where we will decide what experiment we are
@@ -44,7 +45,7 @@ if [ -f "$cfile" -a -r "$cfile" ]; then
 else
   echo flight.sh: missing or unreadable $cfile: stopping >&2
   exec 1>&4 2>&4 # close pipe to flight.sh.log and reopen stdout/err
-  exec parent
+  exec parent -V
 fi
 
 if [ -n "$Experiment" -a -n "$HomeDir" -a -d "$HomeDir" ]; then
@@ -72,7 +73,7 @@ if [ -n "$LOOP_ON_FILE" -a -e "$LOOP_ON_FILE" ]; then
     echo "`date '+%T'` [ERROR] reduce did not clear LOOP_ON_FILE '$LOOP_ON_FILE'" |
       tee -a $REDUCE_LOG_FILE
     rm -f $LOOP_STOP_FILE $LOOP_START_FILE
-    exec parent
+    exec parent -V
   fi
   [ -f $LOOP_STOP_FILE ] && mv $LOOP_STOP_FILE $LOOP_START_FILE
   exit 0 # exit to reestablish tee log
@@ -147,7 +148,7 @@ fi
 VERSION=1.0
 [ -f VERSION ] && VERSION=`cat VERSION`
 if [ -d bin/$VERSION/ ]; then
-  TMBINDIR=`fullpath -t bin/$VERSION/`
+  TMBINDIR=$PWD/bin/$VERSION
   PATH=$TMBINDIR:$PATH
 else
   TMBINDIR='.'
@@ -213,4 +214,4 @@ else
 fi
 
 [ -z "$FlightNode" -a -z "$parent_loop" ] && parent_loop="-q"
-exec parent $parent_loop
+exec parent $parent_loop -V

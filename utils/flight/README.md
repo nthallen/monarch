@@ -11,14 +11,9 @@ eventually, but these are notes for that development.
 Installation:
 - flight.sh => /usr/local/sbin
 - add_auth_key.sh => /usr/local/sbin
-- dasng-run.service => /lib/systemd/system
 - dasng.service => /lib/systemd/system
-- dasng-run.sh => /usr/local/share/linkeng/setup
 - dasng_setup.sh => /usr/local/share/linkeng/setup
 - dasng_reset.sh => /usr/local/share/linkeng/setup
-
-### Setup dasng-run to run at boot time:
-`sudo systemctl enable dasng-run`
 
 ### Start dasng 
 `sudo systemctl start dasng`
