@@ -36,19 +36,13 @@ class Socket : public Interface {
                          socket_type_t;
 
     /**
-     * Create to a Unix Domain socket client using the service name
-     * @param iname Interface name (for debugging)
-     * @param bufsz The initial input buffer size
-     * @param service String representing the service name
-     */
-    Socket(const char *iname, int bufsz, const char *service);
-    
-    /**
-     * Create a TCP client connection to the specified hostname and service/port.
      * @param iname Interface name (for debugging)
      * @param bufsz The initial input buffer size
      * @param hostname Hostname ofthe remote system
      * @param service String representing the service name or port number
+     * Create a socket connection to the specified hostname and service/port.
+     * If hostname is 0, a Unix Domain socket will be created. Otherwise
+     * a TCP connection will be used.
      */
     Socket(const char *iname, int bufsz, const char *hostname, const char *service);
     
@@ -227,9 +221,10 @@ class Socket : public Interface {
     /**
      * Called when connection has failed. The library will
      * automatically retry indefinitely, extending the
-     * retry interval. The failure will have been reported
-     * on the first occurrence, and then not on failed
-     * retries.
+     * retry interval. By default, the first failure will
+     * be reported, but that report can be suppressed by
+     * setting conn_fail_reported to true. An alternate
+     * message could then be provided in this method.
      *
      * This method can be used to adjust the retry interval
      * from the default, or to take some other application-

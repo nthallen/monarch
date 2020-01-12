@@ -1,0 +1,30 @@
+<package> dasctl
+<include> oui msg
+<include> server
+<follow> oui msg
+<include> "dasctl.h"
+
+<opts> "QrR:SG:"
+
+<sort>
+	-Q Force quit via parent service (doit not)
+	-r Request restart from parent service using defaults
+	-R <script> Request restart with specified script
+	-S Request status information from parent service on flight system
+	-t <flight_hostname> Specify flight hostname (defaults to localhost)
+	-G <gse_hostname> Query dasctl on GSE for startup script
+
+<unsort>
+dasctl communicates with the parent service or the dasctl service in order
+to communicate options for startup.
+<blank>
+A flight system will run dasctl with
+the -G option in order to query the dasctl service on the GSE for startup
+options. The -G option should not be combined with any of the -QrRvt options.
+<blank>
+GSE scripts will run dasctl with other options to connect with
+the parent service on the flight system to startup, shutdown or obtain
+status information about the current operations.
+
+<init>
+  dasctl_init_options(argc, argv);
