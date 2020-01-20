@@ -6,6 +6,7 @@
 extern int quit_when_childless;
 extern int parent_timeout;
 extern pid_t monitor_pid;
+extern const char *script_file;
 
 using namespace DAS_IO;
 
@@ -18,6 +19,14 @@ class parent_ssclient : public Serverside_client {
   protected:
     // ~parent_ssclient();
     bool protocol_input();
+    /**
+     * @param script name of requested script
+     * Writes the script name to the file specified by the -s
+     * option, saved in the global script_file variable. If
+     * no script_file is specified, no action is taken.
+     * If script is zero, the string "/dev/null" is written.
+     */
+    void write_script_file(const char *script);
     // Include any local data here
 };
 
@@ -32,7 +41,7 @@ class parent_sigif : public Interface {
       return (signals_seen & signal_bit(signal));
     }
     Server *srvr;
-    bool have_children;
+    // bool have_children;
     bool handled_INT;
     bool handled_timeout;
 };

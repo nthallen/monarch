@@ -12,6 +12,8 @@
 int quit_when_childless = 0;
 int parent_timeout = 0;
 pid_t monitor_pid = 0;
+bool have_children = true;
+const char *script_file = 0;
 
 /**
  * @brief the Serverside_Client socket
@@ -30,18 +32,49 @@ Serverside_client *new_parent_ssclient(Authenticator *Auth, SubService *SS) {
   return new parent_ssclient(Auth, Auth->get_client_app());
 }
 
+void parent_ssclient::write_script_file(const char *script) {
+  if (script == 0)
+    script = "/dev/null";
+  if (script_file != 0) {
+    FILE *fp = fopen(script_file, "w");
+    if (fp == 0) {
+      msg(MSG_ERROR, "Cannot write to script file %s", script_file);
+    } else {
+      fprintf(fp, "%s\n", script);
+      fclose(fp);
+    }
+  }
+}
+
 /**
  * @return true if shutdown is requested
  */
 bool parent_ssclient::protocol_input() {
   switch (buf[0]) {
-    case 'Q':
-      consume(nc);
+    case 'Q': // Quit unconditionally
+      write_script_file(0);
       iwrite("OK\n");
+      report_ok(nc);
       return true;
+    case 'r': // Quit if childless
+    case 'R':
+      if (have_children) return iwrite("NOK: Subprocesses running, quit first\n");
+      write_script_file((const char *)((buf[0] == 'R') ? &buf[1] : 0));
+      iwrite("OK\n");
+      report_ok(nc);
+      return true;
+    case 'S': // Request status
+      if (have_children) {
+        iwrite("Status: have children\n");
+      } else {
+        iwrite("Status: no more children\n");
+      }
+      report_ok(nc);
+      break;
     default:
       report_err("%s: Invalid command", iname);
       iwrite("NOK\n");
+      consume(nc);
       break;
   }
   return false;
@@ -50,7 +83,6 @@ bool parent_ssclient::protocol_input() {
 parent_sigif::parent_sigif(Server *srvr)
       : Interface("ParSig",0),
         srvr(srvr),
-        have_children(true),
         handled_INT(false),
         handled_timeout(false) {
   if (monitor_pid && !parent_timeout)
@@ -74,7 +106,7 @@ bool parent_sigif::serialized_signal_handler(uint32_t signals_seen) {
         case -1:
           switch (errno) {
             case ECHILD:
-              have_children = 0;
+              have_children = false;
               msg( 0, "parent: No more children");
               break;
             case EINTR:
@@ -138,6 +170,7 @@ int main(int argc, char **argv) {
   psi->signal(SIGCHLD);
   psi->signal(SIGINT);
   psi->signal(SIGHUP); // Need to handle (ignore) HUP or I'll see my own
+  // invoke signal handler to decide if we have children:
   psi->serialized_signal_handler(1 << (SIGCHLD-1));
   S.Start(Server::Srv_Both);
   return 0;

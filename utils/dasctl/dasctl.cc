@@ -1,4 +1,5 @@
 #include <string>
+#include <string.h>
 #include <unistd.h>
 #include "dasctl.h"
 #include "oui.h"
@@ -42,7 +43,12 @@ void dasctl_init_options(int argc, char **argv) {
  * We will setup our own Loop.
  */
 void query_gse() {
-
+  dasctlclt_t *clt = new dasctlclt_t();
+  DAS_IO::Loop ELoop;
+  ELoop.add_child(clt);
+  clt->connect();
+  ELoop.event_loop();
+  clt->close();
 }
 
 dasctl_t::dasctl_t() : Client("parent", 80, flight_host, "parent", 0) {}
@@ -62,9 +68,14 @@ bool dasctl_t::app_connected() {
 bool dasctl_t::protocol_input() {
   if (opt_S) {
     // just display the text.
+    msg(0, "%s", &buf[0]);
   } else {
     // Check for OK response, and then shutdown
+    if (strncasecmp((const char *)(&buf[0]), "OK", 2) != 0) {
+      msg(2, "%s", &buf[0]);
+    }
   }
+  report_ok(nc);
   return true;
 }
 
@@ -77,6 +88,8 @@ dasctl_ssclient::dasctl_ssclient(Authenticator *Auth, const char *iname)
 dasctl_ssclient::~dasctl_ssclient() {}
 
 bool dasctl_ssclient::connected() {
+  if (restart_script == 0)
+    restart_script = "/dev/null";
   msg(0, "Answering server request with script '%s'", restart_script);
   if (!iwrite(restart_script))
     script_delivered = true;
@@ -86,6 +99,17 @@ bool dasctl_ssclient::connected() {
 Serverside_client *new_dasctl_ssclient(Authenticator *Auth, SubService *SS) {
   SS = SS; // No need for this
   return new dasctl_ssclient(Auth, Auth->get_client_app());
+}
+
+dasctlclt_t::dasctlclt_t()
+    : Client("dasctl", 80, gse_host, "dasctl", 0) {}
+
+bool dasctlclt_t::protocol_input() {
+  // What do I do with the script? Output to stdout?
+  // I will try that
+  fprintf(stdout, "%s", &buf[0]);
+  report_ok(nc);
+  return true;
 }
 
 int main(int argc, char **argv) {

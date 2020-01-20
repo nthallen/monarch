@@ -2,16 +2,18 @@
 <include> <stdlib.h>
 <include> "parent.h"
 <include> msg oui
-<opts> "qt:M:"
+<opts> "qt:M:s:"
 <sort>
 	-q Quit when childless
 	-t <seconds> Send HUP to children after specified delay
 	-M <pid> Do not invoke -t until <pid> has terminated
+	-s <scriptfile> Name of file to write script file to.
 
 <switch>
   case 'M': monitor_pid = strtol(optarg, NULL, 10); break;
   case 'q': quit_when_childless = 1; break;
   case 't': parent_timeout = atoi(optarg); break;
+  case 's': script_file = optarg; break;
 
 <package> appid_default
 <include> "dasio/appid.h"

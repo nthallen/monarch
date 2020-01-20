@@ -26,5 +26,12 @@ class dasctl_t : public Client {
     bool protocol_input();
 };
 
+class dasctlclt_t : public Client {
+  public:
+    dasctlclt_t();
+  protected:
+    bool protocol_input();
+};
+
 #endif
 
