@@ -93,6 +93,9 @@ bool dasctl_ssclient::connected() {
   msg(0, "Answering server request with script '%s'", restart_script);
   if (!iwrite(restart_script))
     script_delivered = true;
+  close();
+  if (ELoop)
+    ELoop->delete_child(this);
   return false;
 }
 
@@ -104,7 +107,7 @@ Serverside_client *new_dasctl_ssclient(Authenticator *Auth, SubService *SS) {
 dasctlclt_t::dasctlclt_t()
     : Client("dasctl", 80, gse_host, "dasctl", 0) {}
 
-bool dasctlclt_t::protocol_input() {
+bool dasctlclt_t::app_input() {
   // What do I do with the script? Output to stdout?
   // I will try that
   fprintf(stdout, "%s", &buf[0]);

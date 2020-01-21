@@ -30,7 +30,7 @@ class dasctlclt_t : public Client {
   public:
     dasctlclt_t();
   protected:
-    bool protocol_input();
+    bool app_input();
 };
 
 #endif

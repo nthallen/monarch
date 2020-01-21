@@ -1,4 +1,4 @@
-#! /bin/bash
+#! @SHELL_EXE@
 # Flight instrument script
 # The operation of this script is determined by the
 # contents of Experiment.config. In most configurations

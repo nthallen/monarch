@@ -4,7 +4,7 @@
 <follow> oui msg
 <include> "dasctl.h"
 
-<opts> "QrR:SG:"
+<opts> "QrR:St:G:"
 
 <sort>
 	-Q Force quit via parent service (doit not)
