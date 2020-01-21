@@ -6,7 +6,7 @@
 <include> msg oui
 <opts> "s:"
 <sort>
-  -s <Unix, TCP, or both>
+	-s <Unix, TCP, or both>
 <switch>
   case 's':
     if (strcasecmp(optarg, "Unix") == 0) {
