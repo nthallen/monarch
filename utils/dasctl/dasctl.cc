@@ -94,8 +94,7 @@ bool dasctl_ssclient::connected() {
   if (!iwrite(restart_script))
     script_delivered = true;
   close();
-  if (ELoop)
-    ELoop->delete_child(this);
+  srvr->Shutdown(true);
   return false;
 }
 
