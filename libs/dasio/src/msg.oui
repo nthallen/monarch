@@ -26,7 +26,7 @@
 <sort>
 	-n <AppID name> change the AppID name
 	-v add a level of verbosity
-	-o <error filename> Write to specified file
+	-o <error filename> Write (append) to specified file
 	-V write to stderr
 
 <include> "dasio/msg.h"
