@@ -1,4 +1,5 @@
 <package> tmdf
+<include> oui
 <include> msg
 <follow> msg
 <include> "tmdf_int.h"

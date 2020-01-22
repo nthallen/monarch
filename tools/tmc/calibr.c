@@ -1,83 +1,4 @@
-/* calibr.c Handles calibration information.
- * Revision 1.1  2012/06/29 17:15:52  nort
- * Initial revision
- *
- * Revision 1.5  2012/06/29 12:53:03  ntallen
- * Resolve 32-bit problem
- *
- * Revision 1.4  2009/10/02 15:50:59  ntallen
- * const char *
- *
- * Revision 1.3  2009/05/22 13:17:01  ntallen
- * Replace call to ltoa with code for binary conversion
- * Remove use of min()
- *
- * Revision 1.2  2008/07/03 18:18:48  ntallen
- * To compile under QNX6 with minor blind adaptations to changes between
- * dbr.h and tm.h
- *
- * Revision 1.1  2008/07/03 15:11:07  ntallen
- * Copied from QNX4 version V1R9
- *
- * Revision 1.24  2004/12/08 21:28:30  nort
- * Output a useful bit of information when compiling with -C
- *
- * Revision 1.23  1999/08/30 17:11:42  nort
- * Documented limitation in 1.22
- *
- * Revision 1.22  1999/06/24 17:59:53  nort
- * Change limit checks to use SHRT instead of INT for 32-bit compile.
- *
- * Revision 1.21  1998/11/20 19:02:36  nort
- * Fixed bug where input is unsigned and output is signed and
- * implicit promotion from signed short to unsigned short to
- * signed long produced problems.
- *
- * Added a note about a 32-bit problem that will require a fix.
- *
- * Revision 1.20  1998/09/16 18:55:33  nort
- * Generated function names were not specific enough:
- * %4x and %4u both got mapped to the same function!
- *
- * Revision 1.18  1997/02/10 22:08:51  nort
- * classify_conv() was being too strict:
- *   Would not treat a type as icvt if not numeric, even though
- *   an explicit conversion was provided.
- *   Forced unsigned long to be treated as double even when no
- *   conversion was required (ftype == ttype).
- *
- * Revision 1.17  1996/10/16  20:50:17  nort
- * Many changes in upgrade
- *
- * Revision 1.16  1996/08/08  18:22:39  nort
- * Compiled, not tested.
- *
- * Revision 1.15  1996/07/30  19:07:29  nort
- * Bug causing some calibrations to fail
- *
- * Revision 1.14  1996/03/27  02:44:36  nort
- * Fixed a SIGSEGV and an assert failure under error conditions.
- * Now supports narrow format for char conversions
- * Shortened long warning for narrow formats
- *
- * Revision 1.13  1995/11/15  04:20:02  nort
- * Added support for explicit conversion functions
- *
- * Revision 1.12  1995/10/18  02:03:23  nort
- * *** empty log message ***
- *
- * Revision 1.11  1994/02/17  01:31:52  nort
- * Possible kluge to fix erroneous generated functions:
- * allowed for wrapping of (nX+r) modulo 65536 which will only
- * work correctly if n,X and r are all shorts, so force r in
- * particular to be short.
- *
- * Revision 1.10  1993/09/27  19:39:07  nort
- * Changes to support common compiler functions, cleanup.
- * Tuning of calibration conversions.
- *
- * Revision 1.9  1993/04/01  22:04:38  nort
- * Restructuring & cleaned up output
+/** @file calibr.c Handles calibration information.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -133,7 +54,7 @@
         input. Produces warnings if extrapolation is necessary.
     }
 
-    static void txtfmt(char *buf, char *format, struct pfmt *pformat,
+    static int txtfmt(char *buf, char *format, struct pfmt *pformat,
                 double ov, unsigned int type) {
         Given format and value, produces output text. Used for
         8-bit text conversions.
@@ -352,7 +273,7 @@ static int txtfmt(char *buf, char *format, struct pfmt *pformat,
   union {
     int8_t c;
     uint8_t uc;
-    int i;
+    int16_t i;
     uint16_t ui;
     int32_t l;
     uint32_t ul;
@@ -408,9 +329,16 @@ static int txtfmt(char *buf, char *format, struct pfmt *pformat,
       // strcpy(buf+u.i, lbuf);
       // c = pformat->flags & PF_ZERO ? '0' : ' ';
       // while (u.i > 0) buf[--u.i] = c;
-    } else switch (type & (INTTYPE_CHAR | INTTYPE_LONG | INTTYPE_UNSIGNED)) {
-      case 0: compile_error(2, "Invalid unqualified int"); u.i = ov; sprintf(buf, format, u.i); break;
-      case INTTYPE_UNSIGNED: u.ui = ov; sprintf(buf, format, u.ui); break;
+    } else switch (type & (INTTYPE_CHAR | INTTYPE_SHORT
+                           | INTTYPE_LONG | INTTYPE_UNSIGNED)) {
+      case 0:
+      case INTTYPE_UNSIGNED:
+        compile_error(2, "Invalid unqualified int");
+        u.i = ov;
+        sprintf(buf, format, u.i);
+        return(1);
+      case INTTYPE_UNSIGNED | INTTYPE_SHORT:
+        u.ui = ov; sprintf(buf, format, u.ui); break;
       case INTTYPE_CHAR: u.c = ov; sprintf(buf, format, u.c); break;
       case INTTYPE_UNSIGNED | INTTYPE_CHAR:
         u.uc = ov; sprintf(buf, format, u.uc); break;

@@ -31,14 +31,14 @@ static unsigned long opt_end_file = ULONG_MAX;
 
 /** Options we need to support:
 
-        -A : autostart without regulation
-        -a : autostart with regulation
-        -F index : Starting log file index
-        -L index : Ending log file index 
-        -T time : Starting time/Ending time
-        -P path : path to log directories
-        -k : invoke kluge to work around lgr bug
-        -q : autoquit
+  -A : autostart without regulation
+  -a : autostart with regulation
+  -F index : Starting log file index
+  -L index : Ending log file index 
+  -T time : Starting time/Ending time
+  -P path : path to log directories
+  -k : invoke kluge to work around lgr bug
+  -q : autoquit
 
  */
 
@@ -234,10 +234,6 @@ void Reader::process_tstamp() {
  checked by an assertion in Reader::Reader().
  */
 void Reader::process_data() {
-  static int nrows_full_rec = 0;
-  static int last_rec_full = 1;
-  static unsigned short frac_MFCtr;
-
   if ( ! have_tstamp ) {
     msg(MSG_WARN, "process_data() without initialization" );
     return;

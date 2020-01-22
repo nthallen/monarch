@@ -124,6 +124,12 @@ void msg_init_options(int argc, char **argv) {
     }
   }
   
+  if (file_fp) {
+    time_t now = time(NULL);
+    const char *nowt = asctime(gmtime(&now));
+    fprintf(file_fp, "\n%s Starting: %s", DAS_IO::AppID.name, nowt );
+  }
+  
   if (!write_to_stderr && !write_to_file && !write_to_memo) {
     if (we_are_memo) {
       write_to_stderr = 1;
