@@ -55,14 +55,16 @@ bool parent_ssclient::protocol_input() {
       write_script_file(0);
       iwrite("OK\n");
       report_ok(nc);
-      return true;
+      break;
     case 'r': // Quit if childless
     case 'R':
       if (have_children) return iwrite("NOK: Subprocesses running, quit first\n");
-      write_script_file((const char *)((buf[0] == 'R') ? &buf[1] : 0));
+      if (buf[0] == 'R') {
+        write_script_file((const char *)(&buf[1]));
+      }
       iwrite("OK\n");
       report_ok(nc);
-      return true;
+      break;
     case 'S': // Request status
       if (have_children) {
         iwrite("Status: have children\n");
@@ -75,9 +77,10 @@ bool parent_ssclient::protocol_input() {
       report_err("%s: Invalid command", iname);
       iwrite("NOK\n");
       consume(nc);
-      break;
+      return false;
   }
-  return false;
+  srvr->Shutdown(true);
+  return true;
 }
 
 parent_sigif::parent_sigif(Server *srvr)

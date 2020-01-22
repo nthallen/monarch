@@ -51,7 +51,13 @@ void query_gse() {
   clt->close();
 }
 
-dasctl_t::dasctl_t() : Client("parent", 80, flight_host, "parent", 0) {}
+dasctl_t::dasctl_t(Server *srvr)
+  : Client("parent", 80, flight_host, "parent", 0),
+    srvr(srvr),
+    waiting_for_parent(false) {
+  conn_fail_reported = true;
+  set_retries(-1, 2, 2);
+}
 
 bool dasctl_t::app_connected() {
   if (opt_Q) return iwrite("Q\n");
@@ -65,7 +71,7 @@ bool dasctl_t::app_connected() {
   msg(MSG_FATAL, "Expected option Q, r, R or S in app_connected");
 }
 
-bool dasctl_t::protocol_input() {
+bool dasctl_t::app_input() {
   if (opt_S) {
     // just display the text.
     msg(0, "%s", &buf[0]);
@@ -76,7 +82,16 @@ bool dasctl_t::protocol_input() {
     }
   }
   report_ok(nc);
-  return true;
+  srvr->Shutdown(true);
+  return false;
+}
+
+bool dasctl_t::connect_failed() {
+  if (!waiting_for_parent) {
+    msg(0, "Waiting for parent");
+    waiting_for_parent = true;
+  }
+  return false;
 }
 
 /**
@@ -103,15 +118,22 @@ Serverside_client *new_dasctl_ssclient(Authenticator *Auth, SubService *SS) {
   return new dasctl_ssclient(Auth, Auth->get_client_app());
 }
 
+
+// dasctrlclt_t is the client that talks to a dasctl server
 dasctlclt_t::dasctlclt_t()
-    : Client("dasctl", 80, gse_host, "dasctl", 0) {}
+    : Client("dasctl", 80, gse_host[0] ? gse_host : 0, "dasctl", 0) {
+  conn_fail_reported = true;
+}
 
 bool dasctlclt_t::app_input() {
-  // What do I do with the script? Output to stdout?
-  // I will try that
   fprintf(stdout, "%s", &buf[0]);
   report_ok(nc);
   return true;
+}
+
+bool dasctlclt_t::connect_failed() {
+  msg(MSG_DEBUG, "Unable to connect to dasctl server");
+  exit(0);
 }
 
 int main(int argc, char **argv) {
@@ -120,7 +142,7 @@ int main(int argc, char **argv) {
   else {
     Server S("dasctl");
     S.add_subservice(new SubService("dasctl", new_dasctl_ssclient, (void *)0));
-    dasctl_t *dasctl = new dasctl_t();
+    dasctl_t *dasctl = new dasctl_t(&S);
     S.ELoop.add_child(dasctl);
     dasctl->connect();
     S.Start(flight_host ? Server::Srv_TCP : Server::Srv_Unix);

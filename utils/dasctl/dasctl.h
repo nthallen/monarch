@@ -19,18 +19,29 @@ class dasctl_ssclient : public Serverside_client {
     // Include any local data here
 };
 
+/**
+ * Class to send commands to a parent server
+ */
 class dasctl_t : public Client {
   public:
-    dasctl_t();
+    dasctl_t(Server *srvr);
     bool app_connected();
-    bool protocol_input();
+    bool app_input();
+  protected:
+    bool connect_failed();
+    Server *srvr;
+    bool waiting_for_parent;
 };
 
+/**
+ * Class to query a dasctl server
+ */
 class dasctlclt_t : public Client {
   public:
     dasctlclt_t();
   protected:
     bool app_input();
+    bool connect_failed();
 };
 
 #endif
