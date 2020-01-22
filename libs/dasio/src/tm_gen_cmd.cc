@@ -5,7 +5,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <ctype.h>
-// #include "dasio/tm_gen_client.h"
 #include "dasio/tm_gen_cmd.h"
 #include "nl.h"
 #include "nl_assert.h"
