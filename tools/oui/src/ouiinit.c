@@ -24,7 +24,7 @@ void oui_init_options(int argc, char **argv) {
     opterr = 0;
     while ((optltr = getopt(argc, argv, opt_string)) != -1) {
       switch (optltr) {
-      	case 'I': add_path(optarg);
+      	case 'I': add_path(optarg); break;
       	case 'u': sort_output = 0; break;
         case 'h':
           print_usage(argc, argv);

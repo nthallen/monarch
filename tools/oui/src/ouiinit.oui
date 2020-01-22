@@ -13,5 +13,5 @@
 	-u Do not sort the 'sort' strings
 <include> "ouidefs.h"
 <switch>
-	case 'I': add_path(optarg);
+	case 'I': add_path(optarg); break;
 	case 'u': sort_output = 0; break;

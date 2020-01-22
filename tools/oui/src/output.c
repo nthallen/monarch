@@ -248,7 +248,7 @@ static void output_sorted(void) {
       }
       free_memory(sorter);
     }
-  } else dump_llos_usage( &global_defs.sorted, "" );
+  } else dump_llos_usage( &global_defs.sorted, "  " );
 }  
 
 /* this is where we (yes, you, Miles), edit the function to print the help text */
