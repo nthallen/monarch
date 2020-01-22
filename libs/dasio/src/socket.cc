@@ -271,7 +271,7 @@ bool Socket::ProcessData(int flag) {
       }
       if ((flag & Fl_Write) &&
           (sock_err == EISCONN || sock_err == 0)) {
-        msg(MSG_DEBUG, "%s: Connected", iname);
+        msg(MSG_DBG(1), "%s: Connected", iname);
         socket_state = Socket_connected;
         TO.Clear();
         flags &= ~(Fl_Write|Fl_Timeout);
@@ -481,8 +481,7 @@ bool read = false;
 std::map<std::string, std::string> name_to_port;
 const char * filename = "/services";
 
-/** Changed by Miles on 2019-09-12 */
-/** Returns true on error. */
+/** Re-written by Miles 2020-01-21 */
 bool Socket::get_service_port(const char *service, char *port) {
   /** First check if the file has already been read in. */
   if (!read) {
@@ -508,97 +507,34 @@ bool Socket::get_service_port(const char *service, char *port) {
     char current_line[16];
     char ch;
     
-    bool name_captured;
-    bool port_captured;
-    int port_index;
-    
     while (fgets(current_line, 16, portfile) != NULL) {
-      name_captured = false;
-      port_captured = false;
-      port_index = 0;
-      char name_accumulator[80];
+      char name_accumulator[16];
       char port_accumulator[8];
       
-      for (std::string::size_type i = 0; i < strlen(current_line); i++) {
-        ch = current_line[i];
-        
-        if (ch == EOF) {
-          read = true;
-          break;
-        } else {
-          /** Capture the name of the service. */
-          if (!name_captured) {
-            if (i >= 80) {
-              msg(MSG_FATAL, "arbitrary service name limit exceeded!");
-            }
-            if (isspace(ch)) {
-              if (i > 0) {
-                name_captured = true;
-                name_accumulator[i] = '\0';
-              } else {
-                continue;
-              }
-            } else {
-              name_accumulator[i] = ch;
-            }
-          }
-          
-          /** Capture the corresponding port number. */
-          if (name_captured && !port_captured) {
-            if (isspace(ch)) {
-              if (isdigit(port_accumulator[0])) {
-                port_captured = true;
-                port_accumulator[port_index] = '\0';
-              } else {
-                continue;
-              }
-            }
-            if (isdigit(ch)) {
-              if (port_index >= 5) {
-                msg(MSG_FATAL, "maximum port length exceeded!");
-              } else {
-                port_accumulator[port_index] = ch;
-                port_index++;
-              }
-            } else {
-              if (isdigit(port_accumulator[0])) {
-                port_captured = true;
-                port_accumulator[port_index] = '\0';
-              } else {
-                msg(MSG_FATAL, "error finding port for %s", service);
-                port[0] = '-';
-                port[1] = '1';
-                port[2] = '\0';
-                return true;
-              }
-            }
-          }
+      int scanned = sscanf(current_line, "%s %s", name_accumulator, port_accumulator);
+      if (scanned == 0) {
+        msg(MSG_FATAL, "failed to match service/port identifier!");
+      } else {
+        if (name_accumulator == 0) {
+          msg(MSG_FATAL, "service name failed to initialize!");
+        }
+        if (port_accumulator == 0) {
+          msg(MSG_FATAL, "port number failed to initialize!");
         }
         
-        /** Finally, store both in the map. */
-        if (name_captured && port_captured) {
-          //printf("%8s: %s\n", name_accumulator, port_accumulator);
-          
-          // TODO
-          // make permanent std::string out of name_accumulator and port_accumulator
-          // and then fill the map with those
-          
-          std::string name_string(name_accumulator);
-          std::string port_string(port_accumulator);
-          
-          name_to_port[name_string] = port_string;
-          memset(name_accumulator, 0, sizeof(name_accumulator));
-          memset(port_accumulator, 0, sizeof(port_accumulator));
-          break;
-        }
+        std::string name_string(name_accumulator);
+        std::string port_string(port_accumulator);
+
+        name_to_port[name_string] = port_string;
+        msg(MSG_DBG(1), "read in port %s for service %s", port_accumulator, name_accumulator);
+        memset(name_accumulator, 0, sizeof(name_accumulator));
+        memset(port_accumulator, 0, sizeof(port_accumulator));
       }
     }
     
     fclose(portfile);
     read = true;
     
-    //TODO
-    //make std::string for service just for lookup
     std::string service_string(service);
     std::string port_result = name_to_port[service_string];
     
@@ -606,6 +542,7 @@ bool Socket::get_service_port(const char *service, char *port) {
     strcpy(port, port_c_str);
     
     if (isdigit(port[0])) {
+      msg(MSG_DBG(1), "(%s/%s): selected port %s", iname, service, port);
       return false;
     } else {
       msg(MSG_FATAL,"no port for %s!", service);
@@ -622,6 +559,7 @@ bool Socket::get_service_port(const char *service, char *port) {
     strcpy(port, port_c_str);
     
     if (isdigit(port[0])) {
+      msg(MSG_DBG(1), "(%s/%s): selected port %s", iname, service, port);
       return false;
     } else {
       msg(MSG_FATAL,"no proper port number for %s!", service);
