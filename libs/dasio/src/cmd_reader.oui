@@ -1,0 +1,22 @@
+<package> cmd_reader
+
+<comment>
+  oui package for Cmd_reader, applications that wish to
+  receive commands from the server.
+  Applications must provide appropriate AppID initialization
+
+<opts> "C:"
+<sort>
+	-C <hostname> receive commands from server on specified host
+
+<include> "dasio/cmd_reader.h"
+<defs>
+const char *DAS_IO::Cmd_reader::CmdServerNode;
+
+<switch>
+  case 'C': DAS_IO::Cmd_reader::CmdServerNode = optarg; break;
+
+<package> appid_default
+<include> "dasio/appid.h"
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("cmd_rdr", "Command Reader", "V2.0");

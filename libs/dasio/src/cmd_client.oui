@@ -1,0 +1,23 @@
+<package> cmd_writer
+<include> cmd_version
+<follow> cmd_version
+
+<comment>
+  oui package for Cmd_writer, applications that wish to
+  send commands to the server.
+  Formerly known as cic.oui.
+  Applications must provide appropriate AppID initialization
+
+<opts> "C:p"
+<sort>
+	-C <hostname> send commands to server on specified host
+	-p Playback mode: do not send commands to server
+
+<include> "dasio/cmd_writer.h"
+<init>
+  cic_options(argc, argv);
+
+<package> appid_default
+<include> "dasio/appid.h"
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("cmd_clt", "Command Client", "V2.0");
