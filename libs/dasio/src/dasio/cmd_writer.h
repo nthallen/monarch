@@ -7,6 +7,7 @@ typedef enum { Cmd_Send, Cmd_Test, Cmd_Send_Quiet } CI_Cmd_Mode;
 
 #ifdef __cplusplus
 
+#include "cmd_client.h"
 #include "client.h"
 #include "loop.h"
 #include "cmdalgo.h"
@@ -68,9 +69,7 @@ class Cmd_writer : public Client {
     void settime(int32_t time);
     
     static Cmd_writer *Cmd;
-    // static Cmd_quit *Quit;
     static bool playback;
-    static const char *CmdServerNode;
     static const int CMD_PREFIX_MAX = 10;
     static const int CMD_VERSION_MAX = 80;
     
@@ -94,11 +93,11 @@ extern "C" {
   #define CMD_VERSION_MAX 80
 
 #endif // __cplusplus
-  
+
 /**
- * Command line options parser for DAS_IO::Cmd_writer
+ * @param playback Indicates if this is a playback session. Defaults to false.
  */
-void cic_options(int argc, char **argv);
+void cic_set_playback(bool playback);
 
 /**
  * If not in playback mode,

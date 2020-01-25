@@ -15,7 +15,6 @@ namespace DAS_IO {
 
 Cmd_writer *Cmd_writer::Cmd = 0;
 bool Cmd_writer::playback = false;
-const char *Cmd_writer::CmdServerNode;
 
 Cmd_writer::Cmd_writer(const char *iname, const char *hostname)
       : Client(iname, 128, hostname, "cmd", "server") {
@@ -172,34 +171,14 @@ void Cmd_writer::settime(int32_t time) {
 
 }
 
-void cic_options(int argcc, char **argvv) {
-  int c;
-  extern char *opt_string;
-
-  optind = OPTIND_RESET;
-  opterr = 0;
-  if (argcc > 0) do {
-    c = getopt(argcc,argvv,opt_string);
-    switch (c) {
-      case 'C':
-        DAS_IO::Cmd_writer::CmdServerNode = optarg;
-        break;
-      case 'p':
-        DAS_IO::Cmd_writer::playback = 1;
-        break;
-      case '?':
-        msg(MSG_FATAL, "Unknown option -%c", optopt);
-      default:
-        break;
-    }
-  } while (c != -1);
-  opterr = 1;
+void cic_set_playback(bool playback) {
+  DAS_IO::Cmd_writer::playback = playback;
 }
 
 bool cic_init() {
   if (DAS_IO::Cmd_writer::Cmd)
     return false;
-  DAS_IO::Cmd_writer *cmd = new DAS_IO::Cmd_writer("Cmd", DAS_IO::Cmd_writer::CmdServerNode);
+  DAS_IO::Cmd_writer *cmd = new DAS_IO::Cmd_writer("Cmd", DAS_IO::CmdServerNode);
   if (DAS_IO::Cmd_writer::playback)
     return false;
   cmd->connect();

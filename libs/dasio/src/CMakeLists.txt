@@ -11,7 +11,7 @@ add_library(dasio interface.cc ascii_escape.cc not_parsed.cc serial.cc
   client.cc server.cc appid.cc tm_data_sndr.cc tm_data_rcvr.cc
   tm_gen_col.cc tm_gen.cc tm_gen_cmd.cc tm_tmr.cc tm_gen_tmr.cc
   tm_queue.cc tm_client.cc tmdac.cc tm_info.cc nc_tm_client.cc
-  cmd_writer.cc cmd_version.cc cmd_version_def.cc msg.cc
+  cmd_client.cc cmd_writer.cc cmd_version.cc cmd_version_def.cc msg.cc
   cic_transmit.cc cmd_server.cc quit.cc get_baud_code.cc csv_file.cc
   timetext.cc tm_rcvr.cc)
 target_include_directories(dasio PUBLIC
@@ -30,6 +30,7 @@ install(TARGETS dasio
 install(FILES
   cmd_server.oui
   cmd_version.oui
+  cmd_client.oui
   cmd_reader.oui
   cmd_writer.oui
   collect.oui

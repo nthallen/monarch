@@ -2,7 +2,8 @@
 #ifndef CMD_READER_H_INCLUDED
 #define CMD_READER_H_INCLUDED
 
-#include "dasio/client.h"
+#include "client.h"
+#include "cmd_client.h"
 
 namespace DAS_IO {
 
@@ -12,7 +13,6 @@ namespace DAS_IO {
           : Client(iname, bufsize, CmdServerNode, "cmd", cmdchannel) {
         flags = Interface::Fl_Read;
       }
-      static const char *CmdServerNode;
     protected:
   };
 
