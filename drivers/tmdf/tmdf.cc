@@ -12,10 +12,9 @@
 #include "tmdf.h"
 #include "dasio/appid.h"
 #include "dasio/loop.h"
+#include "dasio/quit.h"
 
 using namespace DAS_IO;
-
-DAS_IO::AppID_t DAS_IO::AppID("tmdf", "TMDF", "V1.0");
 
 const char *df_path = "/";
 const char *tmdf_name = "tmdf";
@@ -103,24 +102,13 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   msg(0, "Startup");
   
-  DAS_IO::Client QC("cmd", 5, 0, "cmd", "Quit");
-  QC.flags = Interface::Fl_Read;
+  DAS_IO::Quit QC;
   TMDF_data_sndr TM( 60, tmdf_name, 0, &TMDF, sizeof(TMDF) );
   QC.connect();
   TM.connect();
-  
   Loop ELoop;
   ELoop.add_child(&QC);
   ELoop.add_child(&TM);
   ELoop.event_loop();
-  
-  /* { Selector S;
-    DAS_IO::Client QC("cmd", 5, "cmd", "cmd", "quit");
-    TMDF_data_sndr TM( 60, tmdf_name, &TMDF, sizeof(TMDF));
-    S.add_child(&QC);
-    S.add_child(&TM);
-    S.event_loop();
-  } */
-  
   msg(0, "Terminating");
 }

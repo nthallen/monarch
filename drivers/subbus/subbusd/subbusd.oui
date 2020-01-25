@@ -1,6 +1,6 @@
 <package> subbusd
 <include> "subbusd_int.h"
-<include> msg oui
+<include> msg oui cmd_reader
 <follow> msg oui
 
 <opts> "s:q"

@@ -2,10 +2,6 @@
 #include "dasio/quit.h"
 
 namespace DAS_IO {
-
-  Quit::Quit() : Client("Quit", 20, 0, "cmd", "Quit") {}
-  //Quit::Quit(const char *hostname) : Client("Quit", 20, hostname, "cmd", "Quit") {}
-  Quit::~Quit() {}
+  Quit::Quit() : Cmd_reader("Quit", 20, "Quit") {}
   bool Quit::process_eof() { return true; }
-  
 }

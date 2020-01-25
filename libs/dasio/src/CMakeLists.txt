@@ -30,6 +30,7 @@ install(TARGETS dasio
 install(FILES
   cmd_server.oui
   cmd_version.oui
+  cmd_reader.oui
   cmd_writer.oui
   collect.oui
   kbdclt.oui
