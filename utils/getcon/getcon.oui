@@ -1,0 +1,36 @@
+<package> getcon
+<include> "getcon.h"
+<include> msg oui
+<include> cmd_reader cmd_writer
+
+<synopsis>
+%C [options] <windowname> [<session_id>]
+
+<opts> "e:"
+
+<sort>
+	-e <session_id> End the specified session
+<switch>
+  case 'e': opt_end_session = true; break;
+
+<args>
+  getcon_args(optarg);
+
+<unsort>
+<blank>
+windowname is a unique name for the window
+session_id uniquely defines the session.
+When -e is specified, neither windowname nor session_id are specified
+as positional parameters.
+<blank>
+getcon writes the name of the terminal to the file
+pty.<windowname>.<session_id>, then waits for the
+'Quit' command, SIGHUP or SIGINT to terminate.
+<blank>
+The -e option provides a way to have getcon terminate prior to a
+full 'Quit', i.e. on 'Exit' at the GSE.
+
+<package> appid_default
+<include> "dasio/appid.h"
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("getcon", "Get Console", "V2.0");

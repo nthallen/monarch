@@ -182,6 +182,9 @@ class Interface {
     
     /**
      * Called by ProcessData() when new data is available to the protocol level.
+     * nc indicates the total number of characters in buf and should always be
+     * greater than zero. [Note that even if it were zero, that should not be
+     * interpreted as EOF, as that condition is handled separately in fillbuf()]
      *
      * protocol_input() and the parsing functions use the Interface's buf, cp and nc
      * members to define the current input text. nc is the total number

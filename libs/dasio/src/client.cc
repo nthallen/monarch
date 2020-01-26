@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "dasio/client.h"
 #include "dasio/appid.h"
+#include "nl.h"
 
 namespace DAS_IO {
 
@@ -13,18 +14,39 @@ namespace DAS_IO {
   bool Client::protocol_input() {
     if (is_negotiated()) return app_input();
     if (not_str("OK\n")) {
-      report_err("%s: Negotiation failed", iname);
-      consume(nc);
-      return true;
+      if (cp < nc) {
+        report_err("%s: Unexpected response in negotiation", iname);
+        consume(nc);
+        close();
+        return app_negotiation_failed();
+      }
+      return false;
     }
     clt_state = Clt_negotiated;
     report_ok(nc);
     return app_connected();
   }
   
+  bool Client::process_eof() {
+    if (clt_state == Clt_negotiation_failed) {
+      clt_state = Clt_connecting;
+      return app_negotiation_failed();
+    } else return app_process_eof();
+  }
+
+  bool Client::app_negotiation_failed() {
+    msg(MSG_ERROR, "%s: Negotiation failed", iname);
+    return true;
+  }
+  
+  bool Client::app_process_eof() {
+    return true;
+  }
+  
   void Client::close() {
     DAS_IO::Socket::close();
-    clt_state = Clt_connecting;
+    clt_state = is_negotiated() ? Clt_connecting :
+      Clt_negotiation_failed;
   }
   
   bool Client::connected() {

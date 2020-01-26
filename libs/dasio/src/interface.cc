@@ -80,7 +80,7 @@ bool Interface::ProcessData(int flag) {
     if (fillbuf(bufsize, flag)) return true;
     if (fd < 0) return false;
     cp = 0;
-    if (protocol_input()) return true;
+    if (nc > 0 && protocol_input()) return true;
   }
   if ((flags & flag & Fl_Write) && iwrite_check())
     return true;

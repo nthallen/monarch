@@ -11,7 +11,7 @@ namespace DAS_IO {
   
   class Client : public Socket {
     public:
-      typedef enum { Clt_connecting, Clt_negotiating, Clt_negotiated }
+      typedef enum { Clt_connecting, Clt_negotiating, Clt_negotiated, Clt_negotiation_failed }
                          clt_state_t;
       /**
        * @param iname the interface name
@@ -43,7 +43,22 @@ namespace DAS_IO {
        */
       virtual bool app_connected();
       
+      /**
+       * Called on EOF after successful negotiation. The default returns true;
+       * @return true if the event loop should exit.
+       */
+      virtual bool app_process_eof();
+      
+      /**
+       * Called if our login was unsuccessful. The connection will have been
+       * closed and the buffer emptied. The default method delivers an error
+       * and returns true to exit the loop.
+       * @return true to exist the event loop
+       */
+      virtual bool app_negotiation_failed();
+      
       bool protocol_input();
+      bool process_eof();
       void close();
       bool connected();
       inline bool is_negotiated() { return clt_state == Clt_negotiated; }
