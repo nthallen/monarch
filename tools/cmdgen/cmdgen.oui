@@ -5,10 +5,11 @@
 <synopsis>
 %C	[options] [filename]
 
-<opts> "d:V"
+<opts> "d:Vx:"
 <sort>
 	-V Include verbose information
 	-d filename  Write data structures to this file
+  -x filename  Version string will be defined in this file
 
 <unsort>
 <blank>

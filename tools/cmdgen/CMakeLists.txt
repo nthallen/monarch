@@ -17,8 +17,11 @@ ADD_FLEX_BISON_DEPENDENCY(CmdScanner CmdParser)
 
 set(CURSES_NEED_NCURSES, TRUE)
 
+include( ../../oui_setup.cmake )
+OUI_FILE(cmdgen.oui c)
+
 add_executable(cmdgen cmdgen.c dstructs.c interfaces.c prompts.c
-    rules.c states.c trie.c vunion.c cmdgenoui.c
+    rules.c states.c trie.c vunion.c ${CMAKE_CURRENT_BINARY_DIR}/cmdgenoui.c
     ${BISON_CmdParser_OUTPUT_SOURCE}
     ${FLEX_CmdScanner_OUTPUTS})
 target_include_directories(cmdgen PRIVATE
@@ -27,6 +30,8 @@ target_include_directories(cmdgen PRIVATE
   ${le_das_tools_SOURCE_DIR}/oui/src)
 target_link_libraries(cmdgen nl)
 install(TARGETS cmdgen RUNTIME
+        DESTINATION bin)
+install(PROGRAMS cmdgen_version
         DESTINATION bin)
 install(FILES cmdgen.skel
         DESTINATION share/linkeng)

@@ -1,0 +1,18 @@
+#! /bin/bash
+# Script to calculate the md5sum of cmdgen output files
+#
+# cmdgen_version <outputbase> <source> ...
+#
+# A definition for the ci_version string is written to the specified outputfile.
+# If cmdgen is invoked with the -x option, code to read in this definition
+# will be included in the cmdgen output files.
+base=$1
+shift
+cmdgen -o $base.cc -d $base.dat -x $base.h $* ||
+  rm -f $base.cc $base.dat $base.h
+md5=`for ifile in $base.cc $base.dat; do
+  echo "File: $ifile"
+  cat $ifile
+done | md5sum`
+md5=${md5% *}
+echo "char ci_version[] = \"\$CGID: $md5 \$\";" >$base.h

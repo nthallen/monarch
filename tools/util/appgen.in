@@ -559,9 +559,10 @@ for i in $basetargets; do
     *)
       replace_all .slp ${prefix}slp.cmd "${nl}${tab}\$(SLP2CMD)" $deps;;
   esac
-  if replace_all .cmd ${prefix}cmd.cc "${nl}${tab}\$(CMDGEN) -d ${prefix}cmd.dat" $deps
+  if replace_all .cmd ${prefix}cmd.cc "${nl}${tab}cmdgen_version ${prefix}cmd" $deps
   then
     add_member OBJ ${prefix}cmd.dat
+    add_member OBJ ${prefix}cmd.h
   fi
   # Collect the h dependents, but don't consume them
   unset hdeps

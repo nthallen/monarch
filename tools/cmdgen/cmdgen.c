@@ -30,6 +30,7 @@
 static int verbose = 0;
 static char data_file[FILENAME_MAX+1] = "";
 static time_t time_of_day;
+static char *version_file = 0;
 
 // const char *opt_string = OPT_COMPILER_INIT "d:V";
 
@@ -130,10 +131,14 @@ static void print_states(void) {
 }
 
 static void output_version(void) {
-  fprintf(ofile, "char ci_version[] = \"$CGID: ");
-  if (output_filename != NULL) fprintf(ofile, "%s", output_filename);
-  else fprintf(ofile, "\" __FILE__ \"");
-  fprintf(ofile, ": MD5SUM $\";\n"); // Formerly included date
+  if (version_file) {
+    fprintf(ofile, "#include \"%s\"\n", version_file);
+  } else {
+    fprintf(ofile, "char ci_version[] = \"$CGID: ");
+    if (output_filename != NULL) fprintf(ofile, "%s", output_filename);
+    else fprintf(ofile, "\" __FILE__ \"");
+    fprintf(ofile, ": MD5SUM $\";\n"); // Formerly included date
+  }
 }
 
 static void generate_output(void) {
@@ -171,6 +176,7 @@ static void generate_output(void) {
 %C	[options] [filename]
     -q           Print this message
     -o filename  Write output to this file
+    -x filename  Verion information will be read from this file
     -v           General verbosity flag
     -V           Include verbose information
     -d filename  Write data structures to this file
@@ -204,6 +210,9 @@ void cmdgen_init_options(int argc, char **argv) {
       case 'd':
         strncpy(data_file, optarg, FILENAME_MAX);
         data_file[FILENAME_MAX] = 0;
+        break;
+      case 'x':
+        version_file = optarg;
         break;
       case 'V':
         verbose = 1;
