@@ -133,7 +133,7 @@ static void output_version(void) {
   fprintf(ofile, "char ci_version[] = \"$CGID: ");
   if (output_filename != NULL) fprintf(ofile, "%s", output_filename);
   else fprintf(ofile, "\" __FILE__ \"");
-  fprintf(ofile, ": %24.24s $\";\n", ctime( &time_of_day));
+  fprintf(ofile, ": MD5SUM $\";\n"); // Formerly included date
 }
 
 static void generate_output(void) {
@@ -219,7 +219,7 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   Skel_open("cmdgen.skel");
   time_of_day = time(NULL);
-  fprintf(ofile, "/* cmdgen output.\n * %s */\n", ctime( &time_of_day));
+  fprintf(ofile, "/* cmdgen output */\n"); // Formerly included date
   Skel_copy(ofile, "headers", 1);
   if (yyparse() != 0) msg(3, "Parsing failed\n");
   if (error_level == 0) {
