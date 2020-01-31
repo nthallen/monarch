@@ -1,0 +1,27 @@
+#! /bin/bash
+
+function nl_error {
+  echo appgen: $* >&2
+  rm -f $tmp $tmpxm
+  exit 1
+}
+
+#function waitfor {
+[ -z "$1" ] && nl_error Must provide name argument
+[ -z "$2" ] && nl_error Must provide length argument
+  name=$1
+  duration=$2
+  if [ -n "$3" ]; then
+    decrement=$3
+    delay=1
+  else
+    decrement=1
+    delay=5
+  fi
+  while [ $duration -gt 0 ]; do
+    [ -e $name ] && exit 0
+    sleep 1
+    let duration=duration-$decrement
+  done
+  exit 1
+#}
