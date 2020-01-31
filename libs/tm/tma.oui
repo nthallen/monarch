@@ -1,0 +1,13 @@
+<package> tma
+<include> "tma.h"
+
+<unsort>
+  Package for tmcalgo algos
+  There are currently no options supported, but we'll
+  redefine the header default and include the
+  appropriate command client packages
+
+<include> cmd_writer
+
+<init>
+  tma_init_options( argc, argv );

@@ -3,10 +3,10 @@ install(TARGETS tm
   ARCHIVE
   DESTINATION lib
 )
-install(FILES nctable.h
+install(FILES nctable.h tma.h tmctime.h
   DESTINATION include
 )
-install(FILES nctable.oui
+install(FILES nctable.oui tma.oui
   DESTINATION share/oui
 )
 target_include_directories(tm PRIVATE

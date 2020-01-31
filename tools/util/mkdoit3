@@ -136,7 +136,7 @@ open( $fh, ">", $opts{o} ) ||
   die "mkdoit3: Unable to write to $opts{o}\n";
 
 print $fh <<'EOF';
-#! /bin/ksh
+#! /bin/bash
 #ifdef __USAGE
 #%C [options]
 #  Starts Instrument operation

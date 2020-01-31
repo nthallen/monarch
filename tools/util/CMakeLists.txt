@@ -32,6 +32,8 @@ install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/distribute_check
   genui
   genui_chk
+  mkdoit3
+  waitfor
   ${CMAKE_CURRENT_BINARY_DIR}/mlf_find
   ${CMAKE_CURRENT_BINARY_DIR}/saverun
   DESTINATION bin)
