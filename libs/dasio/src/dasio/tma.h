@@ -1,6 +1,7 @@
 /* Definitions for TMCALGO V2.0 */
 /* Do I need to include tmctime.h? */
 #include <time.h>
+#include "tm.h"
 #include "tmctime.h"
 #ifndef _TMA_H_INCLUDED
 #define _TMA_H_INCLUDED

@@ -19,7 +19,7 @@ int memo_quit_threshold = 1;
 
 void memo_init_options( int argc, char **argv ) {
   set_we_are_memo();
-	int c;
+  int c;
 
   optind = OPTIND_RESET;
   opterr = 0;

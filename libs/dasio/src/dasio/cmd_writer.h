@@ -18,6 +18,8 @@ namespace DAS_IO {
  * @brief Class for command server clients
  */
 class Cmd_writer : public Client {
+  friend const char *::ci_time_str();
+  friend void ::ci_settime(int32_t time);
   public:
     Cmd_writer(const char *iname, const char *hostname);
     bool app_input();

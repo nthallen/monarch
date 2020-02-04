@@ -1,5 +1,5 @@
 <package> tma
-<include> "tma.h"
+<include> "dasio/tma.h"
 
 <unsort>
   Package for tmcalgo algos

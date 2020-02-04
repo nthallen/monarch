@@ -3,7 +3,7 @@ install(TARGETS tm
   ARCHIVE
   DESTINATION lib
 )
-install(FILES nctable.h tma.h tmctime.h
+install(FILES nctable.h
   DESTINATION include
 )
 install(FILES nctable.oui tma.oui

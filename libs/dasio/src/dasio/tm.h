@@ -250,9 +250,9 @@ extern char ci_version[];
 void cic_transmit(char *buf, int n_chars, int transmit);
 // int ci_sendcmd(const char *cmdtext, int mode);
 // int ci_sendfcmd(int mode, const char *fmt, ...);
-void ci_settime( long int time );
+void ci_settime( int32_t time );
 extern int cic_cmd_quit_fd;
-const char *ci_time_str( void );
+const char *ci_time_str();
 #define CMD_MAX_COMMAND_IN 300  // Maximum command message input length
 void ci_server(void); /* in nortlib/cis.c */
 void cis_initialize(void); /* in cmdgen.skel or .cmd */
@@ -264,6 +264,13 @@ void ci_report_version(void);
 void tma_new_state(unsigned int partition, const char *name);
 void tma_new_time(unsigned int partition, long int t1, const char *next_cmd);
 void tma_hold(int hold);
+/* Added 2020-01-29 by Miles so that everything in the lib/tm folder will compile for mkdoit, doit */
+//void cic_options(int argc, char **argv, const char *def_prefix);
+//extern const char *msghdr_init(const char *hdr_default, int argc, char **argv);
+//void tma_init_options(int argc, char **argv);
+//int tma_process( long int it );
+//void tma_init_state( int partno, tma_state *cmds, const char *name );
+//void ci_settime( long int time );
 
 /* tmdac.cc */
 void load_tmdac( const char *path );
