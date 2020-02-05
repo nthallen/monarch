@@ -1,0 +1,16 @@
+<package> test_ir
+<include> msg oui
+<include> "test_ir.h"
+
+<opts> "deP:D:"
+<sort>
+  -d disable PWM
+  -e enable PWM
+  -P <period> Set PWM period
+  -D <duty_cycle> Set PWM duty cycle
+
+<switch>
+  case 'd': pwm_disable = true; break;
+  case 'e': pwm_enable = true; break;
+  case 'P': pwm_period = optarg; break;
+  case 'D': pwm_duty_cycle = optarg; break;
