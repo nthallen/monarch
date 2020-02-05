@@ -6,7 +6,7 @@ install(TARGETS tm
 install(FILES nctable.h
   DESTINATION include
 )
-install(FILES nctable.oui tma.oui
+install(FILES nctable.oui
   DESTINATION share/oui
 )
 target_include_directories(tm PRIVATE

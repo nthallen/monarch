@@ -1,4 +1,5 @@
 <package> tma
+<preceed> tm_client cmd_writer
 <include> "dasio/tma.h"
 
 <unsort>
@@ -11,3 +12,8 @@
 
 <init>
   tma_init_options( argc, argv );
+
+<package> appid_default
+<include> "dasio/appid.h"
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("TMA", "TMA", "V1.0");

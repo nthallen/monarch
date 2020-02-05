@@ -21,7 +21,6 @@ char rcsid_tma_c[] =
 tma_prtn *tma_partitions = NULL;
 long int tma_runbasetime = 0L;
 int tma_is_holding = 0;
-static int playback = 0;
 
 /*
 >Command Text Goes Here
@@ -74,17 +73,20 @@ void ci_settime( int32_t time ) {
 const char *ci_time_str() {
   static char buf[11];
   int hour, min, sec;
-  int32_t time = Cmd_writer::Cmd->ci_time;
-
-  if ( ! playback || time == 0 ) return "";
-  if ( time < 0 ) return "-1: ";
-  time = time % ( 24 * 3600L );
-  hour = time / 3600;
-  time = time % 3600;
-  min = time / 60;
-  sec = time % 60;
-  sprintf( buf, "%02d:%02d:%02d: ", hour, min, sec );
-  return buf;
+  if (Cmd_writer::Cmd) {
+    int32_t time = Cmd_writer::Cmd->ci_time;
+    if ( ! Cmd_writer::playback || time == 0 ) return "";
+    if ( time < 0 ) return "-1: ";
+    time = time % ( 24 * 3600L );
+    hour = time / 3600;
+    time = time % 3600;
+    min = time / 60;
+    sec = time % 60;
+    sprintf( buf, "%02d:%02d:%02d: ", hour, min, sec );
+    return buf;
+  } else {
+    return "";
+  }
 }
 
 void tma_hold(int hold) {

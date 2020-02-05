@@ -40,6 +40,7 @@ install(FILES
   server.oui
   seteuid.oui
   tm_client.oui
+  tma.oui
   DESTINATION share/oui
 )
 add_subdirectory(dasio)
