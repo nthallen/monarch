@@ -7,7 +7,7 @@ RuntimeDirectoryMode=2775
 ExecStart=/usr/local/sbin/flight.sh
 User=flight
 WorkingDirectory=~
-#Restart=always
+Restart=always
 
 [Install]
 WantedBy=multi-user.target

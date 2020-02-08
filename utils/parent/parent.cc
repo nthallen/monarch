@@ -72,7 +72,7 @@ bool parent_ssclient::protocol_input() {
         iwrite("Status: no more children\n");
       }
       report_ok(nc);
-      break;
+      return false;
     default:
       report_err("%s: Invalid command", iname);
       iwrite("NOK\n");
