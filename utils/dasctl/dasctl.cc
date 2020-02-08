@@ -69,6 +69,7 @@ bool dasctl_t::app_connected() {
   }
   if (opt_S) return iwrite("S\n");
   msg(MSG_FATAL, "Expected option Q, r, R or S in app_connected");
+  return false; // Never reached
 }
 
 bool dasctl_t::app_input() {

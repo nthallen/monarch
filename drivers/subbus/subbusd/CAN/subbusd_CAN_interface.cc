@@ -213,6 +213,7 @@ bool CAN_socket::iwritten(int nb) {
   if (obuf_empty() && !request_pending) {
     parent->process_requests();
   }
+  return false;
 }
 
 const char *CAN_socket::ascii_escape() {
@@ -450,6 +451,7 @@ bool CAN_serial::iwritten(int nb) {
   if (obuf_empty() && !request_pending && slcan_state == st_operate) {
     parent->process_requests();
   }
+  return false;
 }
 
 bool CAN_serial::protocol_input() {

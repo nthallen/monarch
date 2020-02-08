@@ -126,6 +126,7 @@ bool subbusd_serusb_client::incoming_sbreq() {
       msg(4, "Undefined command in incoming_sbreq!" );
   }
   flavor->enqueue_request(SBDR_TYPE_CLIENT, this, sreq, &rep, 0);
+  return false;
 }
 
 void subbusd_serusb_client::request_complete(uint16_t n_bytes) {
@@ -190,6 +191,7 @@ bool serusb_if::protocol_timeout() {
       cur_req.request[0] );
     dequeue_request(-ETIMEDOUT, 0, 0, 0, "");
   }
+  return false;
 }
 
 bool serusb_if::advance_if_char(unsigned char c) {

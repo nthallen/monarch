@@ -103,4 +103,5 @@ speed_t DAS_IO::Serial::get_baud_code(int baud) {
 #endif
     default: msg(MSG_FATAL, "Invalid baud rate: %u", baud);
   }
+  return B0; // Never reached
 }

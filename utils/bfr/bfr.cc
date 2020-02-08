@@ -53,7 +53,7 @@ bfr_input_client::~bfr_input_client() {
 bool bfr_input_client::process_eof() {
   // Ideally, we should ensure that the tm_queue has been flushed
   srvr->Shutdown();
-  Serverside_client::process_eof();
+  return Serverside_client::process_eof();
 }
 
 bool bfr_input_client::protocol_input() {

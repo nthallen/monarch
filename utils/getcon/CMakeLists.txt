@@ -12,6 +12,8 @@ include( ../../oui_setup.cmake )
 OUI_FILE(getcon.oui)
 add_executable(getcon getcon.cc getconoui.cc)
 target_link_libraries(getcon dasio nl pthread)
+target_include_directories(getcon PRIVATE
+  ${le_das_SOURCE_DIR}/tools/cmdgen)
 
 install(TARGETS getcon RUNTIME DESTINATION bin)
 install(FILES
