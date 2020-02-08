@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
   psi->signal(SIGHUP); // Need to handle (ignore) HUP or I'll see my own
   // invoke signal handler to decide if we have children:
   psi->serialized_signal_handler(1 << (SIGCHLD-1));
-  S.Start(Server::Srv_Both);
+  S.Start(Server::server_type);
   return 0;
 }
 

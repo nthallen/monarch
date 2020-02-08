@@ -15,6 +15,8 @@
 #   systemd using /lib/systemd/system/dasng.service
 export PATH=:/bin:/usr/bin:/usr/local/bin
 
+umask g+w
+
 if [ -f OSUPDATEREQ ]; then
   echo "flight.sh: suspending due to OSUPDATEREQ" |
     tee -a flight.sh.log
@@ -56,9 +58,10 @@ else
 fi
 export Experiment
 
-umask g+w
 
 launch_error=""
+parent_srvr=''
+[ -n "$FlightNode" ] && parent_srvr='-s both'
 parent_loop=''
 script=''
 
@@ -73,7 +76,7 @@ if [ -n "$LOOP_ON_FILE" -a -e "$LOOP_ON_FILE" ]; then
     echo "`date '+%T'` [ERROR] reduce did not clear LOOP_ON_FILE '$LOOP_ON_FILE'" |
       tee -a $REDUCE_LOG_FILE
     rm -f $LOOP_STOP_FILE $LOOP_START_FILE
-    exec parent -V
+    exec parent $parent_srvr -V
   fi
   [ -f $LOOP_STOP_FILE ] && mv $LOOP_STOP_FILE $LOOP_START_FILE
   exit 0 # exit to reestablish tee log
@@ -122,13 +125,13 @@ function Launch {
         echo "`date +%T` [DEBUG] Launch: Waiting for $Launch_pid:$name"
       waitfor $name 10 || {
         echo "`date +%T` [ERROR] Launch: namewait failure: $*"
-        launch_error=yes
+        launch_error="namewait failed on $*"
         return 1
       }
     fi
   else
     echo "`date +%T` [ERROR] Launch: $*"
-    launch_error=yes
+    launch_error="Launch failed on $*"
     return 1
   fi
   return 0
@@ -214,4 +217,4 @@ else
 fi
 
 [ -z "$FlightNode" -a -z "$parent_loop" ] && parent_loop="-q"
-exec parent $parent_loop -V
+exec parent $parent_srvr $parent_loop -V

@@ -16,15 +16,17 @@ else
   adduser --disabled-password --gecos "flight user" --no-create-home flight
   echo "dasng_setup.sh: flight user created"
 fi
+[ -n "$SUDO_USER" ] && adduser $SUDO_USER flight
 
 # setup the /home/flight directory 
 if [ ! -d /home/flight ]; then
   mkdir -p /home/flight/.ssh
   
-  echo "SUDO_USER = $SUDO_USER"
-  if [ -f ~$SUDO_USER/.ssh/authorized_keys ]; then
+  HOMEDIR=`eval echo ~$SUDO_USER`
+  echo "HOMEDIR = $HOMEDIR"
+  if [ -f $HOMEDIR/.ssh/authorized_keys ]; then
     echo "Copying ssh keys from ~$SUDO_USER/.ssh"
-    cp ~$SUDO_USER/.ssh/authorized_keys /home/flight/.ssh/
+    cp $HOMEDIR/.ssh/authorized_keys /home/flight/.ssh/
   else
     echo "dasng_setup.sh: WARNING: authorized_keys file not found"
   fi
