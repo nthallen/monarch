@@ -7,6 +7,7 @@ extern int quit_when_childless;
 extern int parent_timeout;
 extern pid_t monitor_pid;
 extern const char *script_file;
+extern const char *status_string;
 
 using namespace DAS_IO;
 
