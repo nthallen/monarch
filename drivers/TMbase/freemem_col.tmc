@@ -1,0 +1,50 @@
+%{
+  #include <stdint.h>
+  #ifdef __QNXNTO__
+  #include <sys/stat.h>
+  #include <sys/syspage.h>
+  #endif
+  #include <errno.h>
+  #include <limits.h>
+
+  uint16_t get_free_mem() {
+  #ifdef __QNXNTO__
+    int ret;
+    uint64_t fr;
+    struct stat64 sbuf;
+    ret = stat64("/proc", &sbuf);
+    if (ret == -1)
+      nl_error(3, "Error %d from stat64(/proc)", errno);
+    fr = sbuf.st_size / 20972;
+    if (fr > USHRT_MAX) fr = USHRT_MAX;
+    return (uint16_t) fr;
+  #else
+    return 0;
+  #endif
+  }
+
+  void report_total_mem() {
+  #ifdef __QNXNTO__
+    char *str = SYSPAGE_ENTRY(strings)->data;
+    struct asinfo_entry *as = SYSPAGE_ENTRY(asinfo);
+    uint64_t total = 0;
+    unsigned num;
+    double dtot;
+    for (num = _syspage_ptr->asinfo.entry_size / sizeof(*as);
+         num > 0; --num ) {
+      if (strcmp(&str[as->name], "ram") == 0) {
+        total += as->end - as->start + 1;
+      }
+      ++as;
+    }
+    dtot = (double) total;
+    dtot /= (1024.*1024.);
+    nl_error(0, "Total RAM: %.2lf MB", dtot);
+  #else
+  #endif
+  }
+  
+%}
+
+TM INITFUNC report_total_mem();
+
