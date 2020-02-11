@@ -610,15 +610,16 @@ class Interface {
      */
     bool not_any(const char *alternatives);
     /**
-     * @brief Matches a word delimited by comma
+     * @brief Matches a word followed by a delimiter defaulting to comma
      * @param KWbuf holds the matched keyword
+     * @param delim 
      *
      * From UserPkts2.cc
      *
      * This is a fairly application-specific test. It accepts:
      *  - optional leading spaces
-     *  - up to 30 characters that are not space or comma
-     *  - requires a trailing comma
+     *  - up to 30 characters that are not space or the delimiter
+     *  - requires a trailing delimiter (comma)
      * 
      * On success, the matched string is copied into KWbuf.
      *
@@ -630,7 +631,7 @@ class Interface {
      * 
      * @return false on a successful match
      */
-    bool not_KW(char *KWbuf);
+    bool not_KW(char *KWbuf, char delim = ',');
     /** The name of this interface. Used in diagnostic messages. */
     const char *iname;
     /** The number of characters in buf */

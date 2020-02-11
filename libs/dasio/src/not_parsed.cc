@@ -398,18 +398,18 @@ bool DAS_IO::Interface::not_uint8(uint8_t &val) {
   return false;
 }
 
-bool DAS_IO::Interface::not_KW(char *KWbuf) {
+bool DAS_IO::Interface::not_KW(char *KWbuf, char delim) {
   int KWi = 0;
   while (cp < nc && isspace(buf[cp]))
     ++cp;
   while (cp < nc && KWi < 30 && !isspace(buf[cp]) &&
-         buf[cp] != ',') {
+         buf[cp] != delim) {
     KWbuf[KWi++] = buf[cp++];  
   }
   if (KWi >= 30) {
     report_err("%s: Keyword overflow", iname);
     return true;
-  } else if (buf[cp] == ',') {
+  } else if (buf[cp] == delim) {
     KWbuf[KWi] = '\0';
     ++cp;
     return false;
