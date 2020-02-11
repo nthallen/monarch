@@ -8,7 +8,6 @@
   case 't':
     //tm_set_srcnode(optarg);
     DAS_IO::tm_client::tm_client_hostname = optarg;
-    //msg(1, "-t argument coming soon!");
     break;
 
 <package> appid_default
