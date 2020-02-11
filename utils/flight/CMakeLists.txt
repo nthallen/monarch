@@ -20,6 +20,15 @@ install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/flight.sh
   DESTINATION sbin)
 
+install(PROGRAMS
+  ${CMAKE_CURRENT_SOURCE_DIR}/dasng_setup.sh
+  ${CMAKE_CURRENT_SOURCE_DIR}/dasng_reset.sh
+  DESTINATION share/linkeng/setup)
+
+install(FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/dasng.service
+  DESTINATION share/linkeng/setup)
+
 if (NOT CMAKE_CROSSCOMPILING)
 
 else (NOT CMAKE_CROSSCOMPILING)

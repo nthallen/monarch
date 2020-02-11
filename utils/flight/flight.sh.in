@@ -15,6 +15,8 @@
 #   systemd using /lib/systemd/system/dasng.service
 export PATH=:/bin:/usr/bin:/usr/local/bin
 
+umask g+w
+
 if [ -f OSUPDATEREQ ]; then
   echo "flight.sh: suspending due to OSUPDATEREQ" |
     tee -a flight.sh.log
@@ -45,7 +47,7 @@ if [ -f "$cfile" -a -r "$cfile" ]; then
 else
   echo flight.sh: missing or unreadable $cfile: stopping >&2
   exec 1>&4 2>&4 # close pipe to flight.sh.log and reopen stdout/err
-  exec parent -V
+  exec parent -V -S "Missing $cfile"
 fi
 
 if [ -n "$Experiment" -a -n "$HomeDir" -a -d "$HomeDir" ]; then
@@ -56,11 +58,16 @@ else
 fi
 export Experiment
 
-umask g+w
 
 launch_error=""
+parent_srvr=''
+[ -n "$FlightNode" ] && parent_srvr='-s both'
 parent_loop=''
 script=''
+have_tm_bfr=''
+have_tm_gen=''
+have_cmd=''
+status_string=''
 
 [ -n "$LOOP_STOP_FILE" ] || LOOP_STOP_FILE=loopstop.txt
 [ -n "$LOOP_START_FILE" ] || LOOP_START_FILE=loopstart.txt
@@ -73,7 +80,7 @@ if [ -n "$LOOP_ON_FILE" -a -e "$LOOP_ON_FILE" ]; then
     echo "`date '+%T'` [ERROR] reduce did not clear LOOP_ON_FILE '$LOOP_ON_FILE'" |
       tee -a $REDUCE_LOG_FILE
     rm -f $LOOP_STOP_FILE $LOOP_START_FILE
-    exec parent -V
+    exec parent $parent_srvr -V -S "reduce error"
   fi
   [ -f $LOOP_STOP_FILE ] && mv $LOOP_STOP_FILE $LOOP_START_FILE
   exit 0 # exit to reestablish tee log
@@ -122,13 +129,16 @@ function Launch {
         echo "`date +%T` [DEBUG] Launch: Waiting for $Launch_pid:$name"
       waitfor $name 10 || {
         echo "`date +%T` [ERROR] Launch: namewait failure: $*"
-        launch_error=yes
+        launch_error="namewait failed on $*"
         return 1
       }
+      [ "$name" = "tm_bfr" ] && have_tm_bfr='yes'
+      [ "$name" = "tm_gen" ] && have_tm_gen='yes'
+      [ "$name" = "cmd" ] && have_cmd='yes'
     fi
   else
     echo "`date +%T` [ERROR] Launch: $*"
-    launch_error=yes
+    launch_error="Launch failed on $*"
     return 1
   fi
   return 0
@@ -158,31 +168,20 @@ export TMBINDIR
 ## This SCRIPT_OVERRIDE mechanism needs to be reinvented,
 ## possibly via client/server with a lightweight server
 ## app run on the GSE
-# if [ -z "$script" -a -n "$SCRIPT_OVERRIDE" ]; then
-#   if [ "${SCRIPT_OVERRIDE#/}" = "$SCRIPT_OVERRIDE" -a -n "$HomeDir" ]; then
-#     [ -n "$EXP_NODES" ] || EXP_NODES=`hostname`
-#     if [ -n "$FlightNode" ]; then
-#       [ -z "$NETWORK_DELAY" ] && NETWORK_DELAY=3
-#       if [ $NETWORK_DELAY -gt 0 ]; then
-#         echo "`date +%T` sleep $NETWORK_DELAY to acquire network connections"
-#         sleep $NETWORK_DELAY
-#       fi
-#     fi
-#     for node in $EXP_NODES; do
-#       sfile=/net/$node$HomeDir/$SCRIPT_OVERRIDE
-#       if [ -r $sfile ]; then
-#         script=`cat $sfile`
-#         rm $sfile
-#         echo "`date +%T` Script name '$script' read from $sfile"
-#       else
-#         [ -n "$VERBOSE" ] && echo "`date +%T` [DEBUG] $sfile not found"
-#       fi
-#     done
-#   elif [ -n "$SCRIPT_OVERRIDE" -a -r "$SCRIPT_OVERRIDE" ]; then
-#     script=`cat $SCRIPT_OVERRIDE`
-#     rm $SCRIPT_OVERRIDE
-#   fi
-# fi
+if [ -z "$script" -a -n "$EXP_NODES" ]; then
+  [ -z "$NETWORK_DELAY" ] && NETWORK_DELAY=3
+  if [ $NETWORK_DELAY -gt 0 ]; then
+    echo "`date +%T` sleep $NETWORK_DELAY to acquire network connections"
+    sleep $NETWORK_DELAY
+  fi
+  for node in $EXP_NODES; do
+    script=`dasctl -G $node -V`
+    [ -n "$script" ] && break
+  done
+  [ -n "$script" ] &&
+    echo "`date +%T` Script name '$script' received via dasctl"
+fi
+
 if [ -z "$script" ]; then
   if [ -n "$PICKFILE" ]; then
     script=`cd $TMBINDIR; $PICKFILE`
@@ -191,13 +190,27 @@ if [ -z "$script" ]; then
   fi
 fi
 
+status_prefix=''
+status_suffix=''
+status_string="script $script"
 [ ${script#/} = "$script" ] && script=$TMBINDIR/$script
 if [ -r $script ]; then
   echo "`date +%T` `id`: Experiment=$Experiment script=$script"
   . $script
 else
   echo "`date +%T` Specified script $script not found"
+  status_suffix=" not found"
 fi
+[ -n "$have_tm_bfr" -a -n "$have_tm_gen" -a -n "$have_cmd" ] &&
+  status_prefix='Ready: '
+if [ -z "$status_suffix" ]; then
+  if [ -n "$launch_err" ]; then
+    status_suffix=" started: $launch_err"
+  else
+    status_suffix=" completed"
+  fi
+fi
+status_string="$status_prefix$status_string$status_suffix"
 
 if [ -n "$SUBBUS_PID" ]; then
   pids=`jobs -p | grep -v $SUBBUS_PID`
@@ -208,10 +221,12 @@ fi
 if [ -n "$launch_error" -o -n "$pids" ]; then
   [ -n "$FlightNode" ] && echo $script >$LOOP_STOP_FILE
 else
+  parent_loop="-f $LOOP_START_FILE"
   [ -n "$SUBBUS_PID" ] && kill -SIGHUP $SUBBUS_PID
   echo "`date +%T` No subprocesses, closing flight.sh.log"
   exec 1>&4 2>&4
 fi
 
-[ -z "$FlightNode" -a -z "$parent_loop" ] && parent_loop="-q"
-exec parent $parent_loop -V
+# This condition only makes sense under cygwin now
+# [ -z "$FlightNode" -a -z "$parent_loop" ] && parent_loop="-q"
+exec parent $parent_srvr $parent_loop -V -S "$status_string"

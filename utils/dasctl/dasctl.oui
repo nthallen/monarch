@@ -1,6 +1,5 @@
 <package> dasctl
 <include> oui msg
-<include> server
 <follow> oui msg
 <include> "dasctl.h"
 
@@ -29,3 +28,9 @@ status information about the current operations.
 
 <init>
   dasctl_init_options(argc, argv);
+
+<package> appid_default
+<include> "dasio/appid.h"
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("dasctl", "DAS Control", "V1.0");
+

@@ -14,6 +14,7 @@ int parent_timeout = 0;
 pid_t monitor_pid = 0;
 bool have_children = true;
 const char *script_file = 0;
+const char *status_string = 0;
 
 /**
  * @brief the Serverside_Client socket
@@ -50,6 +51,8 @@ void parent_ssclient::write_script_file(const char *script) {
  * @return true if shutdown is requested
  */
 bool parent_ssclient::protocol_input() {
+  char obuf[100];
+
   switch (buf[0]) {
     case 'Q': // Quit unconditionally
       write_script_file(0);
@@ -66,13 +69,14 @@ bool parent_ssclient::protocol_input() {
       report_ok(nc);
       break;
     case 'S': // Request status
-      if (have_children) {
-        iwrite("Status: have children\n");
-      } else {
-        iwrite("Status: no more children\n");
-      }
+      if (status_string == 0)
+      	status_string = "OK";
+      snprintf(obuf, 100, "Status: %s: %ssubprocesses\n",
+      	status_string, have_children ?
+	  "" : "no ");
+      iwrite(obuf);
       report_ok(nc);
-      break;
+      return false;
     default:
       report_err("%s: Invalid command", iname);
       iwrite("NOK\n");
@@ -175,7 +179,7 @@ int main(int argc, char **argv) {
   psi->signal(SIGHUP); // Need to handle (ignore) HUP or I'll see my own
   // invoke signal handler to decide if we have children:
   psi->serialized_signal_handler(1 << (SIGCHLD-1));
-  S.Start(Server::Srv_Both);
+  S.Start(Server::server_type);
   return 0;
 }
 

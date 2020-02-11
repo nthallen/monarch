@@ -69,6 +69,7 @@ bool dasctl_t::app_connected() {
   }
   if (opt_S) return iwrite("S\n");
   msg(MSG_FATAL, "Expected option Q, r, R or S in app_connected");
+  return false; // Never reached
 }
 
 bool dasctl_t::app_input() {
@@ -82,8 +83,9 @@ bool dasctl_t::app_input() {
     }
   }
   report_ok(nc);
-  srvr->Shutdown(true);
-  return false;
+  if (srvr)
+    srvr->Shutdown(true);
+  return true;
 }
 
 bool dasctl_t::connect_failed() {
@@ -141,11 +143,17 @@ int main(int argc, char **argv) {
   if (gse_host) query_gse();
   else {
     Server S("dasctl");
-    S.add_subservice(new SubService("dasctl", new_dasctl_ssclient, (void *)0));
     dasctl_t *dasctl = new dasctl_t(&S);
     S.ELoop.add_child(dasctl);
     dasctl->connect();
-    S.Start(flight_host ? Server::Srv_TCP : Server::Srv_Unix);
+    if (opt_S) {
+      S.ELoop.event_loop();
+      S.ELoop.delete_children();
+    } else {
+      S.add_subservice(new SubService("dasctl",
+	new_dasctl_ssclient, (void *)0));
+      S.Start(flight_host ? Server::Srv_TCP : Server::Srv_Unix);
+    }
   }
   return 0;
 }

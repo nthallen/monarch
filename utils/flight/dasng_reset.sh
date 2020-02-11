@@ -3,7 +3,21 @@
 # This is mostly for development purposes, so that we can
 # test the setup process repeatedly until it's right.
 
+function nl_error {
+  echo "dasng_reset.sh ERROR: $*" >&2
+  exit 1
+}
+
+[ `id -u` -ne 0 ] && nl_error "Must be run as root"
+
 # Shutdown, disable and/or remove the dasng service(s)
+if [ -f /lib/systemd/system/dasng.service ]; then
+  echo "dasng_reset.sh: Removing dasng service"
+  systemctl stop dasng
+  systemctl disable dasng
+  rm -f /lib/systemd/system/dasng.service
+fi
+
 # Remove the /home/flight directory
 if [ -d /home/flight ]; then
   rm -rf /home/flight
