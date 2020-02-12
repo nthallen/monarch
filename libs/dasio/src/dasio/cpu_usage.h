@@ -34,6 +34,7 @@
       private:
 	uint64_t prev_total;
 	uint64_t prev_idle;
+        uint8_t prev_report;
     };
 
   }
