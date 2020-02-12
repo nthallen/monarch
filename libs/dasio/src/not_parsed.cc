@@ -342,6 +342,62 @@ bool DAS_IO::Interface::not_uint16(uint16_t &output_val) {
   return false;
 }
 
+bool DAS_IO::Interface::not_uint32(uint32_t &output_val, bool allow_sign) {
+  uint32_t val = 0;
+  if (allow_sign && buf[cp] == '-') {
+    if (isdigit(buf[++cp])) {
+      while (isdigit(buf[cp])) {
+        ++cp;
+      }
+      if (cp < nc)
+        report_err("%s: not_uint32: Negative int truncated at col %d",
+          iname, cp);
+    } else {
+      if (cp < nc)
+        report_err("%s: Found '-' and no digits at col %d", iname, cp);
+      return true;
+    }
+  } else if (isdigit(buf[cp])) {
+    while (isdigit(buf[cp])) {
+      val = val*10 + buf[cp++] - '0';
+    }
+  } else {
+    if (cp < nc)
+      report_err("%s: not_uint32: no digits at col %d", iname, cp);
+    return true;
+  }
+  output_val = val;
+  return false;
+}
+
+bool DAS_IO::Interface::not_uint64(uint64_t &output_val, bool allow_sign) {
+  uint64_t val = 0;
+  if (allow_sign && buf[cp] == '-') {
+    if (isdigit(buf[++cp])) {
+      while (isdigit(buf[cp])) {
+        ++cp;
+      }
+      if (cp < nc)
+        report_err("%s: not_uint64: Negative int truncated at col %d",
+          iname, cp);
+    } else {
+      if (cp < nc)
+        report_err("%s: Found '-' and no digits at col %d", iname, cp);
+      return true;
+    }
+  } else if (isdigit(buf[cp])) {
+    while (isdigit(buf[cp])) {
+      val = val*10 + buf[cp++] - '0';
+    }
+  } else {
+    if (cp < nc)
+      report_err("%s: not_uint64: no digits at col %d", iname, cp);
+    return true;
+  }
+  output_val = val;
+  return false;
+}
+
 bool DAS_IO::Interface::not_ISO8601(double &Time, bool w_hyphens) {
   struct tm buft;
   float secs;

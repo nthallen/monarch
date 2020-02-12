@@ -380,12 +380,34 @@ class Interface {
      * @return false if an integer was converted, true if the current
      * char is not a digit.
      */
-    bool not_int32(int32_t &val );
+    bool not_int32(int32_t &val);
+    /**
+     * @brief Matches an unsigned 32-bit integer
+     * @param[out] val The converted value
+     *
+     * This method expects an unsigned value, but will tolerate
+     * a leading minus sign if allow_sign is true, truncating
+     * the converted value to 0 and issuing an error message.
+     *
+     * @return false on a successful match
+     */
+    bool not_uint32(uint32_t &val, bool allow_sign = true);
+    /**
+     * @brief Matches an unsigned 64-bit integer
+     * @param[out] val The converted value
+     *
+     * This method expects an unsigned value, but will tolerate
+     * a leading minus sign if allow_sign is true, truncating
+     * the converted value to 0 and issuing an error message.
+     *
+     * @return false on a successful match
+     */
+    bool not_uint64(uint64_t &val, bool allow_sign = true);
     /**
      * @brief Matches an unsigned 16-bit integer
      * @param[out] val The converted value
      *
-     * This method expects and unsigned value, but will tolerate
+     * This method expects an unsigned value, but will tolerate
      * a leading minus sign, truncating the converted value to 0
      * and issuing an error message.
      *

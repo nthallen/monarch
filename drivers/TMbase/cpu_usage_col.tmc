@@ -1,6 +1,5 @@
 %{
-  #include "cpu_usage.h"
-  cpu_usage CPU;
+  #include "das_io/cpu_usage.h"
+  DAS_IO::cpu_usage CPU;
 %}
-TM INITFUNC CPU.init();
-Collect CPU_Pct = CPU.report(1);
+Collect CPU_Pct = CPU.report();
