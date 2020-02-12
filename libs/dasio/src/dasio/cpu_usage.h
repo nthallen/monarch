@@ -32,7 +32,8 @@
         cpu_usage();
         uint8_t report();
       private:
-        int fd;
+	uint64_t prev_total;
+	uint64_t prev_idle;
     };
 
   }

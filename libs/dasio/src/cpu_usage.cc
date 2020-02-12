@@ -16,6 +16,8 @@
 namespace DAS_IO {
   
 cpu_usage::cpu_usage() : Interface("procstat", 256) {
+  prev_total = 0;
+  prev_idle = 0;
   fd = open("/proc/stat", O_RDONLY);
   if (fd < 0) msg(MSG_ERROR, "%s: Unable to open /proc/stat", iname);
 }
@@ -58,7 +60,11 @@ uint8_t cpu_usage::report() {
       idle = cur_cts;
   }
   report_ok(nc);
-  uint64_t ratio = (total - idle)*100/total;
+  uint64_t dtotal = total - prev_total;
+  uint64_t didle = idle - prev_idle;
+  prev_total = total;
+  prev_idle = idle;
+  uint64_t ratio = (dtotal - didle)*100/dtotal;
   if (ratio > 100 || ratio < 0)
     ratio = 255;
   return (uint8_t) ratio;

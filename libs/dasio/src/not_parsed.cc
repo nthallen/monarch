@@ -312,6 +312,8 @@ bool DAS_IO::Interface::not_ndigits(int n, int &value) {
 
 bool DAS_IO::Interface::not_uint16(uint16_t &output_val) {
   uint32_t val = 0;
+  while (isspace(buf[cp]))
+    ++cp;
   if (buf[cp] == '-') {
     if (isdigit(buf[++cp])) {
       while (isdigit(buf[cp])) {
@@ -372,6 +374,8 @@ bool DAS_IO::Interface::not_uint32(uint32_t &output_val, bool allow_sign) {
 
 bool DAS_IO::Interface::not_uint64(uint64_t &output_val, bool allow_sign) {
   uint64_t val = 0;
+  while (isspace(buf[cp]))
+    ++cp;
   if (allow_sign && buf[cp] == '-') {
     if (isdigit(buf[++cp])) {
       while (isdigit(buf[cp])) {
