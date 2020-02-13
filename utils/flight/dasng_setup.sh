@@ -38,8 +38,12 @@ else
 fi
 
 service=/usr/local/share/linkeng/setup/dasng.service 
+svcdest=/lib/systemd/system/dasng.service
 if [ -f $service ]; then
-  cp $service /lib/systemd/system
+  if [ -f $svcdest ]; then
+    systemctl stop dasng
+  fi
+  cp -f $service $svcdest
   echo "dasng_setup.sh: Copied dasng.service into /lib/systemd/system"
   systemctl enable dasng &&
   systemctl start dasng
