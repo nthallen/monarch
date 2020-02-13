@@ -100,7 +100,7 @@ bool Cmd_writer::app_connected() {
       AppID.name, ci_version );
     if (iwrite(vcheck, nb)) return true;
     nl_assert(obuf_empty());
-    return true;
+    return false;
   }
   return true;
 }

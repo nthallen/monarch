@@ -15,9 +15,6 @@
 
 using namespace DAS_IO;
 
-char rcsid_tma_c[] = 
-  "$Header$";
-
 tma_prtn *tma_partitions = NULL;
 long int tma_runbasetime = 0L;
 int tma_is_holding = 0;
