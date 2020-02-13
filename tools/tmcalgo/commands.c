@@ -72,7 +72,7 @@ void get_version(FILE *ofp) {
   #endif
   fprintf(ofp, "%%{\n"
 	"  #include \"nl.h\"\n"
-	"  #include \"tma.h\"\n"
+	"  #include \"dasio/tma.h\"\n"
 	"  char ci_version[] = \"%s\";\n"
 	"%%}\n", ci_version);
 }
