@@ -28,7 +28,8 @@ my $rlvl_limit = 3;
 #   I'd be tempted to look in /usr/local/share/huarp/appgen/ as well as
 #   ../*/TM/ and ../*/*/TM/
 my @searchpath = $module =~ m|/| ? ('') :
-  map "$_/", ('.',<../*/TM>, <../Peripherals/*/TM>, '/usr/local/share/huarp');
+  map "$_/", ('.',<../*/TM>, <../Peripherals/*/TM>,
+      '/usr/local/share/linkeng');
 pathcheck: while (@searchpath) {
   my $dir = shift(@searchpath);
   for my $suffix ( '', '.agm' ) {

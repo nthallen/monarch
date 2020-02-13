@@ -16,3 +16,9 @@ install(TARGETS tmdf RUNTIME DESTINATION bin)
 install(FILES tmdf.h
   DESTINATION include
 )
+
+install(FILES
+  tmdf.tmc
+  tmdf_col.tmc
+  DESTINATION share/linkeng)
+

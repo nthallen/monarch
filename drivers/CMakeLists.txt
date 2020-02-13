@@ -17,3 +17,4 @@ endif (NOT DEFINED le_das_SOURCE_DIR)
 
 add_subdirectory(subbus)
 add_subdirectory(tmdf)
+add_subdirectory(TMbase)

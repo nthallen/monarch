@@ -28,7 +28,8 @@ getopts('cjd:o:', \%opts);
 $opts{c} && $opts{j} && die "Cannot select both -c and -j\n";
 my $matdir = $opts{d};
 if ($matdir && ! -d $matdir) {
-  die "Specified matdir '$matdir' is not a directory\n";
+  mkdir $matdir or
+    die "Unable to create specified matdir '$matdir'\n";
 }
 
 my %group; # for each grp, list of plots in definition order

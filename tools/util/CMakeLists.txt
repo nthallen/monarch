@@ -42,9 +42,7 @@ install(FILES
   appgen.mk
   edf2ext.awk
   edf2oui.awk
-  flttime.tmc
   loop.cmd
-  root.cmd
   DESTINATION share/linkeng)
 
 else (NOT CMAKE_CROSSCOMPILING)
