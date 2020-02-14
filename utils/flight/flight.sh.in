@@ -17,24 +17,35 @@ export PATH=:/bin:/usr/bin:/usr/local/bin
 
 umask g+w
 
-if [ -f OSUPDATEREQ ]; then
-  echo "flight.sh: suspending due to OSUPDATEREQ" |
-    tee -a flight.sh.log
-  while [ -f OSUPDATEREQ ]; do
-    sleep 1
-  done
-fi
+## Eliminate this when we can just stop the service
+# if [ -f OSUPDATEREQ ]; then
+#   echo "flight.sh: suspending due to OSUPDATEREQ" |
+#     tee -a flight.sh.log
+#   while [ -f OSUPDATEREQ ]; do
+#     sleep 1
+#   done
+# fi
 
 if [ "x$1" != "xteed" ]; then
   touch flight.sh.log
   if [ -w flight.sh.log ]; then
     exec 5>&1
-    $0 teed 4>&5 2>&1 | tee -a flight.sh.log
+    $0 teed $* 4>&5 2>&1 | tee -a flight.sh.log
     exit 0
   fi
   echo "Cannot write to flight.sh.log"
   exec 4>&1
+else
+  shift
 fi
+
+# If flight.sh is passed the "adhoc" argument, we are not
+# running under a service like systemd which loops
+SERVICE=yes
+if [ "x$1" = "xadhoc" ]; then
+  SERVICE=no
+fi
+
 echo
 echo -n "Running flight.sh: "; date
 
@@ -45,7 +56,7 @@ cfile=Experiment.config
 if [ -f "$cfile" -a -r "$cfile" ]; then
   . $cfile
 else
-  echo flight.sh: missing or unreadable $cfile: stopping >&2
+  msg -V -n flight.sh "missing or unreadable $cfile: stopping"
   exec 1>&4 2>&4 # close pipe to flight.sh.log and reopen stdout/err
   exec parent -V -S "Missing $cfile"
 fi
@@ -53,15 +64,15 @@ fi
 if [ -n "$Experiment" -a -n "$HomeDir" -a -d "$HomeDir" ]; then
   cd $HomeDir
 else
-  echo Experiment or HomeDir undefined or non-existant >&2
+  msg -V -n flight.sh "Experiment or HomeDir undefined or non-existant"
   Experiment=none
 fi
 export Experiment
 
 
 launch_error=""
-parent_srvr=''
-[ -n "$FlightNode" ] && parent_srvr='-s both'
+parent_srvr='-s Unix'
+[ -n "$FlightNode" -a $SERVICE = yes ] && parent_srvr='-s both'
 parent_loop=''
 script=''
 have_tm_bfr=''
@@ -72,12 +83,12 @@ status_string=''
 [ -n "$LOOP_STOP_FILE" ] || LOOP_STOP_FILE=loopstop.txt
 [ -n "$LOOP_START_FILE" ] || LOOP_START_FILE=loopstart.txt
 if [ -n "$LOOP_ON_FILE" -a -e "$LOOP_ON_FILE" ]; then
-  echo "`date '+%T'` Invoking reduce for LOOP_ON_FILE"
+  msg -V -n flight.sh "Invoking reduce for LOOP_ON_FILE"
   [ -z "$REDUCE_LOG_FILE" ] && REDUCE_LOG_FILE=reducelog.txt
   exec 1>&4 2>&4 # close pipe to flight.sh.log and reopen stdout/err
   BEDTIME=yes reduce 2>&1 | tee -a $REDUCE_LOG_FILE
   if [ -e "$LOOP_ON_FILE" ]; then
-    echo "`date '+%T'` [ERROR] reduce did not clear LOOP_ON_FILE '$LOOP_ON_FILE'" |
+    msg -V -n flight.sh "[ERROR] reduce did not clear LOOP_ON_FILE '$LOOP_ON_FILE'" 2>&1 |
       tee -a $REDUCE_LOG_FILE
     rm -f $LOOP_STOP_FILE $LOOP_START_FILE
     exec parent $parent_srvr -V -S "reduce error"
@@ -86,11 +97,11 @@ if [ -n "$LOOP_ON_FILE" -a -e "$LOOP_ON_FILE" ]; then
   exit 0 # exit to reestablish tee log
 elif [ -e "$LOOP_STOP_FILE" ]; then
   if [ -n "$RESTART_FILE" -a -e "$RESTART_FILE" ]; then
-    echo "`date '+%T'` Restarting"
+    msg -V -n flight.sh "Restarting"
     rm -f "$RESTART_FILE"
     script=`cat $LOOP_STOP_FILE`
   else
-    echo "`date '+%T'` Looping terminated"
+    msg -V -n flight.sh "Looping terminated"
     rm -f $LOOP_STOP_FILE $LOOP_START_FILE
     script=/dev/null
   fi
@@ -115,10 +126,10 @@ function Launch {
   name=$1
   shift
   [ -n "$launch_error" ] && return 1
-  [ -n "$VERBOSE" ] && echo "`date +%T` [DEBUG] Launch: $*"
+  [ -n "$VERBOSE" ] && msg -V -n flight.sh "[DEBUG] Launch: $*"
   if { $* & }; then
     Launch_pid=$!
-    echo "`date +%T` Launch: $Launch_pid $*"
+    msg -V -n flight.sh "Launch: $Launch_pid $*"
     if [ "$name" = "DG/cmd" ]; then
       parent_loop="-q -M $Launch_pid -t 5"
     fi
@@ -126,9 +137,9 @@ function Launch {
       [ "$name" = "-TMC-" ] && name="/var/run/linkeng/run/$Experiment/$!"
       [ "${name#/}" = "$name" ] && name="/var/run/linkeng/$Experiment/$name"
       [ -n "$VERBOSE" ] &&
-        echo "`date +%T` [DEBUG] Launch: Waiting for $Launch_pid:$name"
+        msg -V -n flight.sh "[DEBUG] Launch: Waiting for $Launch_pid:$name"
       waitfor $name 10 || {
-        echo "`date +%T` [ERROR] Launch: namewait failure: $*"
+        msg -V -n flight.sh "[ERROR] Launch: namewait failure: $*"
         launch_error="namewait failed on $*"
         return 1
       }
@@ -137,7 +148,7 @@ function Launch {
       [ "$name" = "cmd" ] && have_cmd='yes'
     fi
   else
-    echo "`date +%T` [ERROR] Launch: $*"
+    msg -V -n flight.sh "[ERROR] Launch: $*"
     launch_error="Launch failed on $*"
     return 1
   fi
@@ -148,7 +159,7 @@ SUBBUS_PID=''
 subbus_name=/var/run/linkeng/$Experiment/subbus
 if [ -n "$SUBBUSD" -a ! -e $subbus_name ]; then
   if [ -n "$SUBBUSD_DELAY" ]; then
-    echo "`date +%T` sleep $SUBBUSD_DELAY for subbus"
+    msg -V -n flight.sh "sleep $SUBBUSD_DELAY for subbus"
     sleep $SUBBUSD_DELAY
   fi
   Launch $subbus_name subbusd_$SUBBUSD -V
@@ -171,7 +182,7 @@ export TMBINDIR
 if [ -z "$script" -a -n "$EXP_NODES" ]; then
   [ -z "$NETWORK_DELAY" ] && NETWORK_DELAY=3
   if [ $NETWORK_DELAY -gt 0 ]; then
-    echo "`date +%T` sleep $NETWORK_DELAY to acquire network connections"
+    msg -V -n flight.sh "sleep $NETWORK_DELAY to acquire network connections"
     sleep $NETWORK_DELAY
   fi
   for node in $EXP_NODES; do
@@ -179,7 +190,7 @@ if [ -z "$script" -a -n "$EXP_NODES" ]; then
     [ -n "$script" ] && break
   done
   [ -n "$script" ] &&
-    echo "`date +%T` Script name '$script' received via dasctl"
+    msg -V -n flight.sh "Script name '$script' received via dasctl"
 fi
 
 if [ -z "$script" ]; then
@@ -194,11 +205,11 @@ status_prefix=''
 status_suffix=''
 status_string="script $script"
 [ ${script#/} = "$script" ] && script=$TMBINDIR/$script
+msg -V -n flight.sh "`id`: Experiment=$Experiment script=$script"
 if [ -r $script ]; then
-  echo "`date +%T` `id`: Experiment=$Experiment script=$script"
   . $script
 else
-  echo "`date +%T` Specified script $script not found"
+  msg -V -n flight.sh "Specified script $script not found"
   status_suffix=" not found"
 fi
 [ -n "$have_tm_bfr" -a -n "$have_tm_gen" -a -n "$have_cmd" ] &&
@@ -219,14 +230,17 @@ else
 fi
 
 if [ -n "$launch_error" -o -n "$pids" ]; then
-  [ -n "$FlightNode" ] && echo $script >$LOOP_STOP_FILE
+  [ $SERVICE = yes ] && echo $script >$LOOP_STOP_FILE
+  [ -z "$parent_loop" ] && parent_loop="-q"
 else
   parent_loop="-f $LOOP_START_FILE"
   [ -n "$SUBBUS_PID" ] && kill -SIGHUP $SUBBUS_PID
-  echo "`date +%T` No subprocesses, closing flight.sh.log"
+  msg -V -n flight.sh "No subprocesses, closing flight.sh.log"
   exec 1>&4 2>&4
 fi
 
 # This condition only makes sense under cygwin now
 # [ -z "$FlightNode" -a -z "$parent_loop" ] && parent_loop="-q"
+msg -V -n flight.sh \
+  "[DEBUG] parent $parent_srvr $parent_loop -V -S '$status_string'"
 exec parent $parent_srvr $parent_loop -V -S "$status_string"
