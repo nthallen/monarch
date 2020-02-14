@@ -35,7 +35,7 @@ void lgr_init( int argc, char **argv ) {
 char *tmc_lgr::mlf_config;
 unsigned int tmc_lgr::file_limit = 4096*3;
 
-tmc_lgr::tmc_lgr() : tm_client( 4096, false) {
+tmc_lgr::tmc_lgr() : tm_client( 4096, false, tm_client::tm_client_hostname) {
   mlf = mlf_init( 3, 60, 1, "LOG", "dat", mlf_config );
   ofp = NULL;
 }
