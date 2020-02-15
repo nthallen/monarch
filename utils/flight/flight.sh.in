@@ -232,15 +232,15 @@ fi
 if [ -n "$launch_error" -o -n "$pids" ]; then
   [ $SERVICE = yes ] && echo $script >$LOOP_STOP_FILE
   [ -z "$parent_loop" ] && parent_loop="-q"
+  msg -V -n flight.sh \
+    "[DEBUG] parent $parent_srvr $parent_loop -V -S '$status_string'"
 else
   parent_loop="-f $LOOP_START_FILE"
   [ -n "$SUBBUS_PID" ] && kill -SIGHUP $SUBBUS_PID
   msg -V -n flight.sh "No subprocesses, closing flight.sh.log"
+  msg -V -n flight.sh \
+    "[DEBUG] parent $parent_srvr $parent_loop -V -S '$status_string'"
   exec 1>&4 2>&4
 fi
 
-# This condition only makes sense under cygwin now
-# [ -z "$FlightNode" -a -z "$parent_loop" ] && parent_loop="-q"
-msg -V -n flight.sh \
-  "[DEBUG] parent $parent_srvr $parent_loop -V -S '$status_string'"
 exec parent $parent_srvr $parent_loop -V -S "$status_string"
