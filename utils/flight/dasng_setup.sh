@@ -41,12 +41,19 @@ service=/usr/local/share/linkeng/setup/dasng.service
 svcdest=/lib/systemd/system/dasng.service
 if [ -f $service ]; then
   if [ -f $svcdest ]; then
+    echo "dasng_setup.sh: Shutting down dasng service"
     systemctl stop dasng
+    systemctl disable dasng
   fi
+  echo "dasng_setup.sh: cp -f $service $svcdest"
   cp -f $service $svcdest
   echo "dasng_setup.sh: Copied dasng.service into /lib/systemd/system"
+  echo "dasng_setup.sh: Reloading, Enabling and Starting dasng"
+  systemctl daemon-reload &&
   systemctl enable dasng &&
   systemctl start dasng
+  sleep 1
+  systemctl status dasng
 else
   echo "dasng_setup.sh: Skipping systemd configuration"
 fi
