@@ -36,14 +36,7 @@ if [ "x$1" != "xteed" ]; then
   echo "Cannot write to flight.sh.log"
   exec 4>&1
 else
-  shift
-fi
-
-# If flight.sh is passed the "adhoc" argument, we are not
-# running under a service like systemd which loops
-SERVICE=yes
-if [ "x$1" = "xadhoc" ]; then
-  SERVICE=no
+  shift # may not be relevant after removing adhoc arg
 fi
 
 echo
@@ -69,10 +62,22 @@ else
 fi
 export Experiment
 
+if [ -z "$SERVICE" ] ||
+   [ "$SERVICE" != "Installed" -a "$SERVICE" != "AdHoc" ]; then
+  if [ -e /var/run/linkeng/$Experiment/parent -a \
+       -e /var/run/linkeng/$Experiment/parent.pid ] &&
+     [ -e /proc/`cat /var/run/linkeng/$Experiment/parent.pid` ]; then
+    SERVICE=Installed
+  elif [ -z "$FlightNode" ]; then
+    SERVICE=AdHoc
+  else
+    SERVICE=Installed
+  fi
+fi
 
 launch_error=""
 parent_srvr='-s Unix'
-[ -n "$FlightNode" -a $SERVICE = yes ] && parent_srvr='-s both'
+[ -n "$FlightNode" ] && parent_srvr='-s both'
 parent_loop=''
 script=''
 have_tm_bfr=''
@@ -230,16 +235,16 @@ else
 fi
 
 if [ -n "$launch_error" -o -n "$pids" ]; then
-  [ $SERVICE = yes ] && echo $script >$LOOP_STOP_FILE
+  [ $SERVICE = Installed ] && echo $script >$LOOP_STOP_FILE
   [ -z "$parent_loop" ] && parent_loop="-q"
-  msg -V -n flight.sh \
-    "[DEBUG] parent $parent_srvr $parent_loop -V -S '$status_string'"
+  # msg -V -n flight.sh \
+  #   "[DEBUG] parent $parent_srvr $parent_loop -V -S '$status_string'"
 else
   parent_loop="-f $LOOP_START_FILE"
   [ -n "$SUBBUS_PID" ] && kill -SIGHUP $SUBBUS_PID
   msg -V -n flight.sh "No subprocesses, closing flight.sh.log"
-  msg -V -n flight.sh \
-    "[DEBUG] parent $parent_srvr $parent_loop -V -S '$status_string'"
+  # msg -V -n flight.sh \
+  #   "[DEBUG] parent $parent_srvr $parent_loop -V -S '$status_string'"
   exec 1>&4 2>&4
 fi
 
