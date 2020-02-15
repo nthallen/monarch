@@ -15,7 +15,7 @@ target_link_libraries(getcon dasio nl pthread)
 target_include_directories(getcon PRIVATE
   ${le_das_SOURCE_DIR}/tools/cmdgen)
 
-install(TARGETS getcon RUNTIME DESTINATION bin)
+install(TARGETS getcon RUNTIME DESTINATION sbin)
 install(FILES
   getcon.cmd
   DESTINATION share/linkeng
