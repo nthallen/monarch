@@ -74,10 +74,10 @@ bool parent_ssclient::protocol_input() {
       	status_string = "OK";
       snprintf(obuf, 100, "Status: %s: %ssubprocesses\n",
       	status_string, have_children ?
-	  "" : "no ");
+          "" : "no ");
       iwrite(obuf);
       report_ok(nc);
-      break;
+      return false;
     default:
       report_err("%s: Invalid command", iname);
       iwrite("NOK\n");
@@ -170,7 +170,11 @@ bool parent_sigif::serialized_signal_handler(uint32_t signals_seen) {
       msg( 0, "parent: Received SIGINT");
     }
   }
-  return (quit_when_childless && !have_children);
+  if (quit_when_childless && !have_children) {
+    if (srvr)
+      srvr->Shutdown(true);
+  }
+  return false;
 }
 
 bool parent_sigif::protocol_timeout() {

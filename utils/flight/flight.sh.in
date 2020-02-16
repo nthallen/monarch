@@ -135,6 +135,7 @@ function Launch {
   if { $* & }; then
     Launch_pid=$!
     msg -V -n flight.sh "Launch: $Launch_pid $*"
+    shortname=$name
     if [ "$name" = "DG/cmd" ]; then
       parent_loop="-q -M $Launch_pid -t 5"
     fi
@@ -145,12 +146,13 @@ function Launch {
         msg -V -n flight.sh "[DEBUG] Launch: Waiting for $Launch_pid:$name"
       waitfor $name 10 || {
         msg -V -n flight.sh "[ERROR] Launch: namewait failure: $*"
+        msg -V -n flight.sh "[DEBUG] Launch: name='$name'"
         launch_error="namewait failed on $*"
         return 1
       }
-      [ "$name" = "tm_bfr" ] && have_tm_bfr='yes'
-      [ "$name" = "tm_gen" ] && have_tm_gen='yes'
-      [ "$name" = "cmd" ] && have_cmd='yes'
+      [ "$shortname" = "tm_bfr" ] && have_tm_bfr='yes'
+      [ "$shortname" = "tm_gen" ] && have_tm_gen='yes'
+      [ "$shortname" = "cmd" ] && have_cmd='yes'
     fi
   else
     msg -V -n flight.sh "[ERROR] Launch: $*"
@@ -248,4 +250,5 @@ else
   exec 1>&4 2>&4
 fi
 
+msg -Vn flight.sh "exec parent $parent_srvr $parent_loop -V -S '$status_string'"
 exec parent $parent_srvr $parent_loop -V -S "$status_string"

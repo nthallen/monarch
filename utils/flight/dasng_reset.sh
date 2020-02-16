@@ -16,6 +16,7 @@ if [ -f /lib/systemd/system/dasng.service ]; then
   systemctl stop dasng
   systemctl disable dasng
   rm -f /lib/systemd/system/dasng.service
+  systemctl daemon-reload # try to make it stick!
 fi
 
 # Remove the /home/flight directory
