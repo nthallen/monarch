@@ -25,7 +25,8 @@ const char *status_string = 0;
  * Quit: Shutdown
  */
 parent_ssclient::parent_ssclient(Authenticator *Auth, const char *iname)
-    : Serverside_client(Auth, iname, parent_ssclient_ibufsize) {}
+    : Serverside_client(Auth, iname, parent_ssclient_ibufsize),
+      shutdown_when_closed(false) {}
 
 
 Serverside_client *new_parent_ssclient(Authenticator *Auth, SubService *SS) {
@@ -76,15 +77,37 @@ bool parent_ssclient::protocol_input() {
 	  "" : "no ");
       iwrite(obuf);
       report_ok(nc);
-      return false;
+      break;
     default:
       report_err("%s: Invalid command", iname);
       iwrite("NOK\n");
       consume(nc);
       return false;
   }
-  srvr->Shutdown(true);
-  return true;
+  // srvr->Shutdown(true);
+  // return true;
+  TO.Set(1,0);
+  shutdown_when_closed = true;
+  return false;
+}
+
+bool parent_ssclient::process_eof() {
+  if (shutdown_when_closed) {
+    TO.Clear();
+    srvr->Shutdown(true);
+    return true;
+  }
+  return false;
+}
+
+bool parent_ssclient::protocol_timeout() {
+  if (shutdown_when_closed) {
+    TO.Clear();
+    msg(MSG_ERROR, "%s: Timed out waiting for socket close", iname);
+    srvr->Shutdown(true);
+    return true;
+  }
+  return false;
 }
 
 parent_sigif::parent_sigif(Server *srvr)

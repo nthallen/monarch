@@ -28,6 +28,9 @@ class parent_ssclient : public Serverside_client {
      * If script is zero, the string "/dev/null" is written.
      */
     void write_script_file(const char *script);
+    bool protocol_timeout();
+    bool process_eof();
+    bool shutdown_when_closed;
     // Include any local data here
 };
 
