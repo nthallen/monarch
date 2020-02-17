@@ -17,7 +17,7 @@
 using namespace DAS_IO;
 
 const char *df_path = "/";
-const char *tmdf_name = "tmdf";
+const char *tmdf_name = "TMDF";
 TMDF_t TMDF;
 
 TMDF_data_sndr::TMDF_data_sndr( unsigned seconds, const char *name, const char *hostname,
