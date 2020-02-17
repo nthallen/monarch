@@ -10,6 +10,12 @@
 
 using namespace DAS_IO;
 
+class memo_sigif : public server_sigif {
+  public:
+    inline memo_sigif(Server *srvr) : server_sigif(srvr) {}
+    bool serialized_signal_handler(uint32_t signals_seen);
+};
+
 /* I have group related members into structs here purely
    to help make clear which members are related.
    If you don't like this approach, let me know.

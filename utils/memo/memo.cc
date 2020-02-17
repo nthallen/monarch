@@ -55,10 +55,13 @@ bool memo_socket::protocol_input() {
   return false;
 }
 
+bool memo_sigif::serialized_signal_handler(uint32_t signals_seen) {}
+
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   
   Server server("memo");
+  server.set_sigif(new memo_sigif(&server));
   server.add_subservice(new SubService("memo", (socket_clone_t)new_memo_socket, (void*)0));
   server.set_passive_exit_threshold(memo_quit_threshold);
   server.Start(Server::Srv_Unix);
