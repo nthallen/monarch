@@ -619,6 +619,8 @@ int main(int argc, char **argv) {
   
   Server S("tm_bfr");
   add_subservices(&S);
+  msg(0, "%s %s Starting", AppID.fullname, AppID.rev);
   S.Start(Server::server_type);
+  msg(0, "Terminating");
   return 0;
 }

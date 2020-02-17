@@ -178,6 +178,8 @@ namespace DAS_IO {
   Server::~Server() {}
 
   void Server::Start(Server::Srv_type which = server_type) {
+    signal(SIGHUP);
+    signal(SIGINT);
     if (which & Srv_Unix) {
       Unix = new Server_socket("Unix", service, Socket::Socket_Unix, this);
       Unix->reference();
@@ -190,11 +192,11 @@ namespace DAS_IO {
       TCP->connect();
       ELoop.add_child(TCP);
     }
-    msg(0, "%s %s Starting", AppID.fullname, AppID.rev);
+    // msg(0, "%s %s Starting", AppID.fullname, AppID.rev);
     do {
       ELoop.event_loop();
     } while (!ready_to_quit());
-    msg(0, "Terminating");
+    // msg(0, "Terminating");
   }
 
   bool Server::ready_to_quit() {
