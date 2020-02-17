@@ -60,9 +60,16 @@ dasctl_t::dasctl_t(Server *srvr)
 }
 
 bool dasctl_t::app_connected() {
-  if (opt_Q) return iwrite("Q\n");
-  if (opt_r) return iwrite("r\n");
+  if (opt_Q) {
+    msg(0, "Requesting forced shutdown");
+    return iwrite("Q\n");
+  }
+  if (opt_r) {
+    msg(0, "Requesting default startup");
+    return iwrite("r\n");
+  }
   if (restart_script) {
+    msg(0, "Requesting startup with script %s", restart_script);
     std::string rs("R");
     rs += restart_script;
     return iwrite(rs);
@@ -80,6 +87,8 @@ bool dasctl_t::app_input() {
     // Check for OK response, and then shutdown
     if (strncasecmp((const char *)(&buf[0]), "OK", 2) != 0) {
       msg(2, "%s", &buf[0]);
+    } else {
+      msg(0, "Request acknowledged");
     }
   }
   report_ok(nc);

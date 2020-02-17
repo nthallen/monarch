@@ -12,30 +12,6 @@ class cmdif_rd;
 
 namespace DAS_IO {
   
-  // class Cmd_server {
-    // public:
-      // Cmd_server();
-      // ~Cmd_server();
-      
-      // inline bool add_subservice(SubService *ss) {
-        // return Subs.add_subservice(ss);
-      // }
-      // inline bool rm_subservice(std::string svcs) {
-        // return Subs.rm_subservice(svcs);
-      // }
-      
-      // void StartServer();
-      // /**
-       // * Shuts down the listening server socket.
-       // */
-      // void Shutdown();
-      // Loop ELoop;
-      // Server_socket *SU; // Unix Domain Server_socket
-      // Server_socket *TU; // TCP Domain Server_socket
-      // static Cmd_server *CmdServer;
-    // protected:
-      // SubServices Subs;
-  // };
   extern Server *CmdServer;
   
   /**

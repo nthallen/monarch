@@ -28,6 +28,7 @@ parent_ssclient::parent_ssclient(Authenticator *Auth, const char *iname)
     : Serverside_client(Auth, iname, parent_ssclient_ibufsize),
       shutdown_when_closed(false) {}
 
+parent_sigif *parent_ssclient::sigif;
 
 Serverside_client *new_parent_ssclient(Authenticator *Auth, SubService *SS) {
   SS = SS; // No need for this
@@ -111,9 +112,9 @@ bool parent_ssclient::protocol_timeout() {
 }
 
 parent_sigif::parent_sigif(Server *srvr)
-      : Interface("ParSig",0),
-        srvr(srvr),
+      : server_sigif(srvr),
         handled_INT(false),
+        handled_force_quit(false),
         handled_timeout(false) {
   if (monitor_pid && !parent_timeout)
     parent_timeout = 3;
@@ -121,6 +122,7 @@ parent_sigif::parent_sigif(Server *srvr)
     TO.Set(parent_timeout,0);
     flags |= Fl_Timeout;
   }
+  srvr->set_sigif(this);
 }
 
 bool parent_sigif::serialized_signal_handler(uint32_t signals_seen) {
@@ -158,16 +160,19 @@ bool parent_sigif::serialized_signal_handler(uint32_t signals_seen) {
       break;
     }
   }
-  if (saw_signal(signals_seen, SIGINT)) {
-    handled_INT = 1;
+  if (saw_signal(signals_seen, SIGINT) || signals_seen == 0) {
+    handled_INT = signals_seen ? true : false;
+    handled_force_quit = signals_seen ? false : true;
     quit_when_childless = 1;
     if ( have_children ) {
-      msg( 0, "parent: Received SIGINT, signaling children");
+      msg( 0, "parent: Received %s, signaling children",
+          handled_INT ? "SIGINT" : "force quit request");
       killpg(getpgid(getpid()), SIGHUP);
       TO.Set(3,0);
       flags |= Fl_Timeout;
     } else {
-      msg( 0, "parent: Received SIGINT");
+      msg( 0, "parent: Received %s",
+        handled_INT ? "SIGINT" : "force quit request");
     }
   }
   if (quit_when_childless && !have_children) {
@@ -179,8 +184,9 @@ bool parent_sigif::serialized_signal_handler(uint32_t signals_seen) {
 
 bool parent_sigif::protocol_timeout() {
   TO.Clear();
-  if ( handled_INT )
-    msg( 3, "parent: Timed out waiting for children after INT");
+  if (handled_INT || handled_force_quit)
+    msg( 3, "parent: Timed out waiting for children after %s",
+        handled_INT ? "SIGINT" : "force quit request");
   if ( handled_timeout )
     msg( 3, "parent: Timed out waiting for children after timeout");
   if (have_children) {
@@ -199,11 +205,11 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   Server S("parent");
   S.add_subservice(new SubService("parent", new_parent_ssclient, (void *)0));
-  parent_sigif *psi = new parent_sigif(&S);
+  parent_sigif *psi = parent_ssclient::sigif = new parent_sigif(&S);
   S.ELoop.add_child(psi);
   psi->signal(SIGCHLD);
-  psi->signal(SIGINT);
-  psi->signal(SIGHUP); // Need to handle (ignore) HUP or I'll see my own
+  // psi->signal(SIGINT); // will be added by S.Start()
+  // psi->signal(SIGHUP); // will be added by S.Start(): Need to handle (ignore) HUP or I'll see my own
   // invoke signal handler to decide if we have children:
   psi->serialized_signal_handler(1 << (SIGCHLD-1));
   S.Start(Server::server_type);

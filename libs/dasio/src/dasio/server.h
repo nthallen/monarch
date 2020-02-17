@@ -176,11 +176,21 @@ namespace DAS_IO {
        * directly.
        */
       void signal(int signum);
+      inline const char *get_service() { return service; }
+      /**
+       * @param sigif Pointer to an instance of a server_sigif subclass
+       *
+       * Provide a subclass of server_sigif as an alternative to
+       * the one Server would create in order to modify the
+       * default processing of SIGINT and SIGHUP.
+       * This will report of fatal error if sigif is already
+       * initialized.
+       */
+      void set_sigif(server_sigif *sigif);
+      
       Server_socket *Unix;
       Server_socket *TCP;
       Loop ELoop;
-      inline const char *get_service() { return service; }
-      
       static Srv_type server_type;
     protected:
       /**
@@ -220,7 +230,7 @@ namespace DAS_IO {
       inline server_sigif(Server *srvr)
         : Interface("SrvSig",0), srvr(srvr) {}
       bool serialized_signal_handler(uint32_t signals_seen);
-    private:
+    protected:
       Server *srvr;
   };
 }

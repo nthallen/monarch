@@ -270,6 +270,12 @@ namespace DAS_IO {
     }
     sigif->signal(signum);
   }
+  
+  void Server::set_sigif(server_sigif *sigif) {
+    if (this->sigif)
+      msg(MSG_FATAL, "Server sigif already defined");
+    this->sigif = sigif;
+  }
 
   bool server_sigif::serialized_signal_handler(uint32_t signals_seen) {
     msg(0, "%s: Signal(s) %08X observed", iname, signals_seen);
