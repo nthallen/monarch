@@ -14,5 +14,5 @@ md5=`for ifile in $base.cc $base.dat; do
   echo "File: $ifile"
   cat $ifile
 done | md5sum`
-md5=${md5% *}
+md5=${md5%% *}
 echo "char ci_version[] = \"\$CGID: $md5 \$\";" >$base.h
