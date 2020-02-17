@@ -60,7 +60,8 @@ bool parent_ssclient::protocol_input() {
       write_script_file(0);
       iwrite("OK\n");
       report_ok(nc);
-      break;
+      sigif->serialized_signal_handler(0);
+      return false;
     case 'r': // Quit if childless
     case 'R':
       if (have_children) return iwrite("NOK: Subprocesses running, quit first\n");
