@@ -33,14 +33,14 @@ if [ "x$1" != "xteed" ]; then
     $0 teed $* 4>&5 2>&1 | tee -a flight.sh.log
     exit 0
   fi
-  echo "Cannot write to flight.sh.log"
+  msg -Vn flight.sh "Cannot write to flight.sh.log"
   exec 4>&1
 else
   shift # may not be relevant after removing adhoc arg
 fi
 
 echo
-echo -n "Running flight.sh: "; date
+msg -Vn flight.sh "Running flight.sh: `date`"
 
 #----------------------------------------------------------------
 # This is where we will decide what experiment we are

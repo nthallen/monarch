@@ -140,18 +140,18 @@ bool parent_sigif::serialized_signal_handler(uint32_t signals_seen) {
           switch (errno) {
             case ECHILD:
               have_children = false;
-              msg( 0, "parent: No more children");
+              msg( 0, "No more children");
               break;
             case EINTR:
-              msg( 0, "parent: signal received during waitpid()" );
+              msg( 0, "signal received during waitpid()" );
               break;
             default:
-              msg( 2, "parent: Unexpected error from waitpid(): %s",
+              msg( 2, "Unexpected error from waitpid(): %s",
                 strerror(errno));
           }
           break;
         default:
-          msg( 0, "parent: Process %d terminated: status: %04X", pid, status );
+          msg( 0, "Process %d terminated: status: %04X", pid, status );
           if (monitor_pid && pid == monitor_pid) {
             flags |= Fl_Timeout;
             TO.Set(parent_timeout,0);
@@ -166,15 +166,19 @@ bool parent_sigif::serialized_signal_handler(uint32_t signals_seen) {
     handled_force_quit = signals_seen ? false : true;
     quit_when_childless = 1;
     if ( have_children ) {
-      msg( 0, "parent: Received %s, signaling children",
+      msg( 0, "Received %s, signaling children",
           handled_INT ? "SIGINT" : "force quit request");
       killpg(getpgid(getpid()), SIGHUP);
       TO.Set(3,0);
       flags |= Fl_Timeout;
+      // msg(0, "Still alive after killpg()");
     } else {
-      msg( 0, "parent: Received %s",
+      msg( 0, "Received %s",
         handled_INT ? "SIGINT" : "force quit request");
     }
+  }
+  if (saw_signal(signals_seen, SIGHUP)) {
+    msg(0, "Saw my own SIGHUP");
   }
   if (quit_when_childless && !have_children) {
     if (srvr)
@@ -213,7 +217,9 @@ int main(int argc, char **argv) {
   // psi->signal(SIGHUP); // will be added by S.Start(): Need to handle (ignore) HUP or I'll see my own
   // invoke signal handler to decide if we have children:
   psi->serialized_signal_handler(1 << (SIGCHLD-1));
+  msg(0, "Starting");
   S.Start(Server::server_type);
+  msg(0, "Terminating");
   return 0;
 }
 

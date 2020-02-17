@@ -67,5 +67,6 @@ int main(int argc, char **argv) {
   server.add_subservice(new SubService("memo", (socket_clone_t)new_memo_socket, (void*)0));
   server.set_passive_exit_threshold(memo_quit_threshold);
   server.Start(Server::Srv_Unix);
+  msg(0, "Terminating");
   return 0;
 }
