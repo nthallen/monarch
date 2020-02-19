@@ -37,6 +37,11 @@ else
   echo "dasng_setup.sh: /home/flight already exists"
 fi
 
+if [ -f /usr/local/sbin/flight.sh ]; then
+  echo "dasng_setup.sh: removing flight.sh from old location /usr/local/sbin"
+  rm -f /usr/local/sbin/flight.sh
+fi
+
 service=/usr/local/share/linkeng/setup/dasng.service 
 svcdest=/lib/systemd/system/dasng.service
 if [ -f $service ]; then

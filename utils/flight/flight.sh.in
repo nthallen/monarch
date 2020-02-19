@@ -14,17 +14,7 @@
 #   /etc/config/ttys. Under Linux, this is handled by
 #   systemd using /lib/systemd/system/dasng.service
 export PATH=:/bin:/usr/bin:/usr/local/bin
-
 umask g+w
-
-## Eliminate this when we can just stop the service
-# if [ -f OSUPDATEREQ ]; then
-#   echo "flight.sh: suspending due to OSUPDATEREQ" |
-#     tee -a flight.sh.log
-#   while [ -f OSUPDATEREQ ]; do
-#     sleep 1
-#   done
-# fi
 
 if [ "x$1" != "xteed" ]; then
   touch flight.sh.log
@@ -42,37 +32,12 @@ fi
 echo
 msg -Vn flight.sh "Running flight.sh: `date`"
 
-#----------------------------------------------------------------
-# This is where we will decide what experiment we are
-#----------------------------------------------------------------
-cfile=Experiment.config
-if [ -f "$cfile" -a -r "$cfile" ]; then
-  . $cfile
-else
-  msg -V -n flight.sh "missing or unreadable $cfile: stopping"
+. /usr/local/libexec/load_exconfig.sh
+
+if [ -n "$CFG_ERROR" ]; then
+  msg -Vn flight.sh "$CFG_ERROR: stopping"
   exec 1>&4 2>&4 # close pipe to flight.sh.log and reopen stdout/err
   exec parent -V -S "Missing $cfile"
-fi
-
-if [ -n "$Experiment" -a -n "$HomeDir" -a -d "$HomeDir" ]; then
-  cd $HomeDir
-else
-  msg -V -n flight.sh "Experiment or HomeDir undefined or non-existant"
-  Experiment=none
-fi
-export Experiment
-
-if [ -z "$SERVICE" ] ||
-   [ "$SERVICE" != "Installed" -a "$SERVICE" != "AdHoc" ]; then
-  if [ -e /var/run/linkeng/$Experiment/parent -a \
-       -e /var/run/linkeng/$Experiment/parent.pid ] &&
-     [ -e /proc/`cat /var/run/linkeng/$Experiment/parent.pid` ]; then
-    SERVICE=Installed
-  elif [ -z "$FlightNode" ]; then
-    SERVICE=AdHoc
-  else
-    SERVICE=Installed
-  fi
 fi
 
 launch_error=""
@@ -88,12 +53,12 @@ status_string=''
 [ -n "$LOOP_STOP_FILE" ] || LOOP_STOP_FILE=loopstop.txt
 [ -n "$LOOP_START_FILE" ] || LOOP_START_FILE=loopstart.txt
 if [ -n "$LOOP_ON_FILE" -a -e "$LOOP_ON_FILE" ]; then
-  msg -V -n flight.sh "Invoking reduce for LOOP_ON_FILE"
+  msg -Vn flight.sh "Invoking reduce for LOOP_ON_FILE"
   [ -z "$REDUCE_LOG_FILE" ] && REDUCE_LOG_FILE=reducelog.txt
   exec 1>&4 2>&4 # close pipe to flight.sh.log and reopen stdout/err
   BEDTIME=yes reduce 2>&1 | tee -a $REDUCE_LOG_FILE
   if [ -e "$LOOP_ON_FILE" ]; then
-    msg -V -n flight.sh "[ERROR] reduce did not clear LOOP_ON_FILE '$LOOP_ON_FILE'" 2>&1 |
+    msg -Vn flight.sh "[ERROR] reduce did not clear LOOP_ON_FILE '$LOOP_ON_FILE'" 2>&1 |
       tee -a $REDUCE_LOG_FILE
     rm -f $LOOP_STOP_FILE $LOOP_START_FILE
     exec parent $parent_srvr -V -S "reduce error"
@@ -102,11 +67,11 @@ if [ -n "$LOOP_ON_FILE" -a -e "$LOOP_ON_FILE" ]; then
   exit 0 # exit to reestablish tee log
 elif [ -e "$LOOP_STOP_FILE" ]; then
   if [ -n "$RESTART_FILE" -a -e "$RESTART_FILE" ]; then
-    msg -V -n flight.sh "Restarting"
+    msg -Vn flight.sh "Restarting"
     rm -f "$RESTART_FILE"
     script=`cat $LOOP_STOP_FILE`
   else
-    msg -V -n flight.sh "Looping terminated"
+    msg -Vn flight.sh "Looping terminated"
     rm -f $LOOP_STOP_FILE $LOOP_START_FILE
     script=/dev/null
   fi
@@ -115,26 +80,14 @@ elif [ -e "$LOOP_START_FILE" ]; then
   rm -f $LOOP_START_FILE
 fi
 
-# waitfor <name> <duration>
-function waitfor {
-  name=$1
-  duration=$2
-  while [ $duration -gt 0 ]; do
-    [ -e $name ] && return 0
-    sleep 1
-    let duration=duration-1
-  done
-  return 1
-}
-
 function Launch {
   name=$1
   shift
   [ -n "$launch_error" ] && return 1
-  [ -n "$VERBOSE" ] && msg -V -n flight.sh "[DEBUG] Launch: $*"
+  [ -n "$VERBOSE" ] && msg -Vn flight.sh "[DEBUG] Launch: $*"
   if { $* & }; then
     Launch_pid=$!
-    msg -V -n flight.sh "Launch: $Launch_pid $*"
+    msg -Vn flight.sh "Launch: $Launch_pid $*"
     shortname=$name
     if [ "$name" = "DG/cmd" ]; then
       parent_loop="-q -M $Launch_pid -t 5"
@@ -143,10 +96,10 @@ function Launch {
       [ "$name" = "-TMC-" ] && name="/var/run/linkeng/run/$Experiment/$!"
       [ "${name#/}" = "$name" ] && name="/var/run/linkeng/$Experiment/$name"
       [ -n "$VERBOSE" ] &&
-        msg -V -n flight.sh "[DEBUG] Launch: Waiting for $Launch_pid:$name"
+        msg -Vn flight.sh "[DEBUG] Launch: Waiting for $Launch_pid:$name"
       waitfor $name 10 || {
-        msg -V -n flight.sh "[ERROR] Launch: namewait failure: $*"
-        msg -V -n flight.sh "[DEBUG] Launch: name='$name'"
+        msg -Vn flight.sh "[ERROR] Launch: namewait failure: $*"
+        msg -Vn flight.sh "[DEBUG] Launch: name='$name'"
         launch_error="namewait failed on $*"
         return 1
       }
@@ -155,7 +108,7 @@ function Launch {
       [ "$shortname" = "cmd" ] && have_cmd='yes'
     fi
   else
-    msg -V -n flight.sh "[ERROR] Launch: $*"
+    msg -Vn flight.sh "[ERROR] Launch: $*"
     launch_error="Launch failed on $*"
     return 1
   fi
@@ -166,30 +119,17 @@ SUBBUS_PID=''
 subbus_name=/var/run/linkeng/$Experiment/subbus
 if [ -n "$SUBBUSD" -a ! -e $subbus_name ]; then
   if [ -n "$SUBBUSD_DELAY" ]; then
-    msg -V -n flight.sh "sleep $SUBBUSD_DELAY for subbus"
+    msg -Vn flight.sh "sleep $SUBBUSD_DELAY for subbus"
     sleep $SUBBUSD_DELAY
   fi
   Launch $subbus_name subbusd_$SUBBUSD -V
   [ -z "$launch_error" ] && SUBBUS_PID=$Launch_pid
 fi
 
-VERSION=1.0
-[ -f VERSION ] && VERSION=`cat VERSION`
-if [ -d bin/$VERSION/ ]; then
-  TMBINDIR=$PWD/bin/$VERSION
-  PATH=$TMBINDIR:$PATH
-else
-  TMBINDIR='.'
-fi
-export TMBINDIR
-
-## This SCRIPT_OVERRIDE mechanism needs to be reinvented,
-## possibly via client/server with a lightweight server
-## app run on the GSE
 if [ -z "$script" -a -n "$EXP_NODES" ]; then
   [ -z "$NETWORK_DELAY" ] && NETWORK_DELAY=3
   if [ $NETWORK_DELAY -gt 0 ]; then
-    msg -V -n flight.sh "sleep $NETWORK_DELAY to acquire network connections"
+    msg -Vn flight.sh "sleep $NETWORK_DELAY to acquire network connections"
     sleep $NETWORK_DELAY
   fi
   for node in $EXP_NODES; do
@@ -197,12 +137,12 @@ if [ -z "$script" -a -n "$EXP_NODES" ]; then
     [ -n "$script" ] && break
   done
   [ -n "$script" ] &&
-    msg -V -n flight.sh "Script name '$script' received via dasctl"
+    msg -Vn flight.sh "Script name '$script' received via dasctl"
 fi
 
 if [ -z "$script" ]; then
   if [ -n "$PICKFILE" ]; then
-    script=`cd $TMBINDIR; $PICKFILE`
+    script=`$PICKFILE`
   else
     script=${RUNFILE:-runfile.dflt}
   fi
@@ -212,11 +152,11 @@ status_prefix=''
 status_suffix=''
 status_string="script $script"
 [ ${script#/} = "$script" ] && script=$TMBINDIR/$script
-msg -V -n flight.sh "`id`: Experiment=$Experiment script=$script"
+msg -Vn flight.sh "`id`: Experiment=$Experiment script=$script"
 if [ -r $script ]; then
   . $script
 else
-  msg -V -n flight.sh "Specified script $script not found"
+  msg -Vn flight.sh "Specified script $script not found"
   status_suffix=" not found"
 fi
 [ -n "$have_tm_bfr" -a -n "$have_tm_gen" -a -n "$have_cmd" ] &&
@@ -239,13 +179,13 @@ fi
 if [ -n "$launch_error" -o -n "$pids" ]; then
   [ $SERVICE = Installed ] && echo $script >$LOOP_STOP_FILE
   [ -z "$parent_loop" ] && parent_loop="-q"
-  # msg -V -n flight.sh \
+  # msg -Vn flight.sh \
   #   "[DEBUG] parent $parent_srvr $parent_loop -V -S '$status_string'"
 else
   parent_loop="-f $LOOP_START_FILE"
   [ -n "$SUBBUS_PID" ] && kill -SIGHUP $SUBBUS_PID
-  msg -V -n flight.sh "No subprocesses, closing flight.sh.log"
-  # msg -V -n flight.sh \
+  msg -Vn flight.sh "No subprocesses, closing flight.sh.log"
+  # msg -Vn flight.sh \
   #   "[DEBUG] parent $parent_srvr $parent_loop -V -S '$status_string'"
   exec 1>&4 2>&4
 fi

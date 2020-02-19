@@ -5,7 +5,7 @@ After=multi-user.target
 [Service]
 RuntimeDirectory=linkeng
 RuntimeDirectoryMode=2775
-ExecStart=/usr/local/sbin/flight.sh
+ExecStart=/usr/local/libexec/flight.sh
 User=flight
 WorkingDirectory=~
 Restart=always

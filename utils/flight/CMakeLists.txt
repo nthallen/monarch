@@ -18,7 +18,8 @@ configure_file(flight.sh.in flight.sh @ONLY)
 
 install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/flight.sh
-  DESTINATION sbin)
+  ${CMAKE_CURRENT_SOURCE_DIR}/load_exconfig.sh
+  DESTINATION libexec)
 
 install(PROGRAMS
   ${CMAKE_CURRENT_SOURCE_DIR}/dasng_setup.sh

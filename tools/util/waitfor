@@ -1,27 +1,31 @@
 #! /bin/bash
 
 function nl_error {
-  echo appgen: $* >&2
-  rm -f $tmp $tmpxm
+  echo "waitfor: $*" >&2
   exit 1
 }
 
-#function waitfor {
+function print_usage {
+cat <<EOF;
+waitfor name seconds
+  wait for the specified number of seconds for
+  the named file or socket to appear.
+waitfor -h
+  display this message
+EOF
+}
+
 [ -z "$1" ] && nl_error Must provide name argument
+if [ "$1" = "-h" ]; then
+  print_usage
+  exit 0
+fi
 [ -z "$2" ] && nl_error Must provide length argument
-  name=$1
-  duration=$2
-  if [ -n "$3" ]; then
-    decrement=$3
-    delay=1
-  else
-    decrement=1
-    delay=5
-  fi
-  while [ $duration -gt 0 ]; do
-    [ -e $name ] && exit 0
-    sleep 1
-    let duration=duration-$decrement
-  done
-  exit 1
-#}
+duration=$2
+decrement=1
+while [ $duration -gt 0 ]; do
+  [ -e $name ] && exit 0
+  sleep 1
+  let duration=duration-$decrement
+done
+exit 1
