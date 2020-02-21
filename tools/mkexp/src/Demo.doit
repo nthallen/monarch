@@ -1,0 +1,4 @@
+display Demodisp
+client Democlt
+memo
+batchfile interact
