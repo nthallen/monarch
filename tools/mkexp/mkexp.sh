@@ -1,4 +1,4 @@
-#! /bin/bash
+#! @SHELL_EXE@
 
 # Make sure we are running as root
 if [ `id -u` -ne 0 ]; then
@@ -18,20 +18,21 @@ fi
 # Create the proper directories
 mkexpdir $Experiment
 export ExpDir=/home/$Experiment
+export SourceDir=/usr/local/share/linkeng/setup/src
 
 # Copy all the files
-cp src/services $ExpDir/services
-cp src/base.tmc $ExpDir/base.tmc
-cp src/Experiment.config $ExpDir/Experiment.config
-cp src/interact $ExpDir/interact
-cp src/Demo.doit $ExpDir/$Experiment.doit
-cp src/Demo.tbl $ExpDir/$Experiment.tbl
-cp src/Demo.spec $ExpDir/$Experiment.spec
-cp src/Demo.pcm $ExpDir/$Experiment.pcm
-cp src/freemem.tmc $ExpDir/freemem.tmc
-cp src/TMbase.genui $ExpDir/TMbase.genui
-cp src/TMbase.tbl $ExpDir/TMbase.tbl
-cp src/VERSION $ExpDir/VERSION
+cp SourceDir/services $ExpDir/services
+cp SourceDir/base.tmc $ExpDir/base.tmc
+cp SourceDir/Experiment.config $ExpDir/Experiment.config
+cp SourceDir/interact $ExpDir/interact
+cp SourceDir/Demo.doit $ExpDir/$Experiment.doit
+cp SourceDir/Demo.tbl $ExpDir/$Experiment.tbl
+cp SourceDir/Demo.spec $ExpDir/$Experiment.spec
+cp SourceDir/Demo.pcm $ExpDir/$Experiment.pcm
+cp SourceDir/freemem.tmc $ExpDir/freemem.tmc
+cp SourceDir/TMbase.genui $ExpDir/TMbase.genui
+cp SourceDir/TMbase.tbl $ExpDir/TMbase.tbl
+cp SourceDir/VERSION $ExpDir/VERSION
 
 # Change the names accordingly
 sed -i 's/@NAME@/'$Experiment'/g' $ExpDir/*

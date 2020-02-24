@@ -1,4 +1,4 @@
-#! /bin/bash
+#! @SHELL_EXE@
 
 # Make sure we are running as root
 if [ `id -u` -ne 0 ]; then
