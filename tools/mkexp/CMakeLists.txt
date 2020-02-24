@@ -14,7 +14,9 @@ if (NOT SHELL_EXE)
   message( FATAL_ERROR "No shell located")
 endif (NOT SHELL_EXE)
 
-configure_file(mkexpdir.sh.in mkexpdir @ONLY)
+configure_file(mkexp.sh.in mkexp.sh @ONLY)
+configure_file(mkexpdir.sh.in mkexpdir.sh @ONLY)
+configure_file(mkexpactive.sh.in mkexpactive.sh @ONLY)
 
 install(PROGRAMS mkexp.sh
         DESTINATION /usr/local/share/linkeng/setup)
