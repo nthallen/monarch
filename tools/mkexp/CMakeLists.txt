@@ -18,9 +18,11 @@ configure_file(mkexp.sh.in mkexp.sh @ONLY)
 configure_file(mkexpdir.sh.in mkexpdir @ONLY)
 configure_file(mkexpactive.sh.in mkexpactive @ONLY)
 
-install(PROGRAMS mkexp.sh
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/mkexp.sh
         DESTINATION /usr/local/share/linkeng/setup)
-install(PROGRAMS mkexpactive mkexpdir
-        DESTINATION /usr/local/sbin/mkexpdir)
+install(PROGRAMS
+        ${CMAKE_CURRENT_BINARY_DIR}/mkexpactive
+        ${CMAKE_CURRENT_BINARY_DIR}/mkexpdir
+        DESTINATION /usr/local/sbin)
 
 endif (NOT ${CMAKE_CROSSCOMPILING})
