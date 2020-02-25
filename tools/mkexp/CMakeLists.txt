@@ -15,12 +15,12 @@ if (NOT SHELL_EXE)
 endif (NOT SHELL_EXE)
 
 configure_file(mkexp.sh.in mkexp.sh @ONLY)
-configure_file(mkexpdir.sh.in mkexpdir.sh @ONLY)
-configure_file(mkexpactive.sh.in mkexpactive.sh @ONLY)
+configure_file(mkexpdir.sh.in mkexpdir @ONLY)
+configure_file(mkexpactive.sh.in mkexpactive @ONLY)
 
 install(PROGRAMS mkexp.sh
         DESTINATION /usr/local/share/linkeng/setup)
-install(PROGRAMS mkexpactive.sh mkexpdir.sh
+install(PROGRAMS mkexpactive mkexpdir
         DESTINATION /usr/local/sbin/mkexpdir)
 
 endif (NOT ${CMAKE_CROSSCOMPILING})
