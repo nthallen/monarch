@@ -1,8 +1,9 @@
 /** @file main.cc */
-#include "alicat_int.h"
 #include "dasio/tm_data_sndr.h"
 #include "dasio/loop.h"
 #include "dasio/appid.h"
+#include "modbus_cmd.h"
+#include "alicat_int.h"
 #include "alicat.h"
 #include "oui.h"
 #include "nl.h"
@@ -20,9 +21,9 @@ int main(int argc, char **argv) {
   Modbus::RTU *MB = new Modbus::RTU("RTU", 80, Alicat_port);
   MB->setup(115200, 8, 'n', 1, 5, 1);
   MB->flush_input();
-  MB->add_device(new Modbus::alicat_dev("AC1", 0x01, &(Alicat.Dev[0])));
-  MB->add_device(new Modbus::alicat_dev("AC2", 0x02, &(Alicat.Dev[1])));
-  Modbus::alicat_cmd *Cmd = new Modbus::alicat_cmd(MB);
+  MB->add_device(new Modbus::alicat_device("AC1", 0x01, &(Alicat.Dev[0])));
+  MB->add_device(new Modbus::alicat_device("AC2", 0x02, &(Alicat.Dev[1])));
+  Modbus::modbus_cmd *Cmd = new Modbus::modbus_cmd("alicat", MB);
   Cmd->connect();
   TM->connect();
   ELoop.add_child(Cmd);

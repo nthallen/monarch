@@ -1,4 +1,5 @@
 <package> alicat
+<include> "dasio/appid.h"
 <include> "alicat_int.h"
 <include> msg oui
 

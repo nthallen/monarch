@@ -1,4 +1,5 @@
 #include "alicat_int.h"
+#include "nl_assert.h"
 
 namespace DAS_IO { namespace Modbus {
   
@@ -11,14 +12,18 @@ namespace DAS_IO { namespace Modbus {
     MB->enqueue_poll(req);
   }
 
-  void RH_alicat_regs(RTU::modbus_req *req, RTU::modbus_device *dev,
-            RTU *MB) {
-    swap32_4321(&TM->status, &xbuf[0]);
-    swap32_4321(&TM->pressure, &xbuf[4]);
-    swap32_4321(&TM->flow_temp, &xbuf[8]);
-    swap32_4321(&TM->volumetric_flow, &xbuf[12]);
-    swap32_4321(&TM->mass_flow, &xbuf[16]);
-    swap32_4321(&TM->mass_flow_setpoint, &xbuf[20]);
+  #define myswap_be(x,y) \
+    RTU::modbus_req::swap32_4321((uint8_t*)&ali->TM->x, y)
+
+  void alicat_device::RH_alicat_regs(RTU::modbus_req *req,
+        RTU::modbus_device *dev, RTU *MB) {
+    alicat_device *ali = (alicat_device *)dev;
+    myswap_be(status, &ali->xbuf[0]);
+    myswap_be(pressure, &ali->xbuf[4]);
+    myswap_be(flow_temp, &ali->xbuf[8]);
+    myswap_be(volumetric_flow, &ali->xbuf[12]);
+    myswap_be(mass_flow, &ali->xbuf[16]);
+    myswap_be(mass_flow_setpoint, &ali->xbuf[20]);
     // could set a fresh bit somewhere...
   }
 
