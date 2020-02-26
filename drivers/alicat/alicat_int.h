@@ -22,5 +22,17 @@ namespace DAS_IO { namespace Modbus {
 } }
 
 extern const char *Alicat_port;
+extern const char *address_opts;
+#define ALICAT_MIN_ADDRESS 1
+#define ALICAT_MAX_ADDRESS 254
+#define MNEM_LEN 10
+
+typedef struct {
+  uint16_t device_index;
+  uint16_t device_address;
+  char     mnemonic[MNEM_LEN];
+} board_id_t;
+
+extern board_id_t *board_id;
 
 #endif

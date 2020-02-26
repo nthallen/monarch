@@ -15,6 +15,6 @@ typedef struct __attribute__((__packed__)) {
   alicat_tm_t Dev[2];
 } alicat_t;
 
-extern alicat_t Alicat;
+extern alicat_tm_t *Alicat;
 
 #endif
