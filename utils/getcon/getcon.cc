@@ -99,26 +99,33 @@ bool getcon_cmd::connect_failed() {
  * Process response from the command interface. We expect either
  */
 bool getcon_cmd::app_input() {
-  bool rv = true;
-  if (nc > 0 && buf[0] == 'Q') {
-    msg(MSG_DEBUG, "%s: Received Q, terminating");
-    rv = true;
-  } else if (pid != 0) {
-    int pidlen = strlen(pid);
-    if (strncmp((const char *)buf, pid, pidlen) == 0 &&
-          buf[pidlen] == '\n') {
-      msg(MSG_DEBUG, "%s: Received my session ID (%s), terminating", pid);
+  bool rv = false;
+  cp = 0;
+  while (!rv && cp < nc) {
+    if (buf[cp] == 'Q') {
+      msg(MSG_DEBUG, "%s: Received Q, terminating");
+      report_ok(++cp);
       rv = true;
+    } else if (pid != 0) {
+      unsigned int scp = cp;
+      while (cp < nc && buf[cp] != '\n') ++cp;
+      if (cp < nc && buf[cp] == '\n') {
+        buf[cp++] = '\0';
+        if (strcmp((const char *)&buf[scp], pid) == 0) {
+          msg(MSG_DEBUG, "%s: Received my session ID (%s), terminating", pid);
+          rv = true;
+        } else {
+          msg(MSG_DEBUG, "%s: Received another session ID (%s, not %s)",
+                ascii_escape(), pid);
+        }
+        report_ok(cp);
+      }
     } else {
-      msg(MSG_DEBUG, "%s: Received another session ID (%s, not %s)",
-	ascii_escape(), pid);
-      rv = false;
+      msg(MSG_DEBUG, "%s: Received something, no sesison ID, terminating");
+      rv = true;
     }
-  } else {
-    msg(MSG_DEBUG, "%s: Received something, no sesison ID, terminating");
-    rv = true;
   }
-  report_ok(nc);
+  report_ok(cp);
   return rv;
 }
 
