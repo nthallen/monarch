@@ -7,6 +7,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(src)
 
+find_program(SUDO_EXE sudo)
+if (SUDO_EXE)
+set(HAVE_SUDO yes)
+else (SUDO_EXE)
+set(HAVE_SUDO no)
+endif (SUDO_EXE)
+
 if (NOT ${CMAKE_CROSSCOMPILING})
 
 find_program(SHELL_EXE NAMES ksh bash)

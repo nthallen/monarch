@@ -2,11 +2,11 @@ tmcbase = base.tmc
 
 Module TMbase
 
-TGTDIR = $(TGTNODE)/home/Demo
+TGTDIR = $(TGTNODE)/home/@DEMO@
 IGNORE = "*.o" "*.exe" "*.stackdump" Makefile
 DISTRIB = services interact
 IDISTRIB = doit
 
-Demodisp : Demo.tbl
-Demoalgo : Demo.tma
-madedoit : Demo.doit
+@DEMO@disp : @DEMO@.tbl
+@DEMO@algo : @DEMO@.tma
+madedoit : @DEMO@.doit

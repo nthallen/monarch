@@ -1,4 +1,4 @@
-display Demodisp
-client Democlt
+display @DEMO@disp
+client @DEMO@clt
 memo
 batchfile interact

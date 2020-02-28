@@ -94,11 +94,11 @@ case $dispmode in
   *) nl_error "Unknown dispmode: '$dispmode'";;
 esac
 logfileroot=$Experiment
-interacts='Demodisp Democlt';
+interacts='@DEMO@disp @DEMO@clt';
 extracts='';
 batchfile=interact
 client=playbackclt
-[ $srcmode = realtime ] && client=Democlt
+[ $srcmode = realtime ] && client=@DEMO@clt
 lclsrvr=playbacksrvr
 
 check_path=no
@@ -350,7 +350,7 @@ case $dispmode in
         echo resize 3
         echo focus
         echo "screen -t $logfile /bin/sh -c \"echo \$\$ >less.pid.$session; exec $rmt_cmd less +F $logfile\""
-        echo screen -t Demo /usr/local/sbin/getcon $gcopt scr1 $session
+        echo screen -t @DEMO@ /usr/local/sbin/getcon $gcopt scr1 $session
         echo width -w 20
         #echo height -w 8
   echo focus
@@ -361,7 +361,7 @@ case $dispmode in
         pbarg=''
         [ $srcmode = playback ] && pbarg=" -p $Run"
         echo screen -t doit $0 $pbarg $ncopt -sS $session screen
-        echo select Demo
+        echo select @DEMO@
       } >$rc
       screen -c $rc
       clear
@@ -370,7 +370,7 @@ case $dispmode in
     fi;;
   pterm)
     ### Start pterms for each disp screen and clt
-    pterm -t Demo -m 8x20 -g 8x20 -U /usr/local/sbin/getcon $gcopt scr1 $session &
+    pterm -t @DEMO@ -m 8x20 -g 8x20 -U /usr/local/sbin/getcon $gcopt scr1 $session &
     pterm -t clt -m 2x80 -g 2x80 -y 90% -x 0 -U /usr/local/sbin/getcon $gcopt clt $session &
     ;;
   *)
@@ -412,7 +412,7 @@ for screen in scr1 clt; do
   eval ${screen}_term=$term
 done
 
-Launch -TMC- Demodisp$nc $ncopt $TM_OPT $scr1_term
+Launch -TMC- @DEMO@disp$nc $ncopt $TM_OPT $scr1_term
 $client$nc $CMD_OPT $clt_term $scr1_term
 
 # This is where we run. When the client quits,

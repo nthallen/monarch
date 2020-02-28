@@ -1,1 +1,1 @@
-doit : Demodispnc.cc
+doit : @DEMO@dispnc.cc
