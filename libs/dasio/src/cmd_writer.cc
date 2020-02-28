@@ -27,6 +27,7 @@ Cmd_writer::Cmd_writer(const char *iname, const char *hostname)
   version_verified = false;
   sent_quit = recd_quit = false;
   ci_time = 0;
+  set_retries(0, 0, 0);
 }
 
 Cmd_writer::~Cmd_writer() {
