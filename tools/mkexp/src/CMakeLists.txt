@@ -7,9 +7,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (NOT ${CMAKE_CROSSCOMPILING})
 
-install(FILES base.tmc Demo.doit Demo.pcm Demo.spec Demo.tbl Demo.tma
-        doit doit.dep Experiment.config freemem.tmc interact
-        Makefile services TMbase.genui TMbase.tbl VERSION
+install(FILES base.tmc Demo.doit Demo.spec Demo.tbl Demo.tma
+        doit Experiment.config interact services VERSION
         DESTINATION /usr/local/share/linkeng/setup/src)
 
 endif (NOT ${CMAKE_CROSSCOMPILING})

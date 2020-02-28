@@ -41,12 +41,11 @@ cp -p $SourceDir/Demo.tbl $ExpDir/$Experiment.tbl
 cp -p $SourceDir/Demo.tma $ExpDir/$Experiment.tma
 cp -p $SourceDir/Demo.spec $ExpDir/$Experiment.spec
 cp -p $SourceDir/Demo.pcm $ExpDir/$Experiment.pcm
-cp -p $SourceDir/freemem.tmc $ExpDir/freemem.tmc
-cp -p $SourceDir/TMbase.genui $ExpDir/TMbase.genui
-cp -p $SourceDir/TMbase.tbl $ExpDir/TMbase.tbl
+cp -p $SourceDir/doit $ExpDir/doit
 cp -p $SourceDir/VERSION $ExpDir/VERSION
 
 echo "       files copied to $ExpDir"
+chown -R flight:flight $ExpDir
 chmod -R g+w $ExpDir
 
 # Change the names accordingly
