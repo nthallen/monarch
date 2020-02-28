@@ -1,13 +1,18 @@
 #! @SHELL_EXE@
 
 function nl_error {
-  echo "interact: $*" >&2
+  echo "mkexpactive: $*" >&2
   exit 1
 }
 
-# Make sure we are running as root
-if [ `id -u` -ne 0 ]; then
-  exec sudo $0 $*
+HAVE_SUDO=@HAVE_SUDO@
+
+if [ HAVE_SUDO ]
+then
+  # Make sure we are running as root
+  if [ `id -u` -ne 0 ]; then
+    exec sudo $0 $*
+  fi
 fi
 
 # Make sure we have an Experiment name
@@ -22,7 +27,6 @@ fi
 [ -d /home/flight ] || nl_error "missing directory /home/flight"
 [ -d /home/$Experiment ] || nl_error "missing directory /home/$Experiment"
 [ -e /home/$Experiment/Experiment.config ] || nl_error "missing /home/$Experiment/Experiment.config"
-[ -e /home/flight/Experiment/config ] || nl_error "missing /home/flight/Experiment.config"
 
 ln -sf /home/$Experiment/Experiment.config /home/flight/Experiment.config
 systemctl restart dasng
