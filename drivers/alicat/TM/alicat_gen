@@ -124,7 +124,7 @@ my ($datadef, $coldef, @grpmem, $tbldef, $hktbldef, $cmddef,
 
 if ($have_digital) {
   $datadef = "TM $Rate Hz ${Name}_Stale_t ${Name}_Stale;\n";
-  $coldef .= "  ${Name}_Stale = ${Name}_obj->stale(255);\n";
+  $coldef .= "  ${Name}_Stale = ${Name}_obj->Stale(255);\n";
   push(@grpmem, "${Name}_Stale");
 
 print $tmc <<EOF
@@ -207,7 +207,7 @@ for (my $i = 0; $i < $n_channels; ++$i) {
   
   my $setdisp = ($D->{chtype} eq 'mfc') ? "(${datum}_Set,7)" : '"          "';
   my $datumtbl =
-    "  ${datum}: $setdisp (${datum}_Flow,7) $VFunits;\n";
+    "  ${datum}: $setdisp (${datum}_VolFlow,7) $VFunits;\n";
   $tbldef .= $datumtbl;
 
   if ($D->{type} eq 'digital') {
@@ -287,19 +287,23 @@ if ($have_digital) {
 print $cmd <<EOF
 %INTERFACE <$Name>
 
-void ${Name}_set(int ID, float setpoint) {
-  uint32_t rawset = *(uint32_t*)&setpoint;
-  // WII:FF:AAAA:NN:DD:DD...\n
-  // II is the device ID
-  // FF is the Modbus function code
-  // AA is the register address
-  // NN is the number of registers
-  // DD are the register values
-  // All values are in hex
-  if_$Name.Turf("W%X:%X:%X:2:%X:%X\\n",
-    ID, 16, 1010, ((rawset>>16) & 0xFFFF),
-    (rawset & 0xFFFF));
-}
+%{
+  #ifdef SERVER
+  void ${Name}_set(int ID, float setpoint) {
+    uint32_t rawset = *(uint32_t*)&setpoint;
+    // WII:FF:AAAA:NN:DD:DD...\n
+    // II is the device ID
+    // FF is the Modbus function code
+    // AA is the register address
+    // NN is the number of registers
+    // DD are the register values
+    // All values are in hex
+    if_$Name.Turf("W%X:%X:%X:2:%X:%X\\n",
+      ID, 16, 1010, ((rawset>>16) & 0xFFFF),
+      (rawset & 0xFFFF));
+  }
+  #endif
+%}
 
 EOF
 ;
