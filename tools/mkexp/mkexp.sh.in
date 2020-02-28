@@ -22,10 +22,8 @@ fi
 # Create the proper directories
 mkexpdir $Experiment
 mkdir -p /home/$Experiment/src/TM
-chown flight:flight /home/$Experiment/src
-chown flight:flight /home/$Experiment/src/TM
-chmod g+sw /home/$Experiment/src
-chmod g+sw /home/$Experiment/src/TM
+chown -R flight:flight /home/$Experiment/src
+chmod -R g+sw /home/$Experiment/src
 
 export ExpDir=/home/$Experiment/src/TM
 export SourceDir=/usr/local/share/linkeng/setup/src
@@ -34,21 +32,22 @@ echo "       ExpDir captured as [$ExpDir]"
 echo "       SourceDir captured as [$SourceDir]"
 
 # Copy all the files
-cp $SourceDir/services $ExpDir/services
-cp $SourceDir/base.tmc $ExpDir/base.tmc
-cp $SourceDir/Experiment.config $ExpDir/Experiment.config
-cp $SourceDir/interact $ExpDir/interact
-cp $SourceDir/Demo.doit $ExpDir/$Experiment.doit
-cp $SourceDir/Demo.tbl $ExpDir/$Experiment.tbl
-cp $SourceDir/Demo.tma $ExpDir/$Experiment.tma
-cp $SourceDir/Demo.spec $ExpDir/$Experiment.spec
-cp $SourceDir/Demo.pcm $ExpDir/$Experiment.pcm
-cp $SourceDir/freemem.tmc $ExpDir/freemem.tmc
-cp $SourceDir/TMbase.genui $ExpDir/TMbase.genui
-cp $SourceDir/TMbase.tbl $ExpDir/TMbase.tbl
-cp $SourceDir/VERSION $ExpDir/VERSION
+cp -p $SourceDir/services $ExpDir/services
+cp -p $SourceDir/base.tmc $ExpDir/base.tmc
+cp -p $SourceDir/Experiment.config $ExpDir/Experiment.config
+cp -p $SourceDir/interact $ExpDir/interact
+cp -p $SourceDir/Demo.doit $ExpDir/$Experiment.doit
+cp -p $SourceDir/Demo.tbl $ExpDir/$Experiment.tbl
+cp -p $SourceDir/Demo.tma $ExpDir/$Experiment.tma
+cp -p $SourceDir/Demo.spec $ExpDir/$Experiment.spec
+cp -p $SourceDir/Demo.pcm $ExpDir/$Experiment.pcm
+cp -p $SourceDir/freemem.tmc $ExpDir/freemem.tmc
+cp -p $SourceDir/TMbase.genui $ExpDir/TMbase.genui
+cp -p $SourceDir/TMbase.tbl $ExpDir/TMbase.tbl
+cp -p $SourceDir/VERSION $ExpDir/VERSION
 
 echo "       files copied to $ExpDir"
+chmod -R g+w $ExpDir
 
 # Change the names accordingly
 sed -i 's/\@DEMO\@/'$Experiment'/g' $ExpDir/*
