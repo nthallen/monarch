@@ -8,7 +8,8 @@ typedef struct __attribute__((__packed__)) {
   float flow_temp;
   float volumetric_flow;
   float mass_flow;
-  float mass_flow_setpoint;
+  float flow_setpoint;
+  uint32_t stale;
 } alicat_tm_t;
 
 typedef struct __attribute__((__packed__)) {

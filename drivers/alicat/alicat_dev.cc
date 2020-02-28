@@ -23,7 +23,8 @@ namespace DAS_IO { namespace Modbus {
     myswap_be(flow_temp, &ali->xbuf[8]);
     myswap_be(volumetric_flow, &ali->xbuf[12]);
     myswap_be(mass_flow, &ali->xbuf[16]);
-    myswap_be(mass_flow_setpoint, &ali->xbuf[20]);
+    myswap_be(flow_setpoint, &ali->xbuf[20]);
+    ali->TM->stale = 0;
     // could set a fresh bit somewhere...
   }
 

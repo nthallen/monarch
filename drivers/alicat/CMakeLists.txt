@@ -18,8 +18,9 @@ install(FILES alicat.h
   DESTINATION include
 )
 
-# If/when I add the Module definitions
-#install(FILES
-#  alicat.tmc
-#  alicat_col.tmc
-#  DESTINATION share/linkeng)
+install(PROGRAMS
+  TM/alicat_gen
+  DESTINATION share/linkeng)
+install(FILES
+  TM/alicat.agm
+  DESTINATION share/linkeng)
