@@ -47,6 +47,7 @@ static void end_session() {
   if (cic_init()) {
     msg(MSG_ERROR, "Unable to connect to command server");
   } else {
+    if (pid == 0) msg(MSG_FATAL, "-e option requires session PID");
     int rv = ci_sendfcmd(Cmd_Send, "getcon end session %s\n", pid);
     if (rv) {
       msg(MSG_ERROR, "Command server returned error %d", rv);
@@ -99,12 +100,24 @@ bool getcon_cmd::connect_failed() {
  */
 bool getcon_cmd::app_input() {
   bool rv = true;
-  if (pid != 0) {
+  if (nc > 0 && buf[0] == 'Q') {
+    msg(MSG_DEBUG, "%s: Received Q, terminating");
+    rv = true;
+  } else if (pid != 0) {
     int pidlen = strlen(pid);
-    rv = nc == pidlen+1 &&
-          strncmp((const char *)buf, pid, pidlen) == 0 &&
-          buf[pidlen] == '\n';
-  } else rv = true;
+    if (strncmp((const char *)buf, pid, pidlen) == 0 &&
+          buf[pidlen] == '\n') {
+      msg(MSG_DEBUG, "%s: Received my session ID (%s), terminating", pid);
+      rv = true;
+    } else {
+      msg(MSG_DEBUG, "%s: Received another session ID (%s, not %s)",
+	ascii_escape(), pid);
+      rv = false;
+    }
+  } else {
+    msg(MSG_DEBUG, "%s: Received something, no sesison ID, terminating");
+    rv = true;
+  }
   report_ok(nc);
   return rv;
 }
