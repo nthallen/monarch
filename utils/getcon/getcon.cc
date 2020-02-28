@@ -103,7 +103,7 @@ bool getcon_cmd::app_input() {
   cp = 0;
   while (!rv && cp < nc) {
     if (buf[cp] == 'Q') {
-      msg(MSG_DEBUG, "%s: Received Q, terminating");
+      msg(MSG_DEBUG, "%s: Received Q, terminating", iname);
       report_ok(++cp);
       rv = true;
     } else if (pid != 0) {
@@ -112,16 +112,18 @@ bool getcon_cmd::app_input() {
       if (cp < nc && buf[cp] == '\n') {
         buf[cp++] = '\0';
         if (strcmp((const char *)&buf[scp], pid) == 0) {
-          msg(MSG_DEBUG, "%s: Received my session ID (%s), terminating", pid);
+          msg(MSG_DEBUG, "%s: Received my session ID (%s), terminating",
+              iname, pid);
           rv = true;
         } else {
           msg(MSG_DEBUG, "%s: Received another session ID (%s, not %s)",
-                ascii_escape(), pid);
+                iname, ascii_escape(), pid);
         }
         report_ok(cp);
       }
     } else {
-      msg(MSG_DEBUG, "%s: Received something, no sesison ID, terminating");
+      msg(MSG_DEBUG, "%s: Received something, no sesison ID, terminating",
+            iname);
       rv = true;
     }
   }
