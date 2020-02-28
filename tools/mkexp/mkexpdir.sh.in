@@ -21,13 +21,13 @@ fi
 
 # Create the Experiment directory
 mkdir /home/$Experiment
-chmod g+w /home/$Experiment
-chown $USERNAME /home/$Experiment
+chmod g+sw /home/$Experiment
+chown flight:flight /home/$Experiment
 
 # Create the corresponding bin directory
 mkdir /home/$Experiment/bin
-chmod g+w /home/$Experiment/bin
-chown $USERNAME /home/$Experiment/bin
+chmod g+sw /home/$Experiment/bin
+chown flight:flight /home/$Experiment/bin
 
 echo "mkexpdir: created /home/$Experiment"
 

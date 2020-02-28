@@ -19,10 +19,14 @@ else
   exit 1
 fi
 
-# Uncertain about invocation?
 # Create the proper directories
 mkexpdir $Experiment
 mkdir -p /home/$Experiment/src/TM
+chown flight:flight /home/$Experiment/src
+chown flight:flight /home/$Experiment/src/TM
+chmod g+sw /home/$Experiment/src
+chmod g+sw /home/$Experiment/src/TM
+
 export ExpDir=/home/$Experiment/src/TM
 export SourceDir=/usr/local/share/linkeng/setup/src
 
@@ -36,6 +40,7 @@ cp $SourceDir/Experiment.config $ExpDir/Experiment.config
 cp $SourceDir/interact $ExpDir/interact
 cp $SourceDir/Demo.doit $ExpDir/$Experiment.doit
 cp $SourceDir/Demo.tbl $ExpDir/$Experiment.tbl
+cp $SourceDir/Demo.tma $ExpDir/$Experiment.tma
 cp $SourceDir/Demo.spec $ExpDir/$Experiment.spec
 cp $SourceDir/Demo.pcm $ExpDir/$Experiment.pcm
 cp $SourceDir/freemem.tmc $ExpDir/freemem.tmc
