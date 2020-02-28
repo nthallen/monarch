@@ -125,28 +125,28 @@ int main( int argc, char **argv ) {
   FILE *fp;
 
   oui_init_options( argc, argv );
-  if ( winname == NULL )
-    msg( 3, "Must specify a window name" );
-  if ( has_pid ) {
-    snprintf( fname1, PATH_MAX, "pty.%s.%s.tmp", winname, pid );
-    snprintf( fname2, PATH_MAX, "pty.%s.%s", winname, pid );
-  } else {
-    snprintf( fname1, PATH_MAX, "pty.%s.tmp", winname );
-    snprintf( fname2, PATH_MAX, "pty.%s", winname );
-  }
-  tty = ttyname( STDOUT_FILENO );
-  if (tty == NULL)
-    msg( 3, "ttyname(1) returned error %d", errno );
-  fp = fopen( fname1, "w" );
-  if ( fp == NULL )
-    msg( 3, "Unable to write to %s", fname1 );
-  fprintf( fp, "%s\n", tty );
-  fclose( fp );
-  if ( rename( fname1, fname2 ) != 0 )
-    msg( 3, "rename returned error %d", errno );
   if (opt_end_session) {
     end_session();
   } else {
+    if ( winname == NULL )
+      msg( 3, "Must specify a window name" );
+    if ( has_pid ) {
+      snprintf( fname1, PATH_MAX, "pty.%s.%s.tmp", winname, pid );
+      snprintf( fname2, PATH_MAX, "pty.%s.%s", winname, pid );
+    } else {
+      snprintf( fname1, PATH_MAX, "pty.%s.tmp", winname );
+      snprintf( fname2, PATH_MAX, "pty.%s", winname );
+    }
+    tty = ttyname( STDOUT_FILENO );
+    if (tty == NULL)
+      msg( 3, "ttyname(1) returned error %d", errno );
+    fp = fopen( fname1, "w" );
+    if ( fp == NULL )
+      msg( 3, "Unable to write to %s", fname1 );
+    fprintf( fp, "%s\n", tty );
+    fclose( fp );
+    if ( rename( fname1, fname2 ) != 0 )
+      msg( 3, "rename returned error %d", errno );
     wait_for_quit();
   }
   return 0;
