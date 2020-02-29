@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   Loop ELoop;
   Modbus::RTU *MB = new Modbus::RTU("RTU", 80, Alicat_port);
-  MB->setup(115200, 8, 'n', 1, 5, 1);
+  MB->setup(19200, 8, 'n', 1, 5, 1);
   MB->flush_input();
   configure_devices(MB);
 
