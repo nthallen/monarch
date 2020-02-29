@@ -25,6 +25,7 @@ void configure_devices(Modbus::RTU *MB) {
   while (*s) {
     ++n_drives;
     while (*s && *s != ',') ++s;
+    if (*s) ++s;
   }
   
   Alicat = (alicat_tm_t *)new_memory(n_drives * sizeof(alicat_tm_t));
@@ -74,12 +75,12 @@ int main(int argc, char **argv) {
   MB->flush_input();
   configure_devices(MB);
 
-  Modbus::modbus_cmd *Cmd = new Modbus::modbus_cmd("alicat", MB);
+  Modbus::modbus_cmd *Cmd = new Modbus::modbus_cmd("Alicat", MB);
   Cmd->connect();
   ELoop.add_child(Cmd);
 
   TM_data_sndr *TM =
-    new TM_data_sndr("TM", "Alicat", 0, (void *)Alicat,
+    new TM_data_sndr("TM", 0, "Alicat", (void *)Alicat,
       n_drives * sizeof(alicat_tm_t));
   TM->connect();
   ELoop.add_child(TM);

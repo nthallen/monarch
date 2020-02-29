@@ -12,6 +12,7 @@ namespace DAS_IO { namespace Modbus {
       inline alicat_device(const char *dev_name, uint8_t devID, alicat_tm_t *TM) :
         RTU::modbus_device(dev_name, devID), TM(TM) {}
       void enqueue_polls();
+      static void myswap(uint8_t *dest, uint8_t *src);
       static void RH_alicat_regs(RTU::modbus_req *req,
           RTU::modbus_device *dev, RTU *MB);
       alicat_tm_t *TM;
