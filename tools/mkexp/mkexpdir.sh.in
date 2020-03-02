@@ -13,9 +13,9 @@ fi
 # Make sure we have an Experiment name
 if [ "$1" != "" ]; then
   export Experiment=$1
-  echo "Experiment named captured as [$1]"
+  echo "mkexpdir: Experiment named captured as [$1]"
 else
-  echo "Fatal: no Experiment name"
+  echo "mkexpdir: Fatal: no Experiment name"
   exit 1
 fi
 

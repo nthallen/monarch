@@ -28,8 +28,8 @@ chmod -R g+sw /home/$Experiment/src
 export ExpDir=/home/$Experiment/src/TM
 export SourceDir=/usr/local/share/linkeng/setup/src
 
-echo "       ExpDir captured as [$ExpDir]"
-echo "       SourceDir captured as [$SourceDir]"
+echo "mkexp: ExpDir captured as [$ExpDir]"
+echo "mkexp: SourceDir captured as [$SourceDir]"
 
 # Copy all the files
 cp -p $SourceDir/services $ExpDir/services
@@ -44,11 +44,18 @@ cp -p $SourceDir/Demo.pcm $ExpDir/$Experiment.pcm
 cp -p $SourceDir/doit $ExpDir/doit
 cp -p $SourceDir/VERSION $ExpDir/VERSION
 
-echo "       files copied to $ExpDir"
+echo "mkexp: files copied to $ExpDir"
 chown -R flight:flight $ExpDir
 chmod -R g+w $ExpDir
+chmod +x $ExpDir/doit
 
 # Change the names accordingly
-sed -i 's/\@DEMO\@/'$Experiment'/g' $ExpDir/*
+for file in $ExpDir/*; do
+  sed -i 's/\@DEMO\@/'$Experiment'/g' $file
+  echo "mkexp: sedded on $file" 
+done
+
+# Change the names accordingly
+# sed -i 's/\@DEMO\@/'$Experiment'/g' $ExpDir/*
 
 exit 0

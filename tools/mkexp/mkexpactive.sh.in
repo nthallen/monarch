@@ -18,9 +18,9 @@ fi
 # Make sure we have an Experiment name
 if [ "$1" != "" ]; then
   export Experiment=$1
-  echo "Experiment named captured as [$1]"
+  echo "mkexpactive: Experiment named captured as [$1]"
 else
-  echo "Fatal: no Experiment name"
+  echo "mkexpactive: Fatal: no Experiment name"
   exit 1
 fi
 
@@ -30,5 +30,6 @@ fi
 
 ln -sf /home/$Experiment/Experiment.config /home/flight/Experiment.config
 systemctl restart dasng
+echo "mkexpactive: finished"
 
 exit 0
