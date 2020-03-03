@@ -1,0 +1,61 @@
+#! @SHELL_EXE@
+
+HAVE_SUDO=@HAVE_SUDO@
+
+if [ HAVE_SUDO ]
+then
+  # Make sure we are running as root
+  if [ `id -u` -ne 0 ]; then
+    exec sudo $0 $*
+  fi
+fi
+
+# Make sure we have an experiment name
+if [ "$1" != "" ]; then
+  export Experiment=$1
+  echo "mkexp: Experiment named captured as [$1]"
+else
+  echo "mkexp: Fatal: no Experiment name"
+  exit 1
+fi
+
+# Create the proper directories
+mkexpdir $Experiment
+mkdir -p /home/$Experiment/src/TM
+chown -R flight:flight /home/$Experiment/src
+chmod -R g+sw /home/$Experiment/src
+
+export ExpDir=/home/$Experiment/src/TM
+export SourceDir=/usr/local/share/linkeng/setup/src
+
+echo "mkexp: ExpDir captured as [$ExpDir]"
+echo "mkexp: SourceDir captured as [$SourceDir]"
+
+# Copy all the files
+cp -p $SourceDir/services $ExpDir/services
+cp -p $SourceDir/base.tmc $ExpDir/base.tmc
+cp -p $SourceDir/Experiment.config $ExpDir/Experiment.config
+cp -p $SourceDir/interact $ExpDir/interact
+cp -p $SourceDir/Demo.doit $ExpDir/$Experiment.doit
+cp -p $SourceDir/Demo.tbl $ExpDir/$Experiment.tbl
+cp -p $SourceDir/Demo.tma $ExpDir/$Experiment.tma
+cp -p $SourceDir/Demo.spec $ExpDir/$Experiment.spec
+cp -p $SourceDir/Demo.pcm $ExpDir/$Experiment.pcm
+cp -p $SourceDir/doit $ExpDir/doit
+cp -p $SourceDir/VERSION $ExpDir/VERSION
+
+echo "mkexp: files copied to $ExpDir"
+chown -R flight:flight $ExpDir
+chmod -R g+w $ExpDir
+chmod +x $ExpDir/doit
+
+# Change the names accordingly
+for file in $ExpDir/*; do
+  sed -i 's/\@DEMO\@/'$Experiment'/g' $file
+  echo "mkexp: sedded on $file" 
+done
+
+# Change the names accordingly
+# sed -i 's/\@DEMO\@/'$Experiment'/g' $ExpDir/*
+
+exit 0
