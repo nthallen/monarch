@@ -492,6 +492,11 @@ bool CAN_serial::protocol_input() {
       return false; // wait for more chars
     }
     update_tc_vmin(1); // we've received everything we need
+    if (not_str("\r")) {
+      if (cp >= nc) return false;
+      consume(nc);
+      return false;
+    }
     
     // reassemble longer response as necessary
     if (!request_pending) {
@@ -503,12 +508,12 @@ bool CAN_serial::protocol_input() {
     // check for CAN error frame
     if (repfrm->can_id & (CAN_EFF_FLAG|CAN_RTR_FLAG)) {
       report_err("%s: Unexpected packet type: ID:%08X", iname, repfrm->can_id);
-      consume(nc);
+      consume(cp);
       return false;
     }
     if (repfrm->can_id & CAN_ERR_FLAG) {
       report_err("%s: CAN error frame ID:0x%X", iname, repfrm->can_id & CAN_ERR_MASK);
-      consume(nc);
+      consume(cp);
       return false;
     }
     // check incoming ID with request
@@ -516,14 +521,14 @@ bool CAN_serial::protocol_input() {
         ((reqfrm.can_id & CAN_SFF_MASK) | CAN_ID_REPLY_BIT)) {
       report_err("%s: Invalid ID: %X, expected %X", iname,
         repfrm->can_id, reqfrm.can_id | CAN_ID_REPLY_BIT);
-      consume(nc);
+      consume(cp);
       return false;
     }
     // check incoming cmd with request
     // check incoming seq with req_seq_no
     if (repfrm->can_dlc < 2) {
       report_err("%s: DLC:%d (<2)", iname, repfrm->can_dlc);
-      consume(nc);
+      consume(cp);
       return false;
     }
     if (repfrm->data[0] != CAN_CMD(reqfrm.data[0],rep_seq_no)) {
@@ -568,7 +573,7 @@ bool CAN_serial::protocol_input() {
     if (rep_recd + nbdat > rep_len) {
       report_err("%s: msg overflow. cmdseq=%02X dlc=%d rep_len=%d",
         iname, repfrm->data[0], repfrm->can_dlc, rep_len);
-      consume(nc);
+      consume(cp);
       return false;
     }
     if (nl_debug_level <= MSG_DBG(1)) {
@@ -583,11 +588,11 @@ bool CAN_serial::protocol_input() {
       rep_seq_no, nbdat, rep_recd, rep_len);
     // update rep_seq_no
     ++rep_seq_no;
-    report_ok(nc);
-    msg(MSG_DBG(1), "%s: Clearing timeout", iname);
-    TO.Clear();
+    report_ok(cp);
     // If request is complete, call clt->request_complete
     if (rep_recd == rep_len) {
+      msg(MSG_DBG(1), "%s: Clearing timeout", iname);
+      TO.Clear();
       //reqs.pop_front();
       parent->pop_req();
       // clearing request_pending after request_complete()
@@ -595,6 +600,8 @@ bool CAN_serial::protocol_input() {
       request.clt->request_complete(SBS_ACK, rep_len);
       request_pending = false;
       parent->process_requests();
+    } else {
+      TO.Set(0,50); // Extend timeout
     }
   } else if (slcan_state == st_init || slcan_state == st_init_retry) {
     if (buf[nc-1] == '\r' || buf[nc-1] == '\n') {
