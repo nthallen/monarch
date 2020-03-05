@@ -15,6 +15,11 @@ if (NOT SHELL_EXE)
 endif (NOT SHELL_EXE)
 
 configure_file(flight.sh.in flight.sh @ONLY)
+configure_file(extract.in extract @ONLY)
+
+install(PROGRAMS
+  ${CMAKE_CURRENT_BINARY_DIR}/extract
+  DESTINATION /usr/local/bin)
 
 install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/flight.sh

@@ -46,6 +46,9 @@ if [ -n "$FlightNode" -a ! /home/flight/Experiment.config -ef $cfile ]; then
   FltNode_Access=Remote
 fi
 
+echo "load_exconfig: FltNode_Access: [$FltNode_Access]"
+echo "load_exconfig: TM_OPT: [$TM_OPT]"
+
 if [ $FltNode_Access = Remote ]; then
   TM_OPT='-t $FlightNode'
   CMD_OPT='-C $FlightNode'

@@ -31,7 +31,6 @@ if [ ! -d /home/flight ]; then
     echo "dasng_setup.sh: WARNING: authorized_keys file not found"
   fi
   chown -R flight:flight /home/flight
-  chmod g+w /home/flight
   echo "dasng_setup.sh: /home/flight hierarchy created"
 else
   echo "dasng_setup.sh: /home/flight already exists"
