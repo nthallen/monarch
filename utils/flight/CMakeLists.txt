@@ -31,7 +31,7 @@ install(PROGRAMS
   DESTINATION share/linkeng/setup)
 
 install(FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/dasng.service
+  ${CMAKE_CURRENT_SOURCE_DIR}/dasng.service services
   DESTINATION share/linkeng/setup)
 
 if (NOT CMAKE_CROSSCOMPILING)

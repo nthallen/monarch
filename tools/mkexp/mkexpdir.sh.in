@@ -1,0 +1,34 @@
+#! @SHELL_EXE@
+
+HAVE_SUDO=@HAVE_SUDO@
+
+if [ HAVE_SUDO ]
+then
+  # Make sure we are running as root
+  if [ `id -u` -ne 0 ]; then
+    exec sudo $0 $*
+  fi
+fi
+
+# Make sure we have an Experiment name
+if [ "$1" != "" ]; then
+  export Experiment=$1
+  echo "mkexpdir: Experiment named captured as [$1]"
+else
+  echo "mkexpdir: Fatal: no Experiment name"
+  exit 1
+fi
+
+# Create the Experiment directory
+mkdir /home/$Experiment
+chmod g+sw /home/$Experiment
+chown flight:flight /home/$Experiment
+
+# Create the corresponding bin directory
+mkdir /home/$Experiment/bin
+chmod g+sw /home/$Experiment/bin
+chown flight:flight /home/$Experiment/bin
+
+echo "mkexpdir: created /home/$Experiment"
+
+exit 0

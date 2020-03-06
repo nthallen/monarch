@@ -7,6 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_definitions( -D_POSIX_SOURCE=1 -D_XOPEN_SOURCE=500 )
 
 add_subdirectory(cmdgen)
+add_subdirectory(mkexp)
 add_subdirectory(oui/src)
 add_subdirectory(tmc)
 add_subdirectory(tmcalgo)
