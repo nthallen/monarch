@@ -1,6 +1,6 @@
 [Unit]
 Description=Link Engineering Data Acquisition System ng Service
-After=multi-user.target
+After=default.target
 
 [Service]
 RuntimeDirectory=linkeng
@@ -11,5 +11,5 @@ WorkingDirectory=~
 Restart=always
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
 
