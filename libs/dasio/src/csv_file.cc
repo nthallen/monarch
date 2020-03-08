@@ -109,6 +109,7 @@ csv_file::csv_file(const char *name, unsigned int n_cols,
   if (nan_text)
     nan = nan_text;
   json = json_fmt ? true : false;
+  fp = 0;
 }
 
 void csv_file::init() {
@@ -132,7 +133,8 @@ const char *csv_file::nan = "";
 csv_file::~csv_file() {
   unsigned int i;
   if (time_set) flush_row();
-  fclose(fp);
+  if (fp)
+    fclose(fp);
   for (i = 0; i < cols.size(); ++i) {
     if ( cols[i] ) delete cols[i];
   }
