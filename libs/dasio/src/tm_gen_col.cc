@@ -13,7 +13,7 @@ collector::collector() : tm_generator() {
 collector::~collector() {}
 
 void collector::init() {
-  tm_generator::init(4, 1, true);
+  tm_generator::init(4, true);
 }
 
 void collector::event(enum tm_gen_event evt) {

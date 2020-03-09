@@ -30,6 +30,9 @@ Interface::Interface(const char *name, int bufsz) {
   nc = cp = 0;
   bufsize = 0;
   buf = 0;
+  obufsize = 0;
+  obuf = 0;
+  onc = ocp = 0;
   fd = -1;
   flags = 0;
   signals = 0;
@@ -56,6 +59,15 @@ Interface::~Interface() {
     close();
   }
   set_ibufsize(0);
+  set_obufsize(0);
+}
+
+void Interface::set_obufsize(int bufsz) {
+  if (obufsize != bufsz) {
+    if (obuf) free_memory(obuf);
+    obufsize = bufsz;
+    obuf = obufsize ? (unsigned char *)new_memory(obufsize) : 0;
+  }
 }
 
 bool Interface::serialized_signal_handler(uint32_t signals_seen) {
@@ -104,12 +116,6 @@ void Interface::dereference(Interface *P) {
   }
 }
 
-bool Interface::iwritev(struct iovec *iov, int nparts) {
-  wiov = iov;
-  n_wiov = nparts;
-  return iwrite_check();
-}
-
 /**
  * Sets up a write of nc bytes from the buffer pointed to by str.
  * If the write cannot be accomplished immediately, the information
@@ -131,15 +137,68 @@ bool Interface::iwrite(const char *str, unsigned int nc, unsigned int cp) {
   pvt_iov.iov_base = (void *)(str+cp);
   pvt_iov.iov_len = nc - cp;
   return iwritev(&pvt_iov, 1);
-  // obuf = (unsigned char *)str;
-  // onc = nc;
-  // ocp = cp;
-  // return iwrite_check();
+}
+
+bool Interface::iwrite(const std::string &s) {
+  return iwrite(s.c_str(), s.length());
+}
+
+bool Interface::iwrite(const char *str) {
+  return iwrite(str, strlen(str));
+}
+
+void Interface::fill_obuf(struct iovec *iov, int nparts) {
+  unsigned nb_free = obufsize - onc;
+  unsigned nb_copy = 0;
+  for (int i = 0; i < nparts; ++i) {
+    nb_copy += iov[i].iov_len;
+  }
+  if (nb_copy > nb_free && nb_copy <= nb_free + ocp) {
+    memmove(&obuf[0], &obuf[ocp], onc-ocp);
+    onc -= ocp;
+    nb_free += ocp;
+    ocp = 0;
+  }
+  if (nb_copy > nb_free) {
+    msg(MSG_FATAL, "%s: output buffer overflow", iname);
+  }
+  nl_assert(nb_copy + onc <= obufsize);
+  for (int i = 0; i < nparts; ++i ) {
+    memmove(&obuf[onc], wiov[i].iov_base, wiov[i].iov_len);
+    onc += wiov[i].iov_len;
+  }
+}
+
+bool Interface::iwritev(struct iovec *iov, int nparts) {
+  if (n_wiov) {
+    msg(MSG_FATAL, "%s: write before previous completed", iname);
+  }
+  if (onc) {
+    fill_obuf(iov, nparts);
+  } else {
+    wiov = iov;
+    n_wiov = nparts;
+  }
+  return iwrite_check();
 }
 
 bool Interface::iwrite_check() {
   bool rv = false;
-  if (!obuf_empty()) {
+  nl_assert(n_wiov == 0 || onc == 0);
+  if (onc) {
+    int ntr = write(fd, &obuf[ocp], onc-ocp);
+    if (ntr < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+      flags &= ~Fl_Write;
+      return(iwrite_error(errno));
+    }
+    if (ntr > 0) {
+      ocp += ntr;
+      if (ocp >= onc) {
+        ocp = onc = 0;
+      }
+      rv = iwritten(ntr);
+    }
+  } else if (n_wiov) {
     int ntr = writev(fd, wiov, n_wiov);
     if (ntr < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
       flags &= ~Fl_Write;
@@ -158,6 +217,9 @@ bool Interface::iwrite_check() {
           ntr = 0;
         }
       }
+      if (n_wiov && obuf) {
+        fill_obuf(wiov, n_wiov);
+      }
       rv = iwritten(ntrr);
     }
   }
@@ -165,14 +227,6 @@ bool Interface::iwrite_check() {
     flags & ~Fl_Write :
     flags | Fl_Write;
   return rv;
-}
-
-bool Interface::iwrite(const std::string &s) {
-  return iwrite(s.c_str(), s.length());
-}
-
-bool Interface::iwrite(const char *str) {
-  return iwrite(str, strlen(str));
 }
 
 void Interface::iwrite_cancel() {

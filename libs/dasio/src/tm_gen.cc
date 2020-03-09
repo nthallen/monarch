@@ -23,14 +23,8 @@ bool tm_gen_bfr::app_connected() {
 }
 
 bool tm_gen_bfr::iwritev(struct iovec *iov, int nparts, const char *where) {
-  bool rv = true;
-  if (is_negotiated()) {
-    rv = Interface::iwritev(iov, nparts);
-    if (!obuf_empty()) {
-      msg(MSG_FATAL, "%s: Incomplete write %s", iname, where);
-    }
-  }
-  return rv;
+  nl_assert(is_negotiated());
+  return Client::iwritev(iov, nparts);
 }
 
 tm_generator *tm_generator::TM_server;
@@ -45,6 +39,8 @@ tm_generator::tm_generator()
   regulated = false;
   regulation_optional = true;
   autostart = false;
+  nl_assert(TM_server == 0);
+  TM_server = this;
 }
 
 tm_generator::~tm_generator() {}
@@ -52,8 +48,8 @@ tm_generator::~tm_generator() {}
 /**
  * Assumes tm_info is defined
  */
-void tm_generator::init(int nQrows, int low_water, bool collection) {
-  tm_queue::init(nQrows, low_water);
+void tm_generator::init(int nQrows, bool collection) {
+  tm_queue::init(nQrows);
   tm_gen_cmd::attach(this); // defines the subservice
   bfr = new tm_gen_bfr(collection);
   bfr->reference();

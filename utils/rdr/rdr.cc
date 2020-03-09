@@ -139,13 +139,14 @@ int main( int argc, char **argv ) {
   Reader *rdr = new Reader(nQrows, nQrows/2, RDR_BUFSIZE, mlf);
   
   /* Added arguments: low_water=0, collection=false */
-  rdr->init(nQrows, 0, false);
+  rdr->init(nQrows, false);
   rdr->start();
   msg(0, "Shutdown");
 }
 
 Reader::Reader(int nQrows, int low_water, int bufsize, rdr_mlf *mlf)
-    : tm_rcvr(mlf),
+    : tm_generator(),
+      tm_rcvr(mlf),
       mlf(mlf) {
   int rv = pthread_mutex_init( &tmq_mutex, NULL );
   if ( rv )

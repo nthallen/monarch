@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
   int nQrows = TMR_BUFSIZE/tmi(nbrow);
   if (nQrows < 2) nQrows = 2;
   
-  new_tm_relay->init(nQrows, 0, false);
+  new_tm_relay->init(nQrows, false);
   msg(0, "tm_relay starting");
   new_tm_relay->connect();
   new_tm_relay->Start(Server::server_type);

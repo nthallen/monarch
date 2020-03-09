@@ -19,10 +19,6 @@ class tm_gen_bfr : public Client {
   public:
     tm_gen_bfr(bool collection);
     inline bool iwritev(struct iovec *iov, int nparts, const char *where);
-    /** 2019-05-13 This override exists to make this function public */
-    inline bool obuf_empty() {
-      return Interface::obuf_empty();
-    }
   protected:
     virtual ~tm_gen_bfr();
     bool app_connected();
@@ -34,7 +30,7 @@ class tm_generator : public tm_queue, public Server {
   public:
     tm_generator();
     virtual ~tm_generator();
-    void init(int nQrows, int low_water, bool collection);
+    void init(int nQrows, bool collection);
     bool execute(const char *cmd);
     virtual void event(enum tm_gen_event evt);
     virtual void service_row_timer() = 0;
