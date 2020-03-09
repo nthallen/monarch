@@ -11,13 +11,13 @@
 #include "oui.h"
 #include "nl_assert.h"
 #include "dasio/tm_gen.h"
-#include "dasio/appid.h"
+//#include "dasio/appid.h"
 
 #define RDR_BUFSIZE 16384
 
 using namespace DAS_IO;
 
-DAS_IO::AppID_t DAS_IO::AppID("rdr", "Telemetry Reader", "V2.0");
+//DAS_IO::AppID_t DAS_IO::AppID("rdr", "Telemetry Reader", "V2.0");
 
 static const char *opt_basepath = ".";
 static int opt_autostart;

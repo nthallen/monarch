@@ -1,5 +1,5 @@
 <package> rdr
-<include> msg oui
+<include> msg oui server
 <include> "rdr.h"
 <follow> msg
 
@@ -14,3 +14,8 @@
 	-L ending file index
 <init>
   rdr_init(argc, argv);
+
+<package> appid_default
+<include> "dasio/appid.h"
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("rdr", "rdr server", "V1.0");

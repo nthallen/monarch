@@ -251,7 +251,7 @@ rv=0
 memo -o extract.log -V &
 memo=/var/run/linkeng/$Experiment/memo
 waitfor $memo || exit 1
-bfr &
+bfr -vvvvv -s Unix &
 waitfor /var/run/linkeng/$Experiment/tm_bfr || exit 1
 for ext in ; do
   # echo "ext: $ext"
@@ -276,8 +276,8 @@ for ext in ; do
   fi
   shift
 done
-msg -n extract "rdr $RDR_OPTS $time_opts -AqP $dir"
-rdr $RDR_OPTS $time_opts -AqP $dir || rv=1
+msg -n extract "rdr $RDR_OPTS $time_opts -AqvvvvvP $dir -s Unix"
+gdb --args rdr $RDR_OPTS $time_opts -AqvvvvvP $dir -s Unix || rv=1
 
 # rdr -v -c0 -n $# -Q $RDR_OPTS $time_opts -d $dir -f $dir/tm.dac &
 cd $rootdir
