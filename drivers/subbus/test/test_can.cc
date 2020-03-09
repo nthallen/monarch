@@ -31,7 +31,7 @@ void identify_board(subbuspp *P, uint8_t bdid) {
   msg(0, "  Inst ID:  %u", value);
   
   char mreqstr[30];
-  snprintf(mreqstr, 30, "%X|28@%X", bdid_hi|6, bdid_hi|7);
+  snprintf(mreqstr, 30, "%X|28@%X", bdid_hi|8, bdid_hi|9);
   subbus_mread_req *mreq = P->pack_mread_request(0x29, mreqstr);
   device_name_t devname;
   uint16_t nread;
@@ -41,6 +41,21 @@ void identify_board(subbuspp *P, uint8_t bdid) {
   } else {
     msg(0, "nr:%u/%u '%s'", nread, devname.n_words, &devname.name[0]);
   }
+
+  // char mreqstr[30];
+  // snprintf(mreqstr, 30, "%X:1:%X", bdid_hi|0x10, bdid_hi|0x1A);
+  // subbus_mread_req *mreq = P->pack_mread_request(11, mreqstr);
+  // uint16_t mread_results[11];
+  // uint16_t nread;
+  // int rv = P->mread_subbus_nw(mreq, mread_results, &nread);
+  // if (rv < 0) {
+    // msg(2, "Error %d from mread", rv);
+  // } else {
+    // msg(0, "nr:%u\n", nread);
+    // for (int i = 0; i < nread; ++i) {
+      // printf("  %02X = %04X\n", i+0x10, mread_results[i]);
+    // }
+  // }
 }
 
 void test_ack(subbuspp *P, uint16_t addr) {

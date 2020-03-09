@@ -187,8 +187,10 @@ void Socket::connect() {
         struct addrinfo *res = 0;
         int err = getaddrinfo(hostname, portname, &hints, &res);
         if (err < 0) {
-          msg(MSG_FATAL, "%s: getaddrinfo(%s, %s) failed with error %d: %s",
+          msg(MSG_ERROR, "%s: getaddrinfo(%s, %s) failed with error %d: %s",
             iname, hostname, portname, err, gai_strerror(err));
+          reset();
+          return;
         } else {
           
           

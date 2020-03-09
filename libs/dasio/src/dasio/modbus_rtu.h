@@ -58,8 +58,7 @@ class RTU : public DAS_IO::Serial {
     bool tm_sync();
 
     /**
-     * Called from within the modbus_device constructor. add_device() cannot
-     * access any methods or attributes of dev during this call.
+     * Adds the specified device on the Modbus::RTU connection.
      * @param dev Pointer to a modbus_device.
      */
     void add_device(modbus_device *dev);

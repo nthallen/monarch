@@ -27,6 +27,10 @@ install(PROGRAMS
   DESTINATION libexec)
 
 install(PROGRAMS
+  ${CMAKE_CURRENT_SOURCE_DIR}/dump_exconfig.sh
+  DESTINATION sbin)
+
+install(PROGRAMS
   ${CMAKE_CURRENT_SOURCE_DIR}/dasng_setup.sh
   ${CMAKE_CURRENT_SOURCE_DIR}/dasng_reset.sh
   DESTINATION share/linkeng/setup)

@@ -21,12 +21,12 @@ void mkfltdir(const char *dir, uid_t flt_uid, gid_t flt_gid) {
   } else if (! S_ISDIR(buf.st_mode)) {
     // check to make sure it's a directory
     msg(3, "%s is not a directory", dir);
-  } else {
-    if (chmod(dir, 02775) == -1)
-      msg(3, "Error on chmod(%s): %s", dir, strerror(errno));
   }
-  // if ( chown( dir, flt_uid, flt_gid) == -1)
-  //   msg(3,"Error chowning directory %s: %s", dir, strerror(errno));
+  /* permissions on the directories should be taken
+     care of by sticky bits and umask */
+  // } else {
+  //   if (chmod(dir, 02775) == -1)
+  //     msg(3, "Error on chmod(%s): %s", dir, strerror(errno));
 }
 
 static const char *get_runexpdir() {

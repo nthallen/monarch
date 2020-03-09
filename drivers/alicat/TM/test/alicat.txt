@@ -1,0 +1,6 @@
+# alicat.txt
+Name Alicat
+Rate 1 Hz
+Port /dev/ser3
+Digital MFC1 1 MFC 5 slm 20 gps 1050 mbar "Cal 1"
+Digital MFC2 2 MFC 2 cc/m 100 kg/s 800 Torr "Cal 2"

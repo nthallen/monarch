@@ -50,8 +50,9 @@ echo "load_exconfig: FltNode_Access: [$FltNode_Access]"
 echo "load_exconfig: TM_OPT: [$TM_OPT]"
 
 if [ $FltNode_Access = Remote ]; then
-  TM_OPT='-t $FlightNode'
-  CMD_OPT='-C $FlightNode'
+  TM_OPT="-t $FlightNode"
+  CMD_OPT="-C $FlightNode"
+  SSH_CMD="ssh -t flight@$FlightNode"
   SERVICE=Installed
 elif [ -e /var/run/linkeng/$Experiment/parent -a \
        -e /var/run/linkeng/$Experiment/parent.pid ] &&
@@ -70,3 +71,30 @@ else
   TMBINDIR='.'
 fi
 export TMBINDIR
+
+msgVdefault='-V'
+msgProgram='load_exconfig.sh'
+msgDebug=-1
+
+function msgf {
+  msgV=$msgVdefault
+  if [ "$1" = '-V' ]; then
+    msgV=-V
+    shift
+  fi
+  code=$1
+  excode=''
+  case $code in
+    1) prefix='[Warn]';;
+    2) prefix='[Error]';;
+    3) prefix='[Fatal]'; excode=1;;
+    4) prefix='[Internal]'; excode=1;;
+    -1) excode=0;;
+    *) prefix='';;
+  esac
+  shift
+  if [ $code -ge $msgDebug ]; then
+    /usr/local/bin/msg $msgV -n $msgProgram "$*"
+  fi
+  [ -n "$excode" ] && exit $excode
+}

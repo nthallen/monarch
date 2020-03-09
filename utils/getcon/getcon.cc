@@ -47,6 +47,7 @@ static void end_session() {
   if (cic_init()) {
     msg(MSG_ERROR, "Unable to connect to command server");
   } else {
+    if (pid == 0) msg(MSG_FATAL, "-e option requires session PID");
     int rv = ci_sendfcmd(Cmd_Send, "getcon end session %s\n", pid);
     if (rv) {
       msg(MSG_ERROR, "Command server returned error %d", rv);
@@ -98,14 +99,35 @@ bool getcon_cmd::connect_failed() {
  * Process response from the command interface. We expect either
  */
 bool getcon_cmd::app_input() {
-  bool rv = true;
-  if (pid != 0) {
-    int pidlen = strlen(pid);
-    rv = nc == pidlen+1 &&
-          strncmp((const char *)buf, pid, pidlen) == 0 &&
-          buf[pidlen] == '\n';
-  } else rv = true;
-  report_ok(nc);
+  bool rv = false;
+  cp = 0;
+  while (!rv && cp < nc) {
+    if (buf[cp] == 'Q') {
+      msg(MSG_DEBUG, "%s: Received Q, terminating", iname);
+      report_ok(++cp);
+      rv = true;
+    } else if (pid != 0) {
+      unsigned int scp = cp;
+      while (cp < nc && buf[cp] != '\n') ++cp;
+      if (cp < nc && buf[cp] == '\n') {
+        buf[cp++] = '\0';
+        if (strcmp((const char *)&buf[scp], pid) == 0) {
+          msg(MSG_DEBUG, "%s: Received my session ID (%s), terminating",
+              iname, pid);
+          rv = true;
+        } else {
+          msg(MSG_DEBUG, "%s: Received another session ID (%s, not %s)",
+                iname, ascii_escape(), pid);
+        }
+        report_ok(cp);
+      }
+    } else {
+      msg(MSG_DEBUG, "%s: Received something, no sesison ID, terminating",
+            iname);
+      rv = true;
+    }
+  }
+  report_ok(cp);
   return rv;
 }
 
@@ -125,28 +147,28 @@ int main( int argc, char **argv ) {
   FILE *fp;
 
   oui_init_options( argc, argv );
-  if ( winname == NULL )
-    msg( 3, "Must specify a window name" );
-  if ( has_pid ) {
-    snprintf( fname1, PATH_MAX, "pty.%s.%s.tmp", winname, pid );
-    snprintf( fname2, PATH_MAX, "pty.%s.%s", winname, pid );
-  } else {
-    snprintf( fname1, PATH_MAX, "pty.%s.tmp", winname );
-    snprintf( fname2, PATH_MAX, "pty.%s", winname );
-  }
-  tty = ttyname( STDOUT_FILENO );
-  if (tty == NULL)
-    msg( 3, "ttyname(1) returned error %d", errno );
-  fp = fopen( fname1, "w" );
-  if ( fp == NULL )
-    msg( 3, "Unable to write to %s", fname1 );
-  fprintf( fp, "%s\n", tty );
-  fclose( fp );
-  if ( rename( fname1, fname2 ) != 0 )
-    msg( 3, "rename returned error %d", errno );
   if (opt_end_session) {
     end_session();
   } else {
+    if ( winname == NULL )
+      msg( 3, "Must specify a window name" );
+    if ( has_pid ) {
+      snprintf( fname1, PATH_MAX, "pty.%s.%s.tmp", winname, pid );
+      snprintf( fname2, PATH_MAX, "pty.%s.%s", winname, pid );
+    } else {
+      snprintf( fname1, PATH_MAX, "pty.%s.tmp", winname );
+      snprintf( fname2, PATH_MAX, "pty.%s", winname );
+    }
+    tty = ttyname( STDOUT_FILENO );
+    if (tty == NULL)
+      msg( 3, "ttyname(1) returned error %d", errno );
+    fp = fopen( fname1, "w" );
+    if ( fp == NULL )
+      msg( 3, "Unable to write to %s", fname1 );
+    fprintf( fp, "%s\n", tty );
+    fclose( fp );
+    if ( rename( fname1, fname2 ) != 0 )
+      msg( 3, "rename returned error %d", errno );
     wait_for_quit();
   }
   return 0;

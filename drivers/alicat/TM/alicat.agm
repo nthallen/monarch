@@ -1,0 +1,84 @@
+Moduledef alicat [ src= name=Alicat ] {
+  alicat Module requires a src variable
+  Source file syntax:
+    source_file : source_line+ .
+    source_line :
+      comment /
+      'Name' word /
+      'Rate' \d+ 'Hz' /
+      'Port' path /
+      'Digital' mnemonic address type VF_FS VFunits MF_FS MFunits P_FS Punits [ command ] .
+    mnemonic : word .
+    word : \w+ .
+    address : \d+ .
+    hex_address : 0x[a-fA-F0-9]+ .
+    type : 'MFC' / 'MFM' .
+    VF_FS : \d+ .
+    MF_FS : \d+ .
+    P_FS : \d+ .
+    VFunits : 'sccm' / 'slm' .
+    MFunits : \w+(?:/\w+)? .
+    Punits : \w+ .
+    command : '"' \w+ [\s\w+]* '"' .
+
+  F_FS is the full scale flow of the MKS device
+  units are the units for F_FS
+  mnemonic is the base used for all telemetry channels relating to this device
+  command is the command string to use to identify this device. Defaults to the mnemonic
+  Digital lines define an MKS device with an RS-485 digital interface
+    address is the device address
+    type specified either a flow controller (MFC) or a flow meter (MFM)
+    command is the text 
+  
+  If the device is an MFC, a command is defined to specify the set point for the
+  channel.
+  
+  'Digital' channels will generate the following TM channels:
+    <channel>_VolFlow
+    <channel>_MassFlow
+    <channel>_Set (for MFCs only)
+    <channel>_T
+    <channel>_P
+    <channel>_Status
+    <channel>_Stale
+  and the following commands for MFCs:
+    <command> Set %f <units>
+  Vertical table for each channel:
+    <channel>_vert {
+      HBox { Title: >"<channel>"< };
+      Set:    (<channel>_Set,6)      <VFunits>;
+      VolF:   (<channel>_VolFlow,6)  <VFunits>;
+      MassF:  (<channel>_MassFlow,6) <MFunits>;
+      T:      (<channel>_T,6)        C;
+      P:      (<channel>_P,6)        <Punits>;
+      Status: (<channel>_Stat,4);
+      Stale:  (<channel>_Stale,3) sec;
+    }
+
+  Combined flows table for all channels:
+
+    <Name>_flows {
+      HBox { Title: >"<Name> Flows"< };
+      ""         Set               Flow;
+      <channel> (<channel>_Set,6) (<channel>_Flow,6) <channel_units>;
+    }
+
+  Combined housekeeping table for all channels:
+    <Name>_hk {
+      HBox { Title: >"<Name> HK"< };
+      ""         Temp             ""   Status            ACK              Stale;
+      <channel> (<channel>_Temp,6) C (<channel>_Stat,4) (<channel>_ACK,2) (<channel>_Stale,3);
+      ...
+    }
+}
+
+mode (default,driver) {
+  tmcbase = @name@.tmc:
+  colbase = @name@_col.tmc:
+  cmdbase = @name@.cmd:
+  genuibase = @name@.genui:
+  SRC = @src@
+  %%
+@name@.tmc @name@_col.tmc @name@.cmd @name@.genui @name@.tbl : @src@ @MODDIR@/alicat_gen
+	@MODDIR@/alicat_gen @src@ name=@name@
+}

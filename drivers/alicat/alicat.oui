@@ -1,0 +1,16 @@
+<package> alicat
+<include> "dasio/appid.h"
+<include> "alicat_int.h"
+<include> msg oui
+
+<opts> "a:p:"
+<sort>
+	-a <addresses>
+  -p <port> Specify RS485 port
+
+<switch>
+  case 'a': address_opts = optarg; break;
+  case 'p': Alicat_port = optarg; break;
+
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("Alicat", "Alicat Mass Flow Controller Driver", "V1.0");
