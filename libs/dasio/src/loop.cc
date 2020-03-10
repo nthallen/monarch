@@ -129,7 +129,7 @@ void Loop::event_loop() {
     if ( rc == 0 ) {
       if ( ProcessTimeout() ) {
         if (!is_memo_loop) {
-          msg(MSG_DBG(0), "Loop.ProcessTimeout() requested termination");
+          msg(MSG_DBG(1), "Loop.ProcessTimeout() requested termination");
         }
         keep_going = 0;
       }
@@ -137,7 +137,7 @@ void Loop::event_loop() {
         Interface *P = *Sp;
         if ((P->flags & P->Fl_Timeout) && P->ProcessData(P->Fl_Timeout)) {
           if (!is_memo_loop) {
-            msg(MSG_DBG(0), "%s: requested termination after P->Fl_Timeout", P->get_iname());
+            msg(MSG_DBG(1), "%s: requested termination after P->Fl_Timeout", P->get_iname());
           }
           keep_going = 0;
         }
@@ -150,7 +150,7 @@ void Loop::event_loop() {
           if (signals_seen && P->signals) {
             if (P->serialized_signal_handler(signals_seen)) {
               if (!is_memo_loop) {
-                msg(MSG_DBG(0), "%s: requested termination after if (errno==EINTR)", P->get_iname());
+                msg(MSG_DBG(1), "%s: requested termination after if (errno==EINTR)", P->get_iname());
               }
               keep_going = 0;
             }
@@ -170,7 +170,7 @@ void Loop::event_loop() {
           if (P->flags & P->Fl_Except) {
             if ( P->ProcessData(P->Fl_Except) ) {
               if (!is_memo_loop) {
-                msg(MSG_DBG(0), "%s: requested termination after P->ProcessData(P->Fl_Except)", P->get_iname());
+                msg(MSG_DBG(1), "%s: requested termination after P->ProcessData(P->Fl_Except)", P->get_iname());
               }
               keep_going = 0;
             }
@@ -199,7 +199,7 @@ void Loop::event_loop() {
           if ( flags ) {
             if ( P->ProcessData(flags) ) {
               if (!is_memo_loop) {
-                msg(MSG_DBG(0), "%s: requested termination after P->ProcessData(flags)", P->get_iname());
+                msg(MSG_DBG(1), "%s: requested termination after P->ProcessData(flags)", P->get_iname());
               }
               keep_going = 0;
             }
