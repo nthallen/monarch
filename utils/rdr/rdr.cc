@@ -55,6 +55,8 @@ rdr_mlf::rdr_mlf(const char *path)
 
 bool rdr_mlf::protocol_input() {
   rdr_ptr->process_message();
+  // bfr is protected
+  flags = rdr_ptr->get_buffering() ? 0 : Interface::Fl_Read;
   return false;
 }
 
@@ -62,6 +64,7 @@ bool rdr_mlf::protocol_input() {
 // This is absolutely a first cut. It will stop at the first sign of trouble (i.e. a missing file)
 // What I will want is a record of first file and last file and/or first time/last time
 bool rdr_mlf::process_eof() {
+  // Is this ever true? I don't think so!
   if ( fd != -1 ) {
     ::close(fd);
     fd = -1;
@@ -71,7 +74,6 @@ bool rdr_mlf::process_eof() {
     fd = mlf_next_fd( mlf );
     set_response(nlrl);
   }
-  // need to alter, as tm_client::bfr_fd isn't being used anymore
   if ( fd == -1 ) {
     if ( opt_autoquit ) {
       rdr_ptr->Shutdown(false);
@@ -136,18 +138,17 @@ int main( int argc, char **argv ) {
   int nQrows = RDR_BUFSIZE/tmi(nbrow);
   if (nQrows < 2) nQrows = 2;
   rdr_mlf *mlf = new rdr_mlf(opt_basepath);
-  Reader *rdr = new Reader(nQrows, nQrows/2, RDR_BUFSIZE, mlf);
-  
-  /* Added arguments: low_water=0, collection=false */
-  rdr->init(nQrows, false);
+  Reader *rdr = new Reader(nQrows, mlf); 
+  rdr->init(nQrows, false, RDR_BUFSIZE);
   rdr->start();
   msg(0, "Shutdown");
 }
 
-Reader::Reader(int nQrows, int low_water, int bufsize, rdr_mlf *mlf)
+Reader::Reader(int nQrows, rdr_mlf *mlf)
     : tm_generator(),
       tm_rcvr(mlf),
-      mlf(mlf) {
+      mlf(mlf),
+      is_buffering(false) {
   int rv = pthread_mutex_init( &tmq_mutex, NULL );
   if ( rv )
     msg( MSG_FATAL, "Mutex initialization failed: %s",
@@ -267,6 +268,12 @@ void Reader::process_data() {
     }
     if (!regulated) transmit_data(false);
   }
+}
+
+void Reader::buffering(bool bfring) {
+  is_buffering = bfring;
+  if (!bfring)
+    mlf->flags = Interface::Fl_Read;
 }
 
 void tminitfunc() {}

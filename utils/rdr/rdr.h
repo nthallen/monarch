@@ -29,11 +29,12 @@ class rdr_mlf : public Interface {
 class Reader : public tm_generator, public tm_rcvr {
   friend class rdr_mlf;
   public:
-    Reader(int nQrows, int low_water, int bufsize, rdr_mlf *mlf);
+    Reader(int nQrows, rdr_mlf *mlf);
     void event(enum tm_gen_event evt);
     void service_row_timer();
     /** Handles autostart and then calls Start(Srv_Unix) */
     void start();
+    inline bool get_buffering() { return is_buffering; }
     // void *input_thread();
     // void *output_thread();
     // void control_loop();
@@ -43,6 +44,7 @@ class Reader : public tm_generator, public tm_rcvr {
     inline void process_message() { tm_rcvr::process_message(); }
     void lock(const char *by = 0, int line = -1);
     void unlock();
+    void buffering(bool bfring);
     // const char *context();
     // int it_blocked;
     // sem_t it_sem;
@@ -56,6 +58,7 @@ class Reader : public tm_generator, public tm_rcvr {
     const char *locked_by_file;
     int locked_by_line;
     rdr_mlf* mlf;
+    bool is_buffering;
 };
 
 /* class Rdr_quit_pulse : public tmg_dispatch_client {
