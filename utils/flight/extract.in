@@ -64,7 +64,7 @@
 # directory, it will be passed to the gdb invocation(s).
 
 function waitfor {
-  echo "extract: waitfor: waiting for [$1]"
+  # echo "extract: waitfor: waiting for [$1]"
   while true
   do
     [ -e $1 ] && return 0
@@ -207,15 +207,15 @@ PATH=$MYPATH${PATH#:}
 
 typeset rv='' wext hasext=$TMBINDIR/$extractor
 
-msgf 0 "command args list: $@"
-msgf 0 "command args list: $*"
+# msgf 0 "command args list: $@"
+# msgf 0 "command args list: $*"
 
 for i in $@; do
   # I'll use a for loop to get the first element of $i. I break at
   # the end of the loop rather than loop, since later elements within
   # $i are arguments to the program, not another program.
   
-  msgf 0 "arg: $i"
+  # msgf 0 "arg: $i"
   
   for j in $i; do
     wext=`which $j`
@@ -257,7 +257,7 @@ rv=0
 memo -o extract.log -V &
 memo=/var/run/linkeng/$Experiment/memo
 waitfor $memo || exit 1
-bfr -vvvvv -s Unix &
+bfr -s Unix &
 waitfor /var/run/linkeng/$Experiment/tm_bfr || exit 1
 for ext in $@; do
   # echo "ext: $ext"
@@ -282,8 +282,8 @@ for ext in $@; do
   fi
   shift
 done
-msgf 0 extract "rdr $RDR_OPTS $time_opts -AqvvvvvP $dir"
-rdr $RDR_OPTS $time_opts -AqvvvvvP $dir || rv=1
+# msgf 0 extract "rdr $RDR_OPTS $time_opts -AqP $dir"
+rdr $RDR_OPTS $time_opts -AqP $dir || rv=1
 
 # rdr -v -c0 -n $# -Q $RDR_OPTS $time_opts -d $dir -f $dir/tm.dac &
 cd $rootdir
