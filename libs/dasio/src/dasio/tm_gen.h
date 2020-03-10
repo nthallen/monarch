@@ -19,22 +19,21 @@ class tm_gen_bfr : public Client {
   public:
     tm_gen_bfr(bool collection);
     inline bool iwritev(struct iovec *iov, int nparts, const char *where);
-    /** 2019-05-13 This override exists to make this function public */
-    inline bool obuf_empty() {
-      return Interface::obuf_empty();
-    }
   protected:
-    virtual ~tm_gen_bfr();
     bool app_connected();
+    bool iwritten(int nb);
   private:
     struct iovec bfr_iov[2];
+    /** true if the last write was not completed */
+    bool buffering;
 };
 
 class tm_generator : public tm_queue, public Server {
+  friend class tm_gen_bfr;
   public:
     tm_generator();
     virtual ~tm_generator();
-    void init(int nQrows, int low_water, bool collection);
+    void init(int nQrows, bool collection, int obufsize = 0);
     bool execute(const char *cmd);
     virtual void event(enum tm_gen_event evt);
     virtual void service_row_timer() = 0;
@@ -45,6 +44,15 @@ class tm_generator : public tm_queue, public Server {
     bool regulated; // True whenever data flow is time-based
     bool autostart;
     bool regulation_optional;
+    /**
+     * Called when the tm_gen_bfr Interface switches between
+     * buffered and unbuffered modes. The buffered mode indicates
+     * that the source is generating data faster than the bfr can
+     * process it, so the caller will need to consider some sort
+     * of throttling scheme.
+     * @param bfring true if tm_gen_bfr is now in buffering mode
+     */
+    virtual void buffering(bool bfring);
 
     // virtual void single_step() = 0;
     void transmit_data(bool single_row);

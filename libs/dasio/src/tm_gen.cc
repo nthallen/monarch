@@ -10,9 +10,18 @@
 namespace DAS_IO {
 
 tm_gen_bfr::tm_gen_bfr(bool collection)
-  : Client("bfr", 80, 0, "tm_bfr", collection ? "input-nb" : "input") {}
+  : Client("bfr", 80, 0, "tm_bfr", collection ? "input-nb" : "input"),
+    buffering(true) {}
 
-tm_gen_bfr::~tm_gen_bfr() {}
+bool tm_gen_bfr::iwritev(struct iovec *iov, int nparts, const char *where) {
+  nl_assert(is_negotiated());
+  bool rv = Client::iwritev(iov, nparts);
+  if (!buffering && onc) {
+    buffering = true;
+    tm_generator::TM_server->buffering(true);
+  }
+  return rv;
+}
 
 bool tm_gen_bfr::app_connected() {
   tm_hdr_t hdr = { TMHDR_WORD, TMTYPE_INIT };
@@ -22,15 +31,12 @@ bool tm_gen_bfr::app_connected() {
   return iwritev( bfr_iov, 2, "Sending tm_info");
 }
 
-bool tm_gen_bfr::iwritev(struct iovec *iov, int nparts, const char *where) {
-  bool rv = true;
-  if (is_negotiated()) {
-    rv = Interface::iwritev(iov, nparts);
-    if (!obuf_empty()) {
-      msg(MSG_FATAL, "%s: Incomplete write %s", iname, where);
-    }
+bool tm_gen_bfr::iwritten(int nb) {
+  if (buffering && is_negotiated() && obuf_empty()) {
+    buffering = false;
+    tm_generator::TM_server->buffering(false);
   }
-  return rv;
+  return false;
 }
 
 tm_generator *tm_generator::TM_server;
@@ -45,6 +51,8 @@ tm_generator::tm_generator()
   regulated = false;
   regulation_optional = true;
   autostart = false;
+  nl_assert(TM_server == 0);
+  TM_server = this;
 }
 
 tm_generator::~tm_generator() {}
@@ -52,10 +60,11 @@ tm_generator::~tm_generator() {}
 /**
  * Assumes tm_info is defined
  */
-void tm_generator::init(int nQrows, int low_water, bool collection) {
-  tm_queue::init(nQrows, low_water);
+void tm_generator::init(int nQrows, bool collection, int obufsize) {
+  tm_queue::init(nQrows);
   tm_gen_cmd::attach(this); // defines the subservice
   bfr = new tm_gen_bfr(collection);
+  bfr->set_obufsize(obufsize);
   bfr->reference();
   bfr->connect();
   ELoop.add_child(bfr);
@@ -270,6 +279,8 @@ void tm_generator::event(enum tm_gen_event evt) {
     Shutdown();
   } 
 }
+
+void tm_generator::buffering(bool bfring) {}
 
 void tm_generator::tm_start(int lock_needed) {
   if (lock_needed) lock(__FILE__,__LINE__);

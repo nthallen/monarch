@@ -92,7 +92,7 @@ class tmq_ref {
 class tm_queue {
   public:
     tm_queue();
-    void init( int n_Qrows, int low_water ); // allocate space for the queue
+    void init( int n_Qrows ); // allocate space for the queue
 
   protected:
     int allocate_rows(unsigned char **rowp);
@@ -119,7 +119,6 @@ class tm_queue {
     
     tmq_ref *first_tmqr;
     tmq_ref *last_tmqr;
-    int tmq_low_water;
 };
 
 }

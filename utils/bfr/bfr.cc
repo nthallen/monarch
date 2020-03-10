@@ -257,7 +257,7 @@ bool bfr_input_client::process_tm_info() {
     ( ( tmi(nrowsper) * 60 + tmi(nsecsper)*tm_info.nrowminf - 1 )
         / (tmi(nsecsper)*tm_info.nrowminf) );
 
-  init(total_Qrows, 1);
+  init(total_Qrows);
 
   switch (output_tm_type) {
     case TMTYPE_DATA_T1:

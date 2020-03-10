@@ -98,3 +98,41 @@ function msgf {
   fi
   [ -n "$excode" ] && exit $excode
 }
+
+function set_have {
+  name=$1
+  value=$2
+  if [ "${name#-}" = "$name" ]; then
+    eval have_$name=$value
+  fi
+}
+
+function Launch {
+  name=$1
+  shortname=$name
+  set_have $shortname no
+  shift
+  [ -n "$launch_error" ] && return 1
+  mkdir -p /var/run/linkeng/run/$Experiment
+  if { $* & }; then
+    Launch_pid=$!
+    msgf -V 0 "Launch: $Launch_pid $*"
+    if [ "$name" != "-" ]; then
+      [ "$name" = "-TMC-" ] && name="/var/run/linkeng/run/$Experiment/$!"
+      [ "${name#/}" = "$name" ] && name="/var/run/linkeng/$Experiment/$name"
+      waitfor $name 10 || {
+        msgf 2 "Launch namewait failure: $*"
+        launch_error=yes
+        return 1
+      }
+    fi
+    [ $name = memo ] && msgVdefault=''
+    set_have $shortname yes
+  else
+    msgf 2 "Launch Error: $*"
+    launch_error=yes
+    return 1
+  fi
+  return 0
+}
+

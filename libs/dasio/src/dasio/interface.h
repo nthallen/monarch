@@ -20,7 +20,16 @@ class Interface {
   friend class Authenticator;
   friend class tm_rcvr;
   public:
+    /**
+     * @param name The interface name, used in diagnostic messages.
+     * @param bufsz The input buffer size required
+     */
     Interface(const char *name, int bufsz);
+    /**
+     * @param obufsize The size of the desired output buffer
+     * Establishes a backup output buffer
+     */
+    void set_obufsize(int obufsize);
     /**
      * @param flag bit-mapped value indicating which event(s) triggered this call.
      * @return true if we should quit
@@ -135,7 +144,9 @@ class Interface {
      */
     bool iwrite(const char *str);
     /**
-     * Sets up a multi-part write
+     * Sets up a multi-part write. The Interface retains a
+     * pointer to the iov array and will modify it in the event
+     * of an incomplete write.
      * @param iov pointer to an array of iovec structs
      * @param nparts the number of elements in the iov array
      * @return true if event loop should terminate.
@@ -162,9 +173,15 @@ class Interface {
      */
     bool iwrite_check();
     /**
+     * Internal function to fill backup output buffer
+     * @param iov pointer to an array of iovec structs
+     * @param nparts the number of elements in the iov array
+     */
+    void fill_obuf(struct iovec *iov, int nparts);
+    /**
      * @return true if there is no pending data in obuf
      */
-    inline bool obuf_empty() { return n_wiov == 0; }
+    inline bool obuf_empty() { return n_wiov == 0 && onc == 0; }
     /**
      * Called from fillbuf() when read() returns an error. If read() returns zero,
      * read_error() is called with EOK, which higher-level processors can use
@@ -664,6 +681,14 @@ class Interface {
     unsigned char *buf;
     /** The current size of the input buffer */
     int bufsize;
+    /** The number of characters in obuf */
+    unsigned int onc;
+    /** The current character offset in obuf */
+    unsigned int ocp;
+    /** The input buffer */
+    unsigned char *obuf;
+    /** The current size of the optional output buffer */
+    int obufsize;
     int n_fills, n_empties;
     int n_eagain, n_eintr;
     // /** The current output buffer */
