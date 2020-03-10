@@ -167,6 +167,7 @@ void Interface::fill_obuf(struct iovec *iov, int nparts) {
     memmove(&obuf[onc], wiov[i].iov_base, wiov[i].iov_len);
     onc += wiov[i].iov_len;
   }
+  n_wiov = 0;
 }
 
 bool Interface::iwritev(struct iovec *iov, int nparts) {
@@ -204,8 +205,8 @@ bool Interface::iwrite_check() {
       flags &= ~Fl_Write;
       return(iwrite_error(errno));
     }
+    int ntrr = ntr;
     if (ntr > 0) {
-      int ntrr = ntr;
       while (ntr > 0 && n_wiov > 0) {
         if (ntr >= wiov->iov_len) {
           ntr -= wiov->iov_len;
@@ -217,11 +218,12 @@ bool Interface::iwrite_check() {
           ntr = 0;
         }
       }
-      if (n_wiov && obuf) {
-        fill_obuf(wiov, n_wiov);
-      }
-      rv = iwritten(ntrr);
     }
+    if (n_wiov && obuf) {
+      fill_obuf(wiov, n_wiov);
+    }
+    if (ntrr > 0)
+      rv = iwritten(ntrr);
   }
   flags = obuf_empty() ?
     flags & ~Fl_Write :

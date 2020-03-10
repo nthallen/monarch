@@ -11,7 +11,7 @@ namespace DAS_IO {
 
 tm_gen_bfr::tm_gen_bfr(bool collection)
   : Client("bfr", 80, 0, "tm_bfr", collection ? "input-nb" : "input"),
-    buffering(false) {}
+    buffering(true) {}
 
 bool tm_gen_bfr::iwritev(struct iovec *iov, int nparts, const char *where) {
   nl_assert(is_negotiated());
@@ -32,10 +32,11 @@ bool tm_gen_bfr::app_connected() {
 }
 
 bool tm_gen_bfr::iwritten(int nb) {
-  if (buffering && obuf_empty()) {
+  if (buffering && is_negotiated() && obuf_empty()) {
     buffering = false;
     tm_generator::TM_server->buffering(false);
   }
+  return false;
 }
 
 tm_generator *tm_generator::TM_server;

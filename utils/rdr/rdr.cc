@@ -81,7 +81,7 @@ bool rdr_mlf::process_eof() {
     }
     flags = 0;
   } else {
-    flags = Interface::Fl_Read;
+    flags = rdr_ptr->get_buffering() ? 0 : Interface::Fl_Read;
   }
   return false;
 }
@@ -148,7 +148,7 @@ Reader::Reader(int nQrows, rdr_mlf *mlf)
     : tm_generator(),
       tm_rcvr(mlf),
       mlf(mlf),
-      is_buffering(false) {
+      is_buffering(true) {
   int rv = pthread_mutex_init( &tmq_mutex, NULL );
   if ( rv )
     msg( MSG_FATAL, "Mutex initialization failed: %s",
@@ -196,8 +196,8 @@ void Reader::event(enum tm_gen_event evt) {
   lock(__FILE__,__LINE__);
   switch (evt) {
     case tmg_event_start:
-      mlf->flags = Interface::Fl_Read;
       if (mlf->fd == -1) mlf->process_eof();
+      mlf->flags = is_buffering ? 0 : Interface::Fl_Read;
       break;
     case tmg_event_stop:
       mlf->flags = 0;
