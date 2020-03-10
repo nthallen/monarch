@@ -1,5 +1,5 @@
 <package> rdr
-<include> msg oui server
+<include> msg oui
 <include> "rdr.h"
 <follow> msg
 
