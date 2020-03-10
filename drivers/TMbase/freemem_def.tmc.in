@@ -5,11 +5,11 @@
      make it easier to read.
   */
 %}
-TM typedef double MB;
-TM typedef int32_t freemem_t {
-  convert MB; text "%7.2lf";
-  collect x = get_free_mem();
+TM typedef double MEM_PCT;
+TM typedef uint16_t memused_t {
+  convert MEM_PCT; text "%6.2lf";
+  collect x = get_memused();
 }
-Calibration (freemem_t, MB) { 0, 0, 1024, 1 }
+Calibration (memused_t, MEM_PCT) { 0, 0, 65535, 100 }
 
-TM @FREEMEM_RATE@ Hz freemem_t freemem;
+TM @FREEMEM_RATE@ Hz memused_t memused;

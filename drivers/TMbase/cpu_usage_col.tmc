@@ -2,4 +2,3 @@
   #include "dasio/cpu_usage.h"
   DAS_IO::cpu_usage CPU;
 %}
-Collect CPU_Pct = CPU.report();

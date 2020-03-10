@@ -30,11 +30,11 @@
     class cpu_usage : public Interface {
       public:
         cpu_usage();
-        uint8_t report();
+        uint16_t report();
       private:
 	uint64_t prev_total;
 	uint64_t prev_idle;
-        uint8_t prev_report;
+        uint16_t prev_report;
     };
 
   }

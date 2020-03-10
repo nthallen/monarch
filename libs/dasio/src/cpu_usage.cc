@@ -26,17 +26,18 @@ cpu_usage::cpu_usage() : Interface("procstat", 256) {
 
 /**
  * @param rate The rate at which this function is called in Hz.
- * @return Percent CPU utilization since the last call.
+ * @return Percent CPU utilization since the last call times 655.34.
+ * 65535 is an error return value.
  */
-uint8_t cpu_usage::report() {
-  if (fd < 0) return 255; // error value
+uint16_t cpu_usage::report() {
+  if (fd < 0) return 65535; // error value
   if (lseek(fd, 0, SEEK_SET) < 0) {
     msg(MSG_ERROR, "%s: Error %d calling lseek", iname, errno);
     return true;
   }
   if (fillbuf()) {
     close();
-    return 255;
+    return 65535;
   }
   cp = 0;
   uint64_t total = 0;
@@ -45,7 +46,7 @@ uint8_t cpu_usage::report() {
   if (not_str("cpu")) {
     if (cp >= nc) report_err("%s: Short read: nc = %u", iname, nc);
     consume(nc);
-    return 255;
+    return 65535;
   }
   int i;
   for (i = 1; ; ++i) {
@@ -55,7 +56,7 @@ uint8_t cpu_usage::report() {
     if (not_uint64(cur_cts)) {
       if (cp >= nc) report_err("%s: Expected numbers", iname);
       consume(nc);
-      return 255;
+      return 65535;
     }
     total += cur_cts;
     if (i == 4)
@@ -67,11 +68,11 @@ uint8_t cpu_usage::report() {
   prev_total = total;
   prev_idle = idle;
   uint64_t ratio = dtotal ?
-    (dtotal - didle)*100/dtotal : prev_report;
-  if (ratio > 100 || ratio < 0)
-    ratio = 255;
+    (dtotal - didle)*65534/dtotal : prev_report;
+  if (ratio > 65534 || ratio < 0)
+    ratio = 65535;
   prev_report = ratio;
-  return (uint8_t) ratio;
+  return (uint16_t) ratio;
 }
 
 } // DAS_IO namespace

@@ -17,6 +17,7 @@
        * @return Amount of memory that is free as a multiple of 20 kB
        */
       int32_t tm_freemem();
+      uint16_t tm_memused();
       int32_t MemTotal;
       int32_t MemFree;
       int32_t MemAvailable;
@@ -27,6 +28,14 @@
   int32_t meminfo::tm_freemem() {
     update();
     int32_t oval = MemAvailable ? MemAvailable : MemFree;
+    return oval;
+  }
+
+  uint16_t meminfo::tm_memused() {
+    update();
+    uint64_t num = MemAvailable ? MemAvailable : MemFree;
+    num = (MemTotal - num) * 65535 / MemTotal;
+    uint16_t oval = (num > 65535) ? 65535 : num;
     return oval;
   }
 
@@ -83,6 +92,10 @@
   #else
     return minfo->tm_freemem();
   #endif
+  }
+
+  uint16_t get_memused() {
+    return minfo->tm_memused();
   }
 
   void report_total_mem() {
