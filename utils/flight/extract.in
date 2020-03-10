@@ -152,6 +152,7 @@ typeset Ropt_sav="$RDR_OPTS"
 #fi
 
 . /usr/local/libexec/load_exconfig.sh
+msgProgram='extract'
 
 [ -z "$Experiment" ] && {
   echo extract: Experiment undefined in $cfile >&2
@@ -206,10 +207,15 @@ PATH=$MYPATH${PATH#:}
 
 typeset rv='' wext hasext=$TMBINDIR/$extractor
 
-for i in; do
+msgf 0 "command args list: $@"
+msgf 0 "command args list: $*"
+
+for i in $@; do
   # I'll use a for loop to get the first element of $i. I break at
   # the end of the loop rather than loop, since later elements within
   # $i are arguments to the program, not another program.
+  
+  msgf 0 "arg: $i"
   
   for j in $i; do
     wext=`which $j`
@@ -253,7 +259,7 @@ memo=/var/run/linkeng/$Experiment/memo
 waitfor $memo || exit 1
 bfr -vvvvv -s Unix &
 waitfor /var/run/linkeng/$Experiment/tm_bfr || exit 1
-for ext in ; do
+for ext in $@; do
   # echo "ext: $ext"
   if [ $debug = yes ]; then
     ndc0=`ls /var/run/$Experiment/ | wc -l`
@@ -262,21 +268,21 @@ for ext in ; do
       ndc1=`ls /var/run/$Experiment/ | wc -l`;
       [ $ndc0 = $ndc1 ];
     do
-      msg -n extract "Waiting for gdb $ext to initialize"
+      msgf 0 "Waiting for gdb $ext to initialize"
       sleep 5
     done
   else
-    $ext -h "$ext" &
+    $ext -n "$ext" &
     extpid=$!
-    if waitfor /var/run/$Experiment/$extpid 2>/dev/null; then
-      msg -n extract "$ext ($extpid) initialized"
+    if waitfor /var/run/linkeng/run/$Experiment/$extpid 2>/dev/null; then
+      msgf 0 extract "$ext ($extpid) initialized"
     else
-      msg -n extract "ERROR: $ext ($extpid) failed to initialize"
+      msgf 0 extract "ERROR: $ext ($extpid) failed to initialize"
     fi
   fi
   shift
 done
-msg -n extract "rdr $RDR_OPTS $time_opts -AqvvvvvP $dir"
+msgf 0 extract "rdr $RDR_OPTS $time_opts -AqvvvvvP $dir"
 rdr $RDR_OPTS $time_opts -AqvvvvvP $dir || rv=1
 
 # rdr -v -c0 -n $# -Q $RDR_OPTS $time_opts -d $dir -f $dir/tm.dac &
