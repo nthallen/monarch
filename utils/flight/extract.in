@@ -277,7 +277,7 @@ for ext in ; do
   shift
 done
 msg -n extract "rdr $RDR_OPTS $time_opts -AqvvvvvP $dir"
-gdb --args rdr $RDR_OPTS $time_opts -AqvvvvvP $dir || rv=1
+rdr $RDR_OPTS $time_opts -AqvvvvvP $dir || rv=1
 
 # rdr -v -c0 -n $# -Q $RDR_OPTS $time_opts -d $dir -f $dir/tm.dac &
 cd $rootdir
