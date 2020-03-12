@@ -43,6 +43,18 @@ class collector : public tm_generator {
  */
 class tmc_collector : public collector {
   public:
+    /**
+     * Reponsible for:
+     *   - determining whether a new timestamp is required
+     *   - filling in/defining the minor frame counter and synch
+     *   - populating the row of data
+     * New timestamp may be required because:
+     *   - we just started
+     *   - the minor frame counter is rolling over
+     *   - we are greater than TS_MFC_LIMIT minor frames from the old timestamp
+     *   - we have drifted from realtime somehow
+     * Implemented in colmain.skel
+     */
     void service_row_timer();
     void init_senders();
     void event(enum tm_gen_event evt);

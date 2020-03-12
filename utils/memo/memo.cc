@@ -55,7 +55,10 @@ bool memo_socket::protocol_input() {
   return false;
 }
 
-bool memo_sigif::serialized_signal_handler(uint32_t signals_seen) {}
+bool memo_sigif::serialized_signal_handler(uint32_t signals_seen) {
+  msg(0, "Overriding server_sigif termination");
+  return false;
+}
 
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);

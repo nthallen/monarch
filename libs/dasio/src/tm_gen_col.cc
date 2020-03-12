@@ -29,18 +29,3 @@ void collector::commit_tstamp( mfc_t MFCtr, le_time_t time ) {
   tm_info.t_stmp.secs = time;
   tm_generator::commit_tstamp(MFCtr, time);
 }
-
-/**
- * Collect_Row() is reponsible for:
- * -determining whether a new timestamp is required
- * -filling in/defining the minor fram counter and synch
- * -populating the row of data
- * New timestamp may be required because:
- * -we just started
- * -the minor frame counter is rolling over
- * -we are greater than TS_MFC_LIMIT minor frames from the old timestamp
- * -we have drifted from realtime somehow
- * Implemented in colmain.skel
- */
-
-// TM_data_rcvr_def *collector::receive(...) defined in tm_data_rcvr.cc
