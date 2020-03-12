@@ -136,21 +136,23 @@ int tm_queue::allocate_rows(unsigned char **rowp) {
  * Locks tmq and unlocks upon completion.
  */
 void tm_queue::commit_rows( mfc_t MFCtr, int mfrow, int nrows ) {
-  // we (the writer thread) own the last pointer, so we can read it without a lock,
-  // but we must lock before writing
+  // we (the writer thread) own the last pointer, so we can read
+  // it without a lock, but we must lock before writing
   nl_assert( !full );
   nl_assert( last+nrows <= total_Qrows );
   nl_assert(last_tmqr); // must commit a time stamp first
   lock(__FILE__,__LINE__);
-  // We need a new tmqr if the last one is a tmq_tstamp or my MFCtr,mfrow don't match the 'next'
-  // elements in the current tmqr
+  // We need a new tmqr if the last one is a tmq_tstamp or my
+  // MFCtr,mfrow don't match the 'next' elements in the current tmqr
   tmq_tstamp_ref *cur_tstamp = 0;
   tmq_ref *tmqdr = 0;
   if (last_tmqr) {
     tmqdr = last_tmqr;
     cur_tstamp = tmqdr->tsp;
-    if (tmqdr->n_Qrows &&
-        (MFCtr != tmqdr->MFCtr_next || mfrow != tmqdr->row_next )) {
+    if (tmqdr->n_Qrows == 0) {
+      tmqdr->MFCtr_next = MFCtr;
+      tmqdr->row_next = mfrow;
+    } else if (MFCtr != tmqdr->MFCtr_next || mfrow != tmqdr->row_next ) {
       tmqdr = 0;
     }
   }
