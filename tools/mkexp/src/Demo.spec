@@ -1,4 +1,5 @@
 tmcbase = base.tmc
+genuibase = @DEMO@.genui
 
 Module TMbase
 

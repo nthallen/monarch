@@ -37,6 +37,7 @@ cp -p $SourceDir/base.tmc $ExpDir/base.tmc
 cp -p $SourceDir/Experiment.config $ExpDir/Experiment.config
 cp -p $SourceDir/interact $ExpDir/interact
 cp -p $SourceDir/Demo.doit $ExpDir/$Experiment.doit
+cp -p $SourceDir/Demo.genui $ExpDir/$Experiment.genui
 cp -p $SourceDir/Demo.tbl $ExpDir/$Experiment.tbl
 cp -p $SourceDir/Demo.tma $ExpDir/$Experiment.tma
 cp -p $SourceDir/Demo.spec $ExpDir/$Experiment.spec

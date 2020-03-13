@@ -7,7 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (NOT ${CMAKE_CROSSCOMPILING})
 
-install(FILES base.tmc Demo.doit Demo.spec Demo.tbl Demo.tma
+install(FILES base.tmc Demo.doit Demo.spec Demo.tbl Demo.tma Demo.genui
         doit Experiment.config interact services VERSION
         DESTINATION /usr/local/share/linkeng/setup/src)
 
