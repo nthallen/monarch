@@ -16,9 +16,11 @@ endif (NOT SHELL_EXE)
 
 configure_file(flight.sh.in flight.sh @ONLY)
 configure_file(extract.in extract @ONLY)
+configure_file(reduce.in reduce @ONLY)
 
 install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/extract
+  ${CMAKE_CURRENT_BINARY_DIR}/reduce
   DESTINATION /usr/local/bin)
 
 install(PROGRAMS
