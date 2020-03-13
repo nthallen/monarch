@@ -121,9 +121,9 @@ void DAS_IO::tmc_collector::service_row_timer() {
       ((long)USHRT_MAX - tm_info.t_stmp.mfc_num - next_minor_frame + 1) /
       MFSECNUM );
   } else if ( next_minor_frame - tm_info.t_stmp.mfc_num > TS_MFC_LIMIT) {
-    // q = floor((m-m0)/n)
-    // m1 = m0+q*n
-    // t1 = t0 + d*(m1-m0)/n = t0 + d*q
+    // q = floor((m-m0)/n): whole seconds since last TS
+    // m1 = m0+q*n: New TS.MFCtr
+    // t1 = t0 + d*(m1-m0)/n = t0 + d*q : New TS.Time
     unsigned short q = (next_minor_frame - tm_info.t_stmp.mfc_num)/MFSECNUM;
     commit_tstamp( tm_info.t_stmp.mfc_num + q * MFSECNUM,
         tm_info.t_stmp.secs + MFSECDEN * q );
