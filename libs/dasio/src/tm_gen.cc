@@ -169,6 +169,10 @@ void tm_generator::transmit_data( bool single_row ) {
             increase/decrease row_rate
             program timer
       TM single step "TMs"
+      TM Unlock optional regulation "TMU"
+        This is for debugging
+      TM Interface Report
+        Also for debugging
 
       Command Summary:
         "" Quit
@@ -252,6 +256,9 @@ bool tm_generator::execute(const char *cmd) {
             event(tmg_event_fast);
           } else tm_start(0);
         }
+        break;
+      case 'U': // Unlock optional regulation
+        regulation_optional = true;
         break;
       default:
         msg(MSG_ERROR,"Invalid TM command in tm_generator::execute: '%s'", cmd );
