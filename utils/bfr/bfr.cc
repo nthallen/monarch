@@ -87,6 +87,7 @@ bool bfr_input_client::protocol_input() {
           // Scan ahead for TMHDR_WORD
           bufsize = sizeof( part.hdr );
           buf = (unsigned char *)&part.hdr;
+          write.off_msg = 0;
           return false;
         }
         switch (part.hdr.s.hdr.tm_type) {
@@ -157,6 +158,7 @@ bool bfr_input_client::protocol_input() {
                 state = TM_STATE_HDR; // already there!
                 bufsize = sizeof( part.hdr );
                 buf = (unsigned char *)&part.hdr;
+                write.off_msg = 0;
               }
               break;
             case TMTYPE_DATA_T1:
@@ -179,6 +181,7 @@ bool bfr_input_client::protocol_input() {
                   state = TM_STATE_HDR;
                   bufsize = sizeof(part.hdr);
                   buf = (unsigned char *)&part.hdr;
+                  write.off_msg = 0;
                 } // else break out
               }
               break;
@@ -195,6 +198,7 @@ bool bfr_input_client::protocol_input() {
           state = TM_STATE_HDR; //### Use state-init function?
           bufsize = sizeof(part.hdr);
           buf = (unsigned char *)&part.hdr;
+          write.off_msg = 0;
           break;
         case TM_STATE_DATA:
           new_rows += (this->*data_state_eval)();
@@ -202,6 +206,7 @@ bool bfr_input_client::protocol_input() {
             state = TM_STATE_HDR;
             bufsize = sizeof(part.hdr);
             buf = (unsigned char *)&part.hdr;
+            write.off_msg = 0;
           }
           break;
       }
@@ -251,7 +256,6 @@ bool bfr_input_client::process_tm_info() {
 
   // What data format should we output?
   lock(__FILE__, __LINE__);
-  // write.buf = NULL;
 
   int total_Qrows = tm_info.nrowminf *
     ( ( tmi(nrowsper) * 60 + tmi(nsecsper)*tm_info.nrowminf - 1 )
@@ -312,8 +316,6 @@ bool bfr_input_client::process_tm_info() {
 //   T3->T3 Copy straight in. Verify consecutive, etc.
 
 int bfr_input_client::data_state_T3() {
-  // int nrrecd = write.off_queue/write.nbrow_rec;
-  // nl_assert(part.nbdata == 0); // redundant here: checked again in the loop below
   lock(__FILE__,__LINE__);
   
   int nrrecd = write.off_queue/nbQrow;
@@ -323,8 +325,6 @@ int bfr_input_client::data_state_T3() {
   if (state == TM_STATE_DATA) {
     commit_rows(part.hdr.s.u.dhdr.mfctr, 0, nrrecd);
     part.hdr.s.u.dhdr.mfctr += nrrecd;
-    // write.nb_rec -= nrrecd * write.nbrow_rec;
-    // write.off_queue += nrrecd * write.nbrow_rec;
   }
   tmq_retire_check();
   int nrowsfree = allocate_rows(&buf);
