@@ -30,8 +30,8 @@ bool bfr_input_client::auth_hook(Authenticator *Auth, SubService *SS) {
 
 bfr_input_client::bfr_input_client(Authenticator *Auth, const char *iname, bool blocking)
     : Serverside_client(Auth, iname, bfr_input_client_ibufsize), blocking(blocking) {
-  data.tmqr = 0;
-  data.n_Qrows = 0;
+  // data.tmqr = 0;
+  // data.n_Qrows = 0;
   state = TM_STATE_HDR;
   bufsize = sizeof(part.hdr);
   set_binary_mode();
@@ -342,7 +342,9 @@ int bfr_input_client::data_state_T3() {
     write.nb_rec -= write.off_queue;
     state = TM_STATE_DATA;
   }
-  bufsize = write.nb_rec;
+  // Cannot override previous bufsize unless write.nb_rec < bufsize
+  if (write.nb_rec < bufsize)
+    bufsize = write.nb_rec;
   unlock();
   return nrrecd;
 }
@@ -590,6 +592,8 @@ bfr_output_client::bfr_output_client(Authenticator *Auth, const char *iname, boo
 }
 
 bfr_output_client::~bfr_output_client() {
+  if (data.tmqr)
+    data.tmqr = data.tmqr->dereference(false);
   all_readers.remove(this);
 }
 
