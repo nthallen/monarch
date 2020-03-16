@@ -23,13 +23,14 @@
 # InetIn can be specified by the same method.
 #endif
 
+. /usr/local/libexec/load_exconfig.sh
+msgProgram=doit
+msgDebug=-2
 function nl_error {
-  msg -Vn doit "$*"
-  exit 1
+  msgf 3 "$*"
 }
 
-. /usr/local/libexec/load_exconfig.sh
-[ -n "$CFG_ERROR" ] && nl_error "$CFG_ERROR"
+[ -n "$CFG_ERROR" ] && msgf 3 "$CFG_ERROR"
 
 # Check to make sure we are running in HomeDir
 [ -z "$CltHomeDir" ] && CltHomeDir=$HomeDir
@@ -158,20 +159,21 @@ function Launch {
   name=$1
   shift
   [ -n "$launch_error" ] && return 1
+  mkdir -p /var/run/linkeng/run/$Experiment
   if { $* & }; then
     Launch_pid=$!
-    msg -Vn doit "Launch: $Launch_pid $*"
+    msgf 0 "Launch: $Launch_pid $*"
     if [ "$name" != "-" ]; then
       [ "$name" = "-TMC-" ] && name="/var/run/linkeng/run/$Experiment/$!"
       [ "${name#/}" = "$name" ] && name="/var/run/linkeng/$Experiment/$name"
       waitfor $name 10 || {
-        msg -Vn doit "Launch namewait failure: $*"
+        msgf 2 "Launch namewait failure: $*"
         launch_error=yes
         return 1
       }
     fi
   else
-    msg -Vn doit "Launch Error: $*"
+    msgf 2 "Launch Error: $*"
     launch_error=yes
     return 1
   fi
@@ -182,6 +184,7 @@ statusready=no
 function isready {
   quiet=no
   [ "$1" = "quiet" ] && quiet=yes
+  msgf -2 "dasctl $TM_OPT -VS"
   dasctl $TM_OPT -VS 2>&1 |
   ( while read j; do
       [ $quiet = no ] && echo $j
@@ -230,8 +233,10 @@ if [ $startup = yes -a $srcmode = realtime ]; then
       sleep 1
     done
   else
+    msg -Vn doit "Running isready quiet, TM_OPT=$TM_OPT"
     isready quiet
     if [ $statusready = no ]; then
+      msg -Vn doit "running dasctl -V $TM_OPT $dasctl_opt"
       dasctl -V $TM_OPT $dasctl_opt
       isready
     fi
@@ -336,9 +341,6 @@ fi
 #   sleep 1
 # done
 
-rmt_cmd=''
-[ $FltNode_Access = Remote ] && rmt_cmd='ssh -t $FlightNode'
-
 # allocate consoles as necessary
 case $dispmode in
   screen)
@@ -349,20 +351,25 @@ case $dispmode in
         echo focus
         echo resize 3
         echo focus
-        echo "screen -t $logfile /bin/sh -c \"echo \$\$ >less.pid.$session; exec $rmt_cmd less +F $logfile\""
-        echo screen -t @DEMO@ /usr/local/sbin/getcon $gcopt scr1 $session
-        echo width -w 20
+        echo "screen -t $logfile /bin/sh -c \"echo \$\$ >less.pid.$session; exec $SSH_CMD less +F $logfile\""
+        echo screen -t @DEMO@ /usr/local/sbin/getcon -V $CMD_OPT scr1 $session
+        echo width -w 64
         #echo height -w 8
-  echo focus
-  echo screen -t clt /usr/local/sbin/getcon $gcopt clt $session
-  echo height -w 2
-  echo width -w 80
-  echo focus
+        echo screen -t POPS /usr/local/sbin/getcon -V $CMD_OPT scr2 $session
+        echo width -w 58
+        #echo height -w 8
+        echo focus
+        echo screen -t clt /usr/local/sbin/getcon -V $CMD_OPT clt $session
+        echo height -w 2
+        echo width -w 80
+        echo focus
         pbarg=''
         [ $srcmode = playback ] && pbarg=" -p $Run"
         echo screen -t doit $0 $pbarg $ncopt -sS $session screen
         echo select @DEMO@
       } >$rc
+      export CMD_OPT
+      export SSH_CMD
       screen -c $rc
       clear
       rm $rc
@@ -370,8 +377,8 @@ case $dispmode in
     fi;;
   pterm)
     ### Start pterms for each disp screen and clt
-    pterm -t @DEMO@ -m 8x20 -g 8x20 -U /usr/local/sbin/getcon $gcopt scr1 $session &
-    pterm -t clt -m 2x80 -g 2x80 -y 90% -x 0 -U /usr/local/sbin/getcon $gcopt clt $session &
+    pterm -t @DEMO@ -m 8x20 -g 8x20 -U /usr/local/sbin/getcon $CMD_OPT scr1 $session &
+    pterm -t clt -m 2x80 -g 2x80 -y 90% -x 0 -U /usr/local/sbin/getcon $CMD_OPT clt $session &
     ;;
   *)
 esac
@@ -379,7 +386,7 @@ esac
 msg -Vndoit Handling less.pid.$session
 pterm_pid=''
 if [ $dispmode != screen ]; then
-  pterm -t $logfile $rmt_cmd less +F $logfile &
+  pterm -t $logfile $SSH_CMD less +F $logfile &
   pterm_pid=$!
 fi
 if [ $dispmode = screen -a -f less.pid.$session ]; then
@@ -393,15 +400,15 @@ fi
 # talk to a local memo to avoid cluttering up
 # the flight log
 ## This test can be made more robust
-msg -Vndoit Conditionally starting memo
-memo=/var/run/linkeng/$Experiment/memo
-if [ ! -e $memo ]; then
-  Launch memo memo -o $logfileroot.clt.log
-fi
+msgf -2 "Starting memo"
+#memo=/var/run/linkeng/$Experiment/memo
+#if [ ! -e $memo ]; then
+  Launch memo memo -o $logfileroot.clt.log -l3
+#fi
 
 # Now collect display consoles for each disp screen and clt
 msg -Vndoit collecting screens
-for screen in scr1 clt; do
+for screen in scr1 scr2 clt; do
   term=''
   if [ $dispmode != photon ]; then
     waitfor pty.$screen.$session 3 ||
@@ -412,8 +419,9 @@ for screen in scr1 clt; do
   eval ${screen}_term=$term
 done
 
-Launch -TMC- @DEMO@disp$nc $ncopt $TM_OPT $scr1_term
-$client$nc $CMD_OPT $clt_term $scr1_term
+Launch -TMC- @DEMO@disp$nc $ncopt $TM_OPT $scr1_term $scr2_term
+msg -Vndoit "Starting $client$nc $CMD_OPT $clt_term $scr1_term $scr2_term"
+$client$nc $CMD_OPT $clt_term $scr1_term $scr2_term
 
 # This is where we run. When the client quits,
 # we are done and need to clean up
