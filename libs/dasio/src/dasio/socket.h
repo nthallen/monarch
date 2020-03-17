@@ -36,25 +36,32 @@ class Socket : public Interface {
                          socket_type_t;
 
     /**
+     * Create a socket connection to the specified hostname and service/port.
+     * If hostname is 0, a Unix Domain socket will be created. Otherwise
+     * a TCP connection will be used.
      * @param iname Interface name (for debugging)
      * @param bufsz The initial input buffer size
      * @param hostname Hostname ofthe remote system
      * @param service String representing the service name or port number
-     * Create a socket connection to the specified hostname and service/port.
-     * If hostname is 0, a Unix Domain socket will be created. Otherwise
-     * a TCP connection will be used.
      */
     Socket(const char *iname, int bufsz, const char *hostname, const char *service);
     
     /**
-     * Create a socket server
+     * Create a server (listening) socket.
+     * @param iname Interface name (for debugging)
+     * @param service String representing the service name or port number
+     * @param socket_type Socket_Unix or Socket_TCP
      */
     Socket(const char *iname, const char *service,
         socket_type_t socket_type);
     
     /**
-     * Initializes this Socket to match the original, making sure to
+     * Creates a new Socket matching the original, making sure to
      * set is_server to false and propagating the is_server_client value.
+     * @param original The socket we are cloning
+     * @iname The new interface name
+     * @ibufsize Size of the new input buffer
+     * @fd The file descriptor of the new connection
      */
     Socket(Socket *original, const char *iname, int ibufsize, int fd);
     
