@@ -138,6 +138,8 @@ esac
 # Copies srcdir to destdir if CopySpace condition holds
 # returns true on success, false otherwise.
 function Copy_Data {
+  msgf 0 "Copy_Data: ['$1'] ['$2']"
+
   # CopySpace defines the minimum number of kb that should be
   # left over after the copy.
   
