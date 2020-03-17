@@ -89,7 +89,7 @@ else
 fi
 
 trun=${directory#$HomeDir/raw/}
-[ "$trun" = "$directory" ] || msgf 3 "trun ('$trun') identical to directory ('$directory'), HomeDir='$HomeDir'"
+[ "$trun" = "$directory" ] && msgf 3 "trun ('$trun') identical to directory ('$directory'), HomeDir='$HomeDir'"
 [ -d raw/$trun ] || msgf 3 "directory already copied (?)"
 
 #----------------------------------------------------------------
