@@ -2,12 +2,12 @@
 
 #__USAGE
 #%C [-xa]
-#	Run "saverun fix" to determine the data directory
+#  Run "saverun fix" to determine the data directory
 #%C [-xa] directory
-#	Operate on the specified directory
+#  Operate on the specified directory
 #
-#	-x  Don't run extractions or analysis
-#	-a  Don't run analysis
+#  -x  Don't run extractions or analysis
+#  -a  Don't run analysis
 #
 # Reduce performs a series of operations following a data run.
 # If the data directory is not specified, reduce invokes saverun
@@ -34,21 +34,37 @@
 # variable in Experiment.config and -x or -a has not been
 # selected, the analysis will be run.
 
+opt_exts=yes
+opt_anal=yes
+CopyData=yes
+FixDisk=no
+Dircksum=no
+
 . /usr/local/libexec/load_exconfig.sh
 msgProgram='reduce'
 
-# typeset opt_exts=yes opt_anal=yes CopyData=yes FixDisk=no
-# typeset Dircksum=no
+function do_tar {
+  # do_tar $run $dir
+  # Accesses globals:
+  #   use_relay gse relay flt HomeDir RunType Decimate
+  run=$1
+  src=$2
+  PC="ProxyCommand /usr/bin/ssh $relay /usr/bin/nc $gse 22"
+  DC=''
+  [ $Decimate = yes ] && DC='--exclude="*[1-9].dat"'
+  msgf 0 Retrieving $HomeDir/raw/$RunType/$run/$src
+  eval time ssh $gse tar -czf- -C $HomeDir/raw/$RunType/$run $DC $src | tar -C $RAW_Dir/$run$flt -xzf-
+}
 
 #----------------------------------------------------------------
 # Process command line options (-x, -a)
 #----------------------------------------------------------------
 while getopts "ax" option; do
   case $option in
-	a) opt_anal=no;;
-	x) opt_exts=no;;
-	\?) echo; exit 1;;
-	*) msgf 0 "Unsupported option: -$option";;
+  a) opt_anal=no;;
+  x) opt_exts=no;;
+  \?) echo; exit 1;;
+  *) msgf 0 "Unsupported option: -$option";;
   esac
 done
 let sval=$OPTIND-1
@@ -57,22 +73,20 @@ shift $sval
 #----------------------------------------------------------------
 # Load the configuration file
 #----------------------------------------------------------------
-[ ! -f "$cfile" ] &&
-  msgf 0 "Unable to locate configuration file $cfile"
 
-. $cfile
-[ -z "$Experiment" ] &&
-  msgf 0 "Experiment undefined in $cfile"
-
+[ -z "$Experiment" ] && msgf 0 "Experiment undefined in Experiment.config"
 export Experiment
 
 if [ -n "$1" ]; then
   directory="$1"
 else
   msgf 0 "Saving Run ..."
-  . saverun
+  saverun saverun_output.txt
   msgf 0 "Run Save Complete"
-  directory=$RunDir
+  [ -e saverun_output.txt ] || exit 0
+  directory=`cat saverun_output.txt`
+  [ -n "$directory" ] || msgf 3 "saverun output empty"
+  rm saverun_output.txt
 fi
 
 #----------------------------------------------------------------
@@ -85,34 +99,36 @@ fi
 #----------------------------------------------------------------
 case "$directory" in
   \/*)
-	# absolute address
-	CopyData=no;;
+  # absolute address
+  CopyData=no;;
   *)
-	# relative address
-	if [ -d "$directory" ]; then
-	  CopyData=no
-	elif [ -z "$fltdir" ]; then
-	  pdirs="."
-	  [ -n "$FlightNode" ] && pdirs="$pdirs /net/$FlightNode$HomeDir"
-	  [ -n "$AltDir" ] && pdirs="$pdirs $AltDir"
-	  for pdir in $pdirs; do
-	    for ppdir in . raw/data raw/flight raw/preflt raw/cal raw/junk; do
-	      if [ -d $pdir/$ppdir/$directory ]; then
-		fltdir=$pdir
-		[ $pdir = . ] && CopyData=no
-		[ $ppdir = . ] || directory=$ppdir/$directory
-		break
-	      fi
-	    done
-	    [ -n "$fltdir" ] && break
-	  done
-	  # [ -n "$FlightNode" ] && fltdir=/net/$FlightNode$HomeDir
-	  # [ -z "$fltdir" -o ! -d "$fltdir/$directory" ] && fltdir=$AltDir
-	  [ -z "$fltdir" ] &&
-	      msgf 0 "Unable to locate data directory $directory"
-	  [ "$CopyData" != "yes" -a $fltdir != . ] &&
-		directory=$fltdir/$directory
-	fi;;
+  # relative address
+  if [ -d "$directory" ]; then
+    CopyData=no
+  elif [ -z "$fltdir" ]; then
+    pdirs="."
+    [ -n "$FlightNode" ] && pdirs="$pdirs /net/$FlightNode$HomeDir"
+    [ -n "$AltDir" ] && pdirs="$pdirs $AltDir"
+    for pdir in $pdirs; do
+      for ppdir in . raw/data raw/flight raw/preflt raw/cal raw/junk; do
+        if [ -d $pdir/$ppdir/$directory ]; then
+          fltdir=$pdir
+          [ $pdir = . ] && CopyData=no
+          [ $ppdir = . ] || directory=$ppdir/$directory
+          break
+        fi
+      done
+      [ -n "$fltdir" ] && break
+    done
+    
+    # [ -n "$FlightNode" ] && fltdir=/net/$FlightNode$HomeDir
+    # [ -z "$fltdir" -o ! -d "$fltdir/$directory" ] && fltdir=$AltDir
+    
+    [ -z "$fltdir" ] &&
+        msgf 0 "Unable to locate data directory $directory"
+    [ "$CopyData" != "yes" -a $fltdir != . ] &&
+    directory=$fltdir/$directory
+  fi;;
 esac
 
 # Copy_Data srcdir destdir
@@ -122,32 +138,34 @@ function Copy_Data {
   # CopySpace defines the minimum number of kb that should be
   # left over after the copy.
   
-  typeset DoCopy=$CopyData SrcDir=$1 DestDir=$2
+  DoCopy=$CopyData
+  SrcDir=$1
+  DestDir=$2
   typeset DestParent destspace hasmtpt srcmnt srcnode
   if [ "$DoCopy" = "yes" -a -n "$CopySpace" ]; then
-	DestParent=`dirname $directory`
-	[ -d $DestParent ] || mkdir -p $DestParent ||
-	  msgf 0 "Unable to create directory '$DestParent'"
-	# pick 4th element of df output (free kb)
-	set X `df $DestParent`
-	let destspace=$5-$CopySpace
-	if [ $destspace -ge 0 ]; then
-	  srcmnt=`fullpath -t $SrcDir`
-	  srcnode=${srcmnt#//}
-	  srcnode=${srcnode%%/*}
-	  set X `on -n $srcnode du -sk $SrcDir`
-	  let destspace=destspace-$2
-	fi
-	if [ $destspace -lt 0 ]; then
-	  msgf 0 "Insufficient space, data will not be copied"
-	  DoCopy=no
-	fi
+    DestParent=`dirname $directory`
+    [ -d $DestParent ] || mkdir -p $DestParent ||
+      msgf 0 "Unable to create directory '$DestParent'"
+    # pick 4th element of df output (free kb)
+    set X `df $DestParent`
+    let destspace=$5-$CopySpace
+    if [ $destspace -ge 0 ]; then
+      srcmnt=`realpath $SrcDir`
+      srcnode=${srcmnt#//}
+      srcnode=${srcnode%%/*}
+      set X `on -n $srcnode du -sk $SrcDir`
+      let destspace=destspace-$2
+    fi
+    if [ $destspace -lt 0 ]; then
+      msgf 0 "Insufficient space, data will not be copied"
+      DoCopy=no
+    fi
   fi
 
   if [ "$DoCopy" = "yes" ]; then
-	msgf 0 "Copying from $SrcDir to $DestDir ..."
-	cp -frc $SrcDir $DestDir
-	return 0
+    msgf 0 "Copying from $SrcDir to $DestDir ..."
+    cp -frc $SrcDir $DestDir
+    return 0
   fi
   return 1
 }
@@ -168,8 +186,7 @@ fi
 
 msgf 0 "Extraction Proceeding ..."
 export Extractions ExtProducts RDR_OPTS
-extract $directory ||
-  msgf 0 "Extraction Apparently Failed"
+extract $directory || msgf 0 "Extraction Apparently Failed"
 
 #----------------------------------------------------------------
 # Analysis

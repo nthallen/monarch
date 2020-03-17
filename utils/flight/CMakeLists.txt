@@ -17,11 +17,15 @@ endif (NOT SHELL_EXE)
 configure_file(flight.sh.in flight.sh @ONLY)
 configure_file(extract.in extract @ONLY)
 configure_file(reduce.in reduce @ONLY)
+configure_file(mlf_find.in mlf_find @ONLY)
+configure_file(saverun.in saverun @ONLY)
 
 install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/extract
   ${CMAKE_CURRENT_BINARY_DIR}/reduce
-  DESTINATION /usr/local/bin)
+  ${CMAKE_CURRENT_BINARY_DIR}/mlf_find
+  ${CMAKE_CURRENT_BINARY_DIR}/saverun
+  DESTINATION bin)
 
 install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/flight.sh
