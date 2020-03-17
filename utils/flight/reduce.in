@@ -51,8 +51,8 @@ function do_tar {
   
   gse="flight@$FlightNode"
   
-  msgf 0 Retrieving $directory
-  eval time ssh $gse tar -czf- -C $HomeDir/raw $t_run | tar -C $run$flt -xzf-
+  msgf -2 "Retrieving directory ('$directory'), trun ('$t_run')"
+  eval time ssh $gse tar -czf- -C $HomeDir/raw $t_run | tar -C $HomeDir/raw -xzf-
 }
 
 #----------------------------------------------------------------
@@ -103,13 +103,13 @@ trun=${directory#$HomeDir/raw/}
 case "$directory" in
   \/*)
     # absolute address
-    msgf 0 "absolute address for '$directory'";;
+    msgf -2 "absolute address for '$directory'";;
     # CopyData=no;;
   *)
     # relative address
-    msgf 0 "relative address for '$directory'"
+    msgf -2 "relative address for '$directory'"
     if [ -d "$directory" ]; then
-      msgf 0 "CopyData is a no"
+      msgf -2 "CopyData is a no"
       CopyData=no
     elif [ -z "$fltdir" ]; then
       pdirs="."
@@ -141,7 +141,7 @@ esac
 # Copies srcdir to destdir if CopySpace condition holds
 # returns true on success, false otherwise.
 function Copy_Data {
-  msgf 0 "Copy_Data: ['$1'] ['$2']"
+  msgf -2 "Copy_Data: ['$1'] ['$2']"
 
   # CopySpace defines the minimum number of kb that should be
   # left over after the copy.
@@ -180,7 +180,7 @@ function Copy_Data {
 }
 
 [ ! "$CopyData" = "yes" ] ||
-  msgf 0 "Copying data from '$directory', '$directory'"
+  msgf -2 "Copying data from '$directory', '$directory'"
   Copy_Data $directory $directory ||
   directory=$directory
 
