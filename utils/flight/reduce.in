@@ -52,7 +52,7 @@ function do_tar {
   gse="flight@$FlightNode"
   
   msgf 0 Retrieving $directory
-  eval time ssh $gse tar -czf- -C $HomeDir/raw $t_run | tar -C raw/$run$flt -xzf-
+  eval time ssh $gse tar -czf- -C $HomeDir/raw $t_run | tar -C $run$flt -xzf-
 }
 
 #----------------------------------------------------------------
@@ -102,36 +102,39 @@ trun=${directory#$HomeDir/raw/}
 #----------------------------------------------------------------
 case "$directory" in
   \/*)
-  # absolute address
-  CopyData=no;;
+    # absolute address
+    msgf 0 "absolute address for '$directory'";;
+    # CopyData=no;;
   *)
-  # relative address
-  if [ -d "$directory" ]; then
-    CopyData=no
-  elif [ -z "$fltdir" ]; then
-    pdirs="."
-    [ -n "$FlightNode" ] && pdirs="$pdirs /net/$FlightNode$HomeDir"
-    [ -n "$AltDir" ] && pdirs="$pdirs $AltDir"
-    for pdir in $pdirs; do
-      for ppdir in . raw/data raw/flight raw/preflt raw/cal raw/junk; do
-        if [ -d $pdir/$ppdir/$directory ]; then
-          fltdir=$pdir
-          [ $pdir = . ] && CopyData=no
-          [ $ppdir = . ] || directory=$ppdir/$directory
-          break
-        fi
+    # relative address
+    msgf 0 "relative address for '$directory'"
+    if [ -d "$directory" ]; then
+      msgf 0 "CopyData is a no"
+      CopyData=no
+    elif [ -z "$fltdir" ]; then
+      pdirs="."
+      [ -n "$FlightNode" ] && pdirs="$pdirs /net/$FlightNode$HomeDir"
+      [ -n "$AltDir" ] && pdirs="$pdirs $AltDir"
+      for pdir in $pdirs; do
+        for ppdir in . raw/data raw/flight raw/preflt raw/cal raw/junk; do
+          if [ -d $pdir/$ppdir/$directory ]; then
+            fltdir=$pdir
+            [ $pdir = . ] && CopyData=no
+            [ $ppdir = . ] || directory=$ppdir/$directory
+            break
+          fi
+        done
+        [ -n "$fltdir" ] && break
       done
-      [ -n "$fltdir" ] && break
-    done
-    
-    # [ -n "$FlightNode" ] && fltdir=/net/$FlightNode$HomeDir
-    # [ -z "$fltdir" -o ! -d "$fltdir/$directory" ] && fltdir=$AltDir
-    
-    [ -z "$fltdir" ] &&
-        msgf 0 "Unable to locate data directory $directory"
-    [ "$CopyData" != "yes" -a $fltdir != . ] &&
-    directory=$fltdir/$directory
-  fi;;
+
+      # [ -n "$FlightNode" ] && fltdir=/net/$FlightNode$HomeDir
+      # [ -z "$fltdir" -o ! -d "$fltdir/$directory" ] && fltdir=$AltDir
+
+      [ -z "$fltdir" ] &&
+          msgf 0 "Unable to locate data directory $directory"
+      [ "$CopyData" != "yes" -a $fltdir != . ] &&
+      directory=$fltdir/$directory
+    fi;;
 esac
 
 # Copy_Data srcdir destdir
@@ -177,8 +180,9 @@ function Copy_Data {
 }
 
 [ ! "$CopyData" = "yes" ] ||
-  Copy_Data $fltdir/$directory $PWD/$directory ||
-  directory=$fltdir/$directory
+  msgf 0 "Copying data from '$directory', '$directory'"
+  Copy_Data $directory $directory ||
+  directory=$directory
 
 if [ -n "$CopyHook" ]; then
   eval $CopyHook
