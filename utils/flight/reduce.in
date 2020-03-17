@@ -45,15 +45,14 @@ msgProgram='reduce'
 
 function do_tar {
   # do_tar $run $dir
-  # Accesses globals:
-  #   use_relay gse relay flt HomeDir RunType Decimate
   run=$1
   src=$2
-  PC="ProxyCommand /usr/bin/ssh $relay /usr/bin/nc $gse 22"
-  DC=''
-  [ $Decimate = yes ] && DC='--exclude="*[1-9].dat"'
-  msgf 0 Retrieving $HomeDir/raw/$RunType/$run/$src
-  eval time ssh $gse tar -czf- -C $HomeDir/raw/$RunType/$run $DC $src | tar -C $RAW_Dir/$run$flt -xzf-
+  t_run=$3
+  
+  gse="flight@$FlightNode"
+  
+  msgf 0 Retrieving $directory
+  eval time ssh $gse tar -czf- -C $HomeDir/raw $t_run | tar -C raw/$run$flt -xzf-
 }
 
 #----------------------------------------------------------------
@@ -88,6 +87,10 @@ else
   [ -n "$directory" ] || msgf 3 "saverun output empty"
   rm saverun_output.txt
 fi
+
+trun=${directory#$HomeDir/raw/}
+[ "$trun" = "$directory" ] || msgf 3 "trun identical to directory"
+[ -d raw/$trun ] || msgf 3 "directory already copied (?)"
 
 #----------------------------------------------------------------
 # If we ran saverun, the directory name is relative to the
@@ -141,7 +144,7 @@ function Copy_Data {
   DoCopy=$CopyData
   SrcDir=$1
   DestDir=$2
-  typeset DestParent destspace hasmtpt srcmnt srcnode
+  # typeset DestParent destspace hasmtpt srcmnt srcnode
   if [ "$DoCopy" = "yes" -a -n "$CopySpace" ]; then
     DestParent=`dirname $directory`
     [ -d $DestParent ] || mkdir -p $DestParent ||
@@ -164,7 +167,8 @@ function Copy_Data {
 
   if [ "$DoCopy" = "yes" ]; then
     msgf 0 "Copying from $SrcDir to $DestDir ..."
-    cp -frc $SrcDir $DestDir
+    # cp -frc $SrcDir $DestDir
+    do_tar $SrcDir $DestDir $trun
     return 0
   fi
   return 1
