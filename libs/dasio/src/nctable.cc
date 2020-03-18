@@ -3,7 +3,7 @@
 #include <ncurses.h>
 #include <unistd.h>
 #include "nl.h"
-#include "nctable.h"
+#include "dasio/nctable.h"
 #include "dasio/cmd_writer.h"
 // #include "tm.h"
 // #include "cic.h" perhaps?

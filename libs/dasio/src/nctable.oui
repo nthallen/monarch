@@ -1,5 +1,5 @@
 <package> nctable
-<include> "nctable.h"
+<include> "dasio/nctable.h"
 
 <opts> "a"
 
