@@ -1,5 +1,4 @@
 #! @SHELL_EXE@
-
 #__USAGE
 #%C [-xa]
 #  Run "saverun fix" to determine the data directory
