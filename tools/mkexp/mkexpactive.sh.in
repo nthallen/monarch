@@ -7,7 +7,7 @@ function nl_error {
 
 HAVE_SUDO=@HAVE_SUDO@
 
-if [ HAVE_SUDO ]
+if [ $HAVE_SUDO = yes ]
 then
   # Make sure we are running as root
   if [ `id -u` -ne 0 ]; then
@@ -15,13 +15,29 @@ then
   fi
 fi
 
+if [ "x$1" = "x-h" ]; then
+cat <<EOF
+mkexpactive <exp>
+  Make Experiment <exp> the active experiment by linking
+  /home/flight/Experiment.config -> /home/<exp>/Experiment.config
+mkexpactive -x
+  Delete /home/flight/Experiment.config to deactivate
+EOF
+exit 0
+fi
+
+if [ "x$1" = "x-x" ]; then
+  echo "mkexpactive: deactivating"
+  rm -f /home/flight/Experiment.config
+  exit 0
+fi
+
 # Make sure we have an Experiment name
 if [ "$1" != "" ]; then
   export Experiment=$1
-  echo "mkexpactive: Experiment named captured as [$1]"
+  echo "mkexpactive: Experiment name captured as [$1]"
 else
-  echo "mkexpactive: Fatal: no Experiment name"
-  exit 1
+  nl_error "mkexpactive: Fatal: no Experiment name"
 fi
 
 [ -d /home/flight ] || nl_error "missing directory /home/flight"

@@ -4,6 +4,7 @@ add_executable(test_can test_can.cc test_sboui.cc)
 add_executable(test_bmm test_bmm.cc test_sboui.cc)
 add_executable(test_serusb test_serusb.cc test_sboui.cc)
 add_executable(test_ir test_ir.cc test_iroui.cc)
+add_executable(test_udacs test_udacs.cc test_sboui.cc)
 
 OUI_FILE(test_sb.oui)
 OUI_FILE(test_ir.oui)
