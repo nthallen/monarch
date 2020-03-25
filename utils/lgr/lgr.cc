@@ -106,7 +106,7 @@ void tmc_lgr::process_data_t3() {
       next_file();
     } else {
       if ( rows_fit > n_rows )
-	rows_fit = n_rows;
+        rows_fit = n_rows;
       wmsg.body.data3.n_rows = rows_fit;
       wmsg.body.data3.mfctr = mfctr;
       lgr_write( &wmsg, nbDataHdr, "writing data header" );

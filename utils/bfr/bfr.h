@@ -101,17 +101,17 @@ class bfr_input_client : public Serverside_client, public tm_queue {
       // consume(n) shifts remaining data
     } part;
     
-    struct data_s {
-      tmq_ref *tmqr; // Which dq_desc we reference
-      int n_Qrows; // The number of Qrows in dq we have already processed
-    } data;
+    // struct data_s {
+      // tmq_ref *tmqr; // Which dq_desc we reference
+      // int n_Qrows; // The number of Qrows in dq we have already processed
+    // } data;
     
     struct write_s {
       // char *buf; // allocated temp buffer
       // int rcvid; // Who is writing
       int nbrow_rec; // bytes per row received
       int nbhdr_rec; // bytes in the header of data messages
-      int nb_msg; // bytes remaining in this write
+      // int nb_msg; // bytes remaining in this write. This is now nc
       int off_msg; // bytes already read from this write
       int nb_rec; // bytes remaining in this record
       int off_queue; // bytes already written in this queue block

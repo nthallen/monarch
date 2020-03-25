@@ -63,6 +63,9 @@
 # When using -d, if a .gdbinit file exists in the current
 # directory, it will be passed to the gdb invocation(s).
 
+. /usr/local/libexec/load_exconfig.sh
+msgProgram='extract'
+
 function waitfor {
   # echo "extract: waitfor: waiting for [$1]"
   while true
@@ -114,7 +117,7 @@ extractor=$2
 shift
 dir=`realpath $dir`
 [ -d "$dir" ] || {
-  echo Unable to locate directory "$dir" >&2
+  msgf 0 "Unable to locate directory '$dir'"
   exit 1
 }
 
@@ -151,12 +154,8 @@ typeset Ropt_sav="$RDR_OPTS"
 #  exit 1
 #fi
 
-. /usr/local/libexec/load_exconfig.sh
-msgProgram='extract'
-
 [ -z "$Experiment" ] && {
-  echo extract: Experiment undefined in $cfile >&2
-  exit 1
+  msgf 3 "Experiment undefined in '$cfile'"
 }
 export Experiment
 Experiment=${Experiment}.r
@@ -183,7 +182,7 @@ if [ -f tm.dac -a "$VERSION" = "$cur_version" ]; then
   if cmp -s $dir/tm.dac tm.dac; then
 	MYPATH="$PWD:"
   else
-	echo $appname: WARNING!: $PWD/tm.dac differs but VERSIONs do not >&2
+	msgf 0 "$appname: WARNING!: $PWD/tm.dac differs but VERSIONs do not"
   fi
 fi
 function eval_dir {
@@ -275,9 +274,9 @@ for ext in $@; do
     $ext -n "$ext" &
     extpid=$!
     if waitfor /var/run/linkeng/run/$Experiment/$extpid 2>/dev/null; then
-      msgf 0 extract "$ext ($extpid) initialized"
+      msgf 0 "$ext ($extpid) initialized"
     else
-      msgf 0 extract "ERROR: $ext ($extpid) failed to initialize"
+      msgf 0 "ERROR: $ext ($extpid) failed to initialize"
     fi
   fi
   shift
@@ -291,13 +290,13 @@ cd $rootdir
 
 if [ -z "$EXTRACT_DIR" ]; then
   analdir=`basename $dir`
-  echo extract: Moving products to subdirectory anal/$analdir
+  msgf 0 "Moving products to subdirectory anal/$analdir"
   [ -d anal/$analdir ] || mkdir -p anal/$analdir
   mv -v $extdir/* anal/$analdir
   rmdir $extdir
 else
-  echo extract: Results located in $extdir
+  msgf 0 "Results located in $extdir"
 fi
 
-echo extract: Extraction Complete
+msgf 0 "Extraction Complete"
 exit $rv

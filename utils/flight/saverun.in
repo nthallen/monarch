@@ -35,30 +35,34 @@
 # will be defined. The newly created directory is
 # $FlightDir/$RunDir
 
+. /usr/local/libexec/load_exconfig.sh
+msgProgram='saverun'
+
+FILE_OPT=$1
+
+[ -n "$CFG_ERROR" ] && msgf 3 $CFG_ERROR
+
 function sv_error {
   echo "saverun: $*" >&2
   exit 1
 }
 
 #----------------------------------------------------------------
-# Locate the configuration file and read it
-#----------------------------------------------------------------
-cfile=./Experiment.config
-[ -f "$cfile" ] || sv_error "Cannot locate $cfile"
-unset Experiment HomeDir FlightNode SaverunHook RunType
-unset FixDisk Dircksum
-. $cfile
-[ -z "$FlightNode" ] && FlightNode=`hostname`
-[ -z "$Experiment" -o -z "$HomeDir" -o -z "$FlightNode" ] &&
-  sv_error "Experiment, HomeDir or FlightNode not defined in $cfile"
-unset zbase cfile
-export Experiment
-
-#----------------------------------------------------------------
 # saverun isn't legal when collection is running:
 #----------------------------------------------------------------
 [ -e /var/run/linkeng/$Experiment/tm_gen ] &&
-  sv_error dg for Experiment $Experiment currently active
+  msgf 3 dg for Experiment $Experiment currently active
+
+if [ $FltNode_Access = Remote ]; then
+  $SSH_CMD saverun $FILE_OPT
+  if [ -n "$FILE_OPT" ]; then
+    scp flight@$FlightNode:$HomeDir/$FILE_OPT $FILE_OPT
+    if [ -e $FILE_OPT ]; then
+      $SSH_CMD rm $HomeDir/$FILE_OPT
+    fi
+  fi
+  exit 0
+fi
 
 #----------------------------------------------------------------
 # Look for the flight node
@@ -113,7 +117,7 @@ for i in $LogDirs; do
   [ -d "$i" ] && logdirs="$logdirs $i"
 done
 [ -z "$logdirs" ] &&
-  sv_error "No log directories ($LogDirs) found in $PWD."
+  msgf 3 "No log directories ($LogDirs) found in $PWD."
 
 if [ -n "SaverunHook" ]; then
   eval $SaverunHook
@@ -142,7 +146,7 @@ if [ -n "$RunType" ]; then
     esac
   fi
   [ -d $RunType ] || mkdir -p $RunType ||
-    sv_error "Unable to create directory '$RunType'"
+    msgf 3 "Unable to create directory '$RunType'"
   unset j
 else
   RunType='.'
@@ -199,7 +203,7 @@ if [ -n "$SaveFiles" ]; then
     if [ -f $i ]; then
       tocopy="$tocopy $i"
     else
-      echo saverun: Unable to locate SaveFiles $i >&2
+      msgf 0 "Unable to locate SaveFiles '$i'"
     fi
   done
 fi
@@ -245,6 +249,8 @@ case $Dircksum in
     esac;;
 esac
 [ "$Dircksum" = "yes" ] && dircksum -wv $RunDir
+
+[ -n "$FILE_OPT" ] && echo $PWD/$RunDir > $FILE_OPT
 
 # cd $OLDDIR
 # unset OLDDIR hascrntrun date run

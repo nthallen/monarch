@@ -150,8 +150,8 @@ void tm_queue::commit_rows( mfc_t MFCtr, int mfrow, int nrows ) {
     tmqdr = last_tmqr;
     cur_tstamp = tmqdr->tsp;
     if (tmqdr->n_Qrows == 0) {
-      tmqdr->MFCtr_next = MFCtr;
-      tmqdr->row_next = mfrow;
+      tmqdr->MFCtr_start = tmqdr->MFCtr_next = MFCtr;
+      tmqdr->row_start = tmqdr->row_next = mfrow;
     } else if (MFCtr != tmqdr->MFCtr_next || mfrow != tmqdr->row_next ) {
       tmqdr = 0;
     }
