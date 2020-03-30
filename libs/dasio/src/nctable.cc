@@ -435,8 +435,8 @@ void nct_charset(int n) {
 }
 
 void nct_hrule( int winnum, int attr, int row, int col,
-                unsigned char *rule ) {
-  unsigned char *r = rule;
+                chtype *rule ) {
+  chtype *r = rule;
   nct_select(winnum);
   // color_set(color_pair_table(attr), NULL);
   while (*r) {
@@ -447,8 +447,8 @@ void nct_hrule( int winnum, int attr, int row, int col,
 }
 
 void nct_vrule( int winnum, int attr, int row, int col,
-                unsigned char *rule ) {
-  unsigned char *r = rule;
+                chtype *rule ) {
+  chtype *r = rule;
   nct_select(winnum);
   // color_set(color_pair_table(attr), NULL);
   while (*r) {
