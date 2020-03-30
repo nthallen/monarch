@@ -342,7 +342,7 @@ static void _PrPTGRuleDef(n)
 	_PPTGRuleDef n;
 #endif
 {
-	PTG_OUTPUT_STRING(f, "  static chtype nct_");
+	PTG_OUTPUT_STRING(f, "  static unsigned char nct_");
 	n->p1->_print(n->p1);
 	PTG_OUTPUT_STRING(f, "_r");
 	PTG_OUTPUT_INT(f, n->p2);

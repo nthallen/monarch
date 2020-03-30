@@ -167,7 +167,7 @@ void nct_clear( int winnum ) {
   mark_dirty();
 }
 
-static unsigned char grphchar[81] = {
+static chtype grphchar[81] = {
   #ifdef __QNXNTO__
   0x20, /*  0 = 0000 */
   0xB3, /*  1 = 0001 */
@@ -335,7 +335,7 @@ static unsigned char grphchar[81] = {
   #endif
 };
 
-static unsigned char asciichar[81] = {
+static chtype asciichar[81] = {
   ' ', /*  0 = LRTB */
   ',', /*  1 = 0001 */
   ',', /*  2 = 0002 */
@@ -419,7 +419,7 @@ static unsigned char asciichar[81] = {
   '+'  /* 80 = 2222 */
 };
 
-static unsigned char *nct_boxchars = grphchar;
+static chtype *nct_boxchars = grphchar;
 
 void nct_charset(int n) {
   switch (n) {
@@ -435,8 +435,8 @@ void nct_charset(int n) {
 }
 
 void nct_hrule( int winnum, int attr, int row, int col,
-                chtype *rule ) {
-  chtype *r = rule;
+                unsigned char *rule ) {
+  unsigned char *r = rule;
   nct_select(winnum);
   // color_set(color_pair_table(attr), NULL);
   while (*r) {
@@ -447,8 +447,8 @@ void nct_hrule( int winnum, int attr, int row, int col,
 }
 
 void nct_vrule( int winnum, int attr, int row, int col,
-                chtype *rule ) {
-  chtype *r = rule;
+                unsigned char *rule ) {
+  unsigned char *r = rule;
   nct_select(winnum);
   // color_set(color_pair_table(attr), NULL);
   while (*r) {

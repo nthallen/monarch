@@ -1,6 +1,5 @@
 #ifndef NCTABLE_H_INCLUDED
 #define NCTABLE_H_INCLUDED
-#include <ncurses.h>
 
 #define NCT_CHARS_GR 0
 #define NCT_CHARS_ASCII 1
@@ -19,9 +18,9 @@ extern void nct_string( int winnum, int attr, int row, int col,
 		const char *text );
 extern void nct_clear( int winnum );
 extern void nct_hrule( int winnum, int attr, int row, int col,
-		chtype *rule );
+		unsigned char *rule );
 extern void nct_vrule( int winnum, int attr, int row, int col,
-		chtype *rule );
+		unsigned char *rule );
 extern char nct_getch(void);
 
 #ifdef __cplusplus
