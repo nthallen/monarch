@@ -168,7 +168,7 @@ void nct_clear( int winnum ) {
 }
 
 static unsigned char grphchar[81] = {
-  #ifdef QNX_NTO
+  #ifdef __QNXNTO__
   0x20, /*  0 = 0000 */
   0xB3, /*  1 = 0001 */
   0xBA, /*  2 = 0002 */
