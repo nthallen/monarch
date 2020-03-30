@@ -8,7 +8,7 @@
 File:
   "%{\n"
   "  /* nctable output */\n"
-  "  #include \"nctable.h\"\n"
+  "  #include \"dasio/nctable.h\"\n"
   "  static int " $4 string "_winnum;\n\n"
   $7 "\n"
   "  static void " $4 string "_redraw(void) {\n"

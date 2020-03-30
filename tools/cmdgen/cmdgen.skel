@@ -160,7 +160,7 @@ static short ioflags;
   #else
     #error Unable to locate curses include files
   #endif
-  #include "nctable.h"
+  #include "dasio/nctable.h"
 #endif
 
 #define CG_IBUF_SIZE 256

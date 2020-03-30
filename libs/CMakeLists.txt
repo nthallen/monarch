@@ -8,4 +8,3 @@ add_definitions( -D_POSIX_SOURCE=1 -D_XOPEN_SOURCE=500 )
 
 add_subdirectory(dasio)
 add_subdirectory(nl)
-add_subdirectory(tm)

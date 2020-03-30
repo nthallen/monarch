@@ -1,7 +1,7 @@
 install(FILES ascii_escape.h interface.h serial.h timeout.h
   socket.h modbus_rtu.h client.h server.h appid.h tm.h
   tm_client.h tm_data_sndr.h tm_gen_col.h tm_gen.h
-  tm_gen_cmd.h 
+  tm_gen_cmd.h nctable.h
   tm_gen_tmr.h tm_tmr.h
   tm_data_rcvr.h tm_queue.h
   cmd_client.h cmd_reader.h cmd_writer.h cmd_version.h cmd_server.h quit.h

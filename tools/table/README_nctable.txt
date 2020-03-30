@@ -3,7 +3,7 @@ under ncurses.  The output file will look something like:
 
 %{
 /* nctable output */
-#include "nctable.h"
+#include "dasio/nctable.h"
 static int idxdiag_winnum;
 static unsigned char nct_r1[] = { 2, 2, 2, 3, 0 };
 static unsigned char nct_r2[] = { 1, 1, 1, 1, 0 };

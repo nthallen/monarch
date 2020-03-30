@@ -522,7 +522,7 @@ for i in $basetargets; do
         ldisp=' -ltmph -lph';;
     *dispnc)
       replace_each .tbl tblnc.tmc "" $deps &&
-        ldisp=' -ltm -lncurses' &&
+        ldisp=' -lncurses' &&
         add_member ouis nctable;;
     *algo)
       replace_each .sws sws.tma "\$(COMPILE.sws)" $deps;;
@@ -584,7 +584,7 @@ for i in $basetargets; do
       if replace_each cmd.cc cltnc.o "\$(COMPILE.cltnc)" -h "$hdeps" $deps; then
         add_member ouis kbdclt
         add_member ouis nctable
-        ltmph=' -ltm -lncurses'
+        ltmph=' -lncurses'
         ldasio=' -ldasio -lpthread'
       else
         nl_error Client $i with no cmd.cc files
@@ -659,7 +659,7 @@ for i in $basetargets; do
         *) nl_error Unrecognized dependent $dep;;
       esac
     done
-    deps="$odeps${nl}${tab}\$(LINK.$LINK$cxx)$odeps$libs$ldisp$ltmph$ldasio -ltm$lssp -lnl"
+    deps="$odeps${nl}${tab}\$(LINK.$LINK$cxx)$odeps$libs$ltmph$ldasio$ldisp$lssp -lnl"
     [ -n "$ouiout" ] && deps="$deps${nl}${tab}\$(OUIUSE) $ouiout"
     case $LINK in
       priv*) deps="$deps${nl}${tab}\$(PROMOTE) $i";;
