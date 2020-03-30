@@ -92,6 +92,96 @@ static void nct_shutdown(void) {
   }
 }
 
+static chtype grphchar[81];
+
+static void init_grphchar() {
+  static bool grphchar_initialized = false;
+  if (!grphchar_initialized) {
+    grphchar_initialized = true;
+    grphchar[0] = ' ';
+    grphchar[1] = ACS_VLINE;
+    grphchar[2] = ACS_VLINE;
+    grphchar[3] = ACS_VLINE;
+    grphchar[4] = ACS_VLINE;
+    grphchar[5] = ACS_VLINE;
+    grphchar[6] = ACS_VLINE;
+    grphchar[7] = ACS_VLINE;
+    grphchar[8] = ACS_VLINE;
+    grphchar[9] = ACS_HLINE;
+    grphchar[10] = ACS_ULCORNER;
+    grphchar[11] = ACS_ULCORNER;
+    grphchar[12] = ACS_LLCORNER;
+    grphchar[13] = ACS_LTEE;
+    grphchar[14] = ACS_LTEE;
+    grphchar[15] = ACS_LLCORNER;
+    grphchar[16] = ACS_LTEE;
+    grphchar[17] = ACS_LTEE;
+    grphchar[18] = ACS_HLINE;
+    grphchar[19] = ACS_ULCORNER;
+    grphchar[20] = ACS_ULCORNER;
+    grphchar[21] = ACS_LLCORNER;
+    grphchar[22] = ACS_LTEE;
+    grphchar[23] = ACS_LTEE;
+    grphchar[24] = ACS_LLCORNER;
+    grphchar[25] = ACS_LTEE;
+    grphchar[26] = ACS_LTEE;
+    grphchar[27] = ACS_HLINE;
+    grphchar[28] = ACS_URCORNER;
+    grphchar[29] = ACS_URCORNER;
+    grphchar[30] = ACS_LRCORNER;
+    grphchar[31] = ACS_RTEE;
+    grphchar[32] = ACS_RTEE;
+    grphchar[33] = ACS_LRCORNER;
+    grphchar[34] = ACS_RTEE;
+    grphchar[35] = ACS_RTEE;
+    grphchar[36] = ACS_HLINE;
+    grphchar[37] = ACS_TTEE;
+    grphchar[38] = ACS_TTEE;
+    grphchar[39] = ACS_BTEE;
+    grphchar[40] = ACS_PLUS;
+    grphchar[41] = ACS_PLUS;
+    grphchar[42] = ACS_BTEE;
+    grphchar[43] = ACS_PLUS;
+    grphchar[44] = ACS_PLUS;
+    grphchar[45] = ACS_HLINE;
+    grphchar[46] = ACS_TTEE;
+    grphchar[47] = ACS_TTEE;
+    grphchar[48] = ACS_BTEE;
+    grphchar[49] = ACS_PLUS;
+    grphchar[50] = ACS_PLUS;
+    grphchar[51] = ACS_BTEE;
+    grphchar[52] = ACS_PLUS;
+    grphchar[53] = ACS_PLUS;
+    grphchar[54] = ACS_HLINE;
+    grphchar[55] = ACS_URCORNER;
+    grphchar[56] = ACS_URCORNER;
+    grphchar[57] = ACS_LRCORNER;
+    grphchar[58] = ACS_RTEE;
+    grphchar[59] = ACS_RTEE;
+    grphchar[60] = ACS_LRCORNER;
+    grphchar[61] = ACS_RTEE;
+    grphchar[62] = ACS_RTEE;
+    grphchar[63] = ACS_HLINE;
+    grphchar[64] = ACS_TTEE;
+    grphchar[65] = ACS_TTEE;
+    grphchar[66] = ACS_BTEE;
+    grphchar[67] = ACS_PLUS;
+    grphchar[68] = ACS_PLUS;
+    grphchar[69] = ACS_BTEE;
+    grphchar[70] = ACS_PLUS;
+    grphchar[71] = ACS_PLUS;
+    grphchar[72] = ACS_HLINE;
+    grphchar[73] = ACS_TTEE;
+    grphchar[74] = ACS_TTEE;
+    grphchar[75] = ACS_BTEE;
+    grphchar[76] = ACS_PLUS;
+    grphchar[77] = ACS_PLUS;
+    grphchar[78] = ACS_BTEE;
+    grphchar[79] = ACS_PLUS;
+    grphchar[80] = ACS_PLUS;
+  }
+};
+
 /**
  * Initializes an ncurses display. nct_init() cannot be called
  * after nct_getch().
@@ -125,6 +215,7 @@ int nct_init( const char *winname, int n_rows, int n_cols ) {
   curs_set(0);
   if ( n_scrs == 0 )
     atexit( &nct_shutdown );
+  init_grphchar();
   return n_scrs++;
 }
 
@@ -166,174 +257,6 @@ void nct_clear( int winnum ) {
   clear();
   mark_dirty();
 }
-
-static chtype grphchar[81] = {
-  #ifdef __QNXNTO__
-  0x20, /*  0 = 0000 */
-  0xB3, /*  1 = 0001 */
-  0xBA, /*  2 = 0002 */
-  0xB3, /*  3 = 0010 */
-  0xB3, /*  4 = 0011 */
-  0xBA, /*  5 = 0012 */
-  0xBA, /*  6 = 0020 */
-  0xBA, /*  7 = 0021 */
-  0xBA, /*  8 = 0022 */
-  0xC4, /*  9 = 0100 */
-  0xDA, /* 10 = 0101 */
-  0xD6, /* 11 = 0102 */
-  0xC0, /* 12 = 0110 */
-  0xC3, /* 13 = 0111 */
-  0xD6, /* 14 = 0112 */
-  0xD3, /* 15 = 0120 */
-  0xD3, /* 16 = 0121 */
-  0xC7, /* 17 = 0122 */
-  0xCD, /* 18 = 0200 */
-  0xD5, /* 19 = 0201 */
-  0xC9, /* 20 = 0202 */
-  0xD4, /* 21 = 0210 */
-  0xC6, /* 22 = 0211 */
-  0xC9, /* 23 = 0212 */
-  0xC8, /* 24 = 0220 */
-  0xC8, /* 25 = 0221 */
-  0xCC, /* 26 = 0222 */
-  0xC4, /* 27 = 1000 */
-  0xBF, /* 28 = 1001 */
-  0xB7, /* 29 = 1002 */
-  0xD9, /* 30 = 1010 */
-  0xB4, /* 31 = 1011 */
-  0xB7, /* 32 = 1012 */
-  0xBD, /* 33 = 1020 */
-  0xBD, /* 34 = 1021 */
-  0xB6, /* 35 = 1022 */
-  0xC4, /* 36 = 1100 */
-  0xC2, /* 37 = 1101 */
-  0xD2, /* 38 = 1102 */
-  0xC1, /* 39 = 1110 */
-  0xC5, /* 40 = 1111 */
-  0xD2, /* 41 = 1112 */
-  0xD0, /* 42 = 1120 */
-  0xD0, /* 43 = 1121 */
-  0xD7, /* 44 = 1122 */
-  0xCD, /* 45 = 1200 */
-  0x20, /* 46 = 1201 */
-  0x20, /* 47 = 1202 */
-  0x20, /* 48 = 1210 */
-  0x20, /* 49 = 1211 */
-  0x20, /* 50 = 1212 */
-  0x20, /* 51 = 1220 */
-  0x20, /* 52 = 1221 */
-  0x20, /* 53 = 1222 */
-  0xCD, /* 54 = 2000 */
-  0xB8, /* 55 = 2001 */
-  0xBB, /* 56 = 2002 */
-  0xBE, /* 57 = 2010 */
-  0xB5, /* 58 = 2011 */
-  0x20, /* 59 = 2012 */
-  0xBC, /* 60 = 2020 */
-  0x20, /* 61 = 2021 */
-  0xB9, /* 62 = 2022 */
-  0x20, /* 63 = 2100 */
-  0x20, /* 64 = 2101 */
-  0x20, /* 65 = 2102 */
-  0x20, /* 66 = 2110 */
-  0x20, /* 67 = 2111 */
-  0x20, /* 68 = 2112 */
-  0x20, /* 69 = 2120 */
-  0x20, /* 70 = 2121 */
-  0x20, /* 71 = 2122 */
-  0xCD, /* 72 = 2200 */
-  0xD1, /* 73 = 2201 */
-  0xCB, /* 74 = 2202 */
-  0xCF, /* 75 = 2210 */
-  0xD8, /* 76 = 2211 */
-  0x20, /* 77 = 2212 */
-  0xCA, /* 78 = 2220 */
-  0x20, /* 79 = 2221 */
-  0xCE  /* 80 = 2222 */
-  #else
-  ' ', /*  0 = LRTB */
-  ACS_VLINE, /*  1 = 0001 */
-  ACS_VLINE, /*  2 = 0002 */
-  ACS_VLINE, /*  3 = 0010 */
-  ACS_VLINE, /*  4 = 0011 */
-  ACS_VLINE, /*  5 = 0012 */
-  ACS_VLINE, /*  6 = 0020 */
-  ACS_VLINE, /*  7 = 0021 */
-  ACS_VLINE, /*  8 = 0022 */
-  ACS_HLINE, /*  9 = 0100 */
-  ACS_ULCORNER, /* 10 = 0101 */
-  ACS_ULCORNER, /* 11 = 0102 */
-  ACS_LLCORNER, /* 12 = 0110 */
-  ACS_LTEE, /* 13 = 0111 */
-  ACS_LTEE, /* 14 = 0112 */
-  ACS_LLCORNER, /* 15 = 0120 */
-  ACS_LTEE, /* 16 = 0121 */
-  ACS_LTEE, /* 17 = 0122 */
-  ACS_HLINE, /* 18 = 0200 */
-  ACS_ULCORNER, /* 19 = 0201 */
-  ACS_ULCORNER, /* 20 = 0202 */
-  ACS_LLCORNER, /* 21 = 0210 */
-  ACS_LTEE, /* 22 = 0211 */
-  ACS_LTEE, /* 23 = 0212 */
-  ACS_LLCORNER, /* 24 = 0220 */
-  ACS_LTEE, /* 25 = 0221 */
-  ACS_LTEE, /* 26 = 0222 */
-  ACS_HLINE, /* 27 = 1000 */
-  ACS_URCORNER, /* 28 = 1001 */
-  ACS_URCORNER, /* 29 = 1002 */
-  ACS_LRCORNER, /* 30 = 1010 */
-  ACS_RTEE, /* 31 = 1011 */
-  ACS_RTEE, /* 32 = 1012 */
-  ACS_LRCORNER, /* 33 = 1020 */
-  ACS_RTEE, /* 34 = 1021 */
-  ACS_RTEE, /* 35 = 1022 */
-  ACS_HLINE, /* 36 = 1100 */
-  ACS_TTEE, /* 37 = 1101 */
-  ACS_TTEE, /* 38 = 1102 */
-  ACS_BTEE, /* 39 = 1110 */
-  ACS_PLUS, /* 40 = 1111 */
-  ACS_PLUS, /* 41 = 1112 */
-  ACS_BTEE, /* 42 = 1120 */
-  ACS_PLUS, /* 43 = 1121 */
-  ACS_PLUS, /* 44 = 1122 */
-  ACS_HLINE, /* 45 = 1200 */
-  ACS_TTEE, /* 46 = 1201 */
-  ACS_TTEE, /* 47 = 1202 */
-  ACS_BTEE, /* 48 = 1210 */
-  ACS_PLUS, /* 49 = 1211 */
-  ACS_PLUS, /* 50 = 1212 */
-  ACS_BTEE, /* 51 = 1220 */
-  ACS_PLUS, /* 52 = 1221 */
-  ACS_PLUS, /* 53 = 1222 */
-  ACS_HLINE, /* 54 = 2000 */
-  ACS_URCORNER, /* 55 = 2001 */
-  ACS_URCORNER, /* 56 = 2002 */
-  ACS_LRCORNER, /* 57 = 2010 */
-  ACS_RTEE, /* 58 = 2011 */
-  ACS_RTEE, /* 59 = 2012 */
-  ACS_LRCORNER, /* 60 = 2020 */
-  ACS_RTEE, /* 61 = 2021 */
-  ACS_RTEE, /* 62 = 2022 */
-  ACS_HLINE, /* 63 = 2100 */
-  ACS_TTEE, /* 64 = 2101 */
-  ACS_TTEE, /* 65 = 2102 */
-  ACS_BTEE, /* 66 = 2110 */
-  ACS_PLUS, /* 67 = 2111 */
-  ACS_PLUS, /* 68 = 2112 */
-  ACS_BTEE, /* 69 = 2120 */
-  ACS_PLUS, /* 70 = 2121 */
-  ACS_PLUS, /* 71 = 2122 */
-  ACS_HLINE, /* 72 = 2200 */
-  ACS_TTEE, /* 73 = 2201 */
-  ACS_TTEE, /* 74 = 2202 */
-  ACS_BTEE, /* 75 = 2210 */
-  ACS_PLUS, /* 76 = 2211 */
-  ACS_PLUS, /* 77 = 2212 */
-  ACS_BTEE, /* 78 = 2220 */
-  ACS_PLUS, /* 79 = 2221 */
-  ACS_PLUS  /* 80 = 2222 */
-  #endif
-};
 
 static chtype asciichar[81] = {
   ' ', /*  0 = LRTB */
