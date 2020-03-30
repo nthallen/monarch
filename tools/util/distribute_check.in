@@ -9,6 +9,19 @@
 # If they are different, an error will be reported and the distribution
 # will be aborted
 opt_r=no
+if [ "x$1" = "x-h" ]; then
+cat <<EOF
+distribute_check -h
+  display this message
+distribute_check [-r] <target-version-dir> <pcmfile>
+
+  -r specifies a terse response for use when target is remote
+
+Checks for the existence of <pcmfile> in the <target-version-dir>
+and compares it to the copy in the local directory. Returns an
+error if they are not identical.
+EOF
+fi
 if [ "x$1" = "x-r" ]; then
   opt_r=yes
   shift 1
@@ -40,9 +53,14 @@ if [ "$rhost" = "$tgt_ver_dir" -a "$rdir" = "$tgt_ver_dir" ]; then
   fi
 
   if [ -f $rdir/$pcmfile ]; then
-    echo "OK:YES"
-  else
-    echo "OK:NO"
+    if [ $opt_r = yes ]; then
+      echo "OK:YES"
+    else
+      cmp -s $pcmfile $rdir/$pcmfile ||
+        nl_error "Telemetry format changed without VERSION change"
+    fi
+# else
+#   echo "OK:NO"
   fi
 elif [ "$rhost:$rdir" != "$tgt_ver_dir" -o -z "$rhost" -o -z "$rdir" ]; then
   nl_error "Invalid remote syntax: '$tgt_ver_dir'"
