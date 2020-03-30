@@ -152,7 +152,7 @@ static void _PrPTGFile(n)
 {
 	PTG_OUTPUT_STRING(f, "%{\n");
 	PTG_OUTPUT_STRING(f, "  /* nctable output */\n");
-	PTG_OUTPUT_STRING(f, "  #include \"nctable.h\"\n");
+	PTG_OUTPUT_STRING(f, "  #include \"dasio/nctable.h\"\n");
 	PTG_OUTPUT_STRING(f, "  static int ");
 	PTG_OUTPUT_STRING(f, n->p4);
 	PTG_OUTPUT_STRING(f, "_winnum;\n\n");

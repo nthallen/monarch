@@ -37,6 +37,7 @@ install(FILES
   collect.oui
   kbdclt.oui
   msg.oui
+  nctable.oui
   no_appid.oui
   server.oui
   seteuid.oui
