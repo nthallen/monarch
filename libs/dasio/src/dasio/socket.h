@@ -218,8 +218,11 @@ class Socket : public Interface {
 
     /**
      * Called upon successful connection. The library
-     * will have already reported the connection.
-     * The default method does nothing.
+     * will have already reported the connection if
+     * the debug level is set to MSG_DBG(1).
+     * The default method does nothing will report
+     * the connection only if conn_fail_reported
+     * is true, and then sets it to false;
      *
      * @return true if the event loop should exit.
      */
@@ -232,6 +235,9 @@ class Socket : public Interface {
      * be reported, but that report can be suppressed by
      * setting conn_fail_reported to true. An alternate
      * message could then be provided in this method.
+     * Note however that setting conn_fail_reported true
+     * will trigger a response in the default connected()
+     * method.
      *
      * This method can be used to adjust the retry interval
      * from the default, or to take some other application-
