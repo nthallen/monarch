@@ -66,6 +66,12 @@ namespace DAS_IO {
   }
 
   bool Client::app_input() { return false; }
-  bool Client::app_connected() { return false; }
+  bool Client::app_connected() {
+    if (conn_fail_reported) {
+      msg(0, "%s: Connected", iname);
+      conn_fail_reported = false;
+    }
+    return false;
+  }
   
 }
