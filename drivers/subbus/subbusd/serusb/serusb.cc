@@ -151,7 +151,7 @@ serusb_if::serusb_if(const char *port)
 void serusb_if::enqueue_request(uint16_t type, subbusd_serusb_client *clt,
       const char *request, subbusd_rep_t *repp, uint16_t n_reads) {
   nl_assert(type == SBDR_TYPE_INTERNAL || (clt != 0 && repp != 0));
-  msg(MSG_DBG(0), "%s: Enqueing request: '%s'", iname, ascii_esc(request));
+  msg(MSG_DBG(1), "%s: Enqueing request: '%s'", iname, ascii_esc(request));
   reqs.push_back(serusb_request(type, clt, request, repp, n_reads));
   process_requests();
 }
@@ -442,7 +442,7 @@ void serusb_if::process_interrupt(unsigned int nb) {
 
 void serusb_if::process_requests() {
   if (request_pending || request_processing || reqs.empty()) {
-    msg(MSG_DBG(0), "%s: process_requests() no action: %s",
+    msg(MSG_DBG(1), "%s: process_requests() no action: %s",
       iname,
       request_pending ? "pending" : request_processing ? "processing"
       : "reqs.empty()");
@@ -491,7 +491,7 @@ void serusb_if::process_requests() {
         msg(4, "Invalid request type" );
     }
     cmdlen = strlen( req.request );
-    msg(MSG_DBG(0), "%s: Sending request: '%*.*s'", iname, cmdlen-1, cmdlen-1,
+    msg(MSG_DBG(1), "%s: Sending request: '%*.*s'", iname, cmdlen-1, cmdlen-1,
       ascii_esc(req.request));
     iwrite((const char *)req.request, cmdlen);
     if (no_response) {
@@ -646,7 +646,7 @@ void serusb_if::dequeue_request(int16_t status, int n_args,
     default:
       msg( 4, "Invalid command type in dequeue_request" );
   }
-  msg(MSG_DBG(0), "%s: Dequeued request: '%s'", iname,
+  msg(MSG_DBG(1), "%s: Dequeued request: '%s'", iname,
     ascii_esc(cur_req.request)); 
   reqs.pop_front();
   request_pending = false;

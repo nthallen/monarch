@@ -205,6 +205,14 @@ namespace DAS_IO {
       if (!full_shutdown_requested)
         return true;
     }
+    if (nl_debug_level < -1) {
+      static int active_clients_reported = -1;
+      if (active_clients != active_clients_reported) {
+        msg(MSG_DBG(0), "ready_to_quit: active_clients = %d",
+          active_clients);
+        active_clients_reported = active_clients;
+      }
+    }
     return active_clients == 0;
   }
   
@@ -251,6 +259,7 @@ namespace DAS_IO {
   }
 
   void Server::client_removed() {
+    msg(MSG_DBG(1), "client_removed(): 1 of %d", active_clients);
     if (--active_clients == 0 &&
         passive_exit_threshold > 0 &&
         total_clients >= passive_exit_threshold) {
