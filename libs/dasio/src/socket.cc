@@ -259,6 +259,11 @@ void Socket::connect() {
   }
 }
 
+void Socket::connect_later(le_time_t secs, long msecs) {
+  TO.Set(secs, msecs);
+  flags |= Fl_Timeout;
+}
+
 bool Socket::ProcessData(int flag) {
   int sock_err;
 

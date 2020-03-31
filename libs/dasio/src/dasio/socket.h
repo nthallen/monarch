@@ -83,6 +83,17 @@ class Socket : public Interface {
     void connect();
 
     /**
+     * Exploits the timeout mechanism built into connect()
+     * to initiate a connection at a later time. This
+     * is useful when the topology of your application
+     * guarantees that some connection cannot be made
+     * immediately.
+     * @param secs The number of seconds to delay. Defaults to 1.
+     * @param msecs The number of msecs to delay. Defaults to 0.
+     */
+    void connect_later(le_time_t secs = 1, long msecs = 0);
+
+    /**
      * The default configuration is set_retries(-1,5,60);
      * @param max_retries Set to 0 for no retries, -1 for unlimited.
      * @param min_dly Seconds to wait before first retry
