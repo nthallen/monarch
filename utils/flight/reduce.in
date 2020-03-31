@@ -92,103 +92,102 @@ trun=${directory#$HomeDir/raw/}
 if [ "$FltNode_Access" = "Remote" ]; then
   [ -d raw/$trun ] && msgf 0 "directory already copied ('raw/$trun')"
 
-
-#----------------------------------------------------------------
-# If we ran saverun, the directory name is relative to the
-# flight directory. If it was specified on the command line,
-# it may be relative to the GSE directory, relative to the
-# flight directory, or absolute (beginning with /) In any
-# case, if it is absolute or exists relative to the GSE
-# directory, no copying is indicated.
-#----------------------------------------------------------------
-case "$directory" in
-  \/*)
-    # absolute address
-    msgf -2 "absolute address for '$directory'";;
-    # CopyData=no;;
-  *)
-    # relative address
-    msgf -2 "relative address for '$directory'"
-    if [ -d "$directory" ]; then
-      msgf -2 "CopyData is a no"
-      CopyData=no
-    elif [ -z "$fltdir" ]; then
-      pdirs="."
-      [ -n "$FlightNode" ] && pdirs="$pdirs /net/$FlightNode$HomeDir"
-      [ -n "$AltDir" ] && pdirs="$pdirs $AltDir"
-      for pdir in $pdirs; do
-        for ppdir in . raw/data raw/flight raw/preflt raw/cal raw/junk; do
-          if [ -d $pdir/$ppdir/$directory ]; then
-            fltdir=$pdir
-            [ $pdir = . ] && CopyData=no
-            [ $ppdir = . ] || directory=$ppdir/$directory
-            break
-          fi
+  #----------------------------------------------------------------
+  # If we ran saverun, the directory name is relative to the
+  # flight directory. If it was specified on the command line,
+  # it may be relative to the GSE directory, relative to the
+  # flight directory, or absolute (beginning with /) In any
+  # case, if it is absolute or exists relative to the GSE
+  # directory, no copying is indicated.
+  #----------------------------------------------------------------
+  case "$directory" in
+    \/*)
+      # absolute address
+      msgf -2 "absolute address for '$directory'";;
+      # CopyData=no;;
+    *)
+      # relative address
+      msgf -2 "relative address for '$directory'"
+      if [ -d "$directory" ]; then
+        msgf -2 "CopyData is a no"
+        CopyData=no
+      elif [ -z "$fltdir" ]; then
+        pdirs="."
+        [ -n "$FlightNode" ] && pdirs="$pdirs /net/$FlightNode$HomeDir"
+        [ -n "$AltDir" ] && pdirs="$pdirs $AltDir"
+        for pdir in $pdirs; do
+          for ppdir in . raw/data raw/flight raw/preflt raw/cal raw/junk; do
+            if [ -d $pdir/$ppdir/$directory ]; then
+              fltdir=$pdir
+              [ $pdir = . ] && CopyData=no
+              [ $ppdir = . ] || directory=$ppdir/$directory
+              break
+            fi
+          done
+          [ -n "$fltdir" ] && break
         done
-        [ -n "$fltdir" ] && break
-      done
 
-      # [ -n "$FlightNode" ] && fltdir=/net/$FlightNode$HomeDir
-      # [ -z "$fltdir" -o ! -d "$fltdir/$directory" ] && fltdir=$AltDir
+        # [ -n "$FlightNode" ] && fltdir=/net/$FlightNode$HomeDir
+        # [ -z "$fltdir" -o ! -d "$fltdir/$directory" ] && fltdir=$AltDir
 
-      [ -z "$fltdir" ] &&
-          msgf 0 "Unable to locate data directory $directory"
-      [ "$CopyData" != "yes" -a $fltdir != . ] &&
-      directory=$fltdir/$directory
-    fi;;
-esac
+        [ -z "$fltdir" ] &&
+            msgf 0 "Unable to locate data directory $directory"
+        [ "$CopyData" != "yes" -a $fltdir != . ] &&
+        directory=$fltdir/$directory
+      fi;;
+  esac
 
-fi
+  # Copy_Data srcdir destdir
+  # Copies srcdir to destdir if CopySpace condition holds
+  # returns true on success, false otherwise.
+  function Copy_Data {
+    msgf -2 "Copy_Data: ['$1'] ['$2']"
 
-# Copy_Data srcdir destdir
-# Copies srcdir to destdir if CopySpace condition holds
-# returns true on success, false otherwise.
-function Copy_Data {
-  msgf -2 "Copy_Data: ['$1'] ['$2']"
+    # CopySpace defines the minimum number of kb that should be
+    # left over after the copy.
 
-  # CopySpace defines the minimum number of kb that should be
-  # left over after the copy.
-  
-  DoCopy=$CopyData
-  SrcDir=$1
-  DestDir=$2
-  # typeset DestParent destspace hasmtpt srcmnt srcnode
-  if [ "$DoCopy" = "yes" -a -n "$CopySpace" ]; then
-    DestParent=`dirname $directory`
-    [ -d $DestParent ] || mkdir -p $DestParent ||
-      msgf 0 "Unable to create directory '$DestParent'"
-    # pick 4th element of df output (free kb)
-    set X `df $DestParent`
-    let destspace=$5-$CopySpace
-    if [ $destspace -ge 0 ]; then
-      srcmnt=`realpath $SrcDir`
-      srcnode=${srcmnt#//}
-      srcnode=${srcnode%%/*}
-      set X `on -n $srcnode du -sk $SrcDir`
-      let destspace=destspace-$2
+    DoCopy=$CopyData
+    SrcDir=$1
+    DestDir=$2
+    # typeset DestParent destspace hasmtpt srcmnt srcnode
+    if [ "$DoCopy" = "yes" -a -n "$CopySpace" ]; then
+      DestParent=`dirname $directory`
+      [ -d $DestParent ] || mkdir -p $DestParent ||
+        msgf 0 "Unable to create directory '$DestParent'"
+      # pick 4th element of df output (free kb)
+      set X `df $DestParent`
+      let destspace=$5-$CopySpace
+      if [ $destspace -ge 0 ]; then
+        srcmnt=`realpath $SrcDir`
+        srcnode=${srcmnt#//}
+        srcnode=${srcnode%%/*}
+        set X `on -n $srcnode du -sk $SrcDir`
+        let destspace=destspace-$2
+      fi
+      if [ $destspace -lt 0 ]; then
+        msgf 0 "Insufficient space, data will not be copied"
+        DoCopy=no
+      fi
     fi
-    if [ $destspace -lt 0 ]; then
-      msgf 0 "Insufficient space, data will not be copied"
-      DoCopy=no
+
+    if [ "$DoCopy" = "yes" ]; then
+      msgf 0 "Copying from $SrcDir to $DestDir ..."
+      # cp -frc $SrcDir $DestDir
+      do_tar $SrcDir $DestDir $trun
+      return 0
     fi
+    return 1
+  }
+
+  [ ! "$CopyData" = "yes" ] ||
+    msgf -2 "Copying data from '$directory', '$directory'"
+    Copy_Data $directory $directory ||
+    directory=$directory
+
+  if [ -n "$CopyHook" ]; then
+    eval $CopyHook
   fi
 
-  if [ "$DoCopy" = "yes" ]; then
-    msgf 0 "Copying from $SrcDir to $DestDir ..."
-    # cp -frc $SrcDir $DestDir
-    do_tar $SrcDir $DestDir $trun
-    return 0
-  fi
-  return 1
-}
-
-[ ! "$CopyData" = "yes" ] ||
-  msgf -2 "Copying data from '$directory', '$directory'"
-  Copy_Data $directory $directory ||
-  directory=$directory
-
-if [ -n "$CopyHook" ]; then
-  eval $CopyHook
 fi
 
 #----------------------------------------------------------------
