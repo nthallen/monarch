@@ -125,7 +125,8 @@ class subbuspp : Client {
       int subbus_int_detach( char *cardID );
     #endif
     int subbus_quit(void);
-
+  protected:
+    bool connect_failed();
   private:
     /**
      @return Status reply from subbusd. Terminates if

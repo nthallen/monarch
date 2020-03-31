@@ -12,6 +12,7 @@
 
 subbuspp::subbuspp(const char *service, const char *sub_service)
     : Client(service, sizeof(subbusd_rep_t)+1, 0, service, sub_service) {
+  conn_fail_reported = true;
 }
 
 subbuspp::~subbuspp() {}
@@ -225,6 +226,12 @@ int subbuspp::send_CSF( uint16_t command, uint16_t val ) {
 int subbuspp::subbus_quit(void) {
   if ( fd < 0 ) return 0;
   return send_to_subbusd( SBC_QUIT, NULL, 0, SBRT_NONE );
+}
+
+bool subbuspp::connect_failed() {
+  TO.Clear();
+  flags &= ~Fl_Timeout;
+  return true;
 }
 
 int subbuspp::mread_subbus( subbus_mread_req *req, uint16_t *data) {

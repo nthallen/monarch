@@ -146,8 +146,10 @@ void Socket::connect() {
                   unix_name->get_svc_name(), std::strerror(errno));
                 conn_fail_reported = true;
               }
-              if (reset() || connect_failed())
-                msg(MSG_FATAL, "connect() failure max retries exceeded");
+              if (reset())
+                msg(MSG_FATAL, "%s: connect() failure max retries exceeded", iname);
+              if (connect_failed())
+                msg(MSG_FATAL, "%s: connect_failed() returned true", iname);
               return;
             }
           }
