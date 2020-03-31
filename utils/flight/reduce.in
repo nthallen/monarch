@@ -195,8 +195,8 @@ fi
 #----------------------------------------------------------------
 # Do Extractions if defined and not disabled
 #----------------------------------------------------------------
-[ -z "$Extractions" ] && echo reduce: No Extractions Defined && exit 0
-[ "$opt_exts" = "no" ] && echo reduce: Extractions Disabled && exit 0
+[ -z "$Extractions" ] && msgf -1 "No Extractions Defined"
+[ "$opt_exts" = "no" ] && msgf -1 "Extractions Disabled"
 
 msgf 0 "Extraction Proceeding ..."
 export Extractions ExtProducts RDR_OPTS
