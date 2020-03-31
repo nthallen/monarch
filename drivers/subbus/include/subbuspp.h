@@ -101,15 +101,15 @@ class subbuspp : Client {
      */
     int mread_subbus( subbus_mread_req *req, uint16_t *data);
     /**
-     * @param req structure defining multi-read request
-     * @param data pointer to where read data should be stored
-     * @param nwords pointer to where actual read length should be stored
      * Passes the raw command directly to the subbus driver and parses
      * the return string for a multi-read. Up to req->n_reads values will be
      * written into the array pointed to by the data argument.
      * If the request returns more data than requested, and error
      * will be reported (MSG_ERROR).
-     * @return The return value from send_to_subbusd().
+     * @param req structure defining multi-read request
+     * @param data pointer to where read data should be stored
+     * @param nwords pointer to where actual read length should be stored
+     * @return Zero on success.
      * If return value is negative, it is the
      * error code returned by the subbusd driver and no values are reported.
      * If it is positive SBS_NOACK (2), it indicates that although the

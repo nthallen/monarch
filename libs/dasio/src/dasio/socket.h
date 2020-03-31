@@ -83,6 +83,17 @@ class Socket : public Interface {
     void connect();
 
     /**
+     * Exploits the timeout mechanism built into connect()
+     * to initiate a connection at a later time. This
+     * is useful when the topology of your application
+     * guarantees that some connection cannot be made
+     * immediately.
+     * @param secs The number of seconds to delay. Defaults to 1.
+     * @param msecs The number of msecs to delay. Defaults to 0.
+     */
+    void connect_later(le_time_t secs = 1, long msecs = 0);
+
+    /**
      * The default configuration is set_retries(-1,5,60);
      * @param max_retries Set to 0 for no retries, -1 for unlimited.
      * @param min_dly Seconds to wait before first retry
@@ -218,8 +229,11 @@ class Socket : public Interface {
 
     /**
      * Called upon successful connection. The library
-     * will have already reported the connection.
-     * The default method does nothing.
+     * will have already reported the connection if
+     * the debug level is set to MSG_DBG(1).
+     * The default method does nothing will report
+     * the connection only if conn_fail_reported
+     * is true, and then sets it to false;
      *
      * @return true if the event loop should exit.
      */
@@ -232,6 +246,9 @@ class Socket : public Interface {
      * be reported, but that report can be suppressed by
      * setting conn_fail_reported to true. An alternate
      * message could then be provided in this method.
+     * Note however that setting conn_fail_reported true
+     * will trigger a response in the default connected()
+     * method.
      *
      * This method can be used to adjust the retry interval
      * from the default, or to take some other application-

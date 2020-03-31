@@ -259,6 +259,11 @@ void Socket::connect() {
   }
 }
 
+void Socket::connect_later(le_time_t secs, long msecs) {
+  TO.Set(secs, msecs);
+  flags |= Fl_Timeout;
+}
+
 bool Socket::ProcessData(int flag) {
   int sock_err;
 
@@ -280,7 +285,7 @@ bool Socket::ProcessData(int flag) {
         flags |= Fl_Read;
         reconn_seconds = reconn_seconds_min;
         reconn_retries = 0;
-        conn_fail_reported = false;
+        // conn_fail_reported = false;
         return connected();
       } else {
         if (!conn_fail_reported) {
@@ -427,7 +432,13 @@ bool Socket::process_eof() {
   }
 }
 
-bool Socket::connected() { return false; }
+bool Socket::connected() {
+  if (conn_fail_reported) {
+    msg(0, "%s: Connected", iname);
+    conn_fail_reported = false;
+  }
+  return false;
+}
 
 bool Socket::connect_failed() { return false; }
 

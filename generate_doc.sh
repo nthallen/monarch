@@ -17,7 +17,6 @@ function generate {
   [ -d .git -a ../git -ef . ] || nl_error "cd - did not returns us to source base directory"
 }
 
-generate libs/tm
 generate libs/nl
 generate libs/dasio
 generate tools/cmdgen
