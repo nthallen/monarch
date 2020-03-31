@@ -79,8 +79,9 @@ class Socket : public Interface {
      * timeout. The client may alter the timeout interval
      * immediately after the call to connect() if a timeout
      * shorter than the network library's is desired.
+     * @return true on error
      */
-    void connect();
+    bool connect();
 
     /**
      * Exploits the timeout mechanism built into connect()

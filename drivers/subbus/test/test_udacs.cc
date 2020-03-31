@@ -76,6 +76,8 @@ void uDACS_init() {
   uDACS_A.saw_nack = false;
   msg(0, "uDACS_A->load()");
   int subfunc = uDACS_A.SB->load();
+  if (subfunc == 0)
+    msg(3, "load() failed");
   if (subfunc != 9)
     msg(2, "Expected Subfunction 9 for uDACS, was %d", subfunc);
   msg(0, "uDACS_A->identify_board();");

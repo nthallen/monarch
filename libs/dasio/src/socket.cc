@@ -86,7 +86,7 @@ void Socket::common_init() {
   is_server_client = false;
 }
 
-void Socket::connect() {
+bool Socket::connect() {
   switch (socket_type) {
     case Socket_Unix:
       if (unix_name == 0) {
@@ -100,7 +100,7 @@ void Socket::connect() {
           socket_state = Socket_locking;
           TO.Set(0,200);
           flags |= Fl_Timeout;
-          return;
+          return false;
         }
         if (!unix_name->claim_server()) {
           msg(MSG_FATAL, "%s: Unable to create server socket %s",
@@ -142,15 +142,17 @@ void Socket::connect() {
                 SUN_LEN(&local)) < 0) {
             if (errno != EINPROGRESS) {
               if (!conn_fail_reported) {
-                msg(MSG_ERROR, "connect() failure in DAS_IO::Socket(%s):%s: %s", iname,
-                  unix_name->get_svc_name(), std::strerror(errno));
+                msg(MSG_ERROR,
+                  "%s: connect() failure in DAS_IO::Socket:%s: %s",
+                  iname, unix_name->get_svc_name(),
+                  std::strerror(errno));
                 conn_fail_reported = true;
               }
               if (reset())
-                msg(MSG_FATAL, "%s: connect() failure max retries exceeded", iname);
-              if (connect_failed())
-                msg(MSG_FATAL, "%s: connect_failed() returned true", iname);
-              return;
+                msg(MSG_FATAL,
+                  "%s: connect() failure max retries exceeded",
+                  iname);
+              return connect_failed();
             }
           }
           socket_state = Socket_connecting;
@@ -192,9 +194,8 @@ void Socket::connect() {
           msg(MSG_ERROR, "%s: getaddrinfo(%s, %s) failed with error %d: %s",
             iname, hostname, portname, err, gai_strerror(err));
           reset();
-          return;
+          return false;
         } else {
-          
           
           /** Added in by Miles from getaddrinfo.c, 2019-11-01 */
           /* struct addrinfo *resi = res;
@@ -209,7 +210,6 @@ void Socket::connect() {
             resi = resi->ai_next;
           } */
           /** End added code from getaddrinfo.c */
-          
           
         }
         if (res == 0) {
@@ -235,19 +235,22 @@ void Socket::connect() {
           if (::connect(fd, (struct sockaddr *)(addr),
                 sizeof(struct sockaddr_in)) < 0) {
             if (errno != EINPROGRESS) {
-              msg(MSG_ERROR,
-                "%s: DAS_IO::Socket::connect() failure:%s(%d.%d.%d.%d):%s: %s",
-                iname, hostname,
-                (addr->sin_addr.s_addr>>0)&0xFF,
-                (addr->sin_addr.s_addr>>8)&0xFF,
-                (addr->sin_addr.s_addr>>16)&0xFF,
-                (addr->sin_addr.s_addr>>24)&0xFF,
-                portname,
-                std::strerror(errno));
+              if (!conn_fail_reported) {
+                msg(MSG_ERROR,
+                  "%s: DAS_IO::Socket::connect() failure:%s(%d.%d.%d.%d):%s: %s",
+                  iname, hostname,
+                  (addr->sin_addr.s_addr>>0)&0xFF,
+                  (addr->sin_addr.s_addr>>8)&0xFF,
+                  (addr->sin_addr.s_addr>>16)&0xFF,
+                  (addr->sin_addr.s_addr>>24)&0xFF,
+                  portname,
+                  std::strerror(errno));
+                conn_fail_reported = true;
+              }
               if (reset()) {
                 msg(MSG_FATAL, "%s: Connect failure fatal after all retries", iname);
               }
-              return;
+              return connect_failed();
             }
           }
           socket_state = Socket_connecting;
@@ -257,8 +260,11 @@ void Socket::connect() {
       }
       break;
     default:
-      msg(MSG_FATAL, "DAS_IO_Socket::Socket::connect: not implemented for socket_type %d", socket_type);
+      msg(MSG_FATAL,
+        "%s: DAS_IO_Socket::Socket::connect: not implemented for socket_type %d",
+          iname, socket_type);
   }
+  return false;
 }
 
 void Socket::connect_later(le_time_t secs, long msecs) {
@@ -272,8 +278,7 @@ bool Socket::ProcessData(int flag) {
   // msg(0, "%s: Socket::ProcessData(%d)", iname, flag);
   switch (socket_state) {
     case Socket_locking:
-      connect();
-      return false;
+      return connect();
     case Socket_connecting:
       if (!readSockError(&sock_err)) {
         return reset();
@@ -329,7 +334,7 @@ bool Socket::ProcessData(int flag) {
       if (TO.Expired()) {
         // msg(0, "%s: reconnecting after timeout", iname);
         TO.Clear();
-        connect();
+        return connect();
       }
       break;
     case Socket_connected:

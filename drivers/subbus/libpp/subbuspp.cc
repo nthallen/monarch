@@ -105,7 +105,9 @@ int subbuspp::load() {
     msg( -2, "Attempt to reload subbus" );
     return subbus_subfunction;
   }
-  connect();
+  if (connect()) {
+    return 0;
+  }
   PELoop.add_child(this);
   ELoop->event_loop(); // should run until connected
   if (fd < 0) {
