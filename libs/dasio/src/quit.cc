@@ -3,14 +3,15 @@
 #include "dasio/msg.h"
 
 namespace DAS_IO {
-  Quit::Quit(Server *srvr) :
+  Quit::Quit(Server *srvr, bool full) :
       Cmd_reader("Quit", 20, "Quit"),
-      srvr(srvr) {}
+      srvr(srvr),
+      full(full) {}
 
   bool Quit::process_eof() {
     msg(MSG_DBG(0),"%s: received EOF", iname);
     if (srvr) {
-      srvr->Shutdown(true);
+      srvr->Shutdown(full);
     } else if (ELoop) {
       ELoop->set_loop_exit();
     }

@@ -20,10 +20,11 @@ namespace DAS_IO {
        * @brief Quit client
        * @param srvr optional pointer to Server
        */
-      Quit(Server *srvr = 0);
+      Quit(Server *srvr = 0, bool full = false);
       bool process_eof();
     protected:
       Server *srvr;
+      bool full;
   };
 }
 

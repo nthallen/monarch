@@ -160,9 +160,9 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   nl_assert(subbusd_core::subbusd != 0);
   if (subbusd_cmd_quit) {
-    Quit *q = new Quit();
+    Quit *q = new Quit(&subbusd_core::subbusd->srvr, false);
     subbusd_core::subbusd->srvr.ELoop.add_child(q);
-    q->connect();
+    q->connect_later(3);
   }
   subbusd_core::subbusd->srvr.signal(SIGINT);
   subbusd_core::subbusd->srvr.signal(SIGHUP);
