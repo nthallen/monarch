@@ -89,9 +89,11 @@ fi
 
 trun=${directory#$HomeDir/raw/}
 [ "$trun" = "$directory" ] && msgf 3 "trun ('$trun') identical to directory ('$directory'), HomeDir='$HomeDir'"
-if [ "$FltNode_Access" = "Remote" ]; then
-  [ -d raw/$trun ] && msgf 0 "directory already copied ('raw/$trun')"
-
+if [ "$FltNode_Access" = "Local" ]; then
+  msgf 0 "skipping copy step for Local Experiment"
+elif [ -d raw/$trun ]; then
+  msgf 0 "directory already copied ('raw/$trun')"
+else
   #----------------------------------------------------------------
   # If we ran saverun, the directory name is relative to the
   # flight directory. If it was specified on the command line,
