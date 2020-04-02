@@ -7,3 +7,4 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_definitions( -D_POSIX_SOURCE=1 -D_XOPEN_SOURCE=500 )
 
 add_subdirectory(tm_relay)
+add_subdirectory(ser_chk)

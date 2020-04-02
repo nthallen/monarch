@@ -1,0 +1,18 @@
+<package> ser_chk
+<include> <string.h>
+<include> msg oui
+<include> "ser_chk.h"
+
+<opts> "p:b:"
+<sort>
+  -p <port> specify the serial port to open
+  -b <baud> specify the baud rate (default is 57600)
+
+<switch>
+  case 'p': ser_chk_port = optarg; break;
+  case 'b': ser_chk_baud = strtol(optarg, NULL, 10); break;
+
+<package> appid_default
+<include> "dasio/appid.h"
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("ser_chk", "ser_chk basic serial port I/O", "V1.0");
