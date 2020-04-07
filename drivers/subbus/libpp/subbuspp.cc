@@ -220,12 +220,17 @@ int subbuspp::send_CSF( uint16_t command, uint16_t val ) {
   }
 #endif // SUBBUS_INTERRUPTS
 
+int subbuspp::tick_sic() {
+  if ( fd < 0 ) return 0;
+  return send_to_subbusd( SBC_TICK, NULL, 0, SBRT_NONE );
+}
+
 /**
  * Requests subbusd to terminate. subbusd will wait until
  * all connections are closed.
  * @return SBS_OK on success.
  */
-int subbuspp::subbus_quit(void) {
+int subbuspp::subbus_quit() {
   if ( fd < 0 ) return 0;
   return send_to_subbusd( SBC_QUIT, NULL, 0, SBRT_NONE );
 }

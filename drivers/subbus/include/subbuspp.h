@@ -119,6 +119,18 @@ class subbuspp : Client {
      */
     int mread_subbus_nw(subbus_mread_req *req, uint16_t *data,
                           uint16_t *nwords);
+                          
+    /**
+     * Historically, tick_sic() has been associated with two timers.
+     * The first is a 2-second timeout that can reboot the system.
+     * The second is a 2-minute timeout that lights the main fail
+     * light indicating that the instrument is not acquiring data.
+     * tick_sic() resets either or both timers, depending on the
+     * specific hardware.
+     * @return Zero on success
+     */
+    int tick_sic();
+    
     #ifdef SUBBUS_INTERRUPTS
       int subbus_int_attach( char *cardID, uint16_t address,
           uint16_t region, struct sigevent *event );
