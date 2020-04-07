@@ -89,6 +89,9 @@ int main(int argc, char **argv) {
   int count = 0;
   oui_init_options(argc, argv);
   uDACS_init();
+  msg(0, "Attempting to tick");
+  uDACS_A.SB->tick_sic();
+  msg(0, "tick_sic() returned successfully");
   for (;;) {
     if (uDACS_mread(uDACS_A)) {
       msg(0, "%5d: N: %5u", ++count, uDACS_A_rvals[21]);

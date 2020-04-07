@@ -495,9 +495,11 @@ void serusb_if::process_requests() {
       ascii_esc(req.request));
     iwrite((const char *)req.request, cmdlen);
     if (no_response) {
-      subbusd_serusb_client *clt = req.clt;
-      reqs.pop_front(); // dequeue_request( SBS_OK, 0, 0, 0, "" );
-      clt->request_complete(0);
+      request_pending = true;
+      dequeue_request( SBS_OK, 0, 0, 0, "" );
+      // subbusd_serusb_client *clt = req.clt;
+      // reqs.pop_front();
+      // clt->request_complete(0);
     } else {
       request_pending = true;
       TO.Set(1,0); // set_timeout(1);

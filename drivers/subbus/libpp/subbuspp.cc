@@ -66,10 +66,11 @@ int subbuspp::send_to_subbusd( uint16_t command, void *data,
   // Clear the input buffer here, since we're using it to return
   // data directly to the client.
   if (nc) report_ok(nc);
-  if (!iwritev(sb_iov, n_iov)) {
+  if (!iwritev(sb_iov, n_iov) && exp_type != SBRT_NONE) {
     ELoop->event_loop();
   }
   if (fd < 0) return SBS_NOT_CONNECTED;
+  if (exp_type == SBRT_NONE) return SBS_OK;
   nl_assert( nc >= sizeof(subbusd_rep_hdr_t) );
   if ( sb_reply->hdr.status < 0 ) 
     exp_type = SBRT_NONE;
