@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "dasio/appid.h"
 #include "subbuspp.h"
 #include "dasio/msg.h"
@@ -78,8 +79,8 @@ void uDACS_init() {
   int subfunc = uDACS_A.SB->load();
   if (subfunc == 0)
     msg(3, "load() failed");
-  if (subfunc != 9)
-    msg(2, "Expected Subfunction 9 for uDACS, was %d", subfunc);
+  if (subfunc != 9 && subfunc != 14)
+    msg(2, "Expected Subfunction 9 or 14 for uDACS, was %d", subfunc);
   msg(0, "uDACS_A->identify_board();");
   identify_board(uDACS_A.SB, "uDACS_A");
   uDACS_A.mreq = uDACS_A.SB->pack_mread_request(0x16, "10:1:25");
@@ -91,11 +92,15 @@ int main(int argc, char **argv) {
   uDACS_init();
   msg(0, "Attempting to tick");
   uDACS_A.SB->tick_sic();
-  msg(0, "tick_sic() returned successfully");
+  msg(0, "tick_sic() returned successfully, trying another");
+  uDACS_A.SB->tick_sic();
+  msg(0, "tick_sic() returned again successfully, entering loop");
   for (;;) {
     if (uDACS_mread(uDACS_A)) {
       msg(0, "%5d: N: %5u", ++count, uDACS_A_rvals[21]);
     }
+    uDACS_A.SB->tick_sic();
+    sleep(1);
   }
 }
 
