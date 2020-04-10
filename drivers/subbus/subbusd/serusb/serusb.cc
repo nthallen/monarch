@@ -96,7 +96,6 @@ bool subbusd_serusb_client::incoming_sbreq() {
       strcpy( sreq, "V\n" ); break;
     case SBC_TICK:
       strcpy( sreq, "T\n" ); break;
-      return false;
     case SBC_DISARM:
       strcpy( sreq, "A\n" ); break;
     case SBC_INTATT:
