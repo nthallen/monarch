@@ -494,9 +494,11 @@ void serusb_if::process_requests() {
       ascii_esc(req.request));
     iwrite((const char *)req.request, cmdlen);
     if (no_response) {
-      subbusd_serusb_client *clt = req.clt;
-      reqs.pop_front(); // dequeue_request( SBS_OK, 0, 0, 0, "" );
-      clt->request_complete(0);
+      request_pending = true;
+      dequeue_request( SBS_OK, 0, 0, 0, "" );
+      // subbusd_serusb_client *clt = req.clt;
+      // reqs.pop_front();
+      // clt->request_complete(0);
     } else {
       request_pending = true;
       TO.Set(1,0); // set_timeout(1);
@@ -532,107 +534,105 @@ void serusb_if::dequeue_request(int16_t status, int n_args,
   } else {
     repp = &tmp_rep;
   }
-  if (cur_req.request[0] != 'T') {
-    repp->hdr.status = status;
-    switch (n_args) {
-      case 0:
-        repp->hdr.ret_type = SBRT_NONE;
-        rsize = sizeof(subbusd_rep_hdr_t);
-        break;
-      case 1:
-        repp->hdr.ret_type = SBRT_US;
-        repp->data.value = arg0;
-        rsize = sizeof(subbusd_rep_hdr_t)+sizeof(uint16_t);
-        break;
-      case 3:
-        nl_assert(cur_req.request[0] == 'V');
-        switch ( cur_req.type ) {
-          case SBDR_TYPE_INTERNAL:
-            msg(0, "Features: %d:%03X Version: %s",
-              arg0, arg1, s);
-            break;
-          case SBDR_TYPE_CLIENT:
-            repp->hdr.ret_type = SBRT_CAP;
-            repp->data.capabilities.subfunc = arg0;
-            repp->data.capabilities.features = arg1;
-            strncpy(repp->data.capabilities.name, s, SUBBUS_NAME_MAX );
-            rsize = sizeof(subbusd_rep_hdr_t) + sizeof(subbusd_cap_t);
-            break;
-          default: 
-            break; // picked up and reported below
-        }
-        break;
-      case 4:
-        // 'M' response and request (tested before calling)
-        repp->hdr.ret_type = SBRT_MREAD;
-        nl_assert(cur_req.request[0] == 'M' && cur_req.n_reads != 0);
-        // Look at req n_reads, then parse responses. Don't parse more
-        // than n_reads values. If we encounter 'm', switch status to
-        // SBS_NOACK. If we encounter 'U', switch status to
-        // SBS_RESP_ERROR, report the error code, and return with no
-        // data. If we get the wrong number of responses, report
-        // SBS_RESP_SYNTAX, complain and return with no data
-        { int n_reads = cur_req.n_reads;
-          int n_parsed = 0;
-          // const char *p = s;
-          uint16_t errval;
+  repp->hdr.status = status;
+  switch (n_args) {
+    case 0:
+      repp->hdr.ret_type = SBRT_NONE;
+      rsize = sizeof(subbusd_rep_hdr_t);
+      break;
+    case 1:
+      repp->hdr.ret_type = SBRT_US;
+      repp->data.value = arg0;
+      rsize = sizeof(subbusd_rep_hdr_t)+sizeof(uint16_t);
+      break;
+    case 3:
+      nl_assert(cur_req.request[0] == 'V');
+      switch ( cur_req.type ) {
+        case SBDR_TYPE_INTERNAL:
+          msg(0, "Features: %d:%03X Version: %s",
+            arg0, arg1, s);
+          break;
+        case SBDR_TYPE_CLIENT:
+          repp->hdr.ret_type = SBRT_CAP;
+          repp->data.capabilities.subfunc = arg0;
+          repp->data.capabilities.features = arg1;
+          strncpy(repp->data.capabilities.name, s, SUBBUS_NAME_MAX );
+          rsize = sizeof(subbusd_rep_hdr_t) + sizeof(subbusd_cap_t);
+          break;
+        default: 
+          break; // picked up and reported below
+      }
+      break;
+    case 4:
+      // 'M' response and request (tested before calling)
+      repp->hdr.ret_type = SBRT_MREAD;
+      nl_assert(cur_req.request[0] == 'M' && cur_req.n_reads != 0);
+      // Look at req n_reads, then parse responses. Don't parse more
+      // than n_reads values. If we encounter 'm', switch status to
+      // SBS_NOACK. If we encounter 'U', switch status to
+      // SBS_RESP_ERROR, report the error code, and return with no
+      // data. If we get the wrong number of responses, report
+      // SBS_RESP_SYNTAX, complain and return with no data
+      { int n_reads = cur_req.n_reads;
+        int n_parsed = 0;
+        // const char *p = s;
+        uint16_t errval;
 
-          nl_assert(n_reads > 0 && n_reads <= 500);
-          nl_assert(cp == 1);
-          cp = 0;
-          while (n_parsed  < n_reads && rsize == 0 && cp < nc) {
-            switch ( buf[cp] ) {
-              case 'm':
-                repp->hdr.status = SBS_NOACK; // No acknowledge on at least one read
-                // fall through
-              case 'M':
-                ++cp;
-                if (!read_hex(repp->data.mread.rvals[n_parsed++])) {
-                  report_err("%s: DACS response syntax error", iname);
-                  repp->hdr.status = SBS_RESP_SYNTAX; // DACS reply syntax error
-                  rsize = sizeof(subbusd_rep_hdr_t);
-                  repp->hdr.ret_type = SBRT_NONE;
-                  break;
-                }
-                continue;
-              case 'U':
-                ++cp;
-                if (!read_hex(errval)) {
-                  report_err("%s: Invalid error in mread response", iname);
-                  repp->hdr.status = SBS_RESP_SYNTAX;
-                } else {
-                  msg(2, "%s: error %d reported on mread", iname, errval );
-                  repp->hdr.status = SBS_RESP_ERROR;
-                }
+        nl_assert(n_reads > 0 && n_reads <= 500);
+        nl_assert(cp == 1);
+        cp = 0;
+        while (n_parsed  < n_reads && rsize == 0 && cp < nc) {
+          switch ( buf[cp] ) {
+            case 'm':
+              repp->hdr.status = SBS_NOACK; // No acknowledge on at least one read
+              // fall through
+            case 'M':
+              ++cp;
+              if (!read_hex(repp->data.mread.rvals[n_parsed++])) {
+                report_err("%s: DACS response syntax error", iname);
+                repp->hdr.status = SBS_RESP_SYNTAX; // DACS reply syntax error
                 rsize = sizeof(subbusd_rep_hdr_t);
                 repp->hdr.ret_type = SBRT_NONE;
                 break;
-              case '\n':
-                break;
-              default:
-                report_err("%s: invalid character in mread at col %d", iname, cp);
-                break;
-            }
-            break;
-          }
-          if (rsize == 0) {
-            if (n_parsed > n_reads || cp >= nc ) {
-              // Wrong number of read values returned
-              report_err("Expected %d, read %d:", n_reads, n_parsed);
-              repp->hdr.status = SBS_RESP_SYNTAX;
+              }
+              continue;
+            case 'U':
+              ++cp;
+              if (!read_hex(errval)) {
+                report_err("%s: Invalid error in mread response", iname);
+                repp->hdr.status = SBS_RESP_SYNTAX;
+              } else {
+                msg(2, "%s: error %d reported on mread", iname, errval );
+                repp->hdr.status = SBS_RESP_ERROR;
+              }
               rsize = sizeof(subbusd_rep_hdr_t);
               repp->hdr.ret_type = SBRT_NONE;
-            } else {
-              repp->data.mread.n_reads = n_parsed;
-              rsize = sizeof(subbusd_rep_hdr_t) +
-                      (n_parsed+1) * sizeof(uint16_t);
-            }
+              break;
+            case '\n':
+              break;
+            default:
+              report_err("%s: invalid character in mread at col %d", iname, cp);
+              break;
+          }
+          break;
+        }
+        if (rsize == 0) {
+          if (n_parsed > n_reads || cp >= nc ) {
+            // Wrong number of read values returned
+            report_err("Expected %d, read %d:", n_reads, n_parsed);
+            repp->hdr.status = SBS_RESP_SYNTAX;
+            rsize = sizeof(subbusd_rep_hdr_t);
+            repp->hdr.ret_type = SBRT_NONE;
+          } else {
+            repp->data.mread.n_reads = n_parsed;
+            rsize = sizeof(subbusd_rep_hdr_t) +
+                    (n_parsed+1) * sizeof(uint16_t);
           }
         }
-        break;
-      case 2:
-        msg( 4, "Invalid n_args in dequeue_request" );
-    }
+      }
+      break;
+    case 2:
+      msg( 4, "Invalid n_args in dequeue_request" );
   }
   switch( cur_req.type ) {
     case SBDR_TYPE_INTERNAL:
