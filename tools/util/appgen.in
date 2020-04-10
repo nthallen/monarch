@@ -659,7 +659,7 @@ for i in $basetargets; do
         *) nl_error Unrecognized dependent $dep;;
       esac
     done
-    deps="$odeps${nl}${tab}\$(LINK.$LINK$cxx)$odeps$libs$ltmph$ldasio$ldisp$lssp -lnl"
+    deps="$odeps${nl}${tab}\$(LINK.$LINK$cxx)$odeps$libs$ldasio$ltmph$ldisp$lssp -lnl"
     [ -n "$ouiout" ] && deps="$deps${nl}${tab}\$(OUIUSE) $ouiout"
     case $LINK in
       priv*) deps="$deps${nl}${tab}\$(PROMOTE) $i";;
