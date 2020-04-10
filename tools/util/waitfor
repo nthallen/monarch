@@ -20,6 +20,8 @@ if [ "$1" = "-h" ]; then
   print_usage
   exit 0
 fi
+name=$1
+
 [ -z "$2" ] && nl_error Must provide length argument
 duration=$2
 decrement=1

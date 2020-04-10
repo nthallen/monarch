@@ -70,7 +70,6 @@ int subbuspp::send_to_subbusd( uint16_t command, void *data,
     ELoop->event_loop();
   }
   if (fd < 0) return SBS_NOT_CONNECTED;
-  if (exp_type == SBRT_NONE) return SBS_OK;
   nl_assert( nc >= sizeof(subbusd_rep_hdr_t) );
   if ( sb_reply->hdr.status < 0 ) 
     exp_type = SBRT_NONE;

@@ -94,7 +94,13 @@ int main(int argc, char **argv) {
   uDACS_A.SB->tick_sic();
   msg(0, "tick_sic() returned successfully, trying another");
   uDACS_A.SB->tick_sic();
-  msg(0, "tick_sic() returned again successfully, entering loop");
+  sleep(2);
+  msg(0, "Asserting Fail");
+  uDACS_A.SB->write_ack(6,1);
+  sleep(2);
+  msg(0, "Clearing Fail");
+  uDACS_A.SB->write_ack(6,0);
+  sleep(2);
   for (;;) {
     if (uDACS_mread(uDACS_A)) {
       msg(0, "%5d: N: %5u", ++count, uDACS_A_rvals[21]);
