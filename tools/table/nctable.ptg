@@ -2,29 +2,32 @@
 /* $2: PTGNode RulePrint */
 /* $3: PTGNode FieldPrint */
 /* $4: table name (string) */
-/* $5: rows */
-/* $6: columns */
-/* $7: rule definitions */
+/* $5: rule definitions */
+/* $6: PTGNode window instantiation */
 File:
   "%{\n"
   "  /* nctable output */\n"
   "  #include \"dasio/nctable.h\"\n"
   "  static int " $4 string "_winnum;\n\n"
-  $7 "\n"
+  $5 "\n"
   "  static void " $4 string "_redraw(void) {\n"
   "    nct_clear(" $4 string "_winnum);\n"
   $1
   $2
   "  }\n\n"
   "  static void " $4 string "_init(void) {\n"
-  "    " $4 string "_winnum = nct_init(\"" $4 string "\","
-	  $5 int "," $6 int ");\n"
+  $6
   "    " $4 string "_redraw();\n"
   "  }\n"
   "%}\n"
   "TM INITFUNC " $4 string "_init();\n"
   "TM REDRAWFUNC " $4 string "_redraw();\n"
   $3
+
+/* PTGWindow(table_name,w,h) */
+Window:
+  "    " $1 string "_winnum = nct_init(\"" $1 string "\","
+	  $2 int "," $3 int ");\n"
 
 /* PTGField(table_name,name,r,c,w,h) */
 Field:

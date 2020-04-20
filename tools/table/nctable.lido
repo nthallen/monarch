@@ -387,20 +387,23 @@ SYMBOL Rule INHERITS TableLeaf END;
 %----------------------------------------------------------------
 % Alright: let's produce some output!
 %----------------------------------------------------------------
-CHAIN FieldPrint, StringPrint : PTGNode;
+CHAIN FieldPrint, StringPrint, WinPrint : PTGNode;
 ATTR FullOutput : PTGNode;
 
 SYMBOL Program COMPUTE
   CHAINSTART HEAD.FieldPrint = PTGNULL;
   CHAINSTART HEAD.StringPrint = PTGNULL;
+  THIS.WinPrint = PTGWindow(
+    StringTable(THIS.TableName),
+    ADD(SPACE(THIS.Height),1),
+    ADD(SPACE(THIS.Width),1));
   THIS.FullOutput = PTGFile(
     TAIL.StringPrint,
     THIS.RulePrint,
     TAIL.FieldPrint,
     StringTable(THIS.TableName),
-    ADD(SPACE(THIS.Height),1),
-    ADD(SPACE(THIS.Width),1),
-    THIS.RuleDef);
+    THIS.RuleDef,
+    THIS.WinPrint);
   IF(NE(OutputFile,NoKey),
      PTGOutFile(StringTable(GetClpValue(OutputFile,0)),THIS.FullOutput),
      PTGOut(THIS.FullOutput));
