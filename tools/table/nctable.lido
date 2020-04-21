@@ -444,7 +444,7 @@ SYMBOL HWord COMPUTE
 	IF (SYNT.IsEmpty, THIS.StringPrint,
 	  PTGSeq( THIS.StringPrint,
 		PTGString( THIS.Row, THIS.Col,
-		  THIS.Attr, PTGId(THIS.String),
+		  THIS.Attr, StringTable(THIS.String),
 		  StringTable(INCLUDING Program.TableName))));
 END;
 

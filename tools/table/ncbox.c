@@ -25,6 +25,20 @@ typedef struct tblrule {
 
 static TableRule TableRules;
 
+/** 
+ * Identifies the correct rule from the table of rules
+ */
+unsigned char *GetIDrule(int id) {
+  TableRule instance = TableRules;
+  while ((instance != 0) && (instance->ID != id)) {
+    instance = instance->next;
+  }
+  if (instance == 0) {
+    message(DEADLY, "invalid rule id", 0, &curpos );
+  }
+  return instance->rule;
+}
+
 /**
  * Returns true if the specified rule is vertical.
  * The index argument is the StringTable index of the rule string.

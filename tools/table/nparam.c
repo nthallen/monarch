@@ -35,14 +35,14 @@ void preview_window( PTG_OUTPUT_FILE f, const char *name, int w, int h ) {
 }
 
 void preview_label( PTG_OUTPUT_FILE f, const char *str, int r, int c ) {
-  if (do_output) nct_string( winnum, str, r, c );
+  if (do_output) nct_string( winnum, 4, r, c, str );
 }
 
 void preview_field( PTG_OUTPUT_FILE f, int fldnum, int r, int c ) {
   if (do_output) {
     char buf[10];
     sprintf(buf, "%d", fldnum);
-    nct_string( winnum, buf, r, c );
+    nct_string( winnum, 2, r, c, buf );
   }
 }
 
@@ -54,14 +54,14 @@ void preview_loop( PTG_OUTPUT_FILE f ) {
   }
 }
 
-void preview_vrule( PTG_OUTPUT_FILE f, int r, int c, int h, int dbl ) {
+void preview_vrule( PTG_OUTPUT_FILE f, int winnum, int a, int r, int c, int rule_id ) {
   if ( do_output ) {
-    nct_vrule( winnum, r, c, h, dbl );
+    nct_vrule( winnum, a, r, c, GetIDrule(rule_id) );
   }
 }
 
-void preview_hrule( PTG_OUTPUT_FILE f, int r, int c, int w, int dbl ) {
+void preview_hrule( PTG_OUTPUT_FILE f, int winnum, int a, int r, int c, int rule_id ) {
   if ( do_output ) {
-    nct_hrule( winnum, r, c, w, dbl );
+    nct_hrule( winnum, a, r, c, GetIDrule(rule_id) );
   }
 }
