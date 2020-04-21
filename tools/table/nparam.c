@@ -4,6 +4,8 @@
 #include "nctable.h"
 
 int ColSpace = 1;
+static int winnum;
+static int fldnum = 0;
 
 dims_t CalcWordDims(char *text, int attr) {
   dims_t wdims;
@@ -25,8 +27,10 @@ int DatumHeight(int nrows) {
 }
 
 int RuleThickness = 1;
+static int do_output = 0;
 
-void preview_window( PTG_OUTPUT_FILE f, const char *name, int w, int h ) {
+void preview_window( PTG_OUTPUT_FILE f, const char *name, int w, int h, int preview ) {
+  do_output = preview;
   if (do_output) {
     char* argv[2] = {"", "/dev/tty"};
     nct_init_options(2, argv);
@@ -34,14 +38,14 @@ void preview_window( PTG_OUTPUT_FILE f, const char *name, int w, int h ) {
   }
 }
 
-void preview_label( PTG_OUTPUT_FILE f, const char *str, int r, int c ) {
-  if (do_output) nct_string( winnum, 4, r, c, str );
+void preview_label( PTG_OUTPUT_FILE f, const char *str, int a, int r, int c ) {
+  if (do_output) nct_string( winnum, a, r, c, str );
 }
 
-void preview_field( PTG_OUTPUT_FILE f, int fldnum, int r, int c ) {
+void preview_field( PTG_OUTPUT_FILE f, int r, int c, int w ) {
   if (do_output) {
     char buf[10];
-    sprintf(buf, "%d", fldnum);
+    sprintf(buf, "%*d", w, ++fldnum);
     nct_string( winnum, 2, r, c, buf );
   }
 }
@@ -54,13 +58,13 @@ void preview_loop( PTG_OUTPUT_FILE f ) {
   }
 }
 
-void preview_vrule( PTG_OUTPUT_FILE f, int winnum, int a, int r, int c, int rule_id ) {
+void preview_vrule( PTG_OUTPUT_FILE f, int a, int r, int c, int rule_id ) {
   if ( do_output ) {
     nct_vrule( winnum, a, r, c, GetIDrule(rule_id) );
   }
 }
 
-void preview_hrule( PTG_OUTPUT_FILE f, int winnum, int a, int r, int c, int rule_id ) {
+void preview_hrule( PTG_OUTPUT_FILE f, int a, int r, int c, int rule_id ) {
   if ( do_output ) {
     nct_hrule( winnum, a, r, c, GetIDrule(rule_id) );
   }

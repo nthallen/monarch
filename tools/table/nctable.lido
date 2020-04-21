@@ -387,8 +387,8 @@ SYMBOL Rule INHERITS TableLeaf END;
 %----------------------------------------------------------------
 % Alright: let's produce some output!
 %----------------------------------------------------------------
-CHAIN FieldPrint, StringPrint, WinPrint : PTGNode;
-ATTR FullOutput : PTGNode;
+CHAIN FieldPrint, StringPrint : PTGNode;
+ATTR FullOutput, WinPrint : PTGNode;
 
 SYMBOL Program COMPUTE
   CHAINSTART HEAD.FieldPrint = PTGNULL;
@@ -396,7 +396,8 @@ SYMBOL Program COMPUTE
   THIS.WinPrint = PTGWindow(
     StringTable(THIS.TableName),
     ADD(SPACE(THIS.Height),1),
-    ADD(SPACE(THIS.Width),1));
+    ADD(SPACE(THIS.Width),1)
+    PreviewDisplay);
   THIS.FullOutput = PTGFile(
     TAIL.StringPrint,
     THIS.RulePrint,
@@ -425,10 +426,11 @@ SYMBOL Datum COMPUTE
   THIS.FieldPrint =
 	PTGSeq(THIS.FieldPrint,
 	  PTGField(
-                StringTable(INCLUDING Program.TableName),
+    StringTable(INCLUDING Program.TableName),
 		PTGId(THIS.String),
 		THIS.Row,
-		SYNT.PrintCol));
+		SYNT.PrintCol,
+    SPACE(THIS.Width)));
 
   THIS.StringPrint =
     PTGSeq(THIS.StringPrint,
