@@ -30,11 +30,11 @@ Window:
 	  $2 int "," $3 int ");\n"
   [ preview_window $1 string $3 int $2 int ]
 
-/* PTGField(table_name,name,r,c,w,h) */
+/* PTGField(table_name,name,r,c) */
 Field:
   "nct_string( " $1 string "_winnum, 2, " $3 int ", " $4 int
     ", text(" $2 ") );\n"
-  [ preview_field $2 int $5 int $4 int $6 int $7 int ]
+  [ preview_field $3 int $4 int ]
 
 /* row, col, attr, string, window */
 /*  Produce output only if string is non-empty */

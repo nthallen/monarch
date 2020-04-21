@@ -38,11 +38,11 @@ void preview_label( PTG_OUTPUT_FILE f, const char *str, int r, int c ) {
   if (do_output) nct_string( winnum, str, r, c );
 }
 
-void preview_field( PTG_OUTPUT_FILE f, int fldnum, int r, int c, int w, int h ) {
+void preview_field( PTG_OUTPUT_FILE f, int fldnum, int r, int c ) {
   if (do_output) {
     char buf[10];
     sprintf(buf, "%d", fldnum);
-    nct_string( winnum, buf, r, c, w, h );
+    nct_string( winnum, buf, r, c );
   }
 }
 
