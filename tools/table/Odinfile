@@ -7,8 +7,9 @@
  +lib_sp=(/usr/local/lib)
 
 %nflags == <<
+ +cc='g++'
  +cc_flags='-I/usr/local/include -Wl,-rpath -Wl,/usr/local/lib'
- +lib=nl
+ +lib=dasio nl -lncurses
  +lib_sp=(/usr/local/lib)
 
 phtable.exe == phtable.specs +(%phflags) :exe

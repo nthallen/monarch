@@ -396,7 +396,7 @@ SYMBOL Program COMPUTE
   THIS.WinPrint = PTGWindow(
     StringTable(THIS.TableName),
     ADD(SPACE(THIS.Height),1),
-    ADD(SPACE(THIS.Width),1)
+    ADD(SPACE(THIS.Width),1),
     PreviewDisplay);
   THIS.FullOutput = PTGFile(
     TAIL.StringPrint,

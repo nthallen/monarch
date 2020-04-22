@@ -1,6 +1,7 @@
 /* nparam.c Parametrized values for ntable (the text version ) */
 #include "err.h"
 #include "param.h"
+#include "phparam.h"
 #include "tablelib.h"
 
 #define MAX_FIELD_WIDTH 150

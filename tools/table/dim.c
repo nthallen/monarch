@@ -34,7 +34,7 @@ void NewInstance( DefTableKey Key, dim_t W, dim_t H,
 				  int Row, int Col, int Real, int Offset ) {
   instance_t inst;
   
-  inst = malloc(sizeof(struct instance_s));
+  inst = (instance_t)malloc(sizeof(struct instance_s));
   if ( inst == 0 )
 	message(DEADLY, "No memory in NewInstance", 0, &curpos );
   inst->next = GetInstance(Key, NULL);
@@ -129,13 +129,13 @@ glue_t GlueApplied( dim_t MinDim, glue_t Glue ) {
 
 col_dim_t InitColSpecs( int n_cols ) {
   int i;
-  col_dim_t ColSpec = malloc( sizeof(scol_dim_t) );
+  col_dim_t ColSpec = (col_dim_t)malloc( sizeof(scol_dim_t) );
 
   if (ColSpec == 0)
 	message(DEADLY, "ColSpec malloc failed", 0, &curpos);
   ColSpec->n_cols = n_cols;
   if ( n_cols > 0 ) {
-	ColSpec->widths = malloc( n_cols * sizeof( dim_t ) );
+	ColSpec->widths = (dim_t*)malloc( n_cols * sizeof( dim_t ) );
 	if ( ColSpec->widths == 0 )
 	  message(DEADLY, "ColSpec->widths malloc failed", 0, &curpos);
 	for ( i = 0; i < n_cols; i++ ) {

@@ -25,11 +25,11 @@ File:
   $3
   [ preview_loop ]
 
-/* PTGWindow(table_name,w,h) */
+/* PTGWindow(table_name,w,h,preview) */
 Window:
   "    " $1 string "_winnum = nct_init(\"" $1 string "\","
 	  $2 int "," $3 int ");\n"
-  [ preview_window $1 string $3 int $2 int ]
+  [ preview_window $1 string $3 int $2 int $4 int ]
 
 /* PTGField(table_name,name,r,c,w) */
 Field:
