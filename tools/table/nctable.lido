@@ -2,6 +2,7 @@ ATTR Dimension, MinWidth, MinHeight: dim_t;
 TERM BareWord, CString, Integer: int;
 ATTR String: int;
 ATTR TableName: int;
+ATTR ncursesSetup : VOID;
 
 SYMBOL Program COMPUTE
   SYNT.TableName = get_table_name(InputFile);
@@ -28,9 +29,9 @@ END;
 ATTR Space, GlueScale: int;
 SYMBOL Dimension COMPUTE
   SYNT.Dimension =
-	MKDIM(
-	  CONSTITUENTS Space.Space WITH ( int, max, IDENTICAL, ZERO ),
-	  CONSTITUENTS GlueSpec.Space WITH ( int, max, IDENTICAL, ZERO ) );
+    MKDIM(
+      CONSTITUENTS Space.Space WITH ( int, max, IDENTICAL, ZERO ),
+      CONSTITUENTS GlueSpec.Space WITH ( int, max, IDENTICAL, ZERO ) );
 END;
 
 RULE: HDimension ::= Dimension COMPUTE
@@ -62,9 +63,9 @@ END;
 
 SYMBOL Glue COMPUTE
   SYNT.MinWidth = CONSTITUENTS HGlue.MinWidth
-	WITH (dim_t,MAXDIM,IDENTICAL,MKDIM0);
+    WITH (dim_t,MAXDIM,IDENTICAL,MKDIM0);
   SYNT.MinHeight = CONSTITUENTS VGlue.MinHeight
-	WITH (dim_t,MAXDIM,IDENTICAL,MKDIM0);
+    WITH (dim_t,MAXDIM,IDENTICAL,MKDIM0);
 END;
 
 %----------------------------------------------------------------
@@ -166,22 +167,22 @@ SYMBOL LeftAlignChar COMPUTE SYNT.present = 1; END;
 SYMBOL RightAlignChar COMPUTE SYNT.present = 1; END;
 SYMBOL LeftAlign COMPUTE
   SYNT.MinWidth = MKDIM( 0,	CONSTITUENTS LeftAlignChar.present
-	WITH (int,ADD,IDENTICAL,ZERO));
+    WITH (int,ADD,IDENTICAL,ZERO));
 END;
 SYMBOL RightAlign COMPUTE
   SYNT.MinWidth = MKDIM( 0, CONSTITUENTS RightAlignChar.present
-	WITH (int,ADD,IDENTICAL,ZERO));
+    WITH (int,ADD,IDENTICAL,ZERO));
 END;
 
 CLASS SYMBOL TableField COMPUTE
   SYNT.MinHeight =
-	CONSTITUENTS ( GFIELD.MinHeight, Columns.MinHeight )
-	  SHIELD ( Columns, GFIELD )
-	  WITH ( dim_t, MAXDIM, IDENTICAL, MKDIM0 );
+    CONSTITUENTS ( GFIELD.MinHeight, Columns.MinHeight )
+      SHIELD ( Columns, GFIELD )
+      WITH ( dim_t, MAXDIM, IDENTICAL, MKDIM0 );
   SYNT.MinWidth =
-	CONSTITUENTS ( GFIELD.MinWidth, Columns.MinWidth )
-	  SHIELD ( GFIELD, Columns )
-	  WITH ( dim_t, MAXDIM, IDENTICAL, MKDIM0 );
+    CONSTITUENTS ( GFIELD.MinWidth, Columns.MinWidth )
+      SHIELD ( GFIELD, Columns )
+      WITH ( dim_t, MAXDIM, IDENTICAL, MKDIM0 );
 END;
 
 SYMBOL VField INHERITS TableField END;
@@ -222,36 +223,36 @@ END;
 %----------------------------------------------------------------
 SYMBOL Columns COMPUTE
   SYNT.MinHeight =
-	CONSTITUENTS CField.MinHeight
-	  SHIELD ( Table, HBOX )
-	  WITH ( dim_t, MAXDIM, IDENTICAL, MKDIM0 );
+    CONSTITUENTS CField.MinHeight
+      SHIELD ( Table, HBOX )
+      WITH ( dim_t, MAXDIM, IDENTICAL, MKDIM0 );
 END;
 
 SYMBOL HBOX COMPUTE
   SYNT.MinHeight =
-	CONSTITUENTS HFIELD.MinHeight
-	  SHIELD ( HBOX )
-	  WITH ( dim_t, MAXDIM, IDENTICAL, MKDIM0 );
+    CONSTITUENTS HFIELD.MinHeight
+      SHIELD ( HBOX )
+      WITH ( dim_t, MAXDIM, IDENTICAL, MKDIM0 );
   SYNT.MinWidth =
-	CONSTITUENTS ( HFIELD.MinWidth, LeftAlign.MinWidth,
-					RightAlign.MinWidth )
-	  SHIELD ( HBOX )
-	  WITH ( dim_t, ADDDIM, IDENTICAL, MKDIM0 );
+    CONSTITUENTS ( HFIELD.MinWidth, LeftAlign.MinWidth,
+                    RightAlign.MinWidth )
+      SHIELD ( HBOX )
+      WITH ( dim_t, ADDDIM, IDENTICAL, MKDIM0 );
 END;
 
 ATTR ColumnsMinWidth : dim_t;
 SYMBOL Table COMPUTE
   SYNT.MinHeight =
-	CONSTITUENTS VField.MinHeight
-	  SHIELD ( Table, Columns, HBOX )
-	  WITH ( dim_t, ADDDIM, IDENTICAL, MKDIM0 );
+    CONSTITUENTS VField.MinHeight
+      SHIELD ( Table, Columns, HBOX )
+      WITH ( dim_t, ADDDIM, IDENTICAL, MKDIM0 );
   SYNT.ColumnsMinWidth =
-	CONSTITUENTS Columns.MinWidth
-	SHIELD Table WITH ( dim_t, MAXDIM, IDENTICAL, MKDIM0 );
+    CONSTITUENTS Columns.MinWidth
+    SHIELD Table WITH ( dim_t, MAXDIM, IDENTICAL, MKDIM0 );
   SYNT.MinWidth =
-	CONSTITUENTS VField.MinWidth
-	  SHIELD ( Table, Columns, HBOX )
-	  WITH ( dim_t, MAXDIM, IDENTICAL, MKDIM0 );
+    CONSTITUENTS VField.MinWidth
+      SHIELD ( Table, Columns, HBOX )
+      WITH ( dim_t, MAXDIM, IDENTICAL, MKDIM0 );
 END;
 
 %----------------------------------------------------------------
@@ -268,9 +269,9 @@ END;
 
 SYMBOL Table COMPUTE
   SYNT.Width = GlueDim( THIS.MinWidth,
-	INCLUDING ( Program.Width, GFIELD.Width, NamedTable.Width ) );
+    INCLUDING ( Program.Width, GFIELD.Width, NamedTable.Width ) );
   SYNT.InhHeight = 
-	INCLUDING ( Program.Height, GFIELD.Height, NamedTable.Height );
+    INCLUDING ( Program.Height, GFIELD.Height, NamedTable.Height );
   SYNT.Height = GlueDim( THIS.MinHeight, SYNT.InhHeight );
   CHAINSTART HEAD.Glue = GlueSet( THIS.MinHeight, SYNT.InhHeight );
 END;
@@ -301,7 +302,7 @@ END;
 
 SYMBOL Columns COMPUTE
   CHAINSTART HEAD.Glue =
-	GlueSet( INCLUDING Table.ColumnsMinWidth, INCLUDING Table.Width );
+    GlueSet( INCLUDING Table.ColumnsMinWidth, INCLUDING Table.Width );
 END;
 
 SYMBOL CField COMPUTE
@@ -312,9 +313,9 @@ END;
 
 SYMBOL GFIELD COMPUTE
   SYNT.Width =
-	INCLUDING ( VField.Width, CField.Width,  HFIELD.Width );
+    INCLUDING ( VField.Width, CField.Width,  HFIELD.Width );
   SYNT.Height =
-	INCLUDING ( VField.Height, CField.Height,  HFIELD.Height );
+    INCLUDING ( VField.Height, CField.Height,  HFIELD.Height );
 END;
 
 CLASS SYMBOL TableLeaf COMPUTE
@@ -393,11 +394,10 @@ ATTR FullOutput, WinPrint : PTGNode;
 SYMBOL Program COMPUTE
   CHAINSTART HEAD.FieldPrint = PTGNULL;
   CHAINSTART HEAD.StringPrint = PTGNULL;
-  THIS.WinPrint = PTGWindow(
+  SYNT.WinPrint = PTGWindow(
     StringTable(THIS.TableName),
     ADD(SPACE(THIS.Height),1),
-    ADD(SPACE(THIS.Width),1),
-    PreviewDisplay);
+    ADD(SPACE(THIS.Width),1));
   THIS.FullOutput = PTGFile(
     TAIL.StringPrint,
     THIS.RulePrint,
@@ -405,9 +405,13 @@ SYMBOL Program COMPUTE
     StringTable(THIS.TableName),
     THIS.RuleDef,
     THIS.WinPrint);
+  SYNT.ncursesSetup = Setupncurses(PreviewDisplay,
+    StringTable(THIS.TableName),
+    ADD(SPACE(THIS.Width),1),
+    ADD(SPACE(THIS.Height),1));
   IF(NE(OutputFile,NoKey),
      PTGOutFile(StringTable(GetClpValue(OutputFile,0)),THIS.FullOutput),
-     PTGOut(THIS.FullOutput));
+     PTGOut(THIS.FullOutput)) <- SYNT.ncursesSetup;
 END;
 
 SYMBOL Table COMPUTE
@@ -420,16 +424,16 @@ ATTR FullWidth : dim_t;
 
 SYMBOL Datum COMPUTE
   SYNT.FullWidth =
-	INCLUDING ( CField.Width, HFIELD.Width, Table.Width );
+    INCLUDING ( CField.Width, HFIELD.Width, Table.Width );
   SYNT.PrintCol =
-	SUB(ADD(THIS.Col,SPACE(THIS.FullWidth)),SPACE(THIS.Width));
+    SUB(ADD(THIS.Col,SPACE(THIS.FullWidth)),SPACE(THIS.Width));
   THIS.FieldPrint =
-	PTGSeq(THIS.FieldPrint,
-	  PTGField(
+    PTGSeq(THIS.FieldPrint,
+      PTGField(
     StringTable(INCLUDING Program.TableName),
-		PTGId(THIS.String),
-		THIS.Row,
-		SYNT.PrintCol,
+        PTGId(THIS.String),
+        THIS.Row,
+        SYNT.PrintCol,
     SPACE(THIS.Width)));
 
   THIS.StringPrint =
@@ -443,11 +447,11 @@ ATTR IsEmpty : int;
 SYMBOL HWord COMPUTE
   SYNT.IsEmpty = EQ(strlen(StringTable(THIS.String)),0);
   THIS.StringPrint =
-	IF (SYNT.IsEmpty, THIS.StringPrint,
-	  PTGSeq( THIS.StringPrint,
-		PTGString( THIS.Row, THIS.Col,
-		  THIS.Attr, StringTable(THIS.String),
-		  StringTable(INCLUDING Program.TableName))));
+    IF (SYNT.IsEmpty, THIS.StringPrint,
+      PTGSeq( THIS.StringPrint,
+        PTGString( THIS.Row, THIS.Col,
+          THIS.Attr, StringTable(THIS.String),
+          StringTable(INCLUDING Program.TableName))));
 END;
 
 ATTR RulePlace : VOID;
@@ -456,18 +460,19 @@ ATTR RuleDef   : PTGNode;
 
 SYMBOL Program COMPUTE
   SYNT.RulePlace = CONSTITUENTS Rule.RulePlace;
-  SYNT.RulePrint = print_rules(THIS.TableName) <- SYNT.RulePlace;
+  SYNT.RulePrint = print_rules(THIS.TableName)
+    <- (SYNT.RulePlace, SYNT.WinPrint);
   SYNT.RuleDef = define_rules(THIS.TableName) <- SYNT.RulePrint;
 END;
 
 ATTR ForReal : int;
 SYMBOL Rule COMPUTE
   SYNT.ForReal =
-	INCLUDING (Program.ForReal, NamedTable.ForReal);
+    INCLUDING (Program.ForReal, NamedTable.ForReal);
   SYNT.RulePlace =
-	IF(THIS.ForReal,
-	  NewRule( THIS.Row, THIS.Col, SPACE(THIS.Width),
-			  SPACE(THIS.Height), 1, THIS.String ));
+    IF(THIS.ForReal,
+      NewRule( THIS.Row, THIS.Col, SPACE(THIS.Width),
+              SPACE(THIS.Height), 1, THIS.String ));
 END;
 
 %----------------------------------------------------------------
@@ -487,10 +492,10 @@ END;
 
 RULE: NamedTable ::= TableNameDef Table COMPUTE
   NamedTable.NamedDims = ORDER(
-	ResetMinDims(TableNameDef.Key,
-	  MKDIMS(Table.MinWidth,Table.MinHeight)),
-	NewInstance(TableNameDef.Key,
-	  Table.MinWidth, Table.MinHeight, 0, 0, 0, 0 )
+    ResetMinDims(TableNameDef.Key,
+      MKDIMS(Table.MinWidth,Table.MinHeight)),
+    NewInstance(TableNameDef.Key,
+      Table.MinWidth, Table.MinHeight, 0, 0, 0, 0 )
   ) <- NamedTable.NamedDims;
 END;
 
@@ -501,12 +506,12 @@ END;
 RULE: TableRef ::= '[' TableNameUse ']' COMPUTE
   TableRef.Key = TableNameUse.Key;
   TableRef.NamedDims =
-	IF ( NOT(HasMinDims(TableRef.Key)),
-	  message(ERROR,"Undefined Table Ref",0,COORDREF))
-		<- TableRef.NamedDims;
+    IF ( NOT(HasMinDims(TableRef.Key)),
+      message(ERROR,"Undefined Table Ref",0,COORDREF))
+        <- TableRef.NamedDims;
   TableRef.MinDims =
-	GetMinDims(TableRef.Key, MKDIMS(MKDIM0(),MKDIM0()))
-	  <- TableRef.NamedDims;
+    GetMinDims(TableRef.Key, MKDIMS(MKDIM0(),MKDIM0()))
+      <- TableRef.NamedDims;
   TableRef.MinWidth = WIDTH(TableRef.MinDims);
   TableRef.MinHeight = HEIGHT(TableRef.MinDims);
 END;
@@ -522,11 +527,11 @@ SYMBOL TableRef INHERITS TableLeaf END;
 ATTR InstanceRecorded : VOID;
 SYMBOL TableRef COMPUTE
   SYNT.ForReal =
-	INCLUDING (Program.ForReal, NamedTable.ForReal);
+    INCLUDING (Program.ForReal, NamedTable.ForReal);
   SYNT.InstanceRecorded =
-	IF(THIS.ForReal,
-	  NewInstance(THIS.Key,THIS.Width,THIS.Height,
-			THIS.Row,THIS.Col, 1, 0 ));
+    IF(THIS.ForReal,
+      NewInstance(THIS.Key,THIS.Width,THIS.Height,
+            THIS.Row,THIS.Col, 1, 0 ));
 END;
 
 SYMBOL Program INHERITS TableRootScope END;
@@ -561,11 +566,11 @@ END;
 ATTR Instance : instance_t;
 RULE: NamedTable ::= TableNameDef Table COMPUTE
   NamedTable.Instance = PopInstance(TableNameDef.Key)
-	<- NamedTable.InstanceReady;
+    <- NamedTable.InstanceReady;
   NamedTable.InstanceRecorded =
-	UNTIL NOT(NamedTable.ForReal)
-	ITERATE NamedTable.Instance = PopInstance(TableNameDef.Key)
-	  <- NamedTable.InstancePropogated;
+    UNTIL NOT(NamedTable.ForReal)
+    ITERATE NamedTable.Instance = PopInstance(TableNameDef.Key)
+      <- NamedTable.InstancePropogated;
   NamedTable.Width = WIDTH(INST_SIZE(NamedTable.Instance));
   NamedTable.Height = HEIGHT(INST_SIZE(NamedTable.Instance));
   NamedTable.Row = INST_ROW(NamedTable.Instance);
@@ -574,23 +579,23 @@ RULE: NamedTable ::= TableNameDef Table COMPUTE
 
   % These are the CHAINs we head:
   CHAINSTART HEAD.FieldPrint = PTGNULL
-	<- NamedTable.Instance;
+    <- NamedTable.Instance;
   CHAINSTART HEAD.StringPrint = PTGNULL
-	<- NamedTable.Instance;
+    <- NamedTable.Instance;
   NamedTable.InstancePropogated =
-	IF(NamedTable.ForReal,
-	  ORDER(
-		SeqFieldPtg(TableNameDef.Key, TAIL.FieldPrint),
-		SeqStringPtg(TableNameDef.Key, TAIL.StringPrint)))
-	  <- Table.InstanceRecorded;
+    IF(NamedTable.ForReal,
+      ORDER(
+        SeqFieldPtg(TableNameDef.Key, TAIL.FieldPrint),
+        SeqStringPtg(TableNameDef.Key, TAIL.StringPrint)))
+      <- Table.InstanceRecorded;
 
   % This is how we hook into the enclosing CHAINs
   NamedTable.FieldPrint =
-	PTGSeq(NamedTable.FieldPrint,
-	  GetFieldPtg(TableNameDef.Key,	PTGNULL))
-		<- NamedTable.InstanceRecorded;
+    PTGSeq(NamedTable.FieldPrint,
+      GetFieldPtg(TableNameDef.Key,	PTGNULL))
+        <- NamedTable.InstanceRecorded;
   NamedTable.StringPrint =
-	PTGSeq(NamedTable.StringPrint,
-	  GetStringPtg(TableNameDef.Key,	PTGNULL))
-		<- NamedTable.InstanceRecorded;
+    PTGSeq(NamedTable.StringPrint,
+      GetStringPtg(TableNameDef.Key,	PTGNULL))
+        <- NamedTable.InstanceRecorded;
 END;

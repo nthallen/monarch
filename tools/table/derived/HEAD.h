@@ -175,6 +175,7 @@ Suite 330, Boston, MA 02111-1307, USA.  */
 #include "ptg_gen.h"
 #include "param.h"
 #include "table_name.h"
+#include "ncparam.h"
 #endif
 
 #ifndef HEAD_H17

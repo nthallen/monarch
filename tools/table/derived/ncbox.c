@@ -25,6 +25,20 @@ typedef struct tblrule {
 
 static TableRule TableRules;
 
+/** 
+ * Identifies the correct rule from the table of rules
+ */
+unsigned char *GetIDrule(int id) {
+  TableRule instance = TableRules;
+  while ((instance != 0) && (instance->ID != id)) {
+    instance = instance->next;
+  }
+  if (instance == 0) {
+    message(DEADLY, "invalid rule id", 0, &curpos );
+  }
+  return instance->rule;
+}
+
 /**
  * Returns true if the specified rule is vertical.
  * The index argument is the StringTable index of the rule string.
@@ -45,14 +59,14 @@ int IsVertical(int index) {
 
 void NewRule( int Row, int Col, int Width, int Height,
                                 int Attr, int index ) {
-  TableRule new;
+  TableRule newrule;
   unsigned char *rule, *rulecode;
   unsigned char middle;
   int Length, Vertical, Lines;
   int preplus = 0, postplus = 0;
   static int rule_id = 0;
 
-  rulecode = StringTable(index);
+  rulecode = (unsigned char *)StringTable(index);
   if ( *rulecode == '+' ) {
         preplus = 1;
         rulecode++;
@@ -70,25 +84,25 @@ void NewRule( int Row, int Col, int Width, int Height,
       } else Lines = 1;
       break;
     default:
-      message( DEADLY, "Unknown code in New Rule", 0, &curpos );
+      message( DEADLY, "Unknown code in newrule Rule", 0, &curpos );
   }
   if ( rulecode[1] == '+' ) postplus = 1;
 
   Length = Width * Height;
-  new = malloc(sizeof(struct tblrule));
-  rule = malloc( Length+1 );
-  if ( new == 0 || rule == 0 )
+  newrule = (TableRule)malloc(sizeof(struct tblrule));
+  rule = (unsigned char *)malloc( Length+1 );
+  if ( newrule == 0 || rule == 0 )
     message(DEADLY, "Out of memory in NewRule", 0, &curpos );
-  new->Row = Row;
-  new->Col = Col;
-  new->Width = Width;
-  new->Height = Height;
-  new->Vertical = Vertical;
-  new->Lines = Lines;
-  new->preplus = preplus;
-  new->postplus = postplus;
-  new->Attr = Attr;
-  new->ID = rule_id++;
+  newrule->Row = Row;
+  newrule->Col = Col;
+  newrule->Width = Width;
+  newrule->Height = Height;
+  newrule->Vertical = Vertical;
+  newrule->Lines = Lines;
+  newrule->preplus = preplus;
+  newrule->postplus = postplus;
+  newrule->Attr = Attr;
+  newrule->ID = rule_id++;
 
   middle = ( Vertical ? RL_TP+RL_BT : RL_LT+RL_RT ) * Lines;
   if (Length == 1) {
@@ -106,9 +120,9 @@ void NewRule( int Row, int Col, int Width, int Height,
     rule[Length-1] = postplus ? middle : ((Vertical ? RL_TP : RL_LT)*Lines);
   }
   rule[Length] = '\0';
-  new->rule = rule;
-  new->next = TableRules;
-  TableRules = new;
+  newrule->rule = rule;
+  newrule->next = TableRules;
+  TableRules = newrule;
 }
 
 static void add_bits( TableRule S, int row, int col, int t, int lines ) {
@@ -147,6 +161,7 @@ static void connect_rules( void ) {
   }
 }
 
+#if 0
 unsigned char scrchar[] = {
   '\x20', /*  0 = 0000 */
   '\xB3', /*  1 = 0001 */
@@ -230,6 +245,7 @@ unsigned char scrchar[] = {
   '\x20', /* 79 = 2221 */
   '\xCE'  /* 80 = 2222 */
 };
+#endif
 
 PTGNode print_rules( int tblname ) {
   TableRule Rule;

@@ -138,9 +138,8 @@ typedef struct _SPTGFile{
 	PTGNode p2;
 	PTGNode p3;
 	CONST char* p4;
-	int p5;
-	int p6;
-	PTGNode p7;
+	PTGNode p5;
+	PTGNode p6;
 } * _PPTGFile;
 
 #ifdef PROTO_OK
@@ -156,7 +155,7 @@ static void _PrPTGFile(n)
 	PTG_OUTPUT_STRING(f, "  static int ");
 	PTG_OUTPUT_STRING(f, n->p4);
 	PTG_OUTPUT_STRING(f, "_winnum;\n\n");
-	n->p7->_print(n->p7);
+	n->p5->_print(n->p5);
 	PTG_OUTPUT_STRING(f, "\n");
 	PTG_OUTPUT_STRING(f, "  static void ");
 	PTG_OUTPUT_STRING(f, n->p4);
@@ -170,15 +169,7 @@ static void _PrPTGFile(n)
 	PTG_OUTPUT_STRING(f, "  static void ");
 	PTG_OUTPUT_STRING(f, n->p4);
 	PTG_OUTPUT_STRING(f, "_init(void) {\n");
-	PTG_OUTPUT_STRING(f, "    ");
-	PTG_OUTPUT_STRING(f, n->p4);
-	PTG_OUTPUT_STRING(f, "_winnum = nct_init(\"");
-	PTG_OUTPUT_STRING(f, n->p4);
-	PTG_OUTPUT_STRING(f, "\",");
-	PTG_OUTPUT_INT(f, n->p5);
-	PTG_OUTPUT_STRING(f, ",");
-	PTG_OUTPUT_INT(f, n->p6);
-	PTG_OUTPUT_STRING(f, ");\n");
+	n->p6->_print(n->p6);
 	PTG_OUTPUT_STRING(f, "    ");
 	PTG_OUTPUT_STRING(f, n->p4);
 	PTG_OUTPUT_STRING(f, "_redraw();\n");
@@ -191,20 +182,20 @@ static void _PrPTGFile(n)
 	PTG_OUTPUT_STRING(f, n->p4);
 	PTG_OUTPUT_STRING(f, "_redraw();\n");
 	n->p3->_print(n->p3);
+	preview_loop(f);
 }
 
 #ifdef PROTO_OK
-PTGNode PTGFile(PTGNode p1, PTGNode p2, PTGNode p3, CONST char* p4, int p5, int p6, PTGNode p7)
+PTGNode PTGFile(PTGNode p1, PTGNode p2, PTGNode p3, CONST char* p4, PTGNode p5, PTGNode p6)
 #else
-PTGNode PTGFile(p1, p2, p3, p4, p5, p6, p7)
+PTGNode PTGFile(p1, p2, p3, p4, p5, p6)
 
 PTGNode p1;
 PTGNode p2;
 PTGNode p3;
 CONST char* p4;
-int p5;
-int p6;
-PTGNode p7;
+PTGNode p5;
+PTGNode p6;
 #endif
 {
 	_PPTGFile n;
@@ -216,7 +207,53 @@ PTGNode p7;
 	n->p4 = p4;
 	n->p5 = p5;
 	n->p6 = p6;
-	n->p7 = p7;
+	return (PTGNode)n;
+}
+
+
+/* Implementation of Pattern Window */
+
+typedef struct _SPTGWindow{
+	_PTGProc _print;
+	CONST char* p1;
+	int p2;
+	int p3;
+} * _PPTGWindow;
+
+#ifdef PROTO_OK
+static void _PrPTGWindow(_PPTGWindow n)
+#else
+static void _PrPTGWindow(n)
+	_PPTGWindow n;
+#endif
+{
+	PTG_OUTPUT_STRING(f, "    ");
+	PTG_OUTPUT_STRING(f, n->p1);
+	PTG_OUTPUT_STRING(f, "_winnum = nct_init(\"");
+	PTG_OUTPUT_STRING(f, n->p1);
+	PTG_OUTPUT_STRING(f, "\",");
+	PTG_OUTPUT_INT(f, n->p2);
+	PTG_OUTPUT_STRING(f, ",");
+	PTG_OUTPUT_INT(f, n->p3);
+	PTG_OUTPUT_STRING(f, ");\n");
+}
+
+#ifdef PROTO_OK
+PTGNode PTGWindow(CONST char* p1, int p2, int p3)
+#else
+PTGNode PTGWindow(p1, p2, p3)
+
+CONST char* p1;
+int p2;
+int p3;
+#endif
+{
+	_PPTGWindow n;
+	n = (_PPTGWindow)MALLOC(sizeof(struct _SPTGWindow));
+	n->_print = (_PTGProc)_PrPTGWindow;
+	n->p1 = p1;
+	n->p2 = p2;
+	n->p3 = p3;
 	return (PTGNode)n;
 }
 
@@ -229,6 +266,7 @@ typedef struct _SPTGField{
 	PTGNode p2;
 	int p3;
 	int p4;
+	int p5;
 } * _PPTGField;
 
 #ifdef PROTO_OK
@@ -247,17 +285,19 @@ static void _PrPTGField(n)
 	PTG_OUTPUT_STRING(f, ", text(");
 	n->p2->_print(n->p2);
 	PTG_OUTPUT_STRING(f, ") );\n");
+	preview_field(f, n->p3, n->p4, n->p5);
 }
 
 #ifdef PROTO_OK
-PTGNode PTGField(CONST char* p1, PTGNode p2, int p3, int p4)
+PTGNode PTGField(CONST char* p1, PTGNode p2, int p3, int p4, int p5)
 #else
-PTGNode PTGField(p1, p2, p3, p4)
+PTGNode PTGField(p1, p2, p3, p4, p5)
 
 CONST char* p1;
 PTGNode p2;
 int p3;
 int p4;
+int p5;
 #endif
 {
 	_PPTGField n;
@@ -267,6 +307,7 @@ int p4;
 	n->p2 = p2;
 	n->p3 = p3;
 	n->p4 = p4;
+	n->p5 = p5;
 	return (PTGNode)n;
 }
 
@@ -278,7 +319,7 @@ typedef struct _SPTGString{
 	int p1;
 	int p2;
 	int p3;
-	PTGNode p4;
+	CONST char* p4;
 	CONST char* p5;
 } * _PPTGString;
 
@@ -298,19 +339,20 @@ static void _PrPTGString(n)
 	PTG_OUTPUT_STRING(f, ", ");
 	PTG_OUTPUT_INT(f, n->p2);
 	PTG_OUTPUT_STRING(f, ", \"");
-	n->p4->_print(n->p4);
+	PTG_OUTPUT_STRING(f, n->p4);
 	PTG_OUTPUT_STRING(f, "\" );\n");
+	preview_label(f, n->p4, n->p3, n->p1, n->p2);
 }
 
 #ifdef PROTO_OK
-PTGNode PTGString(int p1, int p2, int p3, PTGNode p4, CONST char* p5)
+PTGNode PTGString(int p1, int p2, int p3, CONST char* p4, CONST char* p5)
 #else
 PTGNode PTGString(p1, p2, p3, p4, p5)
 
 int p1;
 int p2;
 int p3;
-PTGNode p4;
+CONST char* p4;
 CONST char* p5;
 #endif
 {
@@ -402,6 +444,7 @@ static void _PrPTGHRule(n)
 	PTG_OUTPUT_STRING(f, "_r");
 	PTG_OUTPUT_INT(f, n->p1);
 	PTG_OUTPUT_STRING(f, " );\n");
+	preview_hrule(f, n->p5, n->p3, n->p4, n->p1);
 }
 
 #ifdef PROTO_OK
@@ -459,6 +502,7 @@ static void _PrPTGVRule(n)
 	PTG_OUTPUT_STRING(f, "_r");
 	PTG_OUTPUT_INT(f, n->p1);
 	PTG_OUTPUT_STRING(f, " );\n");
+	preview_vrule(f, n->p5, n->p3, n->p4, n->p1);
 }
 
 #ifdef PROTO_OK

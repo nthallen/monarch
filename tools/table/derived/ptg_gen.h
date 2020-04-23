@@ -97,9 +97,10 @@ extern void PTGFree ELI_ARG((void));
 
 /* ============================ */
 /* functions for making PTG nodes */
-PTGNode PTGFile ELI_ARG((PTGNode p1, PTGNode p2, PTGNode p3, CONST char* p4, int p5, int p6, PTGNode p7));
-PTGNode PTGField ELI_ARG((CONST char* p1, PTGNode p2, int p3, int p4));
-PTGNode PTGString ELI_ARG((int p1, int p2, int p3, PTGNode p4, CONST char* p5));
+PTGNode PTGFile ELI_ARG((PTGNode p1, PTGNode p2, PTGNode p3, CONST char* p4, PTGNode p5, PTGNode p6));
+PTGNode PTGWindow ELI_ARG((CONST char* p1, int p2, int p3));
+PTGNode PTGField ELI_ARG((CONST char* p1, PTGNode p2, int p3, int p4, int p5));
+PTGNode PTGString ELI_ARG((int p1, int p2, int p3, CONST char* p4, CONST char* p5));
 PTGNode PTGRuleDef ELI_ARG((PTGNode p1, int p2, PTGNode p3));
 PTGNode PTGHRule ELI_ARG((int p1, PTGNode p2, int p3, int p4, int p5));
 PTGNode PTGVRule ELI_ARG((int p1, PTGNode p2, int p3, int p4, int p5));
@@ -115,6 +116,11 @@ PTGNode PTGEol ELI_ARG((PTGNode p1));
 
 /* prototypes for used function call insertions */
 
+void preview_loop ELI_ARG((PTG_OUTPUT_FILE));
+void preview_field ELI_ARG((PTG_OUTPUT_FILE, int, int, int));
+void preview_label ELI_ARG((PTG_OUTPUT_FILE, CONST char*, int, int, int));
+void preview_hrule ELI_ARG((PTG_OUTPUT_FILE, int, int, int, int));
+void preview_vrule ELI_ARG((PTG_OUTPUT_FILE, int, int, int, int));
 void PtgOutId ELI_ARG((PTG_OUTPUT_FILE, int));
 void CPtgOutstr ELI_ARG((PTG_OUTPUT_FILE, CONST char*));
 void CPtgOutchar ELI_ARG((PTG_OUTPUT_FILE, int));

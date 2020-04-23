@@ -12,3 +12,4 @@
 #include "ptg_gen.h"
 #include "param.h"
 #include "table_name.h"
+#include "ncparam.h"

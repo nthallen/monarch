@@ -32,14 +32,16 @@ DefTableKey DepFile = NoKey;
 static int DepFile_count = 0;
 DefTableKey OutputFile = NoKey;
 static int OutputFile_count = 0;
+int PreviewDisplay = 0;
 DefTableKey InputFile = NoKey;
 static int error_count = 0;
 
-#define NUMOPTS 6
+#define NUMOPTS 7
 
 static opt opts[] = {
     { "-d", STRVAL | SPACED, &DepFile_count, &DepFile, NULL },
     { "-o", STRVAL | SPACED, &OutputFile_count, &OutputFile, NULL },
+    { "-p", BOOL , &PreviewDisplay, NULL, NULL },
     { "--help", USAGE , NULL, NULL, NULL },
     { "-h", USAGE , NULL, NULL, NULL },
     { "-?", USAGE , NULL, NULL, NULL },
@@ -86,6 +88,7 @@ clp_usage (prog)
   fprintf (stderr, "  Options:\n");
   fprintf (stderr, "    -d string Write names of included files to file\n");
   fprintf (stderr, "    -o string Output filename\n");
+  fprintf (stderr, "    -p       Preview the Rendered Table\n");
   fprintf (stderr, "    --help   Display this usage message\n");
   fprintf (stderr, "    -h       Display this usage message\n");
   fprintf (stderr, "    -?       Display this usage message\n");

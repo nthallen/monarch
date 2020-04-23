@@ -35,12 +35,13 @@ static int do_output = 0;
 const char *opt_string = "a";
 DAS_IO::AppID_t DAS_IO::AppID("nctable", "ncurses table compiler", "V2.0");
 
-void preview_window( PTG_OUTPUT_FILE f, const char *name, int w, int h, int preview ) {
+void Setupncurses(int preview, char *name, int w, int h) {
   do_output = preview;
   if (do_output) {
     char* argv[2] = {strdup(""), strdup("/dev/tty")};
     nct_init_options(2, argv);
     winnum = nct_init( name, w, h );
+    nct_clear(winnum);
   }
 }
 
@@ -58,6 +59,7 @@ void preview_field( PTG_OUTPUT_FILE f, int r, int c, int w ) {
 
 void preview_loop( PTG_OUTPUT_FILE f ) {
   if ( do_output) {
+    nct_refresh();
     if (nct_getch() == 'q') {
       return;
     }

@@ -29,7 +29,6 @@ File:
 Window:
   "    " $1 string "_winnum = nct_init(\"" $1 string "\","
 	  $2 int "," $3 int ");\n"
-  [ preview_window $1 string $3 int $2 int $4 int ]
 
 /* PTGField(table_name,name,r,c,w) */
 Field:
@@ -42,15 +41,15 @@ Field:
 String: "    nct_string( " $5 string "_winnum, "
 	  $3 int ", " $1 int ", " $2 int
 	  ", \"" $4 string "\" );\n"
-  [ preview_label $4 string $3 int $2 int $1 int ]
+  [ preview_label $4 string $3 int $1 int $2 int ]
 
 RuleDef: "  static unsigned char nct_" $1 "_r" $2 int "[] = { " $3 ", 0 };\n"
 
-/* ID#, tblname string, r, c, a ints */
+/* ID#, tblname, r, c, a ints */
 HRule: "    nct_hrule( " $2 "_winnum, " $5 int ", "
 	      $3 int ", " $4 int ", nct_" $2 "_r" $1 int " );\n"
-  [ preview_hrule $1 int $5 int $3 int $4 int ]
+  [ preview_hrule $5 int $3 int $4 int $1 int ]
 VRule: "    nct_vrule( " $2 "_winnum, " $5 int ", "
 	      $3 int ", " $4 int ", nct_" $2 "_r" $1 int " );\n"
-  [ preview_vrule $1 int $5 int $3 int $4 int ]
+  [ preview_vrule $5 int $3 int $4 int $1 int ]
 

@@ -14,6 +14,7 @@ extern void clp_usage ();
 
 extern DefTableKey DepFile;
 extern DefTableKey OutputFile;
+extern int PreviewDisplay;
 extern DefTableKey InputFile;
 
 #endif
