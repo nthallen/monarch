@@ -10,6 +10,8 @@ cat <<EOF;
 waitfor name seconds
   wait for the specified number of seconds for
   the named file or socket to appear.
+waitfor name forever
+  wait indefinitely for the named file or socket to appear.
 waitfor -h
   display this message
 EOF
@@ -23,8 +25,14 @@ fi
 name=$1
 
 [ -z "$2" ] && nl_error Must provide length argument
-duration=$2
-decrement=1
+if [ "$2" = "forever" ]; then
+  duration=1
+  decrement=0
+else
+  duration=$2
+  decrement=1
+fi
+
 while [ $duration -gt 0 ]; do
   [ -e $name ] && exit 0
   sleep 1
