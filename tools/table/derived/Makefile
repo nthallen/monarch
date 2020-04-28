@@ -1,8 +1,8 @@
 SHELL   = /bin/sh
 
 CC	= g++
-CFLAGS	= -g -I/usr/local/include -Wl,-rpath -Wl,/usr/local/lib
-LIBS	= -L/usr/local/lib -ldasio -lnl -lncurses
+CXXFLAGS	= -g -I/usr/local/include -Wl,-rpath -Wl,/usr/local/lib
+LIBS	= -L/usr/local/lib -ldasio -lnl -lncurses -lpthread
 
 OBJS	= driver.o clpintf.o clp.o csm.o obstack.o obsave.o deftbl.o \
 	CoordMap.o coord.o source.o pdl_gen.o ptg_gen.o nparam.o \
@@ -29,7 +29,7 @@ clean:
 tidy:
 	rm -f core a.out *.o *~ *.a ERRS
 
-driver.o:	driver.c err.h HEAD.h INIT.h FINL.h eliproto.h coord.h \
+driver.o:	driver.cc err.h HEAD.h INIT.h FINL.h eliproto.h coord.h \
 		clp.h envmod.h deftbl.h BitSet.h Strings.h SrcFileStack.h \
 		CoordMap.h ColCScope.h TableCScope.h Include.h ptg_gen.h \
 		pdl_gen.h treecon.h DefTableKeyList.h VoidPtrList.h \
@@ -37,53 +37,53 @@ driver.o:	driver.c err.h HEAD.h INIT.h FINL.h eliproto.h coord.h \
 		ncbox.h param.h table_name.h ncparam.h PtgCommon.h clplib.h \
 		ptg.h VoidPtr.h VoidPtrFunctionTypes.h obstack.h nodeptr.h
 
-clpintf.o:	clpintf.c clplib.h clpintf.h eliproto.h
+clpintf.o:	clpintf.cc clplib.h clpintf.h eliproto.h
 
-clp.o:	clp.c clp.h clpintf.h pdl_gen.h csm.h eliproto.h clplib.h \
+clp.o:	clp.cc clp.h clpintf.h pdl_gen.h csm.h eliproto.h clplib.h \
 		DefTableKeyList.h deftbl.h dim.h ptg_gen.h ptg.h \
 		VoidPtrList.h VoidPtr.h VoidPtrFunctionTypes.h obstack.h
 
-csm.o:	csm.c csm.h csmtbl.h obsave.h obstack.h eliproto.h
+csm.o:	csm.cc csm.h csmtbl.h obsave.h obstack.h eliproto.h
 
-obstack.o:	obstack.c obstack.h gettext.h
+obstack.o:	obstack.cc obstack.h gettext.h
 
-obsave.o:	obsave.c obsave.h obstack.h eliproto.h
+obsave.o:	obsave.cc obsave.h obstack.h eliproto.h
 
-deftbl.o:	deftbl.c err.h deftbl.h obstack.h obsave.h eliproto.h \
+deftbl.o:	deftbl.cc err.h deftbl.h obstack.h obsave.h eliproto.h \
 		coord.h
 
-CoordMap.o:	CoordMap.c obstack.h source.h csm.h err.h CoordMap.h \
+CoordMap.o:	CoordMap.cc obstack.h source.h csm.h err.h CoordMap.h \
 		eliproto.h coord.h
 
-coord.o:	coord.c coord.h eliproto.h
+coord.o:	coord.cc coord.h eliproto.h
 
-source.o:	source.c source.h
+source.o:	source.cc source.h
 
-pdl_gen.o:	pdl_gen.c pdl_gen.h deftbl.h dim.h ptg_gen.h eliproto.h \
+pdl_gen.o:	pdl_gen.cc pdl_gen.h deftbl.h dim.h ptg_gen.h eliproto.h \
 		ptg.h
 
-ptg_gen.o:	ptg_gen.c ptg_gen.h obstack.h eliproto.h ptg.h
+ptg_gen.o:	ptg_gen.cc ptg_gen.h obstack.h eliproto.h ptg.h
 
-nparam.o:	nparam.c param.h ncparam.h ncbox.h dim.h ptg_gen.h \
+nparam.o:	nparam.cc param.h ncparam.h ncbox.h dim.h ptg_gen.h \
 		eliproto.h ptg.h
 
-ncbox.o:	ncbox.c csm.h err.h ncbox.h ncmodprint.h obstack.h \
+ncbox.o:	ncbox.cc csm.h err.h ncbox.h ncmodprint.h obstack.h \
 		eliproto.h coord.h ptg_gen.h ptg.h
 
-PtgCommon.o:	PtgCommon.c PtgCommon.h eliproto.h ptg_gen.h csm.h ptg.h \
+PtgCommon.o:	PtgCommon.cc PtgCommon.h eliproto.h ptg_gen.h csm.h ptg.h \
 		obstack.h
 
-VoidPtrList.o:	VoidPtrList.c VoidPtrList.h err.h obstack.h VoidPtr.h \
+VoidPtrList.o:	VoidPtrList.cc VoidPtrList.h err.h obstack.h VoidPtr.h \
 		VoidPtrFunctionTypes.h eliproto.h coord.h
 
-clplib.o:	clplib.c csm.h clplib.h obstack.h eliproto.h
+clplib.o:	clplib.cc csm.h clplib.h obstack.h eliproto.h
 
-envmod.o:	envmod.c err.h obstack.h envmod.h obsave.h eliproto.h \
+envmod.o:	envmod.cc err.h obstack.h envmod.h obsave.h eliproto.h \
 		coord.h deftbl.h BitSet.h
 
-BitSet.o:	BitSet.c obstack.h err.h BitSet.h eliproto.h coord.h
+BitSet.o:	BitSet.cc obstack.h err.h BitSet.h eliproto.h coord.h
 
-treecon.o:	treecon.c node.h nodecode.h attrpredef.h visitmap.h \
+treecon.o:	treecon.cc node.h nodecode.h attrpredef.h visitmap.h \
 		treeact.h obstack.h err.h nodeptr.h HEAD.h eliproto.h \
 		coord.h clp.h envmod.h deftbl.h BitSet.h Strings.h \
 		SrcFileStack.h CoordMap.h ColCScope.h TableCScope.h \
@@ -92,7 +92,7 @@ treecon.o:	treecon.c node.h nodecode.h attrpredef.h visitmap.h \
 		ncmodprint.h ncbox.h param.h table_name.h ncparam.h \
 		PtgCommon.h clplib.h ptg.h VoidPtr.h VoidPtrFunctionTypes.h
 
-visitmap.o:	visitmap.c visitprocs.h visitmap.h HEAD.h node.h treecon.h \
+visitmap.o:	visitmap.cc visitprocs.h visitmap.h HEAD.h node.h treecon.h \
 		eliproto.h clp.h envmod.h deftbl.h BitSet.h Strings.h \
 		SrcFileStack.h CoordMap.h ColCScope.h err.h TableCScope.h \
 		Include.h ptg_gen.h pdl_gen.h DefTableKeyList.h \
@@ -101,7 +101,7 @@ visitmap.o:	visitmap.c visitprocs.h visitmap.h HEAD.h node.h treecon.h \
 		PtgCommon.h clplib.h ptg.h VoidPtr.h VoidPtrFunctionTypes.h \
 		obstack.h coord.h nodeptr.h
 
-visitprocs.o:	visitprocs.c HEAD.h err.h node.h visitprocs.h attrpredef.h \
+visitprocs.o:	visitprocs.cc HEAD.h err.h node.h visitprocs.h attrpredef.h \
 		visitmap.h clp.h envmod.h deftbl.h BitSet.h Strings.h \
 		SrcFileStack.h CoordMap.h ColCScope.h TableCScope.h \
 		Include.h ptg_gen.h pdl_gen.h treecon.h DefTableKeyList.h \
@@ -110,70 +110,70 @@ visitprocs.o:	visitprocs.c HEAD.h err.h node.h visitprocs.h attrpredef.h \
 		PtgCommon.h clplib.h eliproto.h ptg.h VoidPtr.h \
 		VoidPtrFunctionTypes.h obstack.h coord.h nodeptr.h
 
-dim.o:	dim.c dim.h err.h pdl_gen.h dimfunc.h eliproto.h coord.h \
+dim.o:	dim.cc dim.h err.h pdl_gen.h dimfunc.h eliproto.h coord.h \
 		deftbl.h ptg_gen.h ptg.h
 
-table_name.o:	table_name.c table_name.h csm.h pdl_gen.h obstack.h \
+table_name.o:	table_name.cc table_name.h csm.h pdl_gen.h obstack.h \
 		eliproto.h deftbl.h dim.h ptg_gen.h ptg.h
 
-ncmodprint.o:	ncmodprint.c ncmodprint.h ptg_gen.h csm.h eliproto.h ptg.h \
+ncmodprint.o:	ncmodprint.cc ncmodprint.h ptg_gen.h csm.h eliproto.h ptg.h \
 		obstack.h
 
-Include.o:	Include.c source.h csm.h gla.h err.h SrcFileStack.h \
+Include.o:	Include.cc source.h csm.h gla.h err.h SrcFileStack.h \
 		Include.h CoordMap.h obstack.h eliproto.h coord.h
 
-glahead.o:	glahead.c err.h csm.h source.h obstack.h scanops.h \
+glahead.o:	glahead.cc err.h csm.h source.h obstack.h scanops.h \
 		tabsize.h ScanProc.h gla.h xtables.h xcode.h eliproto.h \
 		coord.h
 
-auxNUL.o:	auxNUL.c source.h gla.h
+auxNUL.o:	auxNUL.cc source.h gla.h
 
-dflteot.o:	dflteot.c 
+dflteot.o:	dflteot.cc 
 
-tabsize.o:	tabsize.c 
+tabsize.o:	tabsize.cc 
 
-idn.o:	idn.c err.h idn.h csm.h obstack.h obsave.h idntbl.h \
+idn.o:	idn.cc err.h idn.h csm.h obstack.h obsave.h idntbl.h \
 		eliproto.h coord.h
 
-Cint.o:	Cint.c err.h eliproto.h coord.h
+Cint.o:	Cint.cc err.h eliproto.h coord.h
 
-str.o:	str.c csm.h obstack.h eliproto.h
+str.o:	str.cc csm.h obstack.h eliproto.h
 
-auxScanEOL.o:	auxScanEOL.c eliproto.h err.h gla.h source.h ScanProc.h \
+auxScanEOL.o:	auxScanEOL.cc eliproto.h err.h gla.h source.h ScanProc.h \
 		coord.h
 
-CchStr.o:	CchStr.c err.h source.h gla.h csm.h tabsize.h ScanProc.h \
+CchStr.o:	CchStr.cc err.h source.h gla.h csm.h tabsize.h ScanProc.h \
 		eliproto.h coord.h obstack.h
 
-Ccomment.o:	Ccomment.c err.h gla.h source.h tabsize.h ScanProc.h \
+Ccomment.o:	Ccomment.cc err.h gla.h source.h tabsize.h ScanProc.h \
 		eliproto.h coord.h
 
-SrcFileStack.o:	SrcFileStack.c obstack.h
+SrcFileStack.o:	SrcFileStack.cc obstack.h
 
-depfile.o:	depfile.c depfile.h err.h clp.h csm.h clplib.h pdl_gen.h \
+depfile.o:	depfile.cc depfile.h err.h clp.h csm.h clplib.h pdl_gen.h \
 		DefTableKeyList.h eliproto.h deftbl.h dim.h ptg_gen.h ptg.h \
 		VoidPtrList.h VoidPtr.h VoidPtrFunctionTypes.h obstack.h \
 		coord.h
 
-Strings.o:	Strings.c Strings.h csm.h obstack.h eliproto.h
+Strings.o:	Strings.cc Strings.h csm.h obstack.h eliproto.h
 
-ColCScope.o:	ColCScope.c ColCScope.h envmod.h deftbl.h obstack.h \
+ColCScope.o:	ColCScope.cc ColCScope.h envmod.h deftbl.h obstack.h \
 		BitSet.h eliproto.h
 
-TableCScope.o:	TableCScope.c TableCScope.h envmod.h deftbl.h obstack.h \
+TableCScope.o:	TableCScope.cc TableCScope.h envmod.h deftbl.h obstack.h \
 		BitSet.h eliproto.h
 
-nodecode.o:	nodecode.c nodecode.h
+nodecode.o:	nodecode.cc nodecode.h
 
-treebuild.o:	treebuild.c eliproto.h pdl_gen.h source.h csm.h clp.h \
+treebuild.o:	treebuild.cc eliproto.h pdl_gen.h source.h csm.h clp.h \
 		clpintf.h deftbl.h dim.h ptg_gen.h ptg.h obstack.h clplib.h \
 		DefTableKeyList.h VoidPtrList.h VoidPtr.h \
 		VoidPtrFunctionTypes.h
 
-parser.o:	parser.c err.h gla.h gsdescr.h reparatur.h pgs_gen.h \
+parser.o:	parser.cc err.h gla.h gsdescr.h reparatur.h pgs_gen.h \
 		eliproto.h coord.h parsops.h
 
-pgs_gen.o:	pgs_gen.c gsdescr.h treestack.h HEAD.h err.h parsops.h \
+pgs_gen.o:	pgs_gen.cc gsdescr.h treestack.h HEAD.h err.h parsops.h \
 		eliproto.h coord.h nodeptr.h clp.h envmod.h deftbl.h \
 		BitSet.h Strings.h SrcFileStack.h CoordMap.h ColCScope.h \
 		TableCScope.h Include.h ptg_gen.h pdl_gen.h treecon.h \
@@ -182,11 +182,11 @@ pgs_gen.o:	pgs_gen.c gsdescr.h treestack.h HEAD.h err.h parsops.h \
 		ncparam.h PtgCommon.h clplib.h ptg.h VoidPtr.h \
 		VoidPtrFunctionTypes.h obstack.h
 
-treestack.o:	treestack.c err.h treestack.h eliproto.h coord.h nodeptr.h
+treestack.o:	treestack.cc err.h treestack.h eliproto.h coord.h nodeptr.h
 
-dfltrepar.o:	dfltrepar.c err.h reparatur.h eliproto.h coord.h
+dfltrepar.o:	dfltrepar.cc err.h reparatur.h eliproto.h coord.h
 
-attrmain.o:	attrmain.c treestack.h visitprocs.h nodeptr.h err.h \
+attrmain.o:	attrmain.cc treestack.h visitprocs.h nodeptr.h err.h \
 		eliproto.h coord.h HEAD.h node.h treecon.h clp.h envmod.h \
 		deftbl.h BitSet.h Strings.h SrcFileStack.h CoordMap.h \
 		ColCScope.h TableCScope.h Include.h ptg_gen.h pdl_gen.h \

@@ -4,3 +4,4 @@ dbphtable
 nctable
 nctable.exe
 FullBuild.*
+*.o
