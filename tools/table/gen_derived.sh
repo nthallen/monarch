@@ -36,5 +36,5 @@ install(TARGETS nctable RUNTIME DESTINATION bin)
 EOF
 } >derived/CMakeLists.txt
 
-perl -i.bak -pe 's/^CC\s/#CC /; s/^CFLAGS/CXXFLAGS/; s/\.c/.cc/g' derived/Makefile
+perl -i.bak -pe 's/^CFLAGS/CXXFLAGS/; s/\.c/.cc/g' derived/Makefile
 rm -f derived/Makefile.bak

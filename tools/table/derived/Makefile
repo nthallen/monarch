@@ -1,8 +1,8 @@
 SHELL   = /bin/sh
 
-#CC = g++
+CC	= g++
 CXXFLAGS	= -g -I/usr/local/include -Wl,-rpath -Wl,/usr/local/lib
-LIBS	= -L/usr/local/lib -ldasio -lnl -lncurses
+LIBS	= -L/usr/local/lib -ldasio -lnl -lncurses -lpthread
 
 OBJS	= driver.o clpintf.o clp.o csm.o obstack.o obsave.o deftbl.o \
 	CoordMap.o coord.o source.o pdl_gen.o ptg_gen.o nparam.o \
