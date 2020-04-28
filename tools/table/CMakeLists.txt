@@ -19,8 +19,8 @@ else ((ELI_EXE STREQUAL "ELI_EXE-NOTFOUND"))
 
 message("We have found eli: ${ELI_EXE}")
 ADD_CUSTOM_COMMAND(
-  OUTPUT nctable.exe
-  COMMAND ./gen_nctable.sh ${ELI_EXE} nctable.specs ${CMAKE_CURRENT_BINARY_DIR}/nctable.exe
+  OUTPUT nctable
+  COMMAND ./gen_nctable.sh ${ELI_EXE} nctable.specs ${CMAKE_CURRENT_BINARY_DIR}/nctable
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   DEPENDS
     nctable.specs
@@ -49,9 +49,9 @@ ADD_CUSTOM_COMMAND(
     ntable.pdl
     nctable.ptg
 )
-add_custom_target(gen_nctable ALL DEPENDS nctable.exe)
+add_custom_target(gen_nctable ALL DEPENDS nctable)
 
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/nctable.exe
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/nctable
         DESTINATION bin)
 
 endif ((ELI_EXE STREQUAL "ELI_EXE-NOTFOUND"))
