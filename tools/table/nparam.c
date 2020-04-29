@@ -6,6 +6,7 @@
 #include "dasio/nctable.h"
 #include "oui.h"
 #include "dasio/appid.h"
+#include <assert.h>
 
 int ColSpace = 1;
 static int winnum;
@@ -51,7 +52,8 @@ void preview_label( PTG_OUTPUT_FILE f, const char *str, int a, int r, int c ) {
 
 void preview_field( PTG_OUTPUT_FILE f, int r, int c, int w ) {
   if (do_output) {
-    char buf[10];
+    char buf[32];
+    assert(w < 30);
     sprintf(buf, "%*d", w, ++fldnum);
     nct_string( winnum, 2, r, c, buf );
   }
