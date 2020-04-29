@@ -488,13 +488,18 @@ static void format_range(struct pfmt *pformat, double *fmt_min,
 
 static void type_range( unsigned int type, double *min, double *max) {
   if(TYPE_INTEGRAL(type)) {
-    if (type & INTTYPE_CHAR) {
-      if (type & INTTYPE_UNSIGNED) { *min = 0; *max = UINT8_MAX; }
-      else { *min = INT8_MIN; *max = INT8_MAX; }
-    } else if (type & INTTYPE_LONG) {
-      if (type & INTTYPE_UNSIGNED) { *min = 0; *max = UINT32_MAX; }
-      else { *min = INT32_MIN; *max = INT32_MAX; }
-    } else if (type & INTTYPE_UNSIGNED) { *min = 0; *max = UINT16_MAX; }
+    if (type & (INTTYPE_CHAR | INTTYPE_INT8 | INTTYPE_UINT8)) {
+      if (type & (INTTYPE_UNSIGNED | INTTYPE_UINT8)) {
+        *min = 0; *max = UINT8_MAX;
+      } else { *min = INT8_MIN; *max = INT8_MAX; }
+    } else if (type & (INTTYPE_LONG | INTTYPE_INT32 | INTTYPE_UINT32)) {
+      if (type & (INTTYPE_UNSIGNED | INTTYPE_UINT32)) {
+        *min = 0; *max = UINT32_MAX;
+      } else { *min = INT32_MIN; *max = INT32_MAX; }
+    } else if (type & (INTTYPE_UNSIGNED | INTTYPE_UINT16)) {
+      *min = 0; *max = UINT16_MAX;
+    } else if (type & INTTYPE_UINT64) { *min = 0; *max = UINT64_MAX; }
+    else if (type & INTTYPE_INT64) { *min = INT64_MIN; *max = INT64_MAX; }
     else { *min = INT16_MIN; *max = INT16_MAX; }
   } else { *min = 0; *max = -1; }
 }
