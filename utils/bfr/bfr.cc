@@ -18,7 +18,9 @@
 using namespace DAS_IO;
 
 bool bfr_input_client::tmg_opened = false;
+bfr_input_client *bfr_input_client::tm_gen;
 bool blocked_writer = false;
+bool blocked_reader = false;
 std::list<bfr_output_client*> all_readers;
 
 bool bfr_input_client::auth_hook(Authenticator *Auth, SubService *SS) {
@@ -43,6 +45,7 @@ bfr_input_client::bfr_input_client(Authenticator *Auth, const char *iname, bool 
   write.nb_rec = 0;
   write.off_queue = 0;
   data_state_eval = 0;
+  tm_gen = this;
 }
 
 bfr_input_client::~bfr_input_client() {
@@ -125,6 +128,7 @@ bool bfr_input_client::protocol_input() {
     nc -= nb_read;
     write.off_msg += nb_read; // write.off_msg is maybe cp?? except it is persistent
     if ( state == TM_STATE_DATA ) {
+      // The data has already been read into the buffer
       write.nb_rec -= nb_read;
       // write.off_rec += nb_read;
       write.off_queue += nb_read;
@@ -193,7 +197,7 @@ bool bfr_input_client::protocol_input() {
           // ### Check return value
           if (process_tm_info())
             msg(MSG_FATAL, "We cannot continue with this");
-          blocking = false; // nonblock;
+          // blocking = false; // nonblock;
           new_rows++;
           state = TM_STATE_HDR; //### Use state-init function?
           bufsize = sizeof(part.hdr);
@@ -212,15 +216,19 @@ bool bfr_input_client::protocol_input() {
       }
     }
   }
-  if ( nc == 0 ) {
-    // MsgReply( write.rcvid, write.off_msg, 0, 0 );
-    if ( new_rows ) run_read_queue();
-    //### Mark us as not blocked: maybe that's nbdata != 0?
-  } else {
-    // We must have nbdata == 0 meaning we're going to block
+  if (bufsize == 0) {
+    // bufsize == 0 should only happen when we are in a data state.
+    nl_assert(state == TM_STATE_HDR2 || state == TM_STATE_DATA);
     nl_assert(blocking);
     blocked_writer = true;
+    flags &= ~Fl_Read;
     run_read_queue();
+    if (bufsize == 0) {
+      // msg(MSG, "Still blocked after run_read_queue()");
+      nl_assert(blocked_writer);
+    }
+  } else {
+    if ( new_rows ) run_read_queue();
   }
   return false;
 }
@@ -327,7 +335,7 @@ int bfr_input_client::data_state_T3() {
     part.hdr.s.u.dhdr.mfctr += nrrecd;
   }
   tmq_retire_check();
-  int nrowsfree = allocate_rows(&buf);
+  int nrowsfree = allocate_rows(&buf); // sets buf
   bufsize = nrowsfree * write.nbrow_rec;
   if (nrowsfree > 0 && state == TM_STATE_HDR2) {
     // copy from hdr into buf, update accordingly
@@ -378,6 +386,7 @@ int bfr_input_client::min_reader( tmq_ref *tmqr ) {
 
 void bfr_input_client::run_read_queue() {
   std::list<bfr_output_client*>::iterator ocbi;
+  blocked_reader = false;
   for (lock(__FILE__,__LINE__), ocbi = all_readers.begin(), unlock();
        ocbi != all_readers.end();
        lock(__FILE__,__LINE__), ++ocbi, unlock()) {
@@ -385,6 +394,14 @@ void bfr_input_client::run_read_queue() {
     if (ocb->read.ready) {
       ocb->read.ready = false;
       read_reply(ocb);
+      if (ocb->obuf_empty()) {
+        ocb->read.ready = true;
+      } else {
+        blocked_reader = true;
+      }
+    } else {
+      nl_assert(!ocb->obuf_empty());
+      blocked_reader = true;
     }
   }
   run_write_queue();
@@ -502,7 +519,7 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
           ocb->iov[0].iov_len  = nbDataHdr;
           Qrow_start = tmqr->Qrow + ocb->data.n_Qrows -
                           tmqr->Qrows_retired;
-          if ( Qrow_start > total_Qrows )
+          if ( Qrow_start >= total_Qrows )
             Qrow_start -= total_Qrows;
           nQ1 = nQrows_ready;
           nQ2 = Qrow_start + nQ1 - total_Qrows;
@@ -573,7 +590,12 @@ void bfr_input_client::run_write_queue() {
 }
 
 bool bfr_output_client::iwritten(int ntr) {
-  if (obuf_empty()) read.ready = true;
+  if (obuf_empty()) {
+    read.ready = true;
+    if (blocked_writer && bfr_input_client::tm_gen) {
+      bfr_input_client::tm_gen->run_read_queue();
+    }
+  }
   return false;
 }
 

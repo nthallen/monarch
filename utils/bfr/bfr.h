@@ -51,13 +51,14 @@ enum state_t {
 class bfr_output_client;
 
 class bfr_input_client : public Serverside_client, public tm_queue {
-  //friend class bfr_output_client;
+  friend class bfr_output_client;
   public:
     bfr_input_client(Authenticator *Auth, const char *iname, bool blocking);
     ~bfr_input_client();
     static const int bfr_input_client_ibufsize = 0; // We handle this
     static bool auth_hook(Authenticator *Auth, SubService *SS);
     static bool tmg_opened;
+    static bfr_input_client *tm_gen;
   protected:
     bool process_eof();
     bool protocol_input();
@@ -131,7 +132,7 @@ class bfr_output_client : public Serverside_client {
     // Include whatever virtual function overrides you need here
   protected:
     bool iwritten(int nb);
-    void enqueue_read();
+    // void enqueue_read();
     bool is_fast;
     enum state_t state;
     struct iovec iov[3];
