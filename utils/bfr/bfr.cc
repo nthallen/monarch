@@ -122,7 +122,6 @@ bool bfr_input_client::protocol_input() {
     
     nb_read = nc < bufsize ?
       nc : bufsize;
-    // memcpy(buf, &buf[cp], nb_read);
     buf += nb_read;
     bufsize -= nb_read;
     nc -= nb_read;
@@ -130,7 +129,6 @@ bool bfr_input_client::protocol_input() {
     if ( state == TM_STATE_DATA ) {
       // The data has already been read into the buffer
       write.nb_rec -= nb_read;
-      // write.off_rec += nb_read;
       write.off_queue += nb_read;
     }
     nl_assert(bufsize >= 0);
@@ -429,6 +427,9 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
   // int nb;
   
   if (! ocb->obuf_empty()) return;
+  if (ocb->read.maxQrows == 0) {
+    ocb->read.maxQrows = ocb->is_fast ? 1 : total_Qrows;
+  }
   
   if ( ocb->data.tmqr == 0 ) {
     lock(__FILE__,__LINE__);
@@ -482,11 +483,8 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
       assert( nQrows_ready >= 0 );
       if ( nQrows_ready > 0 ) {
         if ( !blocked_writer && srvr_has_shutdown() &&
-             // dg_opened < 2 &&
              tmqr->next_tmqr == 0 && nQrows_ready < ocb->read.maxQrows
-             // && ocb->hdr.attr->node_type == TM_DCo
              && !ocb->is_fast) {
-          // enqueue_read(ocb);
           // wait for more data
         } else {
           int XRow_Num, NMinf, Row_Num_start, n_iov;
@@ -599,15 +597,16 @@ bool bfr_output_client::iwritten(int ntr) {
   return false;
 }
 
-bfr_output_client::bfr_output_client(Authenticator *Auth, const char *iname, bool is_fast)
-    : Serverside_client(Auth, iname, bfr_output_client_ibufsize), is_fast(is_fast) {
+bfr_output_client::bfr_output_client(Authenticator *Auth,
+          const char *iname, bool is_fast)
+    : Serverside_client(Auth, iname, bfr_output_client_ibufsize),
+      is_fast(is_fast) {
   data.tmqr = 0;
   data.n_Qrows = 0;
   state = TM_STATE_HDR;
   part.nbdata = 0;
   part.dptr = 0;
-  read.buf = 0;
-  read.maxQrows = 1; // We need to figure out a better solution here.
+  read.maxQrows = 0; // Set in first read_reply()
   read.rows_missing = 0;
   read.ready = true;
   all_readers.push_back(this);

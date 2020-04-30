@@ -102,17 +102,9 @@ class bfr_input_client : public Serverside_client, public tm_queue {
       // consume(n) shifts remaining data
     } part;
     
-    // struct data_s {
-      // tmq_ref *tmqr; // Which dq_desc we reference
-      // int n_Qrows; // The number of Qrows in dq we have already processed
-    // } data;
-    
     struct write_s {
-      // char *buf; // allocated temp buffer
-      // int rcvid; // Who is writing
       int nbrow_rec; // bytes per row received
       int nbhdr_rec; // bytes in the header of data messages
-      // int nb_msg; // bytes remaining in this write. This is now nc
       int off_msg; // bytes already read from this write
       int nb_rec; // bytes remaining in this record
       int off_queue; // bytes already written in this queue block
@@ -129,10 +121,8 @@ class bfr_output_client : public Serverside_client {
     bfr_output_client(Authenticator *Auth, const char *iname, bool is_fast);
     ~bfr_output_client();
     static const int bfr_output_client_ibufsize = 80;
-    // Include whatever virtual function overrides you need here
   protected:
     bool iwritten(int nb);
-    // void enqueue_read();
     bool is_fast;
     enum state_t state;
     struct iovec iov[3];
@@ -153,10 +143,8 @@ class bfr_output_client : public Serverside_client {
     } data;
     
     struct read_s {
-      char *buf; // allocated temp buffer
-      //int rcvid; // Who requested
-      // int nbytes; // size of request
-      int maxQrows; // max number of Qrows to be returned with this request
+      /** max number of Qrows to be returned with any request */
+      int maxQrows;
       int rows_missing; // cumulative count
       bool ready;
     } read;
