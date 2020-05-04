@@ -20,9 +20,9 @@ target_include_directories(dasio PUBLIC
   ${dasio_src_SOURCE_DIR}
 )
 target_include_directories(dasio PRIVATE
-  ${le_das_libs_SOURCE_DIR}/tm
   ${le_das_libs_SOURCE_DIR}/nl
   ${le_das_SOURCE_DIR}/tools/cmdgen
+  ${le_das_SOURCE_DIR}/tools/oui/src
 )
 install(TARGETS dasio
   ARCHIVE

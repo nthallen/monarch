@@ -34,7 +34,6 @@ if (DEFINED le_das_SOURCE_DIR)
   set(le_das_OUI_PATH
     -I${le_das_SOURCE_DIR}/libs/dasio/src
     -I${le_das_SOURCE_DIR}/libs/nl
-    -I${le_das_SOURCE_DIR}/libs/tm
     -I${le_das_SOURCE_DIR}/tools/oui/src
   )
 endif (DEFINED le_das_SOURCE_DIR)

@@ -24,12 +24,12 @@ target_include_directories(test_unix_name PUBLIC
 target_link_libraries(test_unix_name dasio nl tm gtest)
 
 add_executable(test_not test_not.cc)
-target_include_directories(test_not PUBLIC
+target_include_directories(test_not PRIVATE
   ../src
   ${le_das_SOURCE_DIR}/libs/tm
   ${le_das_SOURCE_DIR}/libs/nl
   ${le_das_BINARY_DIR}/googletest-src/googletest/include)
-target_link_libraries(test_not dasio nl tm gtest)
+target_link_libraries(test_not dasio nl gtest)
 
 add_executable(echosrvr echosrvr.cc)
 target_include_directories(echosrvr PUBLIC

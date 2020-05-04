@@ -55,6 +55,7 @@ int IsVertical(int index) {
     default:
       message(DEADLY, "Bad character in rule string", 0, &curpos );
   }
+  return 0; // Never reached but need to quiet compiler
 }
 
 void NewRule( int Row, int Col, int Width, int Height,
