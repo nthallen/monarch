@@ -20,16 +20,20 @@ cmake_minimum_required(VERSION 2.8.8)
 cmake_policy(SET CMP0048 NEW)
 project(table_derived  VERSION 2.0.0)
 
-set_source_files_properties(Include.cc PROPERTIES COMPILE_FLAGS "-include unistd.h")
+set_source_files_properties(Include.cc PROPERTIES
+       COMPILE_FLAGS "-include unistd.h")
+
+add_executable(nctable $srcs)
+
 message("Pre-conditional")
 if (NOT DEFINED le_das_BINARY_DIR)
   message("no le_das_BINARY_DIR")
   link_directories( /usr/local/lib )
 else (NOT DEFINED le_das_BINARY_DIR)
-  message("le_das_BINARY_DIR is ${le_das_BINARY_DIR}")
+  message("le_das_BINARY_DIR is \${le_das_BINARY_DIR}")
+  target_include_directories(nctable PRIVATE
+    \${le_das_SOURCE_DIR}/tools/oui/src)
 endif()
-
-add_executable(nctable $srcs)
 
 target_link_libraries(nctable dasio nl ncurses pthread)
 install(TARGETS nctable RUNTIME DESTINATION bin)
