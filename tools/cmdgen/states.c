@@ -66,7 +66,7 @@ void add_rule_pos(state *st, unsigned short rnum, unsigned short pos) {
   unsigned char item_type;
   
   for (rlp = NULL, rl = st->rules; rl != NULL; rlp = rl, rl = rl->next) {
-    if (rnum == rl->rule_number	&& pos == rl->position)
+    if (rnum == rl->rule_number && pos == rl->position)
       return; /* It's already here */
     else if (rnum < rl->rule_number
              || (rnum == rl->rule_number

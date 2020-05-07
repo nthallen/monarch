@@ -13,18 +13,18 @@ TM_data_sndr::TM_data_sndr(const char *iname, const char *hostname, const char *
   set_subservice(sub_service);
 }
 
-TM_data_sndr::~TM_data_sndr() {}
-
 bool TM_data_sndr::app_input() {
   // msg(0, "%s: TM_data_sndr::app_input(%d)", iname, nc);
   report_ok(nc);
-  if (iwrite((char *)data, data_len)) return true;
-  if (ELoop) ELoop->set_gflag(0);
-  return false;
+  return Send();
 }
 
 bool TM_data_sndr::app_connected() {
   // msg(0, "TM_data_sndr::app_connected()");
+  return Send();
+}
+
+bool TM_data_sndr::Send() {
   if (iwrite((char *)data, data_len)) return true;
   if (ELoop) ELoop->set_gflag(0);
   return false;

@@ -496,23 +496,33 @@ void cmdif_wr::Shutdown() {
   }
 }
 
-cmdif_dgdata::cmdif_dgdata(const char *name_in, void *data_in, int dsize_in)
-    : TM_data_sndr(name_in, name_in, hostname, data_in, dsize_in) {
+cmdif_dgdata_sndr::cmdif_dgdata_sndr(const char *name_in, void *data_in, int dsize_in)
+    : DAS_IO::TM_data_sndr(name_in, 0, name_in, data_in, dsize_in) {
 }
 
-cmdif_dgdata::~cmdif_dgdata() {}
+cmdif_dgdata::cmdif_dgdata(const char *name, void *data, int dsize) {
+  sndr = new cmdif_dgdata_sndr(name, data, dsize);
+  sndr->reference();
+}
+
+void cmdif_dgdata::Setup() {
+  nl_assert(DAS_IO::CmdServer != 0);
+  DAS_IO::CmdServer->ELoop.add_child(sndr);
+  sndr->connect();
+}
 
 void cmdif_dgdata::Turf() {
-  if (ELoop == 0) {
-    nl_assert(DAS_IO::CmdServer != 0);
-    DAS_IO::CmdServer->ELoop.add_child(this);
-  }
-  iwrite((const char *)data, dsize);
+  if (sndr)
+    sndr->Send();
 }
 
 void cmdif_dgdata::Shutdown() {
-  if (ELoop)
-    ELoop->delete_child(this);
+  if (sndr) {
+    DAS_IO::Interface::dereference(sndr);
+    if (sndr->ELoop)
+      sndr->ELoop->delete_child(sndr);
+    sndr = 0;
+  }
 }
 
 /*

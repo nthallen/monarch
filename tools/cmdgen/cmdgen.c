@@ -173,7 +173,7 @@ static void generate_output(void) {
 }
 
 #ifdef __USAGE
-%C	[options] [filename]
+%C [options] [filename]
     -q           Print this message
     -o filename  Write output to this file
     -x filename  Verion information will be read from this file

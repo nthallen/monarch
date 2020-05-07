@@ -154,19 +154,31 @@ class cmdif_wr {
  * subservice is "data/datum", but this is handled by
  * the TM_data_sndr class.
  */
-class cmdif_dgdata : public DAS_IO::TM_data_sndr {
+class cmdif_dgdata_sndr : public DAS_IO::TM_data_sndr {
+  public:
+    cmdif_dgdata_sndr(const char *name, void *data, int dsize);
+};
+
+class cmdif_dgdata {
   public:
     cmdif_dgdata(const char *name, void *data, int dsize);
+    void Setup();
     void Turf();
     void Shutdown();
   protected:
-    ~cmdif_dgdata();
-  private:
-    const char *name;
-    void *data;
-    int dsize;
+    cmdif_dgdata_sndr *sndr;
 };
 
+/** @brief Command server main loop
+ * Does all the work for a command server. It does
+ * not return until cmd_batch() returns a CMDREP_QUIT
+ * or it receives a CMDINTERP_QUIT message.
+ *
+ * It registers the appropriate sockets, then
+ * loops to Receive messages. For each received command, ci_server()
+ * calls cmd_init() and cmd_batch(). If needed, a hook could
+ * be added to Receive other messages.
+ */
 void ci_server();
 
 #endif
