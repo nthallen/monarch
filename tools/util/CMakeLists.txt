@@ -29,6 +29,7 @@ install(PROGRAMS
   genui
   genui_chk
   mkdoit3
+  swscomp
   waitfor
   DESTINATION bin)
 
