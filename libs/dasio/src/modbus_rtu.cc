@@ -615,5 +615,7 @@ namespace DAS_IO { namespace Modbus {
           RTU *MB) {
     MB->read_pdu_4321((uint32_t*)(req->dest), req->rep_count/2);
   }
+  
+  void RTU::modbus_device::tm_sync() {}
 
 } } // Close out Modbus and DAS_IO namespaces

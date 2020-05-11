@@ -351,6 +351,11 @@ class RTU : public DAS_IO::Serial {
          * Called during RTU::add_device().
          */
         virtual void enqueue_polls() = 0;
+        /**
+         * Called after RTU handles tm_sync(). This can be used
+         * to increment a device-specific stale counter.
+         */
+        virtual void tm_sync();
       protected:
         /**
          * The Modbus RTU device address. Must be unique among

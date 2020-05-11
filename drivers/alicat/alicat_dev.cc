@@ -12,6 +12,10 @@ namespace DAS_IO { namespace Modbus {
     // req->setup(this, 3, 2041, 2*5, xbuf, RH_alicat_regs);
     MB->enqueue_poll(req);
   }
+  
+  void alicat_device::tm_sync() {
+    TM->stale = TM->stale < 255 ? ++TM->stale : 255;
+  }
 
   #define myswap_be(x,y) \
     myswap((uint8_t*)&ali->TM->x, y)
@@ -42,7 +46,7 @@ namespace DAS_IO { namespace Modbus {
     myswap_be(mass_flow, &ali->xbuf[12]);
     myswap_be(flow_setpoint, &ali->xbuf[16]);
 #endif
-    ++ali->TM->stale;
+    ali->TM->stale = 0;
     // could set a fresh bit somewhere...
   }
 
