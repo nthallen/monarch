@@ -277,7 +277,7 @@ if ($have_digital) {
     "}\n\n",
     "${Name}_hk {\n",
     "  HBox { +-; Title: \"$Name HK\"; -+ };\n" ,
-    '  ""    >Temp<    "" >Status<        >ACK<   ""     >Stale<;' . "\n",
+    '  ""    >Temp<    "" >Pres< "" >Status< >Stale<;' . "\n",
     $hktbldef,
     "}\n";
 } else {
