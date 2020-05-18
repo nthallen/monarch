@@ -149,6 +149,10 @@ namespace DAS_IO { namespace Modbus {
     if (cur_poll == polls.end()) {
       cur_poll = polls.begin();
     }
+    std::deque<RTU::modbus_device *>::iterator pos;
+    for (pos = devices.begin(); pos != devices.end(); ++pos) {
+      (*pos)->tm_sync();
+    }
     return process_requests();
   }
 
