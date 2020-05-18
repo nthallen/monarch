@@ -221,9 +221,9 @@ for (my $i = 0; $i < $n_channels; ++$i) {
     "${datum}_v {\n",
     "  HBox { +-; Title: ${datum}; -+ };\n",
     (($D->{chtype} eq 'mfc') ?
-      "  Set:    (${datum}_Set,7)     $VFunits;\n" : ''),
-    "  VFlow:  (${datum}_VolFlow,7) $VFunits;\n",
-    "  MFlow:  (${datum}_VolFlow,7) $MFunits;\n";
+      "  Set:  (${datum}_Set,7)       $MFunits;\n" : ''),
+    "  MFlow:  (${datum}_MassFlow,7)  $MFunits;\n",
+    "  VFlow:  (${datum}_VolFlow,7)   $VFunits;\n";
   if ($D->{type} eq 'digital') {
     print $tbl
     "  T:      (${datum}_T,7)       C;\n",

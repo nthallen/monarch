@@ -36,9 +36,7 @@ namespace DAS_IO { namespace Modbus {
     ali->TM->pressure = *(float*)&rawbuf[1];
     ali->TM->flow_temp = *(float*)&rawbuf[2];
     ali->TM->volumetric_flow = *(float*)&rawbuf[3];
-    ali->TM->mass_flow = ali->TM->volumetric_flow
-      * (ali->TM->pressure / 1013.25)
-      * ( 273.15 / (273.15+ali->TM->flow_temp) );
+    ali->TM->mass_flow = *(float*)&rawbuf[4];
     ali->TM->flow_setpoint = *(float*)&rawbuf[5];
 #else
     myswap_be(status, &ali->xbuf[0]);
