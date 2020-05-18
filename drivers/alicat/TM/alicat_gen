@@ -197,10 +197,10 @@ for (my $i = 0; $i < $n_channels; ++$i) {
       "  $Rate ${datum}_T      ${Name}_HK T\n",
       "  $Rate ${datum}_P      ${Name}_HK ${Punits}\n",
       (($D->{chtype} eq 'mfc') ?
-        "  $Rate ${datum}_Set    $Name ${VFunits}\n"
+        "  $Rate ${datum}_Set    $Name ${MFunits}\n"
         : ''),
-      "  $Rate ${datum}_VolFlow   $Name ${VFunits}\n",
-      "  $Rate ${datum}_MassFlow   $Name ${MFunits}\n";
+      "  $Rate ${datum}_MassFlow   $Name ${MFunits}\n",
+      "  $Rate ${datum}_VolFlow   $Name ${VFunits}\n";
   } else {
     die "Unsupported type";
   }
