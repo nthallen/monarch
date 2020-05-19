@@ -1,67 +1,73 @@
 #! @SHELL_EXE@
-#__USAGE
-#%C	[-g <time>] [-z <time>] <directory> [prog ...]
-# -r Don't recurse
-# -g <time> specify start time (see "use rdr")
-# -z <time> specify end time (see "use rdr")
-# -F <no> specify the first data file number
-# -L <no> specify the last data file number
-# -d invoke pterm gdb on each extraction
-#
-# Run extraction programs on data in specified directory
-#
-# By default, extract expects to find extraction programs in
-# the current directory. If a file named "VERSION" exists in
-# the specified directory, its contents are used to locate
-# additional directories which are added to the PATH.
-#
-# For example, given the command "extract 970503.1 fooext",
-# suppose 970503.1/VERSION contains "1.1". extract will first
-# look for fooext in the current directory if ./VERSION also
-# contains "1.1" and if ./tm.dac is identical to 970503.1/tm.dac.
-# Next extract will look in ./bin/1.1, again checking that
-# the tm.dac file there is identical to 970503.1/tm.dac. Last,
-# extract will look in 970503.1/../bin/1.1. In this case, that
-# is the same as ./bin/1.1, but if a longer path were specified
-# (to extract from an archive disk, for example) the extractions
-# could be located there also.
-#
-# extract looks for an executable script named "extract" in 
-# the specified directory and executes it. That script takes a 
-# single argument, the source directory, and relies on the 
-# environment variable $Extractions to pass extractions. 
-# (extract will define $Extractions from its command-line 
-# arguments if necessary). This directory-specific version of 
-# extract may in turn call this version of extract with 
-# impunity if it specifies the -r option.
-#
-# Environment variable RDR_OPTS may be used to pass options 
-# directly to the rdr command line.
-#
-# Extract will perform the specified extractions in an empty
-# directory. Any files created by the extractions in that
-# directory will be moved into the analysis subdirectory 
-# anal/$run where $run is the last component of the extraction 
-# directory path. e.g. "extract //1/od1/home/abc/951127.1" 
-# will place products in anal/951127.1 relative to the current 
-# directory.
-#
-# If the environment variable EXTRACT_DIR is defined, the
-# extractions will be run there and none of the resulting files
-# will be moved. Otherwise a process-specified subdirectory will
-# be created and then removed after the results have been
-# moved to the analysis directory.
-#
-# Use of the ExtProducts environment variable is now obsolete.
-#
-# Values for the environment variables Extractions and RDR_OPTS
-# which appear in Experiment.config 
-# are ignored here, but will be used by the script "reduce" 
-# when invoking extract. This allows custom extractions to 
-# override values in Experiment.config gracefully.
-#
-# When using -d, if a .gdbinit file exists in the current
-# directory, it will be passed to the gdb invocation(s).
+
+function print_usage {
+cat <<EOF
+extract [-h] [-g <time>] [-z <time>] <directory> [prog ...]
+ -r Don't recurse
+ -g <time> specify start time (see "use rdr")
+ -z <time> specify end time (see "use rdr")
+ -F <no> specify the first data file number
+ -L <no> specify the last data file number
+ -d invoke pterm gdb on each extraction
+ -h print this message
+
+ Run extraction programs on data in specified directory
+
+ By default, extract expects to find extraction programs in
+ the current directory. If a file named "VERSION" exists in
+ the specified directory, its contents are used to locate
+ additional directories which are added to the PATH.
+
+ For example, given the command "extract 970503.1 fooext",
+ suppose 970503.1/VERSION contains "1.1". extract will first
+ look for fooext in the current directory if ./VERSION also
+ contains "1.1" and if ./tm.dac is identical to 970503.1/tm.dac.
+ Next extract will look in ./bin/1.1, again checking that
+ the tm.dac file there is identical to 970503.1/tm.dac. Last,
+ extract will look in 970503.1/../bin/1.1. In this case, that
+ is the same as ./bin/1.1, but if a longer path were specified
+ (to extract from an archive disk, for example) the extractions
+ could be located there also.
+
+ extract looks for an executable script named "extract" in 
+ the specified directory and executes it. That script takes a 
+ single argument, the source directory, and relies on the 
+ environment variable $Extractions to pass extractions. 
+ (extract will define $Extractions from its command-line 
+ arguments if necessary). This directory-specific version of 
+ extract may in turn call this version of extract with 
+ impunity if it specifies the -r option.
+
+ Environment variable RDR_OPTS may be used to pass options 
+ directly to the rdr command line.
+
+ Extract will perform the specified extractions in an empty
+ directory. Any files created by the extractions in that
+ directory will be moved into the analysis subdirectory 
+ anal/$run where $run is the last component of the extraction 
+ directory path. e.g. "extract //1/od1/home/abc/951127.1" 
+ will place products in anal/951127.1 relative to the current 
+ directory.
+
+ If the environment variable EXTRACT_DIR is defined, the
+ extractions will be run there and none of the resulting files
+ will be moved. Otherwise a process-specified subdirectory will
+ be created and then removed after the results have been
+ moved to the analysis directory.
+
+ Use of the ExtProducts environment variable is now obsolete.
+
+ Values for the environment variables Extractions and RDR_OPTS
+ which appear in Experiment.config 
+ are ignored here, but will be used by the script "reduce" 
+ when invoking extract. This allows custom extractions to 
+ override values in Experiment.config gracefully.
+
+ When using -d, if a .gdbinit file exists in the current
+ directory, it will be passed to the gdb invocation(s).
+EOF
+exit 0
+}
 
 Ex_sav="$Extractions"
 Prod_sav="$ExtProducts"
@@ -96,8 +102,9 @@ HAVE_SUDO=@HAVE_SUDO@
 time_opts=""
 debug=no
 gdbinit=""
-while getopts "drg:z:F:L:" option; do
+while getopts "hdrg:z:F:L:" option; do
   case $option in
+  h) print_usage;;
 	r) EXTRACT_DEPTH=1;;
 	g) time_opts="$time_opts -g $OPTARG";;
 	z) time_opts="$time_opts -z $OPTARG";;
@@ -244,10 +251,10 @@ waitfor /var/run/linkeng/$Experiment/tm_bfr || exit 1
 for ext in $@; do
   # echo "ext: $ext"
   if [ $debug = yes ]; then
-    ndc0=`ls /var/run/$Experiment/ | wc -l`
+    ndc0=`ls /var/run/linkeng/run/$Experiment/ | wc -l`
     pterm gdb $gdbinit $ext &
     while
-      ndc1=`ls /var/run/$Experiment/ | wc -l`;
+      ndc1=`ls /var/run/linkeng/run/$Experiment/ | wc -l`;
       [ $ndc0 = $ndc1 ];
     do
       msgf 0 "Waiting for gdb $ext to initialize"

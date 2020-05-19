@@ -31,8 +31,8 @@ class tm_client : public DAS_IO::Client, public DAS_IO::tm_rcvr {
 
 class ext_tm_client : public tm_client {
   public:
-    inline ext_tm_client(int bufsize_in, bool fast = false, const char *hostname = 0) :
-      tm_client(bufsize_in, fast, hostname) {}
+    inline ext_tm_client(int bufsize_in, const char *hostname = 0) :
+      tm_client(bufsize_in, false, hostname) {}
   protected:
     void process_data();
 };
