@@ -244,7 +244,7 @@ for (my $i = 0; $i < $n_channels; ++$i) {
     my $fword = scalar(@text)+1;
     if ($D->{type} eq 'digital') {
       $cmddef .=
-        "  : " . join(' ', @text, '%f', "($VFunits)", $VFunits, '*') .
+        "  : " . join(' ', @text, '%f', "($MFunits)", $MFunits, '*') .
         " { ${Name}_set($channel, \$$fword); }\n";
     } else {
       die "Unsupported type";
