@@ -428,8 +428,8 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
   
   if (! ocb->obuf_empty()) return;
   if (ocb->read.maxQrows == 0) {
-    // ocb->read.maxQrows = ocb->is_fast ? 1 : total_Qrows;
-    ocb->read.maxQrows = 1;
+    ocb->read.maxQrows = ocb->is_fast ? 1 : total_Qrows;
+    // ocb->read.maxQrows = 1;
   }
   
   if ( ocb->data.tmqr == 0 ) {
