@@ -7,25 +7,39 @@ function nl_error {
 
 function print_usage {
 cat <<EOF;
-waitfor name seconds
+waitfor [-q] name seconds
   wait for the specified number of seconds for
   the named file or socket to appear.
-waitfor name forever
+waitfor [-q] name forever
   wait indefinitely for the named file or socket to appear.
+  If not immediately found, will display an informational message.
+
+Options:
+  -q Omit informative messages
+  
 waitfor -h
   display this message
 EOF
+exit 0
 }
 
+opt_quiet=''
+
+while getopts "hq" option; do
+  case $option in
+    h) print_usage;;
+    q) opt_quiet=yes;;
+  esac
+done
+shift $((OPTIND-1))
+
 [ -z "$1" ] && nl_error Must provide name argument
-if [ "$1" = "-h" ]; then
-  print_usage
-  exit 0
-fi
 name=$1
 
 [ -z "$2" ] && nl_error Must provide length argument
 if [ "$2" = "forever" ]; then
+  [ -e $name ] || sleep 1
+  [ -e $name -o -n "$opt_quiet" ] || echo "Waiting for $name"
   duration=1
   decrement=0
 else

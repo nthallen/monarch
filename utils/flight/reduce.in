@@ -1,37 +1,44 @@
 #! @SHELL_EXE@
-#__USAGE
-#%C [-xa]
-#  Run "saverun fix" to determine the data directory
-#%C [-xa] directory
-#  Operate on the specified directory
-#
-#  -x  Don't run extractions or analysis
-#  -a  Don't run analysis
-#
-# Reduce performs a series of operations following a data run.
-# If the data directory is not specified, reduce invokes saverun
-# to create a new data directory.
-#
-# After the data directory is created and/or located, reduce will
-# copy the data directory from the flight node to the GSE node.
-# This copy step will be skipped if the flight node and the GSE
-# node are the same or if the variable CopyData is set to "no"
-# in Experiment.config. Also, if the target directory is specified
-# using a relative path and it already exists relative to the
-# current directory, no copying will take place. If the
-# path exists relative to the flight directory, it may be copied
-# to the GSE node, following the same rules as for newly created
-# data directories.
-#
-# Next, if any extractions are defined (and -x is not specified),
-# they will be executed, and any spreadsheets created will be moved
-# into the corresponding analysis subdirectory (anal/$dir, where $dir
-# is the name of the new data directory). Extractions are defined via
-# the "Extractions" variable in Experiment.config.
-#
-# Finally, if an analysis script is defined via the "Analysis"
-# variable in Experiment.config and -x or -a has not been
-# selected, the analysis will be run.
+
+function print_usage {
+cat <<EOF
+ reduce [-xa]
+   Run "saverun fix" to determine the data directory
+ reduce [-xa] directory
+   Operate on the specified directory
+ reduce -h
+   Print this message
+ 
+   -x  Don't run extractions or analysis
+   -a  Don't run analysis
+ 
+  Reduce performs a series of operations following a data run.
+  If the data directory is not specified, reduce invokes saverun
+  to create a new data directory.
+ 
+  After the data directory is created and/or located, reduce will
+  copy the data directory from the flight node to the GSE node.
+  This copy step will be skipped if the flight node and the GSE
+  node are the same or if the variable CopyData is set to "no"
+  in Experiment.config. Also, if the target directory is specified
+  using a relative path and it already exists relative to the
+  current directory, no copying will take place. If the
+  path exists relative to the flight directory, it may be copied
+  to the GSE node, following the same rules as for newly created
+  data directories.
+ 
+  Next, if any extractions are defined (and -x is not specified),
+  they will be executed, and any spreadsheets created will be moved
+  into the corresponding analysis subdirectory (anal/$dir, where $dir
+  is the name of the new data directory). Extractions are defined via
+  the "Extractions" variable in Experiment.config.
+ 
+  Finally, if an analysis script is defined via the "Analysis"
+  variable in Experiment.config and -x or -a has not been
+  selected, the analysis will be run.
+EOF
+exit 0
+}
 
 opt_exts=yes
 opt_anal=yes
@@ -39,30 +46,26 @@ CopyData=yes
 FixDisk=no
 Dircksum=no
 
-. /usr/local/libexec/load_exconfig.sh
-msgProgram='reduce'
-
 function do_tar {
-  # do_tar $run $dir
-  run=$1
-  src=$2
-  t_run=$3
-  
-  gse="flight@$FlightNode"
+  # do_tar $SrcRel $DestRel $LocalRel
+  SrcRel=$1
+  DestRel=$2
+  LocalRel=$3
   
   msgf -2 "Retrieving directory ('$directory'), trun ('$t_run')"
-  eval time ssh $gse tar -czf- -C $HomeDir/raw $t_run | tar -C $HomeDir/raw -xzf-
+  eval time $SSH_CMD tar -czf- -C $SrcRel $DestRel | tar -C $LocalRel -xzf-
 }
 
 #----------------------------------------------------------------
 # Process command line options (-x, -a)
 #----------------------------------------------------------------
-while getopts "ax" option; do
+while getopts "ahx" option; do
   case $option in
   a) opt_anal=no;;
+  h) print_usage;;
   x) opt_exts=no;;
   \?) echo; exit 1;;
-  *) msgf 0 "Unsupported option: -$option";;
+  *) msg -V -n $msgProgram "[ERROR] Unsupported option: -$option"; exit 1;;
   esac
 done
 let sval=$OPTIND-1
@@ -71,12 +74,15 @@ shift $sval
 #----------------------------------------------------------------
 # Load the configuration file
 #----------------------------------------------------------------
-
-[ -z "$Experiment" ] && msgf 0 "Experiment undefined in Experiment.config"
-export Experiment
+. /usr/local/libexec/load_exconfig.sh
+msgProgram='reduce'
+[ -n "$CFG_ERROR" ] && msgf 3 "$CFG_ERROR"
 
 if [ -n "$1" ]; then
-  directory="$1"
+  directory=`locate_rundir $1`
+  [ -z "$directory" -a $FltNode_Access = Remote ] &&
+    directory=`$SSH_CMD locate_rundir $1`
+  [ -n "$directory" ] || msgf 3 "Unable to locate run $1"
 else
   msgf 0 "Saving Run ..."
   saverun saverun_output.txt
@@ -86,14 +92,31 @@ else
   [ -n "$directory" ] || msgf 3 "saverun output empty"
   rm saverun_output.txt
 fi
+case $directory in
+  *:*) ;;
+  *) msgf 4 "directory '$directory' should have had a colon";;
+esac
+srcHomeDir=${directory%:*}
+directory=${directory#*:}
 
-trun=${directory#$HomeDir/raw/}
-[ "$trun" = "$directory" ] && msgf 3 "trun ('$trun') identical to directory ('$directory'), HomeDir='$HomeDir'"
-if [ "$FltNode_Access" = "Local" ]; then
-  msgf 0 "skipping copy step for Local Experiment"
-elif [ -d raw/$trun ]; then
-  msgf 0 "directory already copied ('raw/$trun')"
-else
+# saverun returns an absolute pathname with $HomeDir
+# separated from the relative run path by a colon. This should
+# support the case where the HomeDir on the GSE is different
+# from that on the flight computer. If FltNode_Access is
+# remote, we will want to copy the remote directory to
+# the local path relative to the current directory.
+if [ ! -d $srcHomeDir/$directory ]; then
+  # The source must come from a remote system
+  [ -d $directory -o $FltNode_Access = Local ] &&
+    msgf 4 "Was not expecting $directory to be local"
+    
+  ### Working here:
+  ###   srcHomeDir is defined (but could be empty if path is absolute)
+  ###   directory is defined (and could be relative to /)
+  ### Hence the source directory on the remote system is
+  ### $srcHomeDir/$directory, and we will copy it to $directory
+  ### relative to the current directory.
+
   #----------------------------------------------------------------
   # If we ran saverun, the directory name is relative to the
   # flight directory. If it was specified on the command line,
@@ -102,42 +125,42 @@ else
   # case, if it is absolute or exists relative to the GSE
   # directory, no copying is indicated.
   #----------------------------------------------------------------
-  case "$directory" in
-    \/*)
-      # absolute address
-      msgf -2 "absolute address for '$directory'";;
-      # CopyData=no;;
-    *)
-      # relative address
-      msgf -2 "relative address for '$directory'"
-      if [ -d "$directory" ]; then
-        msgf -2 "CopyData is a no"
-        CopyData=no
-      elif [ -z "$fltdir" ]; then
-        pdirs="."
-        [ -n "$FlightNode" ] && pdirs="$pdirs /net/$FlightNode$HomeDir"
-        [ -n "$AltDir" ] && pdirs="$pdirs $AltDir"
-        for pdir in $pdirs; do
-          for ppdir in . raw/data raw/flight raw/preflt raw/cal raw/junk; do
-            if [ -d $pdir/$ppdir/$directory ]; then
-              fltdir=$pdir
-              [ $pdir = . ] && CopyData=no
-              [ $ppdir = . ] || directory=$ppdir/$directory
-              break
-            fi
-          done
-          [ -n "$fltdir" ] && break
-        done
+  # case "$directory" in
+  #   \/*)
+  #     # absolute address
+  #     msgf -2 "absolute address for '$directory'";;
+  #     # CopyData=no;;
+  #   *)
+  #     # relative address
+  #     msgf -2 "relative address for '$directory'"
+  #     if [ -d "$directory" ]; then
+  #       msgf -2 "CopyData is a no"
+  #       CopyData=no
+  #     elif [ -z "$fltdir" ]; then
+  #       pdirs="."
+  #       [ -n "$FlightNode" ] && pdirs="$pdirs /net/$FlightNode$HomeDir"
+  #       [ -n "$AltDir" ] && pdirs="$pdirs $AltDir"
+  #       for pdir in $pdirs; do
+  #         for ppdir in . raw/data raw/flight raw/preflt raw/cal raw/junk; do
+  #           if [ -d $pdir/$ppdir/$directory ]; then
+  #             fltdir=$pdir
+  #             [ $pdir = . ] && CopyData=no
+  #             [ $ppdir = . ] || directory=$ppdir/$directory
+  #             break
+  #           fi
+  #         done
+  #         [ -n "$fltdir" ] && break
+  #       done
 
-        # [ -n "$FlightNode" ] && fltdir=/net/$FlightNode$HomeDir
-        # [ -z "$fltdir" -o ! -d "$fltdir/$directory" ] && fltdir=$AltDir
+  #       # [ -n "$FlightNode" ] && fltdir=/net/$FlightNode$HomeDir
+  #       # [ -z "$fltdir" -o ! -d "$fltdir/$directory" ] && fltdir=$AltDir
 
-        [ -z "$fltdir" ] &&
-            msgf 0 "Unable to locate data directory $directory"
-        [ "$CopyData" != "yes" -a $fltdir != . ] &&
-        directory=$fltdir/$directory
-      fi;;
-  esac
+  #       [ -z "$fltdir" ] &&
+  #           msgf 0 "Unable to locate data directory $directory"
+  #       [ "$CopyData" != "yes" -a $fltdir != . ] &&
+  #       directory=$fltdir/$directory
+  #     fi;;
+  # esac
 
   # Copy_Data srcdir destdir
   # Copies srcdir to destdir if CopySpace condition holds
@@ -149,21 +172,20 @@ else
     # left over after the copy.
 
     DoCopy=$CopyData
-    SrcDir=$1
+    SrcHome=$1
+    SrcRel=$2
+    SrcFull=$SrcHome/$SrcRel
     DestDir=$2
     # typeset DestParent destspace hasmtpt srcmnt srcnode
     if [ "$DoCopy" = "yes" -a -n "$CopySpace" ]; then
-      DestParent=`dirname $directory`
+      DestParent=`dirname $DestDir`
       [ -d $DestParent ] || mkdir -p $DestParent ||
         msgf 0 "Unable to create directory '$DestParent'"
       # pick 4th element of df output (free kb)
       set X `df $DestParent`
       let destspace=$5-$CopySpace
       if [ $destspace -ge 0 ]; then
-        srcmnt=`realpath $SrcDir`
-        srcnode=${srcmnt#//}
-        srcnode=${srcnode%%/*}
-        set X `on -n $srcnode du -sk $SrcDir`
+        set X `$SSH_CMD du -sk $SrcHome`
         let destspace=destspace-$2
       fi
       if [ $destspace -lt 0 ]; then
@@ -175,22 +197,25 @@ else
     if [ "$DoCopy" = "yes" ]; then
       msgf 0 "Copying from $SrcDir to $DestDir ..."
       # cp -frc $SrcDir $DestDir
-      do_tar $SrcDir $DestDir $trun
+      do_tar $SrcHome $SrcRel .
       return 0
     fi
     return 1
   }
 
-  [ ! "$CopyData" = "yes" ] ||
-    msgf -2 "Copying data from '$directory', '$directory'"
-    Copy_Data $directory $directory ||
-    directory=$directory
+  if [ "$CopyData" = "yes" ]; then
+    msgf -2 "Copying data from '$FlightNode:$srcHomeDir/$directory', './$directory'"
+    Copy_Data $srcHomeDir $directory
+  fi
 
   if [ -n "$CopyHook" ]; then
     eval $CopyHook
   fi
 
 fi
+
+# If we get this far, the raw data should be in $directory
+[ -d $directory ] || msgf 0 "Cannot proceed without local data"
 
 #----------------------------------------------------------------
 # Do Extractions if defined and not disabled

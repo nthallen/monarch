@@ -73,7 +73,7 @@ fi
 export TMBINDIR
 
 msgVdefault='-V'
-msgProgram='load_exconfig.sh'
+[ -z "$msgProgram" ] && msgProgram='load_exconfig.sh'
 msgDebug=-1
 
 function msgf {

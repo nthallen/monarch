@@ -73,28 +73,10 @@ Ex_sav="$Extractions"
 Prod_sav="$ExtProducts"
 Ropt_sav="$RDR_OPTS"
 
+# load_exconfig.sh guarantees that Experiment is defined
 . /usr/local/libexec/load_exconfig.sh
 msgProgram='extract'
 [ -n "$CFG_ERROR" ] && msgf 3 "$CFG_ERROR"
-
-function waitfor {
-  # echo "extract: waitfor: waiting for [$1]"
-  while true
-  do
-    [ -e $1 ] && return 0
-    sleep 1
-  done
-}
-
-HAVE_SUDO=@HAVE_SUDO@
-
-#if [ HAVE_SUDO ]
-#then
-#  # Make sure we are running as root
-#  if [ `id -u` -ne 0 ]; then
-#    exec sudo $0 $*
-#  fi
-#fi
 
 #----------------------------------------------------------------
 # Handle arguments
@@ -119,13 +101,19 @@ let sval=$OPTIND-1
 shift $sval
 
 dir=$1
-extractor=$2
 shift
-dir=`realpath $dir`
-[ -d "$dir" ] || {
-  msgf 0 "Unable to locate directory '$dir'"
-  exit 1
-}
+
+[ -n "$dir" ] || print_usage
+
+# Now let's locate the directory. Things to try:
+# If absolute, need to stick with it. Otherwise:
+#   $dir
+#   raw/$dir
+#   raw/<type>/$dir
+fdir=`locate_rundir $dir`
+[ -n "$fdir" ] || msgf 3 "Unable to locate directory '$dir'"
+dir=${fdir%:*}/${fdir#*:}
+[ -d "$dir" ] || msgf 4 "realpath done me wrong: $fdir => $dir"
 
 #----------------------------------------------------------------
 # Look for an extract script in the directory, but avoid 
@@ -148,7 +136,6 @@ fi
 # Modified to modify Experiment only if it is defined. Add .r
 # instead of the whole .node.pid. Only one rdr allowed per
 # experiment per node.
-# Now require the existence of Experiment.config
 #----------------------------------------------------------------
 
 Experiment=${Experiment}.r
@@ -176,6 +163,7 @@ if [ -f tm.dac -a "$VERSION" = "$cur_version" ]; then
     msgf 0 "WARNING!: $PWD/tm.dac differs but VERSIONs do not"
   fi
 fi
+
 function eval_dir {
   bin=$1
   if [ -d $bin ]; then
@@ -185,16 +173,21 @@ function eval_dir {
     MYPATH="$MYPATH$bin:"
   fi
 }
+
 eval_dir bin/$VERSION
-[ $dir/../bin/$VERSION -ef bin/$VERSION ] ||
-  eval_dir $dir/../bin/$VERSION
+# This looks like it is for the case where data is archived on an
+# external disk along with binaries for extraction, but the
+# condition does not make sense. If these are actually the same
+# directory, we don't need to list them separately in the PATH
+# [ $dir/../bin/$VERSION -ef bin/$VERSION ] ||
+#   eval_dir $dir/../bin/$VERSION
 
 [ -z "$MYPATH" ] &&
   msgf 3 "Unable to locate valid bin directory for version $VERSION"
 PATH=$MYPATH${PATH#:}
 
 rv=''
-hasext=$TMBINDIR/$extractor
+hasext=''
 
 # msgf 0 "command args list: $@"
 # msgf 0 "command args list: $*"
@@ -207,8 +200,8 @@ for i in $@; do
   # msgf 0 "arg: $i"
   
   for j in $i; do
-    wext=`which $j`
-    [ -x "$wext" ] || rv="$rv '$j'"
+    wext=`which $j 2>/dev/null`
+    [ -n "$wext" -a -x "$wext" ] || rv="$rv '$j'"
     hasext=yes
     break;
   done
@@ -233,7 +226,6 @@ done
 #----------------------------------------------------------------
 extdir=$EXTRACT_DIR
 [ -z "$extdir" ] && extdir=anal/Ext.$$
-[ -z "$extdir" ] && msgf 3 "Empty extdir"
 [ -d $extdir ] || mkdir -p $extdir
 [ -d $extdir ] || msgf 3 "Unable to create directory $extdir"
 rootdir=$PWD
@@ -243,27 +235,43 @@ export TMLOGDIR=$dir
 export TMBINPATH=$MYPATH
 rv=0
 
+function debugterm {
+  OS=`uname -o`
+  case $OS in
+    Cygwin) cygstart mintty $*;;
+    *) msgf 3 "debugterm does not support OS '$OS'";;
+  esac
+}
+
+function debug {
+  $rundir=/var/run/linkeng/run/$Experiment/
+  ndc0=`ls $rundir | wc -l`
+  debugterm gdb $gdbinit --args $ext
+  while
+    ndc1=`ls $rundir | wc -l`;
+    [ $ndc0 = $ndc1 ];
+  do
+    msgf 0 "Waiting for gdb $ext to initialize"
+    sleep 5
+  done
+}
+
+clean_runfiles -k
+
 memo -o extract.log -V &
+memo_pid=$!
 memo=/var/run/linkeng/$Experiment/memo
-waitfor $memo || exit 1
+waitfor $memo 10 || exit 1
 bfr -s Unix &
-waitfor /var/run/linkeng/$Experiment/tm_bfr || exit 1
+waitfor /var/run/linkeng/$Experiment/tm_bfr 10 || exit 1
 for ext in $@; do
   # echo "ext: $ext"
   if [ $debug = yes ]; then
-    ndc0=`ls /var/run/linkeng/run/$Experiment/ | wc -l`
-    pterm gdb $gdbinit $ext &
-    while
-      ndc1=`ls /var/run/linkeng/run/$Experiment/ | wc -l`;
-      [ $ndc0 = $ndc1 ];
-    do
-      msgf 0 "Waiting for gdb $ext to initialize"
-      sleep 5
-    done
+    debug $ext
   else
     $ext -n "$ext" &
     extpid=$!
-    if waitfor /var/run/linkeng/run/$Experiment/$extpid 2>/dev/null; then
+    if waitfor /var/run/linkeng/run/$Experiment/$extpid 10 2>/dev/null; then
       msgf 0 "$ext ($extpid) initialized"
     else
       msgf 0 "ERROR: $ext ($extpid) failed to initialize"
@@ -271,10 +279,12 @@ for ext in $@; do
   fi
   shift
 done
-# msgf 0 extract "rdr $RDR_OPTS $time_opts -AqP $dir"
+msgf 0 extract "rdr $RDR_OPTS $time_opts -AqP $dir"
 rdr $RDR_OPTS $time_opts -AqP $dir || rv=1
+while kill -0 $memo_pid 2>/dev/null; do
+  sleep 1
+done
 
-# rdr -v -c0 -n $# -Q $RDR_OPTS $time_opts -d $dir -f $dir/tm.dac &
 cd $rootdir
 [ $rv != 0 ] && msgf 3 "Partial result may be in $extdir"
 

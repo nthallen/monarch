@@ -1,0 +1,72 @@
+#! @SHELL_EXE@
+
+function print_usage {
+cat <<EOF
+locate_rundir -h
+  Print this message
+locate_rundir <run>
+  Outputs the full path to the specified run.
+  The path separator between the HomeDir and
+  the relative path will be changed to a colon.
+  In most cases, this looks like:
+    /home/Experiment:raw/data/<run>
+  In the case that <run> is an absolute path, the
+  output if any will be preceded by a colon.
+
+locate_rundir only looks for the run on the local
+system. It is up to the caller to determine whether
+to continue the search on a remote system. The -r
+option is primarily (or exclusively) intended for
+running on a remote system.
+EOF
+exit 0
+}
+
+msgProgram='locate_rundir'
+sep=:
+
+#----------------------------------------------------------------
+# Process command line options (-h)
+#----------------------------------------------------------------
+while getopts "h" option; do
+  case $option in
+  h) print_usage;;
+  \?) echo; exit 1;;
+  *) msg -V -n $msgProgram "[ERROR] Unsupported option: -$option"; exit 1;;
+  esac
+done
+let sval=$OPTIND-1
+shift $sval
+
+RUN=$1
+
+. /usr/local/libexec/load_exconfig.sh
+[ -n "$CFG_ERROR" ] && msgf 3 $CFG_ERROR
+
+[ -n "$RUN" ] || msgf 3 "Must specify run"
+
+case $RUN in
+  /*)
+    if [ -d "$RUN" ]; then
+      echo :${RUN#/}
+    fi
+    exit 0;;
+esac
+
+function test_and_accept {
+  mybase=$1
+  mypath=$2
+  if [ -d $mybase/$mypath ]; then
+    echo $mybase$sep$mypath
+    exit 0
+  fi
+}
+
+# Now we have a relative path
+for base in $HomeDir $AltDir; do
+  test_and_accept $base $RUN
+  test_and_accept $base raw/$RUN
+  for type in flight preflt cal data junk; do
+    test_and_accept $base raw/$type/$RUN
+  done
+done

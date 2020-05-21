@@ -1,51 +1,64 @@
 #! @SHELL_EXE@
-#__USAGE
-#%C
-#	Saves data files, log files and other pertinent info in
-#	a new directory named after the current date and the run
-#	number and optionally located under a runtype-specific
-#	subdirectory.
-#
-#	Saverun must be able to read the experiment configuration
-#	file Experiment.config, usually located in the GSE and
-#	flight directories.
-#
-#	If the variable "FixDisk" is defined to "yes", fixdisk is
-#	run on the disk before the new directory is created.
-#
-#	Also references configuration variables LogDirs,
-#	LogFiles, SaveFiles, RunLog, Dircksum, SaverunHook and
-#	RunType.
-#
-#	For more information, see:
-#	  http://www.arp.harvard.edu/eng/das/manuals/exconfig.html
 
-# Saverun locates the flight directory and does its work
-# there, then returns to the current directory. Care is taken
-# to perturb the environment as little as possible so saverun
-# can be dot-executed with minimal side-effects. Saverun will
-# exit on certain error conditions (no config file, insufficient
-# permissions in flight directory, no log files) and if it is
-# being dot-executed, the calling script will exit also.
-# I use the not-well-documented feature that "cd -" takes you
-# to the previous directory.
-#
-# If saverun completes successfully, (and is dot-executed)
-# the variables Experiment, HomeDir and FlightDir and RunDir
-# will be defined. The newly created directory is
-# $FlightDir/$RunDir
+function print_usage {
+cat <<EOF
+saverun [ofile]
+ 	Saves data files, log files and other pertinent info in
+ 	a new directory named after the current date and the run
+ 	number and optionally located under a runtype-specific
+ 	subdirectory.
+ 
+ 	Saverun must be able to read the experiment configuration
+ 	file Experiment.config, usually located in the GSE and
+ 	flight directories.
+ 
+ 	If the variable "FixDisk" is defined to "yes", fixdisk is
+ 	run on the disk before the new directory is created.
+ 
+ 	Also references configuration variables LogDirs,
+ 	LogFiles, SaveFiles, RunLog, Dircksum, SaverunHook and
+ 	RunType.
+ 
+ 	For more information, see:
+ 	  http://www.arp.harvard.edu/eng/das/manuals/exconfig.html
 
-. /usr/local/libexec/load_exconfig.sh
+  Saverun locates the flight directory and does its work
+  there, then returns to the current directory. Care is taken
+  to perturb the environment as little as possible so saverun
+  can be dot-executed with minimal side-effects. Saverun will
+  exit on certain error conditions (no config file, insufficient
+  permissions in flight directory, no log files) and if it is
+  being dot-executed, the calling script will exit also.
+  I use the not-well-documented feature that "cd -" takes you
+  to the previous directory.
+ 
+  If saverun completes successfully, (and is dot-executed)
+  the variables Experiment, HomeDir and FlightDir and RunDir
+  will be defined. The newly created directory is
+  $FlightDir/$RunDir
+EOF
+exit 0
+}
+
 msgProgram='saverun'
+
+#----------------------------------------------------------------
+# Process command line options (-h)
+#----------------------------------------------------------------
+while getopts "h" option; do
+  case $option in
+  h) print_usage;;
+  \?) echo; exit 1;;
+  *) msg -V -n $msgProgram "[ERROR] Unsupported option: -$option"; exit 1;;
+  esac
+done
+let sval=$OPTIND-1
+shift $sval
 
 FILE_OPT=$1
 
+. /usr/local/libexec/load_exconfig.sh
 [ -n "$CFG_ERROR" ] && msgf 3 $CFG_ERROR
-
-function sv_error {
-  echo "saverun: $*" >&2
-  exit 1
-}
 
 #----------------------------------------------------------------
 # saverun isn't legal when collection is running:
@@ -54,7 +67,7 @@ function sv_error {
   msgf 3 dg for Experiment $Experiment currently active
 
 if [ $FltNode_Access = Remote ]; then
-  $SSH_CMD saverun $FILE_OPT
+  $SSH_CMD saverun $FILE_OPT || exit 1
   if [ -n "$FILE_OPT" ]; then
     scp flight@$FlightNode:$HomeDir/$FILE_OPT $FILE_OPT
     if [ -e $FILE_OPT ]; then
@@ -62,10 +75,14 @@ if [ $FltNode_Access = Remote ]; then
     fi
   fi
   exit 0
+else
+  # This deals with the case we are running saverun in /home/flight
+  # on the flight computer (default login directory for user flight)
+  cd $HomeDir
 fi
 
 #----------------------------------------------------------------
-# Look for the flight node
+# Look for the flight directory
 #----------------------------------------------------------------
 # typeset FN=$FlightNode date run
 # unset FlightDir
@@ -123,7 +140,7 @@ if [ -n "SaverunHook" ]; then
   eval $SaverunHook
 fi
 
-# Ask about RunType [FPCJ]
+# Ask about RunType [FPCDJ]
 if [ -n "$RunType" ]; then
   case "$RunType" in
     raw/flight) : ;;
@@ -250,8 +267,4 @@ case $Dircksum in
 esac
 [ "$Dircksum" = "yes" ] && dircksum -wv $RunDir
 
-[ -n "$FILE_OPT" ] && echo $PWD/$RunDir > $FILE_OPT
-
-# cd $OLDDIR
-# unset OLDDIR hascrntrun date run
-unset -f sv_error
+[ -n "$FILE_OPT" ] && echo "$PWD:$RunDir" > $FILE_OPT

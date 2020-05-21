@@ -1,0 +1,134 @@
+#! @SHELL_EXE@
+
+function print_usage {
+cat << EOF
+clean_runfiles [-h] [-k]
+
+Examines the run directory /var/run/linkeng and
+removes any inactive elements. This includes:
+
+  - orphaned sockets (process no longer exists)
+  - old TM client PID files under /var/run/linkeng/run
+  - empty Experiment directories and lock files
+
+These operations should be safe to execute at any
+time.
+
+Options:
+  -h Print this message
+  -k If the Experiment environment variable is defined
+     and a PID file associated with an active process
+     is found, kill it. This is decidedly not safe to
+     run indescrimanently, since it will unceremoniously
+     shut down the experiment. In particular, it cannot
+     be run at the beginning of a doit script, since
+     a common use case is to run doit after the instrument
+     is operational. On the other hand, it is probably
+     appropriate at the beginning of an extract script,
+     since it then pertains to just the extraction Experiment
+     value.
+EOF
+exit 0
+}
+
+opt_kill=no
+
+while getopts "hk" option; do
+  case $option in
+    h) print_usage;;
+    k) opt_kill=yes;;
+    \?) echo; exit 1;;
+    *) echo Unsupported option: -$option; exit 1;;
+  esac
+done
+
+# Remove any abandoned sockets
+for socket in `find /var/run/linkeng -type s`; do
+  if [ -f ${socket}.pid ]; then
+    if ! kill -0 `cat ${socket}.pid` 2>/dev/null; then
+      echo socket $socket is abandoned
+      rm $socket
+      rm ${socket}.pid
+    else
+      echo socket $socket is still active
+    fi
+  fi
+done
+
+# Remove any dead pid files under run
+for pidfile in `find /var/run/linkeng/run -type f`; do
+  pid=${pidfile##*/}
+  if kill -0 $pid 2>/dev/null; then
+    echo "TM client $pidfile is still active"
+  else
+    echo "TM client $pidfile is gone"
+    rm $pidfile
+  fi
+done
+
+for piddir in `find /var/run/linkeng/run -mindepth 1 -type d`; do
+  rmdir --ignore $piddir
+  if [ -d $piddir ]; then
+    echo "PID directory $piddir is non-empty"
+  else
+    echo "Removed PID directory $piddir"
+  fi
+done
+
+# Remove any empty Experiment directories
+for lockfile in `find /var/run/linkeng -name "*.lock"`; do
+  dir=${lockfile%.lock}
+  [ -d $dir ] &&
+    flock --nb $lockfile rmdir --ignore $dir
+  if [ -d $dir ]; then
+    echo Experiment directory $dir is non-empty
+  else
+    rm $lockfile
+    echo "Experiment directory $dir removed"
+  fi
+done
+
+rv=0
+if [ $opt_kill = yes -a -n "$Experiment" -a -d "/var/run/linkeng/$Experiment" ]; then
+  for pidfile in `find /var/run/linkeng/$Experiment -name "*.pid"`; do
+    pid=`cat $pidfile`
+    if kill -INT $pid 2>/dev/null; then
+      echo "Delivered SIGINT to ${pidfile%.pid} PID $pid"
+      sleep 1
+      if kill -0 $pid 2>/dev/null; then
+        echo "${pidfile%.pid} PID $pid still active"
+        rv=1
+      else
+        rm $pidfile ${pidfile%.pid}
+        echo "${pidfile%.pid} PID $pid successfully terminated"
+      fi
+    else
+      echo "kill $pid for ${pidfile%.pid} failed"
+      rv=1
+    fi
+  done
+fi
+
+if [ $opt_kill = yes -a -n "$Experiment" -a -d "/var/run/linkeng/run/$Experiment" ]; then
+  for pidfile in `find /var/run/linkeng/run/$Experiment -type f`; do
+    pid=${pidfile##*/}
+    if kill -INT $pid 2>/dev/null; then
+      echo "Delivered SIGINT to TM Client PID $pid"
+      sleep 1
+      if kill -0 $pid 2>/dev/null; then
+        echo "TM Client PID $pid still active"
+        rv=1
+      else
+        rm $pidfile
+        echo "TM Client PID $pid successfully terminated"
+      fi
+    else
+      echo "SIGINT failed for TM Client PID $pid"
+      rv=1
+      rm $pidfile
+    fi
+  done
+  rmdir --ignore /var/run/linkeng/run/$Experiment
+fi
+
+exit $rv

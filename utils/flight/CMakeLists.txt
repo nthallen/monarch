@@ -19,9 +19,13 @@ configure_file(extract.in extract @ONLY)
 configure_file(reduce.in reduce @ONLY)
 configure_file(mlf_find.in mlf_find @ONLY)
 configure_file(saverun.in saverun @ONLY)
+configure_file(clean_runfiles.in clean_runfiles @ONLY)
+configure_file(locate_rundir.in locate_rundir @ONLY)
 
 install(PROGRAMS
+  ${CMAKE_CURRENT_BINARY_DIR}/clean_runfiles
   ${CMAKE_CURRENT_BINARY_DIR}/extract
+  ${CMAKE_CURRENT_BINARY_DIR}/locate_rundir
   ${CMAKE_CURRENT_BINARY_DIR}/reduce
   ${CMAKE_CURRENT_BINARY_DIR}/mlf_find
   ${CMAKE_CURRENT_BINARY_DIR}/saverun
