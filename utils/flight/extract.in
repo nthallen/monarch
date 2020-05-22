@@ -256,7 +256,7 @@ function debug {
   done
 }
 
-clean_runfiles -k
+clean_runfiles -k || msgf 3 "Unable to shutdown earlier operations"
 
 memo -o extract.log -V &
 memo_pid=$!

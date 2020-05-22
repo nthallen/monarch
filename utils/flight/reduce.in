@@ -2,15 +2,16 @@
 
 function print_usage {
 cat <<EOF
- reduce [-xa]
+ reduce [-xav]
    Run "saverun fix" to determine the data directory
- reduce [-xa] directory
+ reduce [-xav] directory
    Operate on the specified directory
  reduce -h
    Print this message
  
    -x  Don't run extractions or analysis
    -a  Don't run analysis
+   -v  Increase verbosity
  
   Reduce performs a series of operations following a data run.
   If the data directory is not specified, reduce invokes saverun
@@ -45,6 +46,7 @@ opt_anal=yes
 CopyData=yes
 FixDisk=no
 Dircksum=no
+dbg_level=-1
 
 function do_tar {
   # do_tar $SrcRel $DestRel $LocalRel
@@ -52,18 +54,20 @@ function do_tar {
   DestRel=$2
   LocalRel=$3
   
-  msgf -2 "Retrieving directory ('$directory'), trun ('$t_run')"
-  eval time $SSH_CMD tar -czf- -C $SrcRel $DestRel | tar -C $LocalRel -xzf-
+  msgf -2 "do_tar: $SSH_TAR_CMD tar -cf- -C $SrcRel $DestRel |"
+  msgf -2 "  tar -xzf- -C $LocalRel"
+  eval time $SSH_TAR_CMD tar -czf- -C $SrcRel $DestRel | tar -xzf- -C $LocalRel
 }
 
 #----------------------------------------------------------------
 # Process command line options (-x, -a)
 #----------------------------------------------------------------
-while getopts "ahx" option; do
+while getopts "ahxv" option; do
   case $option in
   a) opt_anal=no;;
   h) print_usage;;
   x) opt_exts=no;;
+  v) let dbg_level=dbg_level-1;;
   \?) echo; exit 1;;
   *) msg -V -n $msgProgram "[ERROR] Unsupported option: -$option"; exit 1;;
   esac
@@ -76,19 +80,20 @@ shift $sval
 #----------------------------------------------------------------
 . /usr/local/libexec/load_exconfig.sh
 msgProgram='reduce'
+msgDebug=$dbg_level
 [ -n "$CFG_ERROR" ] && msgf 3 "$CFG_ERROR"
 
 if [ -n "$1" ]; then
   directory=`locate_rundir $1`
   [ -z "$directory" -a $FltNode_Access = Remote ] &&
-    directory=`$SSH_CMD locate_rundir $1`
+    directory=`$SSH_CMD locate_rundir $1 | tr -d '\r\n'`
   [ -n "$directory" ] || msgf 3 "Unable to locate run $1"
 else
   msgf 0 "Saving Run ..."
   saverun saverun_output.txt
   msgf 0 "Run Save Complete"
   [ -e saverun_output.txt ] || exit 0
-  directory=`cat saverun_output.txt`
+  directory=`cat saverun_output.txt|tr -d '\r\n'`
   [ -n "$directory" ] || msgf 3 "saverun output empty"
   rm saverun_output.txt
 fi
@@ -204,7 +209,7 @@ if [ ! -d $srcHomeDir/$directory ]; then
   }
 
   if [ "$CopyData" = "yes" ]; then
-    msgf -2 "Copying data from '$FlightNode:$srcHomeDir/$directory', './$directory'"
+    msgf -2 "Copying data from '$FlightNode:$srcHomeDir/$directory' to './$directory'"
     Copy_Data $srcHomeDir $directory
   fi
 

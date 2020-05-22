@@ -45,12 +45,13 @@ done
 # Remove any abandoned sockets
 for socket in `find /var/run/linkeng -type s`; do
   if [ -f ${socket}.pid ]; then
-    if ! kill -0 `cat ${socket}.pid` 2>/dev/null; then
+    pid=`cat ${socket}.pid`
+    if ! kill -0 $pid 2>/dev/null; then
       echo socket $socket is abandoned
       rm $socket
       rm ${socket}.pid
     else
-      echo socket $socket is still active
+      echo socket $socket is still active at PID $pid
     fi
   fi
 done
@@ -88,45 +89,53 @@ for lockfile in `find /var/run/linkeng -name "*.lock"`; do
   fi
 done
 
+
+[ $opt_kill = yes ] || exit 0
+. /usr/local/libexec/load_exconfig.sh
+[ -n "$CFG_ERROR" ] && exit 0
+
 rv=0
-if [ $opt_kill = yes -a -n "$Experiment" -a -d "/var/run/linkeng/$Experiment" ]; then
+if [ -d "/var/run/linkeng/$Experiment" ]; then
   for pidfile in `find /var/run/linkeng/$Experiment -name "*.pid"`; do
     pid=`cat $pidfile`
-    if kill -INT $pid 2>/dev/null; then
-      echo "Delivered SIGINT to ${pidfile%.pid} PID $pid"
-      sleep 1
-      if kill -0 $pid 2>/dev/null; then
-        echo "${pidfile%.pid} PID $pid still active"
-        rv=1
+    for signal in INT KILL; do
+      if kill -$signal $pid 2>/dev/null; then
+        echo "Delivered SIG$signal to ${pidfile%.pid} PID $pid"
+        sleep 1
+        if kill -0 $pid 2>/dev/null; then
+          echo "${pidfile%.pid} PID $pid still active"
+        else
+          rm $pidfile ${pidfile%.pid}
+          echo "${pidfile%.pid} PID $pid successfully terminated"
+          break
+        fi
       else
-        rm $pidfile ${pidfile%.pid}
-        echo "${pidfile%.pid} PID $pid successfully terminated"
+        echo "kill SIG$signal returned error for ${pidfile%.pid} PID $pid"
       fi
-    else
-      echo "kill $pid for ${pidfile%.pid} failed"
-      rv=1
-    fi
+    done
+    [ -f $pidfile ] && rv=1
   done
 fi
 
-if [ $opt_kill = yes -a -n "$Experiment" -a -d "/var/run/linkeng/run/$Experiment" ]; then
+if [ -d "/var/run/linkeng/run/$Experiment" ]; then
   for pidfile in `find /var/run/linkeng/run/$Experiment -type f`; do
     pid=${pidfile##*/}
-    if kill -INT $pid 2>/dev/null; then
-      echo "Delivered SIGINT to TM Client PID $pid"
-      sleep 1
-      if kill -0 $pid 2>/dev/null; then
-        echo "TM Client PID $pid still active"
-        rv=1
+    for signal in INT KILL; do
+      if kill -$signal $pid 2>/dev/null; then
+        echo "Delivered SIG$signal to TM Client PID $pid"
+        sleep 1
+        if kill -0 $pid 2>/dev/null; then
+          echo "TM Client PID $pid still active"
+        else
+          rm $pidfile
+          echo "TM Client PID $pid successfully terminated with SIG$signal"
+          break
+        fi
       else
-        rm $pidfile
-        echo "TM Client PID $pid successfully terminated"
+        echo "kill SIG$signal returned error for TM Client PID $pid"
       fi
-    else
-      echo "SIGINT failed for TM Client PID $pid"
-      rv=1
-      rm $pidfile
-    fi
+    done
+    [ -f $pidfile ] && rv=1
   done
   rmdir --ignore /var/run/linkeng/run/$Experiment
 fi

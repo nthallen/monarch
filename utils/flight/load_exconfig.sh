@@ -53,6 +53,7 @@ if [ $FltNode_Access = Remote ]; then
   TM_OPT="-t $FlightNode"
   CMD_OPT="-C $FlightNode"
   SSH_CMD="ssh -t flight@$FlightNode"
+  SSH_TAR_CMD="ssh -T flight@$FlightNode"
   SERVICE=Installed
 elif [ -e /var/run/linkeng/$Experiment/parent -a \
        -e /var/run/linkeng/$Experiment/parent.pid ] &&
