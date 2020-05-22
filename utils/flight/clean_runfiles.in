@@ -57,24 +57,26 @@ for socket in `find /var/run/linkeng -type s`; do
 done
 
 # Remove any dead pid files under run
-for pidfile in `find /var/run/linkeng/run -type f`; do
-  pid=${pidfile##*/}
-  if kill -0 $pid 2>/dev/null; then
-    echo "TM client $pidfile is still active"
-  else
-    echo "TM client $pidfile is gone"
-    rm $pidfile
-  fi
-done
+if [ -d /var/run/linkeng/run ]; then
+  for pidfile in `find /var/run/linkeng/run -type f`; do
+    pid=${pidfile##*/}
+    if kill -0 $pid 2>/dev/null; then
+      echo "TM client $pidfile is still active"
+    else
+      echo "TM client $pidfile is gone"
+      rm $pidfile
+    fi
+  done
 
-for piddir in `find /var/run/linkeng/run -mindepth 1 -type d`; do
-  rmdir --ignore $piddir
-  if [ -d $piddir ]; then
-    echo "PID directory $piddir is non-empty"
-  else
-    echo "Removed PID directory $piddir"
-  fi
-done
+  for piddir in `find /var/run/linkeng/run -mindepth 1 -type d`; do
+    rmdir --ignore $piddir
+    if [ -d $piddir ]; then
+      echo "PID directory $piddir is non-empty"
+    else
+      echo "Removed PID directory $piddir"
+    fi
+  done
+fi
 
 # Remove any empty Experiment directories
 for lockfile in `find /var/run/linkeng -name "*.lock"`; do
