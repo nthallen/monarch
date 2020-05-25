@@ -165,6 +165,11 @@ class RTU : public DAS_IO::Serial {
      */
     std::deque<modbus_device *> devices;
     
+    /**
+     * True during turn around delay
+     */
+    bool turn_around_delay;
+    
   public:
     class modbus_req {
       public:
