@@ -32,7 +32,8 @@ my @searchpath = $module =~ m|/| ? ('') :
       '/usr/local/share/linkeng');
 pathcheck: while (@searchpath) {
   my $dir = shift(@searchpath);
-  for my $suffix ( '', '.agm' ) {
+  # Eliminated '' as a suffix 5/24/20
+  for my $suffix ( '.agm' ) {
     $path = "$dir$module$suffix";
     last pathcheck if -f $path;
     $path = '';
