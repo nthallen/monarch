@@ -1,9 +1,13 @@
-TMbase {
+TMbase_data {
   CPU:    (CPU_Pct,6)  %;
   RAM:    (memused,6)  %;
   Disk:   (Disk,6)     %;
+@SWSnot@  @SWStat@: (@SWStat@,3);
+@Fnot@    @Fail@:   (@Fail@,2);
   TDrift: (SysTDrift,7) sec;
-  VGlue 0+1;
+}
+
+TMbase_times {
   HBox {
     HGlue 0+1;
     {
@@ -13,8 +17,13 @@ TMbase {
   }
 }
 
+TMbase {
+  [TMbase_data];
+  VGlue 0+1;
+  [TMbase_times]
+}
+
 TMbaseB {
   HBox{ +-; Title: "System"; -+ };
   [TMbase]
 }
-

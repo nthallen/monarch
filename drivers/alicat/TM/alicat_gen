@@ -218,20 +218,45 @@ for (my $i = 0; $i < $n_channels; ++$i) {
   }
 
   print $tbl
-    "${datum}_v {\n",
-    "  HBox { +-; Title: ${datum}; -+ };\n",
+    "${datum}_vfull {\n",
     (($D->{chtype} eq 'mfc') ?
-      "  Set:  (${datum}_Set,7)       $MFunits;\n" : ''),
+      "  Set:    (${datum}_Set,7)       $MFunits;\n" : ''),
     "  MFlow:  (${datum}_MassFlow,7)  $MFunits;\n",
     "  VFlow:  (${datum}_VolFlow,7)   $VFunits;\n";
   if ($D->{type} eq 'digital') {
     print $tbl
-    "  T:      (${datum}_T,7)       C;\n",
-    "  P:      (${datum}_P,7)       $Punits;\n",
+    "  T:      (${datum}_T,7)         C;\n",
+    "  P:      (${datum}_P,7)         $Punits;\n",
     "  Status: (${datum}_Status,4);\n",
     "  Stale:  (${datum}_Stale,3);\n";
   }
   print $tbl
+    "}\n\n";
+
+  print $tbl
+    "${datum}_vft {\n",
+    "  HBox { +-; Title: ${datum}; -+ };\n",
+    "  [${datum}_vfull];\n",
+    "}\n\n";
+
+  print $tbl
+    "${datum}_vdata {\n",
+    (($D->{chtype} eq 'mfc') ?
+      "  Set:    (${datum}_Set,7)       $MFunits;\n" : ''),
+    "  MFlow:  (${datum}_MassFlow,7)  $MFunits;\n",
+    "  VFlow:  (${datum}_VolFlow,7)   $VFunits;\n";
+  if ($D->{type} eq 'digital') {
+    print $tbl
+    "  T:      (${datum}_T,7)         C;\n",
+    "  P:      (${datum}_P,7)         $Punits;\n";
+  }
+  print $tbl
+    "}\n\n";
+
+  print $tbl
+    "${datum}_vdt {\n",
+    "  HBox { +-; Title: ${datum}; -+ };\n",
+    "  [${datum}_vdata];\n",
     "}\n\n";
 
   if ($D->{chtype} eq 'mfc') {
