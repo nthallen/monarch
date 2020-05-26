@@ -8,8 +8,22 @@ namespace DAS_IO {
       srvr(srvr),
       full(full) {}
 
+  bool Quit::protocol_input() {
+    if (nc > 0 && buf[0] == 'Q') {
+      msg(0, "%s: received Quit command", iname);
+    } else {
+      report_err("%s: Received non-Q", iname);
+    }
+    report_ok(nc);
+    return shutdown();
+  }
+
   bool Quit::process_eof() {
     msg(MSG_DBG(0),"%s: received EOF", iname);
+    return shutdown();
+  }
+  
+  bool Quit::shutdown() {
     if (srvr) {
       srvr->Shutdown(full);
     } else if (ELoop) {

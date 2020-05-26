@@ -8,7 +8,10 @@
 %INTERFACE <Quit>
 
 &start
-  : &commands Quit * %BLOCK_KB { msg(0,"Shutting down"); }
+  : &commands Quit * %BLOCK_KB {
+      if_Quit.Turf( "Q\n" );
+      msg(0,"Shutting down");
+    }
   : &commands &&Exit
   ;
 &&Exit

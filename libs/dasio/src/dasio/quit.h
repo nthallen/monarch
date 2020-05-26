@@ -21,8 +21,10 @@ namespace DAS_IO {
        * @param srvr optional pointer to Server
        */
       Quit(Server *srvr = 0, bool full = false);
+      bool protocol_input();
       bool process_eof();
     protected:
+      bool shutdown();
       Server *srvr;
       bool full;
   };
