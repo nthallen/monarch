@@ -40,6 +40,7 @@ int nl_verr(int level, const char *fmt, va_list args);
 #define MSG_FATAL 3
 #define MSG_EXIT_ABNORM 4
 #define MSG_DBG(X) (MSG_DEBUG-(X))
+#define MSG_IS_VERBOSE(x) (nl_debug_level<=MSG_DBG(x))
 /** @} */
 
 /**

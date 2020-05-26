@@ -13,6 +13,7 @@ namespace DAS_IO { namespace Modbus {
       : DAS_IO::Serial(iname, bufsz, path, O_RDWR|O_NONBLOCK) {
     flags |= gflag(0);
     pending = 0;
+    turn_around_delay = false;
     cur_poll = polls.begin();
   }
   
@@ -37,6 +38,9 @@ namespace DAS_IO { namespace Modbus {
   bool RTU::protocol_input() {
     if (!pending) {
       report_err("%s: Unexpected input", iname);
+      consume(nc);
+    } else if (turn_around_delay) {
+      report_err("%s: Unexpected input during turn around delay", iname);
       consume(nc);
     } else {
       if (nc < 5) return false; /* dev, cmd|err, exc. code, CRC */
@@ -73,9 +77,12 @@ namespace DAS_IO { namespace Modbus {
           report_ok(nc);
         }
       }
-      dispose_pending();
+      turn_around_delay = true;
+      TO.Set(0, 10); // 5 msecs helped, what about 10?
+      // This should probably be configurable
+      // dispose_pending(); // moved to protocol_timeout
     }
-    process_requests();
+    // process_requests(); // moved to protocol_timeout
     return false;
   }
   
@@ -131,9 +138,15 @@ namespace DAS_IO { namespace Modbus {
    */
   bool RTU::protocol_timeout() {
     if (pending) {
-      report_err("%s: Timeout awaiting reply", iname);
-      if (not_suppressing())
-        msg(0, "%s: Request was: %s", iname, pending->ascii_escape());
+      if (turn_around_delay) {
+        turn_around_delay = false;
+      } else {
+        if (MSG_IS_VERBOSE(0)) {
+          report_err("%s: Timeout awaiting reply", iname);
+          if (not_suppressing())
+            msg(MSG_DBG(0), "%s: Request was: %s", iname, pending->ascii_escape());
+        }
+      }
       consume(nc);
       dispose_pending();
     }
