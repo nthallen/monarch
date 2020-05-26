@@ -78,7 +78,8 @@ namespace DAS_IO { namespace Modbus {
         }
       }
       turn_around_delay = true;
-      TO.Set(0, 5); // 5 msecs *should* be more than enough
+      TO.Set(0, 10); // 5 msecs helped, what about 10?
+      // This should probably be configurable
       // dispose_pending(); // moved to protocol_timeout
     }
     // process_requests(); // moved to protocol_timeout
