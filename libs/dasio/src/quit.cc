@@ -8,7 +8,7 @@ namespace DAS_IO {
       srvr(srvr),
       full(full) {}
 
-  bool Quit::protocol_input() {
+  bool Quit::app_input() {
     if (nc > 0 && buf[0] == 'Q') {
       msg(0, "%s: received Quit command", iname);
     } else {
