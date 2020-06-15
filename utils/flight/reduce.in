@@ -86,7 +86,7 @@ msgDebug=$dbg_level
 if [ -n "$1" ]; then
   directory=`locate_rundir $1`
   [ -z "$directory" -a $FltNode_Access = Remote ] &&
-    directory=`$SSH_CMD locate_rundir $1 | tr -d '\r\n'`
+    directory=`$SSH_CMD "cd $HomeDir && locate_rundir $1" | tr -d '\r\n'`
   [ -n "$directory" ] || msgf 3 "Unable to locate run $1"
 else
   msgf 0 "Saving Run ..."
