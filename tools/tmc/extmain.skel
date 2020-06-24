@@ -107,12 +107,11 @@ bool DAS_IO::nc_tm_client::serialized_signal_handler(uint32_t signals_seen) {
 
 #if TM_DATA_TYPE == TMTYPE_DATA_T3
 void TM_CLIENT::process_data() {
-  tm_data_t3_t *data = &tm_msg->body.data3;
   unsigned char *raw;
-  int n_rows = data->n_rows;
-  MFCtr = data->mfctr;
+  int n_rows = rows_in_buf;
+  MFCtr = buf_mfctr;
   #ifdef IVFUNCS
-    unsigned short delta = MFCtr - next_minor_frame;
+    uint16_t delta = MFCtr - next_minor_frame;
     if (delta != 0) {
         // Because we are TMTYPE_DATA_T3, we know NROWMINF == 1
         if (delta > NROWMAJF) delta = NROWMAJF;
@@ -122,9 +121,9 @@ void TM_CLIENT::process_data() {
         }
     }
   #endif
-  majf_row = (((unsigned short)MFCtr) % NROWMAJF);
+  majf_row = (((uint16_t)MFCtr) % NROWMAJF);
 
-  for ( raw = &data->data[0]; n_rows > 0; --n_rows, raw += nbQrow ) {
+  for ( raw = data_row; n_rows > 0; --n_rows, raw += nbQrow ) {
     home = (union home_row *) raw;
     EXTRACTION_ROW
     efuncs[majf_row]();

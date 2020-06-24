@@ -31,24 +31,25 @@ namespace DAS_IO {
 
   void tm_rcvr::process_message() {
     ncc = interface->nc - cp;
-    if ( ncc >= toread ) {
-      if (tm_msg->hdr.tm_id != TMHDR_WORD) {
-        seek_tmid();
-      }
-    }
     while ( ncc >= toread ) {
       switch ( tm_state ) {
         case TM_STATE_HDR:
+          if (tm_msg->hdr.tm_id != TMHDR_WORD) {
+            seek_tmid();
+            continue;
+          }
           switch ( tm_msg->hdr.tm_type ) {
             case TMTYPE_INIT:
               if ( tm_info_ready )
                 msg(MSG_FATAL, "%sReceived redundant TMTYPE_INIT", context());
               toread += sizeof(tm_info);
+              tm_state = TM_STATE_INIT;
               break;
             case TMTYPE_TSTAMP:
               if ( !tm_info_ready )
                 msg( MSG_FATAL, "%sExpected TMTYPE_INIT, received TMTYPE_TSTAMP", context());
               toread += sizeof(tstamp_t);
+              tm_state = TM_STATE_TSTAMP;
               break;
             case TMTYPE_DATA_T1:
             case TMTYPE_DATA_T2:
@@ -60,7 +61,12 @@ namespace DAS_IO {
               if ( tm_msg->hdr.tm_type != input_tm_type )
                 msg(MSG_FATAL, "%sInvalid data type: %04X", context(),
                   tm_msg->hdr.tm_type );
-              toread = nbDataHdr + nbQrow * tm_msg->body.data1.n_rows;
+              buf_mfctr = tm_msg->body.data3.mfctr;
+              cp += nbDataHdr;
+              ncc -= nbDataHdr;
+              rows_left_in_msg = tm_msg->body.data1.n_rows;
+              toread = nbQrow;
+              tm_state = TM_STATE_DATA;
               break;
             default:
               msg(MSG_ERROR, "%sInvalid TMTYPE: %04X", context(),
@@ -68,47 +74,47 @@ namespace DAS_IO {
               seek_tmid();
               return;
           }
-          tm_state = TM_STATE_DATA;
-          if ( toread > interface->bufsize )
-            msg( MSG_FATAL, "%sRecord size %d exceeds allocated buffer size %d",
-              context(), toread, interface->bufsize );
           break;
-        case TM_STATE_DATA:
-          switch ( tm_msg->hdr.tm_type ) {
-            case TMTYPE_INIT:
-              process_init();
-              break;
-            case TMTYPE_TSTAMP:
-              process_tstamp();
-              break;
-            case TMTYPE_DATA_T1:
-            case TMTYPE_DATA_T2:
-            case TMTYPE_DATA_T3:
-            case TMTYPE_DATA_T4:
-              process_data();
-              break;
-          }
-          if ( ncc > toread ) {
-            cp += toread;
-            // ncc -= toread;
-            // interface->consume(toread);
-          } else if ( ncc == toread ) {
-            interface->consume(interface->nc);
-            cp = 0;
-          }
-          tm_msg = (tm_msg_t *)&interface->buf[cp];
-          ncc = interface->nc - cp;
+        case TM_STATE_INIT:
+          process_init();
+          cp += toread;
+          ncc -= toread;
           tm_expect_hdr();
           break;
-        default: msg(MSG_EXIT_ABNORM, "%sInvalid tm_state %d", context(), tm_state);
+        case TM_STATE_TSTAMP:
+          process_tstamp();
+          cp += toread;
+          ncc -= toread;
+          tm_expect_hdr();
+          break;
+        case TM_STATE_DATA:
+          rows_in_buf = ncc / nbQrow;
+          if (rows_left_in_msg < rows_in_buf)
+            rows_in_buf = rows_left_in_msg;
+          data_row = &interface->buf[cp];
+          // Will process rows_in_buf
+          process_data();
+          buf_mfctr += rows_in_buf;
+          rows_left_in_msg -= rows_in_buf;
+          cp += rows_in_buf * nbQrow;
+          ncc -= rows_in_buf * nbQrow;
+          if (rows_left_in_msg == 0) {
+            tm_expect_hdr();
+          }
+          break;
+        default:
+          msg(MSG_EXIT_ABNORM, "%sInvalid tm_state %d", context(), tm_state);
       }
     }
-    if (cp > 0) {
-      interface->consume(cp);
+    if (cp > 0 && toread > interface->bufsize - cp) {
+      interface->consume(cp); 
       cp = 0;
       tm_msg = (tm_msg_t *)&interface->buf[cp];
       ncc = interface->nc - cp;
     }
+    if ( toread > interface->bufsize )
+      msg( MSG_FATAL, "%sRecord size %d exceeds allocated buffer size %d",
+        context(), toread, interface->bufsize );
   }
 
   void tm_rcvr::process_init() {
@@ -151,12 +157,12 @@ namespace DAS_IO {
     int i;
     for (i = cp+1; i < interface->nc; ++i) {
       if (ubuf[i] == (TMHDR_WORD & 0xFF)) {
-        if (i+1 == ncc || ubuf[i+1] == ((TMHDR_WORD>>8)&0xFF)) {
+        if (i+1 == interface->nc ||
+            ubuf[i+1] == ((TMHDR_WORD>>8)&0xFF)) {
           msg(MSG_WARN, "%sDiscarding %d bytes in seek_tmid()", context(), i-cp);
           interface->consume(i);
-          tm_expect_hdr();
           cp = 0;
-          tm_msg = (tm_msg_t*)&interface->buf[cp];
+          tm_expect_hdr();
           ncc = interface->nc - cp;
           return;
         }
@@ -173,6 +179,7 @@ namespace DAS_IO {
   void tm_rcvr::tm_expect_hdr() {
     tm_state = TM_STATE_HDR;
     toread = sizeof(tm_hdr_t);
+    tm_msg = (tm_msg_t*)&interface->buf[cp];
   }
 
   const char *tm_rcvr::context() {

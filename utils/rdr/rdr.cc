@@ -240,13 +240,13 @@ void Reader::process_data() {
     msg(MSG_WARN, "process_data() without initialization" );
     return;
   }
-  tm_data_t3_t *data = &tm_msg->body.data3;
-  unsigned char *raw = &data->data[0];
-  int n_rows = data->n_rows;
-  unsigned short MFCtr = data->mfctr;
+  // tm_data_t3_t *data = &tm_msg->body.data3;
+  unsigned char *raw = data_row;
+  int n_rows = rows_in_buf;
+  mfc_t MFCtr = buf_mfctr;
 
   // Can check here for time limits
-  // Given MFCtr, timestamp, we can calculate the time. We can
+  // Given mfctr, timestamp, we can calculate the time. We can
   // simply skip the commit_rows() call until the start time
   // is reached, and we could trigger termination if the end
   // time is reached.
@@ -257,7 +257,7 @@ void Reader::process_data() {
     if ( n_room ) {
       unlock();
       if ( n_room > n_rows ) n_room = n_rows;
-      int rawsize = n_room*tm_rcvr::nbQrow;
+      int rawsize = n_room * tm_rcvr::nbQrow;
       memcpy( dest, raw, rawsize );
       commit_rows( MFCtr, 0, n_room );
       raw += rawsize;

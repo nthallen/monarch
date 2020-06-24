@@ -87,10 +87,9 @@ void tmc_lgr::write_tstamp() {
 }
 
 void tmc_lgr::process_data_t3() {
-  tm_data_t3_t *data = &tm_msg->body.data3;
-  int n_rows = data->n_rows;
-  unsigned short mfctr = data->mfctr;
-  unsigned char *wdata = &data->data[0];
+  unsigned int n_rows = rows_in_buf;
+  unsigned char *wdata = data_row;
+  mfc_t MFCtr = buf_mfctr;
   tm_msg_t wmsg;
 
   wmsg.hdr.tm_id = TMHDR_WORD;
@@ -108,11 +107,11 @@ void tmc_lgr::process_data_t3() {
       if ( rows_fit > n_rows )
         rows_fit = n_rows;
       wmsg.body.data3.n_rows = rows_fit;
-      wmsg.body.data3.mfctr = mfctr;
+      wmsg.body.data3.mfctr = MFCtr;
       lgr_write( &wmsg, nbDataHdr, "writing data header" );
       lgr_write( wdata, nbQrow*rows_fit, "writing data" );
       n_rows -= rows_fit;
-      mfctr += rows_fit;
+      MFCtr += rows_fit;
       wdata += nbQrow*rows_fit;
       if ( n_rows ) next_file();
     }
