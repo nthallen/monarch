@@ -19,6 +19,7 @@ namespace DAS_IO {
     tm_expect_hdr();
     tm_info_ready = false;
     cp = 0;
+    interface->set_binary_mode();
     tm_msg = (tm_msg_t *)&interface->buf[cp];
   }
 

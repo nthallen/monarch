@@ -239,12 +239,13 @@ function debugterm {
   OS=`uname -o`
   case $OS in
     Cygwin) cygstart mintty $*;;
+    GNU/Linux) gnome-terminal -x $*;;
     *) msgf 3 "debugterm does not support OS '$OS'";;
   esac
 }
 
 function debug {
-  $rundir=/var/run/linkeng/run/$Experiment/
+  rundir=/var/run/linkeng/run/$Experiment/
   ndc0=`ls $rundir | wc -l`
   debugterm gdb $gdbinit --args $ext
   while
