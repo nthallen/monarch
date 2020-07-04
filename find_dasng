@@ -1,0 +1,12 @@
+#! /bin/bash
+find . -name .git -prune -false -o -type f |
+  xargs grep -lP "(?:(?:le[-_])das)|dasng"
+
+# This demonstrates that there are essentially no
+# references to a bare 'das' or 'DAS', except of
+# course in the namespace DAS_IO. It is not appropriate
+# to replace that with Monarch, since the library is
+# only a piece of the whole.
+# find . -name .git -prune -false -o -type f |
+#   xargs grep -iP "[^-_a-zA-Z]das\b" |
+#   less
