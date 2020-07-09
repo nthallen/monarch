@@ -12,13 +12,13 @@ int comm_delay = 100; // 100 msec delay
 test_client::test_client(const char *hostname) :
       DAS_IO::Client("Client", 80, hostname, "test", 0) {
   state = st_init;
+  flags |= Fl_Timeout;
 }
 
 bool test_client::app_connected() {
   char obuf[80];
   msg(0, "Connected");
   snprintf(obuf, 80, "S%d\n", scenario);
-  TO.Set(0, comm_delay); 
   state = st_scenario_sent;
   return iwrite(obuf);
 }
@@ -28,6 +28,7 @@ bool test_client::app_input() {
   while (nc > 0) {
     switch (buf[cp]) {
       case 'A':
+        msg(MSG_DEBUG, "ACK received");
         switch (state) {
           case st_scenario_sent:
             if (scenario < 10) {
@@ -75,6 +76,7 @@ bool test_client::protocol_timeout() {
   TO.Clear();
   switch (state) {
     case st_comm_delay:
+      msg(MSG_DEBUG, "Sending Info");
       iwrite("I\n");
       if (scenario < 10 && n_txrx <= 0) {
         TO.Set(0, quit_delay);
@@ -109,7 +111,7 @@ bool test_client::protocol_timeout() {
 }
 
 bool test_client::app_process_eof() {
-  msg(0, "Remote server closed connection");
+  msg(0, "Remote server closed connection in state %d", state);
   return true;
 }
 
@@ -144,10 +146,11 @@ void test_client::setup_times(unsigned low, unsigned high) {
   uint32_t delay = (R*(high-low)*N)/M + low*N;
   n_txrx = delay/N;
   quit_delay = delay - n_txrx*N;
-  end_after_tx = delay >= N/2;
+  end_after_tx = quit_delay >= N/2;
   if (end_after_tx)
     quit_delay -= N/2;
-  msg(MSG_DEBUG, "setup_times %d rxtx %d msec %s tx",
+  quit_delay = (quit_delay * comm_delay) / N;
+  msg(0, "setup_times %d rxtx %d msec %s tx",
     n_txrx, quit_delay, end_after_tx ? "after" : "before");
 }
 

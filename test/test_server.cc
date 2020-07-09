@@ -10,6 +10,7 @@ int comm_delay = 100; // 30 msec delay
 test_socket *new_test_socket(DAS_IO::Authenticator *Auth,
         DAS_IO::SubService *SS) {
   test_socket *test = new test_socket(Auth, Auth->get_iname());
+  test->flags |= DAS_IO::Interface::Fl_Timeout;
   return test;
 }
 
@@ -34,6 +35,7 @@ bool test_socket::protocol_input() {
       }
       break;
     case 'I':
+      msg(MSG_DEBUG, "Received Info");
       switch (scenario) {
         case 11:
         case 12:
@@ -41,15 +43,16 @@ bool test_socket::protocol_input() {
           if (n_txrx <= 0 && !end_after_tx) {
             TO.Set(0, quit_delay);
             state = st_quit_delay;
-          } else {
-            TO.Set(0, comm_delay);
-            state = st_comm_delay;
           }
           break;
         default:
           if (scenario >= 10)
             msg(2, "Undefined scenario: %d", scenario);
           break;
+      }
+      if (state != st_quit_delay) {
+        TO.Set(0,comm_delay);
+        state = st_comm_delay;
       }
       break;
     case 'Q':
@@ -69,6 +72,7 @@ bool test_socket::protocol_timeout() {
   TO.Clear();
   switch (state) {
     case st_comm_delay:
+      msg(MSG_DEBUG, "Sending Ack");
       iwrite("A\n");
       state = st_ack_sent;
       if (--n_txrx <= 0 && scenario > 10 && end_after_tx) {
@@ -77,6 +81,7 @@ bool test_socket::protocol_timeout() {
       }
       break;
     case st_quit_delay:
+      msg(MSG_DEBUG, "Sending Quit");
       iwrite("Q\n");
       state = st_quit_sent;
       TO.Set(3, 0);
@@ -91,6 +96,7 @@ bool test_socket::protocol_timeout() {
 }
 
 bool test_socket::process_eof() {
+  srvr->ELoop.delete_child(this);
   switch (state) {
     case st_quit_received:
       msg(0, "Received expected EOF after Quit");
@@ -100,11 +106,12 @@ bool test_socket::process_eof() {
       switch (scenario) {
         case 1:
           msg(2, "Unexpected EOF before Quit in scenario 1");
-          return true;
+          break;
         case 2:
           msg(0, "Received expected EOF without Quit in scenario 2");
-          return true;
-        default: break;
+          break;
+        default:
+          break;
       }
       break;
     default:
@@ -145,10 +152,11 @@ void test_socket::setup_times(unsigned low, unsigned high) {
   uint32_t delay = (R*(high-low)*N)/M + low*N;
   n_txrx = delay/N;
   quit_delay = delay - n_txrx*N;
-  end_after_tx = delay >= N/2;
+  end_after_tx = quit_delay >= N/2;
   if (end_after_tx)
     quit_delay -= N/2;
-  msg(MSG_DEBUG, "setup_times %d rxtx %d msec %s tx",
+  quit_delay = (quit_delay * comm_delay) / N;
+  msg(0, "setup_times %d rxtx %d msec %s tx",
     n_txrx, quit_delay, end_after_tx ? "after" : "before");
 }
 
@@ -157,6 +165,7 @@ int main(int argc, char **argv) {
   DAS_IO::Server *S = new DAS_IO::Server("test");
   S->add_subservice(new DAS_IO::SubService("test",
     (DAS_IO::socket_clone_t)new_test_socket, (void*)0));
+  msg(0, "Starting");
   S->Start(DAS_IO::Server::server_type);
   msg(0, "Terminating");
   return 0;
