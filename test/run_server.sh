@@ -95,7 +95,7 @@ case "$1" in
 esac
 shift 1
 srvrmode=-mV
-[ -z "$FlightNode" ] && srvrmode="$srvrmode -sUnix"
+[ -n "$FlightNode" ] && srvrmode="$srvrmode -sTCP"
 msg start_server $*
 test_server $srvrmode
 TW=`$ns -na | grep ':3500 .* TIME_WAIT' | sed -e 's/\r//'`
