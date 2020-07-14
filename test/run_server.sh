@@ -84,7 +84,7 @@ fi
 [ "$1" != "start_server" -a -z "$FlightNode" ] && nl_error "server_memo command in local mode"
 case "$1" in
   start_server_memo)
-    memo -o run_server.log -V
+    memo -o run_server.log -V -l0
     exit 0;;
   stop_server_memo)
     clean_runfiles -k

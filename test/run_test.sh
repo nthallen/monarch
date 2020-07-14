@@ -1,5 +1,5 @@
 #! /bin/bash
-pause=no
+pause=yes
 iterations=2
 # available scenarios are 1 2 11 12 13
 scenarios="11 12 13"
@@ -23,6 +23,7 @@ if [ -z "$STY" ]; then
   [ -n "$rmtHomeDir" ] && export rmtHomeDir
   screen $0
   clear # after exiting screen
+  echo "run_test.sh completed, screen closed"
 else
   # echo "Running under screen"
   echo "Experiment is '$Experiment'"
