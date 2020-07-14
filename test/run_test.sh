@@ -3,7 +3,6 @@ pause=no
 iterations=2
 # available scenarios are 1 2 11 12 13
 scenarios="11 12 13"
-srvrname=127.0.0.1
 srvrmode=''
 export PATH=$PATH:/cygdrive/c/WINDOWS/system32
 ns=netstat
@@ -18,8 +17,10 @@ function hit_any_key {
 echo "\$0 is '$0'"
 if [ -z "$STY" ]; then
   . /usr/local/libexec/load_exconfig.sh
-  [ -n "$CFG_ERROR" ] && exit 0
-  export BINDIR=../../build-quit_change/test
+  [ -n "$CFG_ERROR" ] && echo "$CFG_ERROR" >&2 && exit 1
+  [ -n "$FlightNode" ] && export FlightNode
+  [ -n "$BINDIR" ] && export BINDIR
+  [ -n "$rmtHomeDir" ] && export rmtHomeDir
   screen $0
   clear # after exiting screen
 else
@@ -56,7 +57,7 @@ else
       rm -f start_server.tmp.log start_server.log
       screen -t server ./run_server.sh local start_server "$desc"
       # screen -t server $BINDIR/test_server $srvrmode
-      if [ -z "$srvrname" ]; then
+      if [ -z "$FlightNode" ]; then
         screen -X select 0
         echo "server has been started, will wait for name"
         waitfor /var/run/linkeng/$Experiment/test 5
