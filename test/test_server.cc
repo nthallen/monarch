@@ -81,10 +81,23 @@ bool test_socket::protocol_timeout() {
       }
       break;
     case st_quit_delay:
-      msg(MSG_DEBUG, "Sending Quit");
-      iwrite("Q\n");
-      state = st_quit_sent;
-      TO.Set(3, 0);
+      switch (scenario) {
+        case 11:
+        case 12:
+          msg(MSG_DEBUG, "Sending Quit");
+          iwrite("Q\n");
+          if (scenario == 11) {
+            state = st_quit_sent;
+            TO.Set(3, 0);
+            break;
+          } // else fall through and just close:
+        case 13:
+          close();
+          srvr->ELoop.delete_child(this);
+          return true;
+        default:
+          msg(3, "Undefined scenario: %d", scenario);
+      }
       break;
     case st_quit_received:
       msg(2, "Timeout without observed EOF");
@@ -93,6 +106,7 @@ bool test_socket::protocol_timeout() {
       msg(2, "Unexpected timeout in state %d", state);
       return true;
   }
+  return false;
 }
 
 bool test_socket::process_eof() {

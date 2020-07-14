@@ -1,8 +1,8 @@
 #! /bin/bash
-pause=yes
-iterations=2
+pause=no
+iterations=10
 # available scenarios are 1 2 11 12 13
-scenarios="11 12 13"
+scenarios="1 2 11 12 13"
 srvrmode=''
 export PATH=$PATH:/cygdrive/c/WINDOWS/system32
 ns=netstat
@@ -63,9 +63,10 @@ else
         echo "server has been started, will wait for name"
         waitfor /var/run/linkeng/$Experiment/test 5
       else
-        sleep 5
         screen -X select 0
-        echo "Remote server has been started"
+        echo "Remote server starting"
+        waitfor start_server.tmp.log forever
+        echo "Remote server presumably started"
       fi
       hit_any_key
       
