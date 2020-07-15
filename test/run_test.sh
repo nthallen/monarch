@@ -1,6 +1,6 @@
 #! /bin/bash
 pause=no
-iterations=10
+iterations=2
 # available scenarios are 1 2 11 12 13
 scenarios="1 2 11 12 13"
 srvrmode=''

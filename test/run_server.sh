@@ -55,11 +55,14 @@ if [ "$1" = "local" ]; then
     [ -n "$rmtHomeDir" ] || nl_error "No rmtHomeDir defined"
     case "$1" in
       start_server)
+        saw_err=no
         ssh -t $FlightNode $rmtHomeDir/run_server.sh $* 2>&1 | tee start_server.tmp.log
         sed -n -e 's/\r//' -e '/ERROR\|WARNING/ s/^[^\[]*//p' start_server.tmp.log |
           while read errline; do
             msg -n rmt "$errline"
+            saw_err=yes
           done
+        [ $saw_err = yes ] && cp start_server.tmp.log start_server.$$.log
         mv start_server.tmp.log start_server.log
         exit 0;;
       *)
