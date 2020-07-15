@@ -2,7 +2,7 @@
 
 function print_usage {
 cat << EOF
-clean_runfiles [-h] [-k]
+clean_runfiles [-h] [-k] [-r]
 
 Examines the run directory /var/run/linkeng and
 removes any inactive elements. This includes:
@@ -27,16 +27,19 @@ Options:
      appropriate at the beginning of an extract script,
      since it then pertains to just the extraction Experiment
      value.
+  -r Use .r suffix to Experiment to cleanup extractions
 EOF
 exit 0
 }
 
 opt_kill=no
+opt_rdr=no
 
-while getopts "hk" option; do
+while getopts "hkr" option; do
   case $option in
     h) print_usage;;
     k) opt_kill=yes;;
+    r) opt_rdr=yes;;
     \?) echo; exit 1;;
     *) echo Unsupported option: -$option; exit 1;;
   esac
@@ -95,12 +98,13 @@ done
 [ $opt_kill = yes ] || exit 0
 . /usr/local/libexec/load_exconfig.sh
 [ -n "$CFG_ERROR" ] && exit 0
+[ $opt_rdr = yes ] && Experiment=$Experiment.r
 
 rv=0
 if [ -d "/var/run/linkeng/$Experiment" ]; then
   for pidfile in `find /var/run/linkeng/$Experiment -name "*.pid"`; do
     pid=`cat $pidfile`
-    for signal in INT KILL; do
+    for signal in KILL; do
       if kill -$signal $pid 2>/dev/null; then
         echo "Delivered SIG$signal to ${pidfile%.pid} PID $pid"
         sleep 1

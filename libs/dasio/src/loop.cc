@@ -10,9 +10,11 @@
 namespace DAS_IO {
   
 Loop::Loop(bool is_memo) : is_memo_loop(is_memo) {
-  children_changed = false;
+  // children_changed = false;
   gflags = 0;
   loop_exit = false;
+  LI = S.begin();
+  list_element_deleted = false;
   pthread_sigmask(SIG_SETMASK, 0, &blockset);
   pthread_sigmask(SIG_SETMASK, 0, &runset);
 }
@@ -25,7 +27,7 @@ void Loop::add_child(Interface *P) {
     P->ELoop = this;
     P->reference();
     P->adopted();
-    children_changed = true;
+    // children_changed = true;
   } else {
     msg( MSG_EXIT_ABNORM, "fd %d already inserted in DAS_IO::Loop::add_child", P->fd );
   }
@@ -34,8 +36,12 @@ void Loop::add_child(Interface *P) {
 bool Loop::remove_child(Interface *P, bool deref) {
   for (InterfaceList::iterator pos = S.begin(); pos != S.end(); ++pos ) {
     if (P == *pos) {
-      S.erase(pos);
-      children_changed = true;
+      if (pos == LI) {
+        list_element_deleted = true;
+      } else {
+        S.erase(pos);
+      }
+      // children_changed = true;
       P->ELoop = 0;
       if (deref) Interface::dereference(P);
       return true;
@@ -104,17 +110,17 @@ void Loop::event_loop() {
     FD_ZERO(&writefds);
     FD_ZERO(&exceptfds);
     TA.Set(GetTimeout());
-    children_changed = false;
+    // children_changed = false;
     if (S.empty() && ! TA.Set()) break;
-    for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
-      Interface *P = *Sp;
+    for (loop_init(); loop_active(); loop_iterate()) {
+      Interface *P = *LI;
       int flag = gflags.fetch_and(~P->flags) & P->flags;
       if (flag) {
         P->ProcessData(flag);
       }
     }
-    for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
-      Interface *P = *Sp;
+    for (loop_init(); loop_active(); loop_iterate()) {
+      Interface *P = *LI;
       // msg(0, "%s fd %d flags %d", P->get_iname(), P->fd, P->flags);
       if (P->fd >= 0) {
         if (P->flags & P->Fl_Read) FD_SET(P->fd, &readfds);
@@ -125,7 +131,8 @@ void Loop::event_loop() {
       if (P->flags & P->Fl_Timeout) TA.Set_Min( P->GetTimeout() );
     }
     // rc = select(width, &readfds, &writefds, &exceptfds, TA.timeout_val());
-    rc = pselect(width, &readfds, &writefds, &exceptfds, TA.timeout_val_ns(), &runset);
+    rc = pselect(width, &readfds, &writefds, &exceptfds,
+                 TA.timeout_val_ns(), &runset);
     if ( rc == 0 ) {
       if ( ProcessTimeout() ) {
         if (!is_memo_loop) {
@@ -133,8 +140,8 @@ void Loop::event_loop() {
         }
         keep_going = 0;
       }
-      for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
-        Interface *P = *Sp;
+      for (loop_init(); loop_active(); loop_iterate()) {
+        Interface *P = *LI;
         if ((P->flags & P->Fl_Timeout) && P->ProcessData(P->Fl_Timeout)) {
           if (!is_memo_loop) {
             msg(MSG_DBG(1), "%s: requested termination after P->Fl_Timeout", P->get_iname());
@@ -145,8 +152,8 @@ void Loop::event_loop() {
     } else if ( rc < 0 ) {
       if ( errno == EINTR ) {
         //keep_going = 0;
-        for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
-          Interface *P = *Sp;
+        for (loop_init(); loop_active(); loop_iterate()) {
+          Interface *P = *LI;
           if (signals_seen && P->signals) {
             if (P->serialized_signal_handler(signals_seen)) {
               if (!is_memo_loop) {
@@ -164,8 +171,8 @@ void Loop::event_loop() {
         }
       } else if (errno == EBADF || errno == EHOSTDOWN) {
         bool handled = false;
-        for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
-          Interface *P = *Sp;
+        for (loop_init(); loop_active(); loop_iterate()) {
+          Interface *P = *LI;
           int flags = 0;
           if (P->flags & P->Fl_Except) {
             if ( P->ProcessData(P->Fl_Except) ) {
@@ -174,7 +181,7 @@ void Loop::event_loop() {
               }
               keep_going = 0;
             }
-            if (children_changed) break; // Changes can occur during ProcessData
+            // if (children_changed) break;
             handled = true;
           }
         }
@@ -183,11 +190,12 @@ void Loop::event_loop() {
         }
       } else {
         msg(MSG_FATAL,
-          "DAS_IO::Loop::event_loop(): Unexpected error from select: %d", errno);
+          "DAS_IO::Loop::event_loop(): Unexpected error from select: %d",
+          errno);
       }
     } else {
-      for ( Sp = S.begin(); Sp != S.end(); ++Sp ) {
-        Interface *P = *Sp;
+      for (loop_init(); loop_active(); loop_iterate()) {
+        Interface *P = *LI;
         int flags = 0;
         if (P->fd >= 0) {
           if ( (P->flags & P->Fl_Read) && FD_ISSET(P->fd, &readfds) )
@@ -203,7 +211,7 @@ void Loop::event_loop() {
               }
               keep_going = 0;
             }
-            if (children_changed) break; // Changes can occur during ProcessData
+            // if (children_changed) break;
           }
         }
       }
@@ -245,7 +253,25 @@ void Loop::signal(int sig, void (*handler)(int)) {
     msg(MSG_ERROR, "sigaction(%d) error %d: %s", sig, errno, strerror(errno));
 }
 
+void Loop::loop_init() {
+  LI = S.begin();
+  list_element_deleted = false;
 }
+
+bool Loop::loop_active() {
+  return(LI != S.end());
+}
+
+bool Loop::loop_iterate() {
+  if (list_element_deleted) {
+    LI = S.erase(LI);
+    list_element_deleted = false;
+  } else {
+    ++LI;
+  }
+}
+
+} // End of namespace DAS_IO
 
 uint32_t DAS_IO::Loop::signals_seen = 0;
 

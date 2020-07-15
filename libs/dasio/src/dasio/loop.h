@@ -45,7 +45,9 @@ class Loop {
     /**
      * @param P the Interface to be deleted.
      * Removes the specified Interface from the list of active interfaces,
-     * and marks it for deletion at a later time.
+     * and marks it for deletion at a later time. This allows an interface
+     * to be deleted safely from inside an interface method, since the
+     * actual deletion will occur after the return.
      */
     void delete_child(Interface *P);
     
@@ -108,11 +110,6 @@ class Loop {
     static uint32_t signals_seen;
     
   private:
-    /** The list of child interfaces */
-    InterfaceList S;
-    /** List of interfaces pending deletion */
-    InterfaceList PendingDeletion;
-    
     /**
      * Locates the position in list S of the Interface with the matching fd.
      * Will not match anything if fd < 0.
@@ -120,7 +117,27 @@ class Loop {
      * @return The position in S of the Interface with the matching fd.
      */
     InterfaceList::iterator find_child_by_fd(int fd);
-    bool children_changed;
+    void loop_init();
+    bool loop_active();
+    bool loop_iterate();
+
+    /** The list of child interfaces */
+    InterfaceList S;
+    /** List of interfaces pending deletion */
+    InterfaceList PendingDeletion;
+    /**
+     * The common iterator used by event_loop() to
+     * facilitate removal of list elements mid loop
+     */
+    InterfaceList::iterator LI;
+    /**
+     * If true, the element at LI has been deleted,
+     * so the iteration step should erase that element
+     * rather than incrementing.
+     */
+    bool list_element_deleted;
+    // bool children_changed;
+    
     std::atomic<int> gflags;
     /**
      * Virtual method called whenever select() returns 0. The default does nothing,
