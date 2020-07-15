@@ -98,12 +98,12 @@ srvrmode=-mV
 [ -n "$FlightNode" ] && srvrmode="$srvrmode -sTCP"
 msg start_server $*
 test_server $srvrmode
-TW=`$ns -na | grep ':3500 .* TIME_WAIT' | sed -e 's/\r//'`
+TW=`netstat -na | grep ':3500 .* TIME_WAIT' | sed -e 's/\r//'`
 if [ -n "$TW" ]; then
   msg "[ERROR] $TW"
   TWcount=0
   while [ -n "$TW" ]; do
-    TW=`$ns -na | grep ':3500 .* TIME_WAIT'`
+    TW=`netstat -na | grep ':3500 .* TIME_WAIT'`
     if [ -n "$TW" ]; then
       if [ $TWcount -lt 30 ]; then
         let TWcount=TWcount+1
