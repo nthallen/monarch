@@ -103,7 +103,7 @@ msg start_server $*
 test_server $srvrmode
 TW=`netstat -na | grep ':3500 .* TIME_WAIT' | sed -e 's/\r//'`
 if [ -n "$TW" ]; then
-  msg "[ERROR] $TW"
+  msg -mV "[ERROR] $TW"
   TWcount=0
   while [ -n "$TW" ]; do
     TW=`netstat -na | grep ':3500 .* TIME_WAIT'`
