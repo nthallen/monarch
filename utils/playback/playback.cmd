@@ -3,11 +3,11 @@
   #define FF_CODE "TM}\n"
 %}
 &tm_cmd
-	: Stop * { if_DG.Turf( "TMe\n" ); }
-	: Play * { if_DG.Turf( "TM>\n" ); }
-	: Faster * { if_DG.Turf( "TM+\n" ); }
-	: Slower * { if_DG.Turf( "TM-\n" ); }
-	: FF * { if_DG.Turf( FF_CODE ); }
+	: Stop * { if_tm_gen.Turf( "TMe\n" ); }
+	: Play * { if_tm_gen.Turf( "TM>\n" ); }
+	: Faster * { if_tm_gen.Turf( "TM+\n" ); }
+	: Slower * { if_tm_gen.Turf( "TM-\n" ); }
+	: FF * { if_tm_gen.Turf( FF_CODE ); }
 	;
 &command
 	: Telemetry * &tm_cmds *

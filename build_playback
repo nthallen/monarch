@@ -1,0 +1,56 @@
+#! /bin/bash
+# build_playback
+#
+# ./build_playback
+#    Locates and/or creates build directory
+#    Runs appgen && make
+# ./build_playback install
+#    Locates build directory and runs make install
+function nl_error {
+  echo "build_playback: $*" >&2
+  exit 1
+}
+function msg {
+  echo "build_playback: $*" >&2
+}
+
+function print_usage {
+cat  <<EOF
+./build_playback
+  Locate and/or create build directory
+  run appgen && make
+./build_playback install
+  Locate build directory and run make install
+  Invoke install with sudo where necessary
+EOF
+}
+
+if [ "$1" = "--help" -o "$1" = "-h" ]; then
+  print_usage
+  exit 0
+fi
+
+subdir=utils/playback
+relsrcroot="../../../git/$subdir"
+
+[ ! -d .git ] && nl_error "Must be run in the source root directory"
+[ -f le-dasng-doxygen.css ] || nl_error Not in the correct source tree
+[ ../git -ef . ] || nl_error Unable to locate source root
+branch=`git rev-parse --abbrev-ref HEAD`
+builddir="../build-$branch/$subdir"
+
+if [ -n "$1" ]; then
+  if [ "$1" = "install" ]; then
+    [ -d $builddir ] || nl_error "Must build before installing"
+    cd $builddir
+    make install SRCDIR=$relsrcroot
+  else
+    nl_error "Unknown option '$1'"
+  fi
+else
+  [ -d $builddir ] || mkdir -p $builddir
+  [ -d $builddir ] || nl_error "Unable to create builddir $builddir"
+  cd $builddir
+  appgen $relsrcroot/playback.spec
+  make SRCDIR=$relsrcroot
+fi
