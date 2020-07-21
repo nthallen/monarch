@@ -16,6 +16,19 @@
 #
 # Experiment and TMBINDIR are exported as required by virtually
 # all the dasio-cognizent programs
+#
+# Determination of the SERVICE status is heuristic and based on
+# circumstantial evidence. Anytime FlightNode is defined it is
+# assumed the service is installed on the FlightNode, which is
+# reasonable. It is entirely possible to imagine running a remote
+# instrument via ssh similar to the way we would start up a local
+# AdHoc instrument, but we would need a separate variable to mark
+# the FlightNode as being AdHoc, since it may not be accessible
+# when the decisions are being made.
+#
+# Similarly, when FlightNode is not defined, the presence of
+# parent registered for this Experiment
+# is deemed strong enough evidence that the service is installed.
 #----------------------------------------------------------------
 export PATH=:/bin:/usr/bin:/usr/local/bin
 umask g+w
@@ -121,7 +134,7 @@ function Launch {
     if [ "$name" != "-" ]; then
       [ "$name" = "-TMC-" ] && name="/var/run/linkeng/run/$Experiment/$!"
       [ "${name#/}" = "$name" ] && name="/var/run/linkeng/$Experiment/$name"
-      waitfor $name 10 || {
+      waitfor $name 20 || {
         msgf 2 "Launch namewait failure: $*"
         launch_error=yes
         return 1

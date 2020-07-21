@@ -483,9 +483,9 @@ void bfr_input_client::read_reply(bfr_output_client *ocb) {
       }
       assert( nQrows_ready >= 0 );
       if ( nQrows_ready > 0 ) {
-        if ( !blocked_writer && srvr_has_shutdown() &&
+        if ( !blocked_writer && (!srvr_has_shutdown()) &&
              tmqr->next_tmqr == 0 && nQrows_ready < ocb->read.maxQrows
-             && !ocb->is_fast) {
+             && (!ocb->is_fast)) {
           // wait for more data
         } else {
           int XRow_Num, NMinf, Row_Num_start, n_iov;

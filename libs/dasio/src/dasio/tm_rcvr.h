@@ -10,6 +10,13 @@
 
 namespace DAS_IO {
 
+  /**
+   * @brief DAS_IO::tm_rcvr is a pure virtual class for
+   * subclasses that receive telemetry data. These of course
+   * include DAS_IO::tm_client, but also rdr's Reader.
+   * Ultimately bfr should also use this class.
+   */
+
 class tm_rcvr {
   public:
     tm_rcvr(DAS_IO::Interface* interface);
