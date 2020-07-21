@@ -128,6 +128,7 @@ void msg_init_options(int argc, char **argv) {
     time_t now = time(NULL);
     const char *nowt = asctime(gmtime(&now));
     fprintf(file_fp, "\n%s Starting: %s", DAS_IO::AppID.name, nowt );
+    fflush(file_fp);
   }
   
   if (!write_to_stderr && !write_to_file && !write_to_memo) {
