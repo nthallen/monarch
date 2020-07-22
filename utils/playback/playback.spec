@@ -6,4 +6,4 @@ prefix = playback
 %%
 binPrograms = playbacksrvr playbackcltnc
 install : $(binPrograms)
-	cp -pnv $(binPrograms) $(TGTNODE)/usr/local/bin
+	cp -puv $(binPrograms) $(TGTNODE)/usr/local/bin
