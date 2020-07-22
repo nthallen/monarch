@@ -25,7 +25,7 @@ class tm_rcvr {
     tm_msg_t *tm_msg;
     static unsigned int next_minor_frame, majf_row, minf_row;
     enum tm_state_t {TM_STATE_HDR, TM_STATE_INIT, TM_STATE_TSTAMP,
-                     TM_STATE_DATA};
+                     TM_STATE_DATA_HDR, TM_STATE_DATA};
   protected:
     void process_message();
     virtual void process_init();

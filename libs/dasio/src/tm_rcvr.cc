@@ -62,12 +62,8 @@ namespace DAS_IO {
               if ( tm_msg->hdr.tm_type != input_tm_type )
                 msg(MSG_FATAL, "%sInvalid data type: %04X", context(),
                   tm_msg->hdr.tm_type );
-              buf_mfctr = tm_msg->body.data3.mfctr;
-              cp += nbDataHdr;
-              ncc -= nbDataHdr;
-              rows_left_in_msg = tm_msg->body.data1.n_rows;
-              toread = nbQrow;
-              tm_state = TM_STATE_DATA;
+              toread = nbDataHdr;
+              tm_state = TM_STATE_DATA_HDR;
               break;
             default:
               msg(MSG_ERROR, "%sInvalid TMTYPE: %04X", context(),
@@ -87,6 +83,14 @@ namespace DAS_IO {
           cp += toread;
           ncc -= toread;
           tm_expect_hdr();
+          break;
+        case TM_STATE_DATA_HDR:
+          buf_mfctr = tm_msg->body.data3.mfctr;
+          cp += toread;
+          ncc -= toread;
+          rows_left_in_msg = tm_msg->body.data1.n_rows;
+          toread = nbQrow;
+          tm_state = TM_STATE_DATA;
           break;
         case TM_STATE_DATA:
           rows_in_buf = ncc / nbQrow;
