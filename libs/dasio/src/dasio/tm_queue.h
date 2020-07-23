@@ -31,8 +31,9 @@ class tmq_ref {
     tmq_ref(mfc_t MFCtr, int mfrow, int Qrow_in, int nrows_in, tmq_tstamp_ref *tsp);
     tmq_ref *add_last(tmq_ref *tmqr);
     /**
-     * @param tmqr Pointer to the tmq_ref which we no longer wish to reference
-     * @return If use_next, the following tmq_ref which we will now reference, else 0.
+     * @param use_next true if we will reference the next tmq_ref
+     * @return If use_next, the following tmq_ref which we will now
+     * reference, else 0.
      */
     tmq_ref *dereference(bool use_next);
     tmq_ref *next_tmqr;

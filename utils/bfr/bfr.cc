@@ -347,6 +347,8 @@ int bfr_input_client::data_state_T3() {
     buf += write.off_queue;
     write.nb_rec -= write.off_queue;
     state = TM_STATE_DATA;
+  } else {
+    write.off_queue = 0;
   }
   // Cannot override previous bufsize unless write.nb_rec < bufsize
   if (write.nb_rec < bufsize)

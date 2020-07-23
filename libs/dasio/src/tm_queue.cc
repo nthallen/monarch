@@ -162,7 +162,12 @@ void tm_queue::commit_rows( mfc_t MFCtr, int mfrow, int nrows ) {
     if ( last_tmqr )
       last_tmqr = last_tmqr->add_last(tmqdr);
     else first_tmqr = last_tmqr = tmqdr;
-  } else tmqdr->append_rows(nrows);
+  } else {
+    if (tmqdr->n_Qrows+nrows > total_Qrows) {
+      msg(MSG_EXIT_ABNORM, "Too many rows reference in tmqr");
+    }
+    tmqdr->append_rows(nrows);
+  }
   last += nrows;
   if ( last == total_Qrows ) last = 0;
   if ( last == first ) full = 1;
