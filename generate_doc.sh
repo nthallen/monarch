@@ -22,6 +22,7 @@ generate libs/dasio
 generate tools/cmdgen
 generate tools/tmc
 generate utils/bfr
+generate utils/rdr
 generate drivers/subbus
 
 cd ../dox
