@@ -40,7 +40,7 @@ class Reader : public tm_generator, public tm_rcvr {
     // void control_loop();
   protected:
     void process_tstamp();
-    void process_data();
+    unsigned int process_data();
     inline void process_message() { tm_rcvr::process_message(); }
     void lock(const char *by = 0, int line = -1);
     void unlock();

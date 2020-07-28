@@ -15,8 +15,8 @@ using namespace DAS_IO;
     protected:
       void process_data_t1();
       void process_data_t2();
-      void process_data_t3();
-      void process_data();
+      unsigned int process_data_t3();
+      unsigned int process_data();
       void process_init();
       void process_tstamp();
       mlf_def_t *mlf;

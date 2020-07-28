@@ -13,7 +13,7 @@ namespace DAS_IO {
     public:
       inline nc_tm_client(int bufsize, const char *hostname = 0) :
         tm_client(bufsize, true, hostname) {}
-      void process_data();
+      unsigned int process_data();
       bool serialized_signal_handler(uint32_t signals_seen);
       void adopted();
   };

@@ -235,10 +235,9 @@ void Reader::process_tstamp() {
  rdr here assumes the incoming data is T3 format. This is
  checked by an assertion in Reader::Reader().
  */
-void Reader::process_data() {
+unsigned int Reader::process_data() {
   if ( ! have_tstamp ) {
     msg(MSG_WARN, "process_data() without initialization" );
-    return;
   }
   // tm_data_t3_t *data = &tm_msg->body.data3;
   unsigned char *raw = data_row;
@@ -268,6 +267,7 @@ void Reader::process_data() {
     }
     if (!regulated) transmit_data(false);
   }
+  return rows_in_buf;
 }
 
 void Reader::buffering(bool bfring) {

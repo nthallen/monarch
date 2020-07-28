@@ -106,7 +106,7 @@ bool DAS_IO::nc_tm_client::serialized_signal_handler(uint32_t signals_seen) {
 #define incmod(x,y) if (x==((y)-1)) x = 0; else x++
 
 #if TM_DATA_TYPE == TMTYPE_DATA_T3
-void TM_CLIENT::process_data() {
+unsigned int TM_CLIENT::process_data() {
   unsigned char *raw;
   int n_rows = rows_in_buf;
   MFCtr = buf_mfctr;
@@ -132,6 +132,7 @@ void TM_CLIENT::process_data() {
   }
   next_minor_frame = MFCtr;
   EXTRACTION_UPDATE;
+  return rows_in_buf;
 }
 #else
   #error Data types TMTYPE_DATA_T1 and TMTYPE_DATA_T2 not implemented in extmain.skel

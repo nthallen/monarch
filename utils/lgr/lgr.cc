@@ -86,7 +86,7 @@ void tmc_lgr::write_tstamp() {
   lgr_write( &tm_info.t_stmp, sizeof(tstamp_t), "writing tstamp" );
 }
 
-void tmc_lgr::process_data_t3() {
+unsigned int tmc_lgr::process_data_t3() {
   unsigned int n_rows = rows_in_buf;
   unsigned char *wdata = data_row;
   mfc_t MFCtr = buf_mfctr;
@@ -118,15 +118,15 @@ void tmc_lgr::process_data_t3() {
   }
 }
 
-void tmc_lgr::process_data() {
+unsigned int tmc_lgr::process_data() {
   switch ( input_tm_type ) {
     case TMTYPE_DATA_T1:
     case TMTYPE_DATA_T2:
       msg(MSG_FATAL,"Data type not implemented" );
     case TMTYPE_DATA_T3:
-      process_data_t3();
-      break;
+      return process_data_t3();
   }
+  return 0;
 }
 
 void tminitfunc() {}

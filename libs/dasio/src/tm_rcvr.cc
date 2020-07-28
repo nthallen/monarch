@@ -16,11 +16,10 @@ namespace DAS_IO {
 
   /* Constructor method */
   tm_rcvr::tm_rcvr(Interface* interface) : interface(interface) {
-    tm_expect_hdr();
+    ncc = cp = 0;
     tm_info_ready = false;
-    cp = 0;
     interface->set_binary_mode();
-    tm_msg = (tm_msg_t *)&interface->buf[cp];
+    tm_expect_hdr();
   }
 
   tm_rcvr::~tm_rcvr() {}
@@ -98,11 +97,12 @@ namespace DAS_IO {
             rows_in_buf = rows_left_in_msg;
           data_row = &interface->buf[cp];
           // Will process rows_in_buf
-          process_data();
-          buf_mfctr += rows_in_buf;
-          rows_left_in_msg -= rows_in_buf;
-          cp += rows_in_buf * nbQrow;
-          ncc -= rows_in_buf * nbQrow;
+          { unsigned int rows_processed = process_data();
+            buf_mfctr += rows_processed;
+            rows_left_in_msg -= rows_processed;
+            cp += rows_processed * nbQrow;
+            ncc -= rows_processed * nbQrow;
+          }
           if (rows_left_in_msg == 0) {
             tm_expect_hdr();
           }

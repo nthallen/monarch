@@ -11,7 +11,7 @@ class tm_relay : public tm_generator, public tm_client {
     tm_relay();
     ~tm_relay();
   protected:
-    void process_data();
+    unsigned int process_data();
     void process_tstamp();
     virtual void service_row_timer();
     bool have_tstamp;
