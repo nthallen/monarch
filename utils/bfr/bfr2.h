@@ -65,6 +65,8 @@ class bfr2_input_client : public Serverside_client, public tm_rcvr,
   protected:
     bool protocol_input();
     bool process_eof();
+    void process_init();
+    void process_tstamp();
     unsigned int process_data();
     void run_input_queue();
     void run_output_queue();
@@ -158,6 +160,14 @@ class bfr2_output_client : public Serverside_client {
       bool ready;
     } output;
 };
+
+class bfr : public Server {
+  public:
+    inline bfr() : Server("tm_bfr") {}
+    void add_subservices();
+  protected:
+    bool ready_to_quit();
+}
 
 } // namespace DAS_IO
 

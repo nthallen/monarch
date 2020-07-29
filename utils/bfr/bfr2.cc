@@ -57,9 +57,32 @@ bool bfr2_input_client::auth_hook(Authenticator *Auth, SubService *SS) {
 }
 
 bool bfr2_input_client::protocol_input() {
+  bool blocked_input_save = blocked_input;
   process_message();
   flags = blocking && blocked_input ? 0 : Fl_Read;
+  if (blocked_input_save != blocked_input)
+    msg(MSG_DBG(0), "Input %sblocked", blocked_input ? "" : "un");
   return false;
+}
+
+// Since we accept data from any frame, we need to copy the incoming
+// frame definition into tm_info so tm_client::process_init()
+// will be happy.
+void bfr2_input_client::process_init() {
+  memcpy(&tm_info, &tm_msg->body.init.tm, sizeof(tm_dac_t));
+  tm_rcvr::process_init();
+
+  lock(__FILE__, __LINE__);
+  int total_Qrows = tm_info.nrowminf *
+    ( ( tmi(nrowsper) * 60 + tmi(nsecsper)*tm_info.nrowminf - 1 )
+        / (tmi(nsecsper)*tm_info.nrowminf) );
+  init(total_Qrows);
+  commit_tstamp(tm_info.t_stmp.mfc_num, tm_info.t_stmp.secs);
+  unlock();
+}
+void bfr2_input_client::process_tstamp() {
+  tm_rcvr::process_tstamp();
+  commit_tstamp(tm_info.t_stmp.mfc_num, tm_info.t_stmp.secs);
 }
 
 bool bfr2_input_client::process_eof() {
@@ -67,7 +90,8 @@ bool bfr2_input_client::process_eof() {
   // not shutdown everything. We will continue to process
   // the tm_queue until all clients have received all the data.
   srvr->Shutdown();
-  return Serverside_client::process_eof();
+  commit_quit();
+  return false;
 }
 
 unsigned int bfr2_input_client::process_data() {
@@ -103,6 +127,7 @@ unsigned int bfr2_input_client::process_data() {
         }
         retire_rows(first_tmqr, 1);
       } else {
+        msg(MSG_DBG(0), "Input blocked");
         blocked_input = true;
         flags &= ~Fl_Read;
         break;
@@ -179,6 +204,7 @@ bfr2_output_client::bfr2_output_client(Authenticator *Auth,
           const char *iname, bool is_fast)
     : Serverside_client(Auth, iname, bfr2_output_client_ibufsize),
       is_fast(is_fast) {
+  data.tsp = 0;
   data.tmqr = 0;
   data.n_Qrows = 0;
   data.n_Qrows_pending = 0;
@@ -386,16 +412,23 @@ Serverside_client *new_bfr_output_client(Authenticator *Auth, SubService *SS) {
   return new bfr2_output_client(Auth, Auth->get_client_app(), is_fast);
 }
 
-void add_subservices(Server *S) {
-  S->add_subservice(new SubService("tm_bfr/input", new_bfr_input_client,
+
+void bfr::add_subservices() {
+  add_subservice(new SubService("tm_bfr/input", new_bfr_input_client,
       (void *)(0), bfr2_input_client::auth_hook));
-  S->add_subservice(new SubService("tm_bfr/input-nb",
+  add_subservice(new SubService("tm_bfr/input-nb",
       new_bfr_input_client,
       (void *)(0), bfr2_input_client::auth_hook));
-  S->add_subservice(new SubService("tm_bfr/optimized",
+  add_subservice(new SubService("tm_bfr/optimized",
       new_bfr_output_client, (void *)(0)));
-  S->add_subservice(new SubService("tm_bfr/fast",
+  add_subservice(new SubService("tm_bfr/fast",
       new_bfr_output_client, (void *)(0)));
+}
+
+bool bfr::ready_to_quit() {
+  if (!has_shutdown_b)
+    Server::ready_to_quit();
+  return bfr2_input_client::queue_empty();
 }
 
 /* Main method */
@@ -403,8 +436,8 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   setup_rundir();
   
-  Server S("tm_bfr");
-  add_subservices(&S);
+  bfr S();
+  S.add_subservices();
   msg(0, "%s %s Starting", AppID.fullname, AppID.rev);
   S.Start(Server::server_type);
   msg(0, "Terminating");

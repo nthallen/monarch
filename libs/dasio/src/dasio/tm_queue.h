@@ -94,6 +94,7 @@ class tm_queue {
   public:
     tm_queue();
     void init( int n_Qrows ); // allocate space for the queue
+    bool queue_empty();
 
   protected:
     int allocate_rows(unsigned char **rowp);
@@ -117,6 +118,8 @@ class tm_queue {
     int last;
     /** True if tm_queue is full */
     bool full;
+    /** True if tm_generator has quit */
+    bool tm_gen_quit;
     
     tmq_ref *first_tmqr;
     tmq_ref *last_tmqr;
