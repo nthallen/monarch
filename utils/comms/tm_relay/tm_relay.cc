@@ -63,7 +63,7 @@ unsigned int tm_relay::process_data() {
     }
     if (!regulated) transmit_data(false);
   }
-  return rows_in_buf;
+  return rows_in_buf; // we will process all rows
 }
 
 void tm_relay::process_tstamp() {

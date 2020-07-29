@@ -116,6 +116,7 @@ unsigned int tmc_lgr::process_data_t3() {
       if ( n_rows ) next_file();
     }
   }
+  return rows_in_buf; // we always write all rows
 }
 
 unsigned int tmc_lgr::process_data() {

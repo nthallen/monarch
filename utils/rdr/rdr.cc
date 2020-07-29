@@ -242,6 +242,7 @@ unsigned int Reader::process_data() {
   // tm_data_t3_t *data = &tm_msg->body.data3;
   unsigned char *raw = data_row;
   int n_rows = rows_in_buf;
+  unsigned int rows_processed = 0;
   mfc_t MFCtr = buf_mfctr;
 
   // Can check here for time limits
@@ -262,12 +263,13 @@ unsigned int Reader::process_data() {
       raw += rawsize;
       n_rows -= n_room;
       MFCtr += n_room;
+      rows_processed += n_room;
     } else {
       unlock();
     }
     if (!regulated) transmit_data(false);
   }
-  return rows_in_buf;
+  return rows_processed;
 }
 
 void Reader::buffering(bool bfring) {
