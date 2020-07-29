@@ -238,9 +238,10 @@ bool tm_queue::next_tmqr(tmq_ref **tmqrp) {
   if (*tmqrp) {
     tmq_ref *tmqr = *tmqrp;
     if (tmqr->next_tmqr) {
-      --tmqr->ref_count;
-      tmqr = tmqr->next_tmqr;
-      ++tmqr->ref_count;
+      tmqr = tmqr->dereference(true);
+      // --tmqr->ref_count;
+      // tmqr = tmqr->next_tmqr;
+      // ++tmqr->ref_count;
       *tmqrp = tmqr;
       return true;
     } else return false;
