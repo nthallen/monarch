@@ -49,24 +49,26 @@ enum state_t {
   TM_STATE_HDR, TM_STATE_HDR2, TM_STATE_INFO, TM_STATE_DATA
 };
 
-class bfr_output_client;
+class bfr2_output_client;
 
-class bfr_input_client : public Serverside_client, public tm_rcvr,
+class bfr2_input_client : public Serverside_client, public tm_rcvr,
                          public tm_queue {
-  friend class bfr_output_client;
+  friend class bfr2_output_client;
   public:
-    bfr_input_client(Authenticator *Auth, const char *iname, bool blocking);
-    // ~bfr_input_client();
-    static const int bfr_input_client_ibufsize = 0; // We handle this
+    bfr2_input_client(Authenticator *Auth, const char *iname,
+          bool blocking);
+    ~bfr2_input_client();
+    static const int bfr2_input_client_ibufsize = 4096*3;
     static bool auth_hook(Authenticator *Auth, SubService *SS);
     static bool tmg_opened;
-    static bfr_input_client *tm_gen;
+    static bfr2_input_client *tm_gen;
   protected:
-    bool process_eof();
     bool protocol_input();
-    void run_read_queue();
-    void run_write_queue();
-    void read_reply(bfr_output_client *ocb);
+    bool process_eof();
+    unsigned int process_data();
+    void run_input_queue();
+    void run_output_queue();
+    void read_reply(bfr2_output_client *ocb);
     /**
        Handles the actual trasmission after the message
        has been packed into struct iovecs. It may allocate a
@@ -77,7 +79,7 @@ class bfr_input_client : public Serverside_client, public tm_rcvr,
        @param iov The struct iovec vector
        @param n_parts The number of elements in iov
      */
-    void do_read_reply(bfr_output_client *ocb, int nb,
+    void do_read_reply(bfr2_output_client *ocb, int nb,
                         struct iovec *iov, int n_parts);
     /**
      * Delete unreferenced tmq_refs from the head of the chain,
@@ -87,61 +89,66 @@ class bfr_input_client : public Serverside_client, public tm_rcvr,
     void tmq_retire_check();
     /**
      * @param tmqr Pointer to the tmq_ref we will evaluate
+     * @param if true, only report minimum of rows referenced
+     * by clients with non-empty output buffers.
      * @return The minimum number of Qrows that have been processed
-     * by all of the bfr_output_clients in all_readers.
+     * by all of the bfr2_output_clients in all_readers.
      */
-    int min_reader(tmq_ref *tmqr);
+    int min_reader(tmq_ref *tmqr, bool forcing = false);
     bool blocking;
     state_t state;
+    /** Count of rows not transmitted to some or all clients */
+    int rows_dropped;
+    /** Count of rows dropped dangerously */
+    int rows_forced;
     
-    struct part_s {
-      tm_hdrs_t hdr;
-      // char *dptr; // pointer into other buffers
-      // int nbdata; // How many bytes are still expected in this sub-transfer
-      // part.nbdata is replaced with Interface::bufsize. As received data is
-      // processed, buf is advanced and bufsize is reduced until all data is
-      // consumed. This differs from standard Interface semantics, where
-      // consume(n) shifts remaining data
-    } part;
+    // struct part_s {
+      // tm_hdrs_t hdr;
+      // // char *dptr; // pointer into other buffers
+      // // int nbdata; // How many bytes are still expected in this sub-transfer
+      // // part.nbdata is replaced with Interface::bufsize. As received data is
+      // // processed, buf is advanced and bufsize is reduced until all data is
+      // // consumed. This differs from standard Interface semantics, where
+      // // consume(n) shifts remaining data
+    // } part;
     
-    struct write_s {
-      int nbrow_rec; // bytes per row received
-      int nbhdr_rec; // bytes in the header of data messages
-      int off_msg; // bytes already read from this write
-      int nb_rec; // bytes remaining in this record
-      int off_queue; // bytes already written in this queue block
-    } write;
+    // struct write_s {
+      // int nbrow_rec; // bytes per row received
+      // int nbhdr_rec; // bytes in the header of data messages
+      // int off_msg; // bytes already read from this write
+      // int nb_rec; // bytes remaining in this record
+      // int off_queue; // bytes already written in this queue block
+    // } write;
   private:
     bool process_tm_info();
-    int (bfr_input_client::*data_state_eval)();
-    int data_state_T3();
+    // int (bfr2_input_client::*data_state_eval)();
+    // int data_state_T3();
 };
 
-class bfr_output_client : public Serverside_client {
-  friend class bfr_input_client;
+class bfr2_output_client : public Serverside_client {
+  friend class bfr2_input_client;
   public:
-    bfr_output_client(Authenticator *Auth, const char *iname, bool is_fast);
-    ~bfr_output_client();
-    static const int bfr_output_client_ibufsize = 80;
+    bfr2_output_client(Authenticator *Auth, const char *iname, bool is_fast);
+    ~bfr2_output_client();
+    static const int bfr2_output_client_ibufsize = 80;
   protected:
+    void transmit();
     bool iwritten(int nb);
     bool is_fast;
-    enum state_t state;
     struct iovec iov[3];
     
-    struct part_s {
-      tm_hdrs_t hdr;
-      char *dptr; // pointer into other buffers
-      int nbdata; // How many bytes are still expected in this sub-transfer
-    } part;
+    tm_hdrs_t hdr; // was part.hdr
     
     struct data_s {
       /** Our current timestamp */
       tmq_tstamp_ref *tsp;
       /** The tmq_ref we are referencing */
       tmq_ref *tmqr;
-      //* The number of Qrows in dq we have already processed
+      /** The number of Qrows relative to tmqr we have
+          already processed */
       int n_Qrows;
+      /** The number of Qrows tied up for output */
+      int n_Qrows_pending;
     } data;
     
     struct read_s {
@@ -149,7 +156,7 @@ class bfr_output_client : public Serverside_client {
       int maxQrows;
       int rows_missing; // cumulative count
       bool ready;
-    } read;
+    } output;
 };
 
 } // namespace DAS_IO

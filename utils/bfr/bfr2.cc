@@ -18,8 +18,8 @@ using namespace DAS_IO;
 
 bool bfr2_input_client::tmg_opened = false;
 bfr2_input_client *bfr2_input_client::tm_gen;
-// bool blocked_writer = false;
-// bool blocked_reader = false;
+// ### figure out if these can go into the class
+bool blocked_input = false;
 std::list<bfr2_output_client*> all_readers;
 
 bfr2_input_client::bfr2_input_client(Authenticator *Auth,
@@ -38,7 +38,15 @@ bfr2_input_client::bfr2_input_client(Authenticator *Auth,
   // write.nb_rec = 0;
   // write.off_queue = 0;
   // data_state_eval = 0;
+  rows_dropped = 0;
+  rows_forced = 0;
   tm_gen = this;
+}
+
+bfr2_input_client::~bfr2_input_client() {
+  msg(0, "Rows dropped safely: %d", rows_dropped);
+  if (rows_forced)
+    msg(1, "Rows dropped unsafely: %d", rows_forced);
 }
 
 bool bfr2_input_client::auth_hook(Authenticator *Auth, SubService *SS) {
@@ -46,4 +54,359 @@ bool bfr2_input_client::auth_hook(Authenticator *Auth, SubService *SS) {
   if (tmg_opened) return false;
   tmg_opened = true;
   return true;
+}
+
+bool bfr2_input_client::protocol_input() {
+  process_message();
+  flags = blocking && blocked_input ? 0 : Fl_Read;
+  return false;
+}
+
+bool bfr2_input_client::process_eof() {
+  // This shuts down the listening ports, but it does
+  // not shutdown everything. We will continue to process
+  // the tm_queue until all clients have received all the data.
+  srvr->Shutdown();
+  return Serverside_client::process_eof();
+}
+
+unsigned int bfr2_input_client::process_data() {
+  unsigned char *raw = data_row;
+  unsigned int rows_processed = 0;
+  int n_rows = rows_in_buf;
+  mfc_t MFCtr = buf_mfctr;
+
+  tmq_retire_check();
+  while ( n_rows ) {
+    unsigned char *dest;
+    lock(__FILE__,__LINE__);
+    int n_room = allocate_rows(&dest);
+    if ( n_room ) {
+      unlock();
+      if ( n_room > n_rows ) n_room = n_rows;
+      int rawsize = n_room * tm_rcvr::nbQrow;
+      memcpy( dest, raw, rawsize );
+      commit_rows( MFCtr, 0, n_room );
+      raw += rawsize;
+      n_rows -= n_room;
+      MFCtr += n_room;
+      rows_processed += n_room;
+    } else {
+      unlock();
+      if (n_rows == rows_in_buf && !blocking) {
+        int min_Qrow = min_reader(first_tmqr, true);
+        if (min_Qrow > first_tmqr->Qrows_retired) {
+          // force early retirement
+          ++rows_dropped;
+        } else {
+          ++rows_forced;
+        }
+        retire_rows(first_tmqr, 1);
+      } else {
+        blocked_input = true;
+        flags &= ~Fl_Read;
+        break;
+      }
+    }
+    run_output_queue();
+  }
+  return rows_processed;
+}
+
+void bfr2_input_client::tmq_retire_check() {
+  while (first_tmqr && first_tmqr->ref_count == 0 &&
+         first_tmqr->next_tmqr && first_tmqr->n_Qrows == 0) {
+    retire_rows(first_tmqr, 0);
+  }
+  tmq_ref *tmqr = first_tmqr;
+  if (!tmqr) return;
+  nl_assert(tmqr->ref_count >= 0);
+  // Now look for Qrows we can retire
+  int min_Qrow = min_reader(tmqr, false);
+  if (min_Qrow > tmqr->Qrows_retired)
+    retire_rows(tmqr, min_Qrow - tmqr->Qrows_retired);
+  // return tmqr;
+}
+
+// The number here determines which rows are absolutely
+// safe to retire. A different calculation is required
+// to determine which rows can be retired that might be
+// currently tied up in output buffers.
+int bfr2_input_client::min_reader(tmq_ref *tmqr, bool forcing) {
+  if ( tmqr != first_tmqr ) return 0;
+  int min = tmqr->Qrows_retired + tmqr->n_Qrows;
+  std::list<bfr2_output_client *>::iterator ocp;
+  for ( ocp = all_readers.begin(); ocp != all_readers.end(); ++ocp ) {
+    bfr2_output_client *oc = *ocp;
+    if ( oc->data.tmqr == tmqr && oc->data.n_Qrows < min &&
+         (!forcing || !oc->obuf_empty()))
+      min = oc->data.n_Qrows;
+  }
+  return min;
+}
+
+void bfr2_input_client::run_input_queue() {
+  if ( blocked_input ) {
+    blocked_input = false;
+    flags |= Fl_Read;
+    process_message();
+  }
+}
+
+void bfr2_input_client::run_output_queue() {
+  std::list<bfr2_output_client*>::iterator oci;
+  for (lock(__FILE__,__LINE__), oci = all_readers.begin(), unlock();
+       oci != all_readers.end();
+       lock(__FILE__,__LINE__), ++oci, unlock()) {
+    bfr2_output_client *oc = *oci;
+    oc->transmit();
+    // if (oc->output.ready) {
+      // oc->output.ready = false;
+      // read_reply(oc);
+      // if (oc->obuf_empty()) {
+        // oc->output.ready = true;
+      // } else {
+      // }
+    // } else {
+      // nl_assert(!oc->obuf_empty());
+    // }
+  }
+  run_input_queue();
+}
+
+
+bfr2_output_client::bfr2_output_client(Authenticator *Auth,
+          const char *iname, bool is_fast)
+    : Serverside_client(Auth, iname, bfr2_output_client_ibufsize),
+      is_fast(is_fast) {
+  data.tmqr = 0;
+  data.n_Qrows = 0;
+  data.n_Qrows_pending = 0;
+  output.maxQrows = 0; // Set in first read_reply()
+  output.rows_missing = 0;
+  output.ready = true;
+  all_readers.push_back(this);
+}
+
+bfr2_output_client::~bfr2_output_client() {
+  if (output.rows_missing)
+    msg(1, "%s: %d rows dropped", iname, output.rows_missing);
+  if (data.tmqr)
+    data.tmqr = data.tmqr->dereference(false);
+  all_readers.remove(this);
+}
+
+/**
+   transmit() is called when we know we have something to send to a
+   tm_client.
+   First determine either the largest complete record that is less
+   than the requested size or the smallest complete record. If the
+   smallest record is larger than the request size, allocate the
+   partial buffer and copy the record into it.
+   Partial buffer size, if allocated, should be the larger of the size
+   of the tm_info message or a one-row data message (based on the
+   assumption that if a small request comes in, the smallest full
+   message will be chosen for output)
+
+   It is assumed that oc has already been removed from whatever wait
+   queue it might have been on.
+*/
+void bfr2_output_client::transmit() {
+  if (! obuf_empty()) return;
+  nl_assert(data.n_Qrows_pending == 0);
+  if (output.maxQrows == 0) {
+    output.maxQrows = bfr2_input_client::tm_gen->total_Qrows;
+    // output.maxQrows = is_fast ? 1 : total_Qrows;
+    // output.maxQrows = 1;
+  }
+  
+  if ( data.tmqr == 0 ) {
+    // First output to this client, so send tm_init
+    bfr2_input_client::tm_gen->lock(__FILE__,__LINE__);
+    if (bfr2_input_client::tm_gen->next_tmqr(&data.tmqr)) {
+      data.n_Qrows = 0;
+    
+      hdr.s.hdr.tm_id = TMHDR_WORD;
+      hdr.s.hdr.tm_type = TMTYPE_INIT;
+      data.tsp = data.tmqr->tsp;
+
+      // Message consists of
+      //   tm_hdr_t (TMHDR_WORD, TMTYPE_INIT)
+      //   tm_info_t with the current timestamp
+      iov[0].iov_base = &hdr.s.hdr;
+      iov[0].iov_len = sizeof(hdr.s.hdr);
+      // SETIOV( &iov[0], &hdr.s.hdr, sizeof(hdr.s.hdr) );
+      iov[1].iov_base = &tm_info;
+      iov[1].iov_len = sizeof(tm_info)-sizeof(tstamp_t);
+      // SETIOV( &iov[1], &tm_info, sizeof(tm_info)-sizeof(tstamp_t) );
+      iov[2].iov_base = &data.tsp->TS; // &data.tmqr->TSq->TS;
+      iov[2].iov_len = sizeof(tstamp_t);
+      // SETIOV( &iov[2], &data.tmqr->TSq->TS, sizeof(tstamp_t) );
+      int nb = sizeof(tm_hdr_t) + sizeof(tm_info_t);
+      iwritev(iov, 3);
+      // do_read_reply( oc, nb, iov, 3 );
+    } else output.ready = true; // enqueue_read( oc, nonblock );
+    bfr2_input_client::tm_gen->unlock();
+  } else {
+    /* I've handled data.n_Qrows */
+    tmq_ref *tmqr = data.tmqr;
+
+    bfr2_input_client::tm_gen->lock(__FILE__,__LINE__);
+    while (tmqr) {
+      int nQrows_ready;
+      
+      /* DQD has a total of tmqr->Qrows_retired + tmqr->n_Qrows */
+      if ( data.n_Qrows < tmqr->Qrows_retired ) {
+        // then we've missed some data: make a note and set
+        int n_missed = tmqr->Qrows_retired - data.n_Qrows;
+        output.rows_missing += n_missed;
+        data.n_Qrows = tmqr->Qrows_retired;
+      }
+      nQrows_ready = tmqr->n_Qrows + tmqr->Qrows_retired
+                      - data.n_Qrows;
+      if (nQrows_ready < 0) {
+        msg(MSG_ERROR, "nQrows_ready=%d (< 0)", nQrows_ready);
+        nQrows_ready = 0;
+      }
+      assert( nQrows_ready >= 0 );
+      if ( nQrows_ready > 0 ) {
+        if ( !blocked_input && (!srvr_has_shutdown()) &&
+             tmqr->next_tmqr == 0 && nQrows_ready < output.maxQrows
+             && (!is_fast)) {
+          // wait for more data
+        } else {
+          int XRow_Num, NMinf, Row_Num_start, n_iov;
+          mfc_t MFCtr_start;
+          int Qrow_start, nQ1, nQ2;
+          
+          // if ( nQrows_ready > output.maxQrows )
+            // nQrows_ready = output.maxQrows;
+          hdr.s.hdr.tm_id = TMHDR_WORD;
+          hdr.s.hdr.tm_type = bfr2_input_client::tm_gen->output_tm_type;
+          hdr.s.u.dhdr.n_rows = nQrows_ready;
+          XRow_Num = tmqr->row_start + data.n_Qrows -
+                      tmqr->Qrows_retired;
+          NMinf = XRow_Num/tm_info.nrowminf;
+          MFCtr_start = tmqr->MFCtr_start + NMinf;
+          Row_Num_start = XRow_Num % tm_info.nrowminf;
+          switch ( bfr2_input_client::tm_gen->output_tm_type ) {
+            case TMTYPE_DATA_T1: break;
+            case TMTYPE_DATA_T2:
+              hdr.s.u.dhdr.mfctr = MFCtr_start;
+              hdr.s.u.dhdr.rownum = Row_Num_start;
+              break;
+            case TMTYPE_DATA_T3:
+              hdr.s.u.dhdr.mfctr = MFCtr_start;
+              break;
+            default:
+              msg(4,"Invalid output_tm_type" );
+          }
+          //SETIOV( &iov[0], &hdr.s.hdr, nbDataHdr );
+          iov[0].iov_base = &hdr.s.hdr;
+          iov[0].iov_len  =
+            bfr2_input_client::tm_gen->tm_queue::nbDataHdr;
+          Qrow_start = tmqr->Qrow + data.n_Qrows -
+                          tmqr->Qrows_retired;
+          if ( Qrow_start >= bfr2_input_client::tm_gen->total_Qrows )
+            Qrow_start -= bfr2_input_client::tm_gen->total_Qrows;
+          nQ1 = nQrows_ready;
+          nQ2 = Qrow_start + nQ1 -
+                bfr2_input_client::tm_gen->total_Qrows;
+          if ( nQ2 > 0 ) {
+            nQ1 -= nQ2;
+            // SETIOV( &iov[2], row[0], nQ2 * nbQrow );
+            iov[2].iov_base = bfr2_input_client::tm_gen->row[0];
+            iov[2].iov_len  =
+              nQ2 * bfr2_input_client::tm_gen->tm_queue::nbQrow;
+            n_iov = 3;
+          } else n_iov = 2;
+          // SETIOV( &iov[1], row[Qrow_start],
+                      // nQ1 * nbQrow );
+          iov[1].iov_base = bfr2_input_client::tm_gen->row[Qrow_start];
+          iov[1].iov_len  =
+            nQ1 * bfr2_input_client::tm_gen->tm_queue::nbQrow;
+          data.n_Qrows_pending += nQrows_ready;
+          // Cannot update n_Qrows until the write is
+          // completed, else we'll get buffer corruption
+          // data.n_Qrows += nQrows_ready;
+          iwritev(iov, n_iov);
+        }
+        break; // out of while(tmqr)
+      } else if (bfr2_input_client::tm_gen->next_tmqr(&tmqr)) {
+        nl_assert(tmqr);
+        bool do_TS = tmqr->tsp != data.tsp;
+        // tmqr = tmqr->dereference(true);
+        data.tmqr = tmqr;
+        data.tsp = tmqr->tsp;
+        data.n_Qrows = 0;
+        data.n_Qrows_pending = 0;
+        if ( do_TS ) {
+          hdr.s.hdr.tm_id = TMHDR_WORD;
+          hdr.s.hdr.tm_type = TMTYPE_TSTAMP;
+          // SETIOV( &iov[0], &hdr.s.hdr, sizeof(tm_hdr_t) );
+          iov[0].iov_base = &hdr.s.hdr;
+          iov[0].iov_len  = sizeof(tm_hdr_t);
+          //SETIOV( &iov[1], &tmqr->TSq->TS, sizeof(tstamp_t) );
+          iov[1].iov_base = &tmqr->tsp->TS;
+          iov[1].iov_len  = sizeof(tstamp_t);
+          iwritev(iov, 2);
+          // do_read_reply( oc, sizeof(tm_hdr_t)+sizeof(tstamp_t),
+            // iov, 2 );
+          break;
+        } // else loop through again to evaluate actual data
+      } else {
+        break;
+      }
+    }
+    bfr2_input_client::tm_gen->unlock();
+  }
+}
+
+bool bfr2_output_client::iwritten(int ntr) {
+  if (obuf_empty()) {
+    if (data.n_Qrows_pending) {
+      data.n_Qrows += data.n_Qrows_pending;
+      data.n_Qrows_pending = 0;
+    }
+    output.ready = true;
+    if (blocked_input && bfr2_input_client::tm_gen) {
+      bfr2_input_client::tm_gen->run_input_queue();
+    }
+  }
+  return false;
+}
+
+Serverside_client *new_bfr_input_client(Authenticator *Auth, SubService *SS) {
+  bool blocking = (SS->name == "tm_bfr/input");
+  return new bfr2_input_client(Auth, Auth->get_client_app(), blocking);
+}
+
+Serverside_client *new_bfr_output_client(Authenticator *Auth, SubService *SS) {
+  bool is_fast = (SS->name == "tm_bfr/fast");
+  return new bfr2_output_client(Auth, Auth->get_client_app(), is_fast);
+}
+
+void add_subservices(Server *S) {
+  S->add_subservice(new SubService("tm_bfr/input", new_bfr_input_client,
+      (void *)(0), bfr2_input_client::auth_hook));
+  S->add_subservice(new SubService("tm_bfr/input-nb",
+      new_bfr_input_client,
+      (void *)(0), bfr2_input_client::auth_hook));
+  S->add_subservice(new SubService("tm_bfr/optimized",
+      new_bfr_output_client, (void *)(0)));
+  S->add_subservice(new SubService("tm_bfr/fast",
+      new_bfr_output_client, (void *)(0)));
+}
+
+/* Main method */
+int main(int argc, char **argv) {
+  oui_init_options(argc, argv);
+  setup_rundir();
+  
+  Server S("tm_bfr");
+  add_subservices(&S);
+  msg(0, "%s %s Starting", AppID.fullname, AppID.rev);
+  S.Start(Server::server_type);
+  msg(0, "Terminating");
+  return 0;
 }
