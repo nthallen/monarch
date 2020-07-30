@@ -157,7 +157,7 @@ unsigned int bfr2_input_client::process_data() {
   }
   if (blocked_input) {
     if (n_rows == 0) {
-      msg(MSG_DBG(0), "Input unblocked");
+      msg(MSG_DBG(0), "Input unblocked in process_data()");
       blocked_input = false;
       flags |= Fl_Read;
     } else {
