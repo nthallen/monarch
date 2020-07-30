@@ -113,6 +113,8 @@ class bfr2_input_client : public Serverside_client, public tm_rcvr,
     int rows_forced;
     /** True when inside process_data() to deter endless loops */
     bool processing_data;
+    /** The total number of rows received from DG */
+    int n_rows_received;
     
     // struct part_s {
       // tm_hdrs_t hdr;
@@ -166,7 +168,8 @@ class bfr2_output_client : public Serverside_client {
     struct read_s {
       /** max number of Qrows to be returned with any request */
       int maxQrows;
-      int rows_missing; // cumulative count
+      int rows_missing; //* cumulative count
+      int rows_output; //* Total rows sent to this client
       bool ready;
     } output;
 };

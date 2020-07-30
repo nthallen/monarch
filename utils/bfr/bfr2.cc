@@ -42,9 +42,11 @@ bfr2_input_client::bfr2_input_client(Authenticator *Auth,
   rows_forced = 0;
   processing_data = false;
   tm_gen = this;
+  n_rows_received = 0;
 }
 
 bfr2_input_client::~bfr2_input_client() {
+  msg(0, "Total rows received: %d", n_rows_received);
   msg(0, "Rows dropped safely: %d", rows_dropped);
   if (rows_forced)
     msg(1, "Rows dropped unsafely: %d", rows_forced);
@@ -125,6 +127,7 @@ unsigned int bfr2_input_client::process_data() {
       int rawsize = n_room * tm_rcvr::nbQrow;
       memcpy( dest, raw, rawsize );
       commit_rows( MFCtr, 0, n_room );
+      n_rows_received += n_room;
       raw += rawsize;
       n_rows -= n_room;
       MFCtr += n_room;
@@ -253,11 +256,13 @@ bfr2_output_client::bfr2_output_client(Authenticator *Auth,
   data.n_Qrows_pending = 0;
   output.maxQrows = 0; // Set in first read_reply()
   output.rows_missing = 0;
+  output.rows_output = 0;
   output.ready = true;
   all_readers.push_back(this);
 }
 
 bfr2_output_client::~bfr2_output_client() {
+  msg(0, "%s: Total rows output: %d", iname, output.rows_output);
   if (output.rows_missing)
     msg(1, "%s: %d rows dropped", iname, output.rows_missing);
   if (data.tmqr)
@@ -378,6 +383,8 @@ void bfr2_output_client::transmit() {
                           tmqr->Qrows_retired;
           if ( Qrow_start >= bfr2_input_client::tm_gen->total_Qrows )
             Qrow_start -= bfr2_input_client::tm_gen->total_Qrows;
+          nl_assert(Qrow_start >= 0 &&
+            Qrow_start < bfr2_input_client::tm_gen->total_Qrows);
           nQ1 = nQrows_ready;
           nQ2 = Qrow_start + nQ1 -
                 bfr2_input_client::tm_gen->total_Qrows;
@@ -435,6 +442,7 @@ bool bfr2_output_client::iwritten(int ntr) {
   if (obuf_empty()) {
     if (data.n_Qrows_pending) {
       data.n_Qrows += data.n_Qrows_pending;
+      output.rows_output += data.n_Qrows_pending;
       data.n_Qrows_pending = 0;
     }
     output.ready = true;
@@ -487,6 +495,8 @@ int main(int argc, char **argv) {
   S.add_subservices();
   msg(0, "%s %s Starting", AppID.fullname, AppID.rev);
   S.Start(Server::server_type);
+  S.ELoop.delete_children();
+  S.ELoop.clear_delete_queue(true);
   msg(0, "Terminating");
   return 0;
 }
