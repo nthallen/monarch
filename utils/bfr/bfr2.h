@@ -58,6 +58,11 @@ class bfr2_input_client : public Serverside_client, public tm_rcvr,
     bfr2_input_client(Authenticator *Auth, const char *iname,
           bool blocking);
     ~bfr2_input_client();
+    /**
+     * @return true if some output client is blocking
+     */
+    bool run_output_queue();
+    bool ready_to_quit();
     static const int bfr2_input_client_ibufsize = 4096*3;
     static bool auth_hook(Authenticator *Auth, SubService *SS);
     static bool tmg_opened;
@@ -69,7 +74,6 @@ class bfr2_input_client : public Serverside_client, public tm_rcvr,
     void process_tstamp();
     unsigned int process_data();
     void run_input_queue();
-    void run_output_queue();
     void read_reply(bfr2_output_client *ocb);
     /**
        Handles the actual trasmission after the message
@@ -167,7 +171,7 @@ class bfr : public Server {
     void add_subservices();
   protected:
     bool ready_to_quit();
-}
+};
 
 } // namespace DAS_IO
 

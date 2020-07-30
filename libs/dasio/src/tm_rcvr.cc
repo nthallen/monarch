@@ -99,6 +99,7 @@ namespace DAS_IO {
           // Will process rows_in_buf
           { unsigned int rows_processed = process_data();
             buf_mfctr += rows_processed;
+            rows_in_buf -= rows_processed;
             rows_left_in_msg -= rows_processed;
             cp += rows_processed * nbQrow;
             ncc -= rows_processed * nbQrow;

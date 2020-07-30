@@ -171,20 +171,23 @@ int bfr2_input_client::min_reader(tmq_ref *tmqr, bool forcing) {
 }
 
 void bfr2_input_client::run_input_queue() {
-  if ( blocked_input ) {
+  if (blocked_input || tm_gen_quit) {
     blocked_input = false;
     flags |= Fl_Read;
     process_message();
   }
 }
 
-void bfr2_input_client::run_output_queue() {
+bool bfr2_input_client::run_output_queue() {
+  bool blocked_output = false;
   std::list<bfr2_output_client*>::iterator oci;
   for (lock(__FILE__,__LINE__), oci = all_readers.begin(), unlock();
        oci != all_readers.end();
        lock(__FILE__,__LINE__), ++oci, unlock()) {
     bfr2_output_client *oc = *oci;
     oc->transmit();
+    if (!oc->obuf_empty())
+      blocked_output = true;
     // if (oc->output.ready) {
       // oc->output.ready = false;
       // read_reply(oc);
@@ -197,8 +200,17 @@ void bfr2_input_client::run_output_queue() {
     // }
   }
   run_input_queue();
+  return blocked_output;
 }
 
+bool bfr2_input_client::ready_to_quit() {
+  while (!queue_empty()) {
+    tmq_retire_check();
+    if (run_output_queue())
+      return false;
+  }
+  return true;
+}
 
 bfr2_output_client::bfr2_output_client(Authenticator *Auth,
           const char *iname, bool is_fast)
@@ -428,7 +440,10 @@ void bfr::add_subservices() {
 bool bfr::ready_to_quit() {
   if (!has_shutdown_b)
     Server::ready_to_quit();
-  return bfr2_input_client::queue_empty();
+  if (bfr2_input_client::tm_gen) {
+    return bfr2_input_client::tm_gen->ready_to_quit();
+  }
+  return true;
 }
 
 /* Main method */
@@ -436,7 +451,7 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   setup_rundir();
   
-  bfr S();
+  bfr S;
   S.add_subservices();
   msg(0, "%s %s Starting", AppID.fullname, AppID.rev);
   S.Start(Server::server_type);

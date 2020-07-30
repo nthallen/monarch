@@ -100,6 +100,7 @@ class tm_queue {
     int allocate_rows(unsigned char **rowp);
     void commit_rows( mfc_t MFCtr, int mfrow, int n_rows );
     void commit_tstamp( mfc_t MFCtr, le_time_t time );
+    void commit_quit();
     void retire_rows( tmq_ref *tmqd, int n_rows );
     // void retire_tstamp( tmq_tstamp_ref *tmqts );
     bool next_tmqr(tmq_ref **tmqrp);
