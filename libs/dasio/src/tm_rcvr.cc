@@ -18,6 +18,7 @@ namespace DAS_IO {
   tm_rcvr::tm_rcvr(Interface* interface) : interface(interface) {
     ncc = cp = 0;
     tm_info_ready = false;
+    processing_message = false;
     interface->set_binary_mode();
     tm_expect_hdr();
   }
@@ -30,6 +31,8 @@ namespace DAS_IO {
   }
 
   void tm_rcvr::process_message() {
+    if (processing_message) return;
+    processing_message = true;
     ncc = interface->nc - cp;
     while ( ncc >= toread ) {
       switch ( tm_state ) {
@@ -68,6 +71,7 @@ namespace DAS_IO {
               msg(MSG_ERROR, "%sInvalid TMTYPE: %04X", context(),
                 tm_msg->hdr.tm_type );
               seek_tmid();
+              processing_message = false;
               return;
           }
           break;
@@ -98,6 +102,10 @@ namespace DAS_IO {
           data_row = &interface->buf[cp];
           // Will process rows_in_buf
           { unsigned int rows_processed = process_data();
+            if (rows_processed == 0) {
+              processing_message = false;
+              return;
+            }
             buf_mfctr += rows_processed;
             rows_in_buf -= rows_processed;
             rows_left_in_msg -= rows_processed;
@@ -121,6 +129,7 @@ namespace DAS_IO {
     if ( toread > interface->bufsize )
       msg( MSG_FATAL, "%sRecord size %d exceeds allocated buffer size %d",
         context(), toread, interface->bufsize );
+    processing_message = false;
   }
 
   void tm_rcvr::process_init() {

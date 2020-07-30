@@ -63,6 +63,7 @@ class bfr2_input_client : public Serverside_client, public tm_rcvr,
      */
     bool run_output_queue();
     bool ready_to_quit();
+
     static const int bfr2_input_client_ibufsize = 4096*3;
     static bool auth_hook(Authenticator *Auth, SubService *SS);
     static bool tmg_opened;
@@ -101,12 +102,17 @@ class bfr2_input_client : public Serverside_client, public tm_rcvr,
      * by all of the bfr2_output_clients in all_readers.
      */
     int min_reader(tmq_ref *tmqr, bool forcing = false);
+    /**
+     * True if accessed via tm_bfr/input subservice.
+     */
     bool blocking;
     state_t state;
     /** Count of rows not transmitted to some or all clients */
     int rows_dropped;
     /** Count of rows dropped dangerously */
     int rows_forced;
+    /** True when inside process_data() to deter endless loops */
+    bool processing_data;
     
     // struct part_s {
       // tm_hdrs_t hdr;

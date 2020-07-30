@@ -40,6 +40,7 @@ bfr2_input_client::bfr2_input_client(Authenticator *Auth,
   // data_state_eval = 0;
   rows_dropped = 0;
   rows_forced = 0;
+  processing_data = false;
   tm_gen = this;
 }
 
@@ -58,6 +59,10 @@ bool bfr2_input_client::auth_hook(Authenticator *Auth, SubService *SS) {
 
 bool bfr2_input_client::protocol_input() {
   bool blocked_input_save = blocked_input;
+  if (blocked_input) {
+    msg(MSG_DBG(0),
+      "protocol_input() while blocked: flags=0x%X", flags);
+  }
   process_message();
   flags = blocking && blocked_input ? 0 : Fl_Read;
   if (blocked_input_save != blocked_input)
@@ -95,11 +100,20 @@ bool bfr2_input_client::process_eof() {
 }
 
 unsigned int bfr2_input_client::process_data() {
+  if (processing_data) return 0;
+  processing_data = true;
   unsigned char *raw = data_row;
   unsigned int rows_processed = 0;
   int n_rows = rows_in_buf;
+  int n_rows_when_blocked = n_rows;
   mfc_t MFCtr = buf_mfctr;
+  int n_times_stuck = 0;
+  static int n_times_stuck_global = 0;
 
+  if (blocked_input) {
+    msg(MSG_DBG(0), "Entering process_data() blocked n_rows=%d",
+      n_rows);
+  }
   tmq_retire_check();
   while ( n_rows ) {
     unsigned char *dest;
@@ -127,14 +141,30 @@ unsigned int bfr2_input_client::process_data() {
         }
         retire_rows(first_tmqr, 1);
       } else {
-        msg(MSG_DBG(0), "Input blocked");
-        blocked_input = true;
-        flags &= ~Fl_Read;
-        break;
+        if (!blocked_input) {
+          msg(MSG_DBG(0), "Input blocked in process_data()");
+          blocked_input = true;
+          flags &= ~Fl_Read;
+          n_rows_when_blocked = n_rows;
+        } else if (blocked_input && n_rows == n_rows_when_blocked) {
+          msg(n_times_stuck_global > 50 ? MSG_FATAL : MSG_WARN,
+            "Stuck in process_data %d/%d", ++n_times_stuck,
+            ++n_times_stuck_global);
+        }
       }
     }
-    run_output_queue();
+    if (run_output_queue()) break;
   }
+  if (blocked_input) {
+    if (n_rows == 0) {
+      msg(MSG_DBG(0), "Input unblocked");
+      blocked_input = false;
+      flags |= Fl_Read;
+    } else {
+      msg(MSG_DBG(0), "Leaving process_data() with Input blocked");
+    }
+  }
+  processing_data = false;
   return rows_processed;
 }
 
@@ -171,9 +201,10 @@ int bfr2_input_client::min_reader(tmq_ref *tmqr, bool forcing) {
 }
 
 void bfr2_input_client::run_input_queue() {
-  if (blocked_input || tm_gen_quit) {
-    blocked_input = false;
-    flags |= Fl_Read;
+  if (blocked_input) {
+    // blocked_input = false;
+    // flags |= Fl_Read;
+    msg(MSG_DBG(0), "Calling process_message() in run_input_queue()");
     process_message();
   }
 }
@@ -199,7 +230,7 @@ bool bfr2_input_client::run_output_queue() {
       // nl_assert(!oc->obuf_empty());
     // }
   }
-  run_input_queue();
+  // run_input_queue();
   return blocked_output;
 }
 
@@ -408,6 +439,7 @@ bool bfr2_output_client::iwritten(int ntr) {
     }
     output.ready = true;
     if (blocked_input && bfr2_input_client::tm_gen) {
+      msg(MSG_DBG(0), "%s: Calling run_input_queue", iname);
       bfr2_input_client::tm_gen->run_input_queue();
     }
   }

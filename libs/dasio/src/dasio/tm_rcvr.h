@@ -78,6 +78,10 @@ class tm_rcvr {
      *  Defined before calling process_data();
      */
     uint8_t *data_row;
+    /**
+     * true if in process_message() to prevent reentrancy.
+     */
+    bool processing_message;
   private:
     DAS_IO::Interface* interface;
     int nQrows;
