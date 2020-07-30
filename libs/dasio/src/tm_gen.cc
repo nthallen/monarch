@@ -23,6 +23,16 @@ bool tm_gen_bfr::iwritev(struct iovec *iov, int nparts, const char *where) {
   return rv;
 }
 
+bool tm_gen_bfr::process_eof() {
+  msg(MSG_FATAL, "Lost connection to bfr");
+  return true;
+}
+
+bool tm_gen_bfr::connect_failed() {
+  msg(MSG_FATAL, "Connect to bfr failed");
+  return true;
+}
+
 bool tm_gen_bfr::app_connected() {
   tm_hdr_t hdr = { TMHDR_WORD, TMTYPE_INIT };
   // struct iovec iov[2];
