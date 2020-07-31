@@ -145,6 +145,9 @@ namespace DAS_IO {
        * the event loop will be deleted. Otherwise Server::Start() will
        * exit without emptying the event loop. That can be useful when
        * applications wish to more carefully manage the cleanup process.
+       * Shutdown() can be called more than once in order to change the
+       * full shutdown selection provided the second call occurs before
+       * processing reaches Server::ready_to_quit().
        * @param full 
        */
       void Shutdown(bool full = true);
