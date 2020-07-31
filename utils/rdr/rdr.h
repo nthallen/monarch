@@ -20,6 +20,7 @@ class rdr_mlf : public Interface {
     rdr_mlf(const char *path);
     inline void set_reader(Reader *rdr) { rdr_ptr = rdr; }
     bool process_eof();
+    inline bool ibuf_empty() { return cp < nc; }
   protected:
     bool protocol_input();
     Reader* rdr_ptr;
