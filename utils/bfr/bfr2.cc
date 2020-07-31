@@ -116,10 +116,10 @@ unsigned int bfr2_input_client::process_data() {
     msg(MSG_DBG(0), "Entering process_data() blocked n_rows=%d",
       n_rows);
   }
-  tmq_retire_check();
   while ( n_rows ) {
     unsigned char *dest;
     lock(__FILE__,__LINE__);
+    tmq_retire_check();
     int n_room = allocate_rows(&dest);
     if ( n_room ) {
       unlock();
