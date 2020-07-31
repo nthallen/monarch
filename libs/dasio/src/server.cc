@@ -202,6 +202,9 @@ namespace DAS_IO {
   bool Server::ready_to_quit() {
     if (shutdown_requested && !has_shutdown_b) {
       do_shutdown(full_shutdown_requested);
+      // As documented, if full shutdown is not requested,
+      // we return true to exit Server::Start and leave
+      // the final details to the application:
       if (!full_shutdown_requested)
         return true;
     }
