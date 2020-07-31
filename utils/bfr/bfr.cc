@@ -7,7 +7,7 @@
 #include <list>
 #include <string.h>
 #include "rundir.h"
-#include "bfr2.h"
+#include "bfr.h"
 #include "oui.h"
 #include "nl.h"
 #include "nl_assert.h"

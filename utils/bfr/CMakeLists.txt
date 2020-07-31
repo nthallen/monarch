@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include( ../../oui_setup.cmake )
 
 OUI_FILE(bfr.oui)
-add_executable(bfr bfr2.cc bfroui.cc rundir.cc)
+add_executable(bfr bfr.cc bfroui.cc rundir.cc)
 target_link_libraries(bfr dasio nl pthread)
 
 install(TARGETS bfr RUNTIME DESTINATION bin)
