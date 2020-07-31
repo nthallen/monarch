@@ -29,15 +29,6 @@ bfr2_input_client::bfr2_input_client(Authenticator *Auth,
       tm_queue(),
       blocking(blocking)
 {
-  // state = TM_STATE_HDR;
-  // buf = (unsigned char *)&part.hdr;
-  // write.nbrow_rec = 0;
-  // write.nbhdr_rec = 0;
-  // nc = 0;
-  // write.off_msg = 0;
-  // write.nb_rec = 0;
-  // write.off_queue = 0;
-  // data_state_eval = 0;
   rows_dropped = 0;
   rows_forced = 0;
   processing_data = false;
@@ -150,9 +141,11 @@ unsigned int bfr2_input_client::process_data() {
           flags &= ~Fl_Read;
           n_rows_when_blocked = n_rows;
         } else if (blocked_input && n_rows == n_rows_when_blocked) {
-          msg(n_times_stuck_global > 50 ? MSG_FATAL : MSG_WARN,
-            "Stuck in process_data %d/%d", ++n_times_stuck,
-            ++n_times_stuck_global);
+          ++n_times_stuck_global;
+          if (++n_times_stuck == 2)
+            msg(MSG_WARN,
+            "Stuck in process_data %d/%d", n_times_stuck,
+            n_times_stuck_global);
         }
       }
     }
@@ -222,18 +215,7 @@ bool bfr2_input_client::run_output_queue() {
     oc->transmit();
     if (!oc->obuf_empty())
       blocked_output = true;
-    // if (oc->output.ready) {
-      // oc->output.ready = false;
-      // read_reply(oc);
-      // if (oc->obuf_empty()) {
-        // oc->output.ready = true;
-      // } else {
-      // }
-    // } else {
-      // nl_assert(!oc->obuf_empty());
-    // }
   }
-  // run_input_queue();
   return blocked_output;
 }
 
@@ -290,8 +272,6 @@ void bfr2_output_client::transmit() {
   nl_assert(data.n_Qrows_pending == 0);
   if (output.maxQrows == 0) {
     output.maxQrows = bfr2_input_client::tm_gen->total_Qrows;
-    // output.maxQrows = is_fast ? 1 : total_Qrows;
-    // output.maxQrows = 1;
   }
   
   if ( data.tmqr == 0 ) {
@@ -353,8 +333,6 @@ void bfr2_output_client::transmit() {
           mfc_t MFCtr_start;
           int Qrow_start, nQ1, nQ2;
           
-          // if ( nQrows_ready > output.maxQrows )
-            // nQrows_ready = output.maxQrows;
           hdr.s.hdr.tm_id = TMHDR_WORD;
           hdr.s.hdr.tm_type = bfr2_input_client::tm_gen->output_tm_type;
           hdr.s.u.dhdr.n_rows = nQrows_ready;
