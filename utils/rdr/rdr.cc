@@ -61,8 +61,10 @@ bool rdr_mlf::protocol_input() {
 }
 
 // Return non-zero where there is nothing else to read
-// This is absolutely a first cut. It will stop at the first sign of trouble (i.e. a missing file)
-// What I will want is a record of first file and last file and/or first time/last time
+// This is absolutely a first cut. It will stop at the
+// first sign of trouble (i.e. a missing file)
+// What I will want is a record of first file and last
+// file and/or first time/last time
 bool rdr_mlf::process_eof() {
   // Is this ever true? I don't think so!
   if ( fd != -1 ) {
@@ -128,12 +130,6 @@ void Reader::event(enum tm_gen_event evt) {
       break;
     case tmg_event_quit:
       msg( 0, "Quit event" );
-      // tmr->settime(0);
-      // lock(__FILE__,__LINE__);
-      // started = false;
-      // quit = true;
-      // unlock();
-      // Shutdown(false);
       break;
     case tmg_event_fast:
       break;
@@ -141,8 +137,8 @@ void Reader::event(enum tm_gen_event evt) {
       break;
   }
   unlock();
+  tm_generator::event(evt);
   if (evt == tmg_event_quit) {
-    tm_generator::event(evt);
     Shutdown(false); // cancel the full part
   }
 }
