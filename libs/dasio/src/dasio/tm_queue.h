@@ -110,12 +110,21 @@ class tm_queue {
     unsigned char *raw;
     unsigned char **row;
     tm_hdrw_t output_tm_type;
+    /** The number of rows the queue can hold at one time */
     int total_Qrows;
-    int nbQrow; // may differ from nbrow if stripping MFCtr & Synch
+    /** The size in bytes of one row stored in the queue.
+     *  This may differ from nbrow if stripping MFCtr & Synch.
+     */
+    int nbQrow;
+    /** The size in bytes of the header for data messages. */
     int nbDataHdr;
-    /** Row index in the tm_queue where the next row of data will be read from */
+    /** Row index in the tm_queue where the next row of data
+     *  will be read from
+     */
     int first;
-    /** Row index in the tm_queue where the next row of data will be written */
+    /** Row index in the tm_queue where the next row of data
+     *  will be written
+     */
     int last;
     /** True if tm_queue is full */
     bool full;
