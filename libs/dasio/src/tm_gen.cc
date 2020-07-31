@@ -16,7 +16,7 @@ tm_gen_bfr::tm_gen_bfr(bool collection)
 bool tm_gen_bfr::iwritev(struct iovec *iov, int nparts, const char *where) {
   nl_assert(is_negotiated());
   bool rv = Client::iwritev(iov, nparts);
-  if (!buffering && onc) {
+  if (!buffering && !obuf_empty()) {
     buffering = true;
     tm_generator::TM_server->buffering(true);
   }

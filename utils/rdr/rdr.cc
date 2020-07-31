@@ -86,64 +86,6 @@ bool rdr_mlf::process_eof() {
   return false;
 }
 
-bool Reader::ready_to_quit() {
-  // check the tm_queue. If it is empty return true
-  if (first_tmqr == 0 ||
-      (first_tmqr == last_tmqr && first_tmqr->n_Qrows == 0)) {
-    return true;
-  }
-  return false;
-}
-
-void rdr_init( int argc, char **argv ) {
-  int c;
-
-  optind = OPTIND_RESET; /* start from the beginning */
-  opterr = 0; /* disable default error message */
-  while ((c = getopt(argc, argv, opt_string)) != -1) {
-    switch (c) {
-      case 'A':
-        opt_autostart = 1;
-        opt_regulate = 0;
-        break;
-      case 'a':
-        opt_autostart = 1;
-        opt_regulate = 1;
-        break;
-      case 'P':
-        opt_basepath = optarg;
-        break;
-      case 'k':
-        opt_kluge_a = 1;
-        break;
-      case 'q':
-        opt_autoquit = 1;
-        break;
-      case 'F':
-        opt_start_file = strtoul(optarg, NULL, 10);
-        break;
-      case 'L':
-        opt_end_file = strtoul(optarg, NULL, 10);
-        break;
-      case '?':
-        msg(MSG_FATAL, "Unrecognized Option -%c", optopt);
-    }
-  }
-}
-
-int main( int argc, char **argv ) {
-  oui_init_options( argc, argv );
-  msg(0, "Startup");
-  load_tmdac(opt_basepath);
-  int nQrows = RDR_BUFSIZE/tmi(nbrow);
-  if (nQrows < 2) nQrows = 2;
-  rdr_mlf *mlf = new rdr_mlf(opt_basepath);
-  Reader *rdr = new Reader(nQrows, mlf); 
-  rdr->init(nQrows, false, RDR_BUFSIZE);
-  rdr->start();
-  msg(0, "Shutdown");
-}
-
 Reader::Reader(int nQrows, rdr_mlf *mlf)
     : tm_generator(),
       tm_rcvr(mlf),
@@ -167,29 +109,11 @@ Reader::Reader(int nQrows, rdr_mlf *mlf)
   ELoop.add_child(mlf);
 }
 
-void Reader::lock(const char *by, int line) {
-  int rv = pthread_mutex_lock(&tmq_mutex);
-  if (rv)
-    msg( MSG_FATAL, "Mutex lock failed: %s",
-            strerror(rv));
-  locked_by_file = by;
-  locked_by_line = line;
-}
-
-void Reader::unlock() {
-  int rv = pthread_mutex_unlock(&tmq_mutex);
-  if (rv)
-    msg( MSG_FATAL, "Mutex unlock failed: %s",
-            strerror(rv));
-}
-
-void Reader::service_row_timer() {
-  if (regulated) transmit_data(true);
-}
-
 void Reader::start() {
   if (autostart) execute("TMc");
   Start(Srv_Unix);
+  ELoop.delete_children();
+  ELoop.clear_delete_queue(true);
 }
 
 void Reader::event(enum tm_gen_event evt) {
@@ -217,6 +141,10 @@ void Reader::event(enum tm_gen_event evt) {
       break;
   }
   unlock();
+}
+
+void Reader::service_row_timer() {
+  if (regulated) transmit_data(true);
 }
 
 void Reader::process_tstamp() {
@@ -272,6 +200,36 @@ unsigned int Reader::process_data() {
   return rows_processed;
 }
 
+bool Reader::ready_to_quit() {
+  if (!tm_gen_quit) commit_quit();
+  while (!queue_empty()) {
+    if (is_buffering) return false;
+    transmit_data(false);
+  }
+  return !is_buffering;
+  // if (first_tmqr == 0 ||
+      // (first_tmqr == last_tmqr && first_tmqr->n_Qrows == 0)) {
+    // return true;
+  // }
+  // return false;
+}
+
+void Reader::lock(const char *by, int line) {
+  int rv = pthread_mutex_lock(&tmq_mutex);
+  if (rv)
+    msg( MSG_FATAL, "Mutex lock failed: %s",
+            strerror(rv));
+  locked_by_file = by;
+  locked_by_line = line;
+}
+
+void Reader::unlock() {
+  int rv = pthread_mutex_unlock(&tmq_mutex);
+  if (rv)
+    msg( MSG_FATAL, "Mutex unlock failed: %s",
+            strerror(rv));
+}
+
 void Reader::buffering(bool bfring) {
   is_buffering = bfring;
   if (!bfring)
@@ -279,3 +237,52 @@ void Reader::buffering(bool bfring) {
 }
 
 void tminitfunc() {}
+
+void rdr_init( int argc, char **argv ) {
+  int c;
+
+  optind = OPTIND_RESET; /* start from the beginning */
+  opterr = 0; /* disable default error message */
+  while ((c = getopt(argc, argv, opt_string)) != -1) {
+    switch (c) {
+      case 'A':
+        opt_autostart = 1;
+        opt_regulate = 0;
+        break;
+      case 'a':
+        opt_autostart = 1;
+        opt_regulate = 1;
+        break;
+      case 'P':
+        opt_basepath = optarg;
+        break;
+      case 'k':
+        opt_kluge_a = 1;
+        break;
+      case 'q':
+        opt_autoquit = 1;
+        break;
+      case 'F':
+        opt_start_file = strtoul(optarg, NULL, 10);
+        break;
+      case 'L':
+        opt_end_file = strtoul(optarg, NULL, 10);
+        break;
+      case '?':
+        msg(MSG_FATAL, "Unrecognized Option -%c", optopt);
+    }
+  }
+}
+
+int main( int argc, char **argv ) {
+  oui_init_options( argc, argv );
+  msg(0, "Startup");
+  load_tmdac(opt_basepath);
+  int nQrows = RDR_BUFSIZE/tmi(nbrow);
+  if (nQrows < 2) nQrows = 2;
+  rdr_mlf *mlf = new rdr_mlf(opt_basepath);
+  Reader *rdr = new Reader(nQrows, mlf); 
+  rdr->init(nQrows, false, RDR_BUFSIZE);
+  rdr->start();
+  msg(0, "Shutdown");
+}
