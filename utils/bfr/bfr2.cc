@@ -96,7 +96,7 @@ bool bfr2_input_client::process_eof() {
   // This shuts down the listening ports, but it does
   // not shutdown everything. We will continue to process
   // the tm_queue until all clients have received all the data.
-  srvr->Shutdown();
+  srvr->Shutdown(false);
   commit_quit();
   return false;
 }
