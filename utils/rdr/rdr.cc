@@ -76,7 +76,8 @@ bool rdr_mlf::process_eof() {
   }
   if ( fd == -1 ) {
     if ( opt_autoquit ) {
-      rdr_ptr->Shutdown(false);
+      rdr_ptr->event(tmg_event_quit);
+      // rdr_ptr->Shutdown(false);
       return true;
     }
     flags = 0;
@@ -128,12 +129,14 @@ void Reader::event(enum tm_gen_event evt) {
       break;
     case tmg_event_quit:
       msg( 0, "Quit event" );
-      tmr->settime(0);
-      lock(__FILE__,__LINE__);
-      started = false;
-      quit = true;
-      unlock();
-      Shutdown(false);
+      Interface::dereference(mlf);
+      mlf = 0;
+      // tmr->settime(0);
+      // lock(__FILE__,__LINE__);
+      // started = false;
+      // quit = true;
+      // unlock();
+      // Shutdown(false);
       break;
     case tmg_event_fast:
       break;
@@ -141,6 +144,7 @@ void Reader::event(enum tm_gen_event evt) {
       break;
   }
   unlock();
+  tm_generator::event(evt);
 }
 
 void Reader::service_row_timer() {
@@ -201,6 +205,7 @@ unsigned int Reader::process_data() {
 }
 
 bool Reader::ready_to_quit() {
+  Server::ready_to_quit();
   if (!tm_gen_quit) commit_quit();
   while (!queue_empty()) {
     if (is_buffering) return false;
