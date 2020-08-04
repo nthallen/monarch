@@ -68,6 +68,12 @@ namespace DAS_IO {
               toread = nbDataHdr;
               tm_state = TM_STATE_DATA_HDR;
               break;
+            case TMTYPE_QUIT:
+              process_quit();
+              cp += toread;
+              ncc -= toread;
+              tm_expect_hdr();
+              break;
             default:
               msg(MSG_ERROR, "%sInvalid TMTYPE: %04X", context(),
                 tm_msg->hdr.tm_type );
