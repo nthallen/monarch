@@ -123,7 +123,7 @@ namespace DAS_IO {
           ELoop->delete_child(this);
         return false;
       }
-      msg(MSG_DEBUG, "%s: Accepted connection from %s for %s", iname,
+      msg(MSG_DEBUG, "Accepted connection from %s for %s",
           client_app, subservice.c_str());
       this->fd = -1;
       if (ELoop) {

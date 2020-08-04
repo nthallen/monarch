@@ -49,6 +49,10 @@ class tm_rcvr {
      * data before returning.
      */
     virtual unsigned int process_data() = 0;
+    /**
+     * The default deletes the Interface.
+     */
+    virtual void process_quit();
     void seek_tmid();
     void tm_expect_hdr();
     virtual const char *context();

@@ -61,7 +61,7 @@ class bfr2_input_client : public Serverside_client, public tm_rcvr,
     /**
      * @return true if some output client is blocking
      */
-    bool run_output_queue();
+    bool run_output_queue(bool quitting);
     bool ready_to_quit();
 
     static const int bfr2_input_client_ibufsize = 4096*3;
@@ -74,6 +74,14 @@ class bfr2_input_client : public Serverside_client, public tm_rcvr,
     void process_init();
     void process_tstamp();
     unsigned int process_data();
+    /**
+     * bfr needs to override this in case it is ever called.
+     * As a server, we need to delay closing until the client
+     * tm_gen has closed. At the moment, we do not expect this
+     * will be called simply because tm_generator can close
+     * the connection to trigger quit processing.
+     */
+    void process_quit();
     void run_input_queue();
     void read_reply(bfr2_output_client *ocb);
     /**
@@ -116,23 +124,6 @@ class bfr2_input_client : public Serverside_client, public tm_rcvr,
     /** The total number of rows received from DG */
     int n_rows_received;
     
-    // struct part_s {
-      // tm_hdrs_t hdr;
-      // // char *dptr; // pointer into other buffers
-      // // int nbdata; // How many bytes are still expected in this sub-transfer
-      // // part.nbdata is replaced with Interface::bufsize. As received data is
-      // // processed, buf is advanced and bufsize is reduced until all data is
-      // // consumed. This differs from standard Interface semantics, where
-      // // consume(n) shifts remaining data
-    // } part;
-    
-    // struct write_s {
-      // int nbrow_rec; // bytes per row received
-      // int nbhdr_rec; // bytes in the header of data messages
-      // int off_msg; // bytes already read from this write
-      // int nb_rec; // bytes remaining in this record
-      // int off_queue; // bytes already written in this queue block
-    // } write;
   private:
     bool process_tm_info();
     // int (bfr2_input_client::*data_state_eval)();
@@ -146,9 +137,11 @@ class bfr2_output_client : public Serverside_client {
     ~bfr2_output_client();
     static const int bfr2_output_client_ibufsize = 80;
   protected:
-    void transmit();
+    void transmit(bool quitting);
     bool iwritten(int nb);
+    bool protocol_timeout();
     bool is_fast;
+    bool quit_sent;
     struct iovec iov[3];
     
     tm_hdrs_t hdr; // was part.hdr
