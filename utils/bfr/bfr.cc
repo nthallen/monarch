@@ -1,7 +1,7 @@
-/** @file bfr.cc
+/** @file bfr2.cc
  *  Telemetry Buffer
- *  est. 25 March 2019
- *  ported from ARP-DAS
+ *  Ported from ARP-DAS circa 25 March 2019
+ *  Rewritten using tm_rcvr starting 26 July 2020
  */
 
 #include <list>
@@ -13,349 +13,158 @@
 #include "nl_assert.h"
 #include "dasio/msg.h"
 #include "dasio/appid.h"
-#include "dasio/tm_queue.h"
 
 using namespace DAS_IO;
 
-bool bfr_input_client::tmg_opened = false;
-bfr_input_client *bfr_input_client::tm_gen;
-bool blocked_writer = false;
-bool blocked_reader = false;
-std::list<bfr_output_client*> all_readers;
+bool bfr2_input_client::tmg_opened = false;
+bfr2_input_client *bfr2_input_client::tm_gen;
+// ### figure out if these can go into the class
+bool blocked_input = false;
+std::list<bfr2_output_client*> all_readers;
 
-bool bfr_input_client::auth_hook(Authenticator *Auth, SubService *SS) {
+bfr2_input_client::bfr2_input_client(Authenticator *Auth,
+          const char *iname, bool blocking)
+    : Serverside_client(Auth, iname, bfr2_input_client_ibufsize),
+      tm_rcvr(this),
+      tm_queue(),
+      blocking(blocking)
+{
+  rows_dropped = 0;
+  rows_forced = 0;
+  processing_data = false;
+  tm_gen = this;
+  n_rows_received = 0;
+}
+
+bfr2_input_client::~bfr2_input_client() {
+  msg(0, "Total rows received: %d", n_rows_received);
+  msg(0, "Rows dropped safely: %d", rows_dropped);
+  if (rows_forced)
+    msg(1, "Rows dropped unsafely: %d", rows_forced);
+}
+
+bool bfr2_input_client::auth_hook(Authenticator *Auth, SubService *SS) {
   // should lock the tm_queue here:
   if (tmg_opened) return false;
   tmg_opened = true;
   return true;
 }
 
-bfr_input_client::bfr_input_client(Authenticator *Auth, const char *iname, bool blocking)
-    : Serverside_client(Auth, iname, bfr_input_client_ibufsize), blocking(blocking) {
-  // data.tmqr = 0;
-  // data.n_Qrows = 0;
-  state = TM_STATE_HDR;
-  bufsize = sizeof(part.hdr);
-  set_binary_mode();
-  buf = (unsigned char *)&part.hdr;
-  write.nbrow_rec = 0;
-  write.nbhdr_rec = 0;
-  nc = 0;
-  write.off_msg = 0;
-  write.nb_rec = 0;
-  write.off_queue = 0;
-  data_state_eval = 0;
-  tm_gen = this;
-}
-
-bfr_input_client::~bfr_input_client() {
-  bufsize = 0;
-  buf = 0;
-}
-
-bool bfr_input_client::process_eof() {
-  // Ideally, we should ensure that the tm_queue has been flushed
-  srvr->Shutdown();
-  return Serverside_client::process_eof();
-}
-
-bool bfr_input_client::protocol_input() {
-  blocked_writer = false;
-  int new_rows = 0; // This might substitute...
-  
-  // _IO_SET_WRITE_NBYTES( ctp, msg->i.nbytes );
-  // Not necessary since we'll handle the return ourselves
-  // However, that means we need to store the total message size
-  // Use off_msg for total size.
-  
-  // We loop here as long as we have work to do. We can get out
-  // if we've processed all the data in the message (nb_msg == 0)
-  // or exhausted all the available space in the DQ (nbdata == 0)
-  //------
-  // In the porting process on 3/26/19, I will make the following replacements
-  //   part.dptr replaced with buf
-  //   part.nbdata replaced with bufsize
-  //   write.nb_msg replace with nc
-  //   ocb->rw. with nothing. See below
-  //   ocb-> replace with nothing. I mean, not 'nothing', but nothing
-  //   DQD_Queue.last replace with last_tmqr
-  while ( nc > 0 && bufsize > 0 ) {
-    int nb_read;
-    nl_assert(nc <= bufsize + binary_offset);
-    if (state == TM_STATE_HDR) {
-      if (nc >= sizeof(tm_hdr_t)) {
-        if ( part.hdr.s.hdr.tm_id != TMHDR_WORD ) {
-          msg(MSG_FATAL, "Invalid Message header" );
-          // MsgError( write.rcvid, EINVAL );
-          // Scan ahead for TMHDR_WORD
-          bufsize = sizeof( part.hdr );
-          buf = (unsigned char *)&part.hdr;
-          write.off_msg = 0;
-          return false;
-        }
-        switch (part.hdr.s.hdr.tm_type) {
-          case TMTYPE_INIT:
-            break;
-          case TMTYPE_TSTAMP:
-            bufsize = sizeof(tm_hdr_t) + sizeof(tstamp_t);
-            break;
-          case TMTYPE_DATA_T1:
-            // bufsize = sizeof(tm_hdr_t) + sizeof(tm_data_t1_t)+1;
-            break;
-          case TMTYPE_DATA_T2:
-            // bufsize = sizeof(tm_hdr_t) + sizeof(tm_data_t2_t)+1;
-            break;
-          case TMTYPE_DATA_T4:
-            // bufsize = sizeof(tm_hdr_t) + sizeof(tm_data_t4_t)+1;
-            break;
-          case TMTYPE_DATA_T3:
-            // bufsize = sizeof(tm_hdr_t) + sizeof(tm_data_t3_t)+1;
-            break;
-          default:
-            msg(4, "Invalid bfr state %d", state);
-        }
-        state = TM_STATE_HDR2;
-      } else {
-        return false; // wait for more input
-      }
-    }
-    
-    nb_read = nc < bufsize ?
-      nc : bufsize;
-    buf += nb_read;
-    bufsize -= nb_read;
-    nc -= nb_read;
-    write.off_msg += nb_read; // write.off_msg is maybe cp?? except it is persistent
-    if ( state == TM_STATE_DATA ) {
-      // The data has already been read into the buffer
-      write.nb_rec -= nb_read;
-      write.off_queue += nb_read;
-    }
-    nl_assert(bufsize >= 0);
-    if ( bufsize == 0 ) {
-      switch ( state ) {
-        case TM_STATE_HDR:
-          msg(3, "Should not see TM_STATE_HDR here");
-        case TM_STATE_HDR2:
-          switch ( part.hdr.s.hdr.tm_type ) {
-            case TMTYPE_INIT:
-              if ( last_tmqr )
-                msg(MSG_FATAL, "Second TMTYPE_INIT received" );
-              write.off_queue = sizeof(tm_hdrs_t)-sizeof(tm_hdr_t);
-              bufsize = sizeof(tm_info) - write.off_queue;
-              buf = (unsigned char *)&tm_info;
-              memcpy( buf, &part.hdr.raw[sizeof(tm_hdr_t)],
-                      write.off_queue );
-              buf += write.off_queue;
-              state = TM_STATE_INFO;
-              break;
-            case TMTYPE_TSTAMP:
-              if ( last_tmqr == 0 )
-                msg(MSG_FATAL, "TMTYPE_TSTAMP received before _INIT" );
-              if (write.off_msg >= sizeof(tm_hdr_t)+sizeof(tstamp_t)) {
-                lock(__FILE__, __LINE__);
-                commit_tstamp(part.hdr.s.u.ts.mfc_num, part.hdr.s.u.ts.secs);
-                unlock();
-                new_rows++;
-                state = TM_STATE_HDR; // already there!
-                bufsize = sizeof( part.hdr );
-                buf = (unsigned char *)&part.hdr;
-                write.off_msg = 0;
-              }
-              break;
-            case TMTYPE_DATA_T1:
-            case TMTYPE_DATA_T2:
-            case TMTYPE_DATA_T4:
-              msg(4,"This state does not exist");
-            case TMTYPE_DATA_T3:
-              if (write.off_msg >= sizeof(tm_hdr_t)+sizeof(tm_data_t3_t)) {
-                if ( last_tmqr == 0 )
-                  msg(MSG_FATAL, "Second TMTYPE_DATA* received before _INIT" );
-                nl_assert( data_state_eval != 0 );
-                nl_assert( part.hdr.s.hdr.tm_type == output_tm_type );
-                write.nb_rec = part.hdr.s.u.dhdr.n_rows *
-                  write.nbrow_rec;
-                write.off_queue = 0;
-                new_rows += (this->*data_state_eval)();
-                // ### Make sure data_state_eval returns the number
-                // of rows that have been completely added to DQ
-                if ( write.nb_rec <= 0 ) {
-                  state = TM_STATE_HDR;
-                  bufsize = sizeof(part.hdr);
-                  buf = (unsigned char *)&part.hdr;
-                  write.off_msg = 0;
-                } // else break out
-              }
-              break;
-            default:
-              msg( 4, "Invalid state" );
-          }
-          break;
-        case TM_STATE_INFO:
-          // ### Check return value
-          if (process_tm_info())
-            msg(MSG_FATAL, "We cannot continue with this");
-          // blocking = false; // nonblock;
-          new_rows++;
-          state = TM_STATE_HDR; //### Use state-init function?
-          bufsize = sizeof(part.hdr);
-          buf = (unsigned char *)&part.hdr;
-          write.off_msg = 0;
-          break;
-        case TM_STATE_DATA:
-          new_rows += (this->*data_state_eval)();
-          if ( write.nb_rec <= 0 ) {
-            state = TM_STATE_HDR;
-            bufsize = sizeof(part.hdr);
-            buf = (unsigned char *)&part.hdr;
-            write.off_msg = 0;
-          }
-          break;
-      }
-    }
+bool bfr2_input_client::protocol_input() {
+  bool blocked_input_save = blocked_input;
+  if (blocked_input) {
+    msg(MSG_DBG(0),
+      "protocol_input() while blocked: flags=0x%X", flags);
   }
-  if (bufsize == 0) {
-    // bufsize == 0 should only happen when we are in a data state.
-    nl_assert(state == TM_STATE_HDR2 || state == TM_STATE_DATA);
-    nl_assert(blocking);
-    blocked_writer = true;
-    flags &= ~Fl_Read;
-    run_read_queue();
-    if (bufsize == 0) {
-      // msg(MSG, "Still blocked after run_read_queue()");
-      nl_assert(blocked_writer);
-    }
-  } else {
-    if ( new_rows ) run_read_queue();
-  }
+  process_message();
+  flags = blocking && blocked_input ? 0 : Fl_Read;
+  if (blocked_input_save != blocked_input)
+    msg(MSG_DBG(0), "Input %sblocked", blocked_input ? "" : "un");
   return false;
 }
 
-/** As soon as tm_info has been received, we can decide what
-   data format to output, how much buffer space to allocate
-   and in what configuration. We can then create the first
-   timestamp record (with the TS in the tm_info) and the
-   first dq_descriptor, albeit with no Qrows, but refrencing
-   the the first timestamp. Then we can check to see if any
-   readers are waiting, and initialize them.
-   @return true if the incoming tm_info is insane.
-*/
-bool bfr_input_client::process_tm_info() {
-  char *rowptr;
-  int i;
+// Since we accept data from any frame, we need to copy the incoming
+// frame definition into tm_info so tm_client::process_init()
+// will be happy.
+void bfr2_input_client::process_init() {
+  memcpy(&tm_info, &tm_msg->body.init.tm, sizeof(tm_dac_t));
+  tm_rcvr::process_init();
 
-  // Perform sanity checks
-  if (tmi(nbminf) == 0 ||
-      tmi(nbrow) == 0 ||
-      tmi(nrowmajf) == 0 ||
-      tmi(nrowsper) == 0 ||
-      tmi(nsecsper) == 0 ||
-      tmi(mfc_lsb) == tmi(mfc_msb) ||
-      tmi(mfc_lsb) >= tmi(nbrow) ||
-      tmi(mfc_msb) >= tmi(nbrow) ||
-      tmi(nbminf) < tmi(nbrow) ||
-      tmi(nbminf) % tmi(nbrow) != 0 ||
-      tm_info.nrowminf != tmi(nbminf)/tmi(nbrow)) {
-    msg(MSG_ERROR, "Sanity Checks failed on incoming stream" );
-    return true;
-  }
-
-  // What data format should we output?
   lock(__FILE__, __LINE__);
-
   int total_Qrows = tm_info.nrowminf *
     ( ( tmi(nrowsper) * 60 + tmi(nsecsper)*tm_info.nrowminf - 1 )
         / (tmi(nsecsper)*tm_info.nrowminf) );
-
   init(total_Qrows);
-
-  switch (output_tm_type) {
-    case TMTYPE_DATA_T1:
-      msg(MSG_FATAL, "TMTYPE_DATA_T1 not supported");
-      // write.nbhdr_rec = TM_HDR_SIZE_T1;
-      // data_state_eval = data_state_T1;
-      break;
-    case TMTYPE_DATA_T2:
-      msg(MSG_FATAL, "TMTYPE_DATA_T2 not supported");
-      // write.nbhdr_rec = TM_HDR_SIZE_T2;
-      // write.nbrow_rec = tmi(nbrow);
-      // data_state_eval = data_state_T2;
-      break;
-    case TMTYPE_DATA_T3:
-      write.nbhdr_rec = TM_HDR_SIZE_T3;
-      write.nbrow_rec = tmi(nbrow) - 4;
-      data_state_eval = &DAS_IO::bfr_input_client::data_state_T3;
-      break;
-    default:
-      msg(4,"Invalid output_tm_type");
-  }
-  
   commit_tstamp(tm_info.t_stmp.mfc_num, tm_info.t_stmp.secs);
   unlock();
+}
+void bfr2_input_client::process_tstamp() {
+  tm_rcvr::process_tstamp();
+  commit_tstamp(tm_info.t_stmp.mfc_num, tm_info.t_stmp.secs);
+}
+
+bool bfr2_input_client::process_eof() {
+  // This shuts down the listening ports, but it does
+  // not shutdown everything. We will continue to process
+  // the tm_queue until all clients have received all the data.
+  srvr->Shutdown(false);
+  commit_quit();
   return false;
 }
 
-// The job of data_state_eval is to decide how big the next
-// chunk of data should be and where it should go.
-// This involves finding space in the data queue and
-// setting part.dptr and part.nbdata. We may need to expire
-// rows from the data queue, but if we aren't nonblocking, we
-// might block to allow the readers to handle what we've already
-// got.
-// data_state_eval() does not transfer any data via ReadMessage,
-// but allocate_qrows() will copy any bytes from the hdr if
-// ocb->state == TM_STATE_HDR
-//
-// Returns the number of rows that have been completed in the
-// data queue.
+unsigned int bfr2_input_client::process_data() {
+  if (processing_data) return 0;
+  processing_data = true;
+  unsigned char *raw = data_row;
+  unsigned int rows_processed = 0;
+  int n_rows = rows_in_buf;
+  int n_rows_when_blocked = n_rows;
+  mfc_t MFCtr = buf_mfctr;
+  int n_times_stuck = 0;
+  static int n_times_stuck_global = 0;
 
-// First check the data we've already moved into the queue
-// The rows we read in will always begin at Data_Queue.last,
-// which should be consistent with the end of the current
-// tmqr data set. The number of rows is also guaranteed to
-// fit within the Data_Queue without wrapping, so it should
-// be safe to add nrrecd to Data_Queue.last, though it may
-// be necessary to set last to zero afterwards.
-//   T1->T1 just add to current tmqr without checks
-//   T2->T2 Copy straight in, then verify continuity with previous
-// records.
-//   T3->T3 Copy straight in. Verify consecutive, etc.
-
-int bfr_input_client::data_state_T3() {
-  lock(__FILE__,__LINE__);
-  
-  int nrrecd = write.off_queue/nbQrow;
-  nl_assert(bufsize == 0);
-  nl_assert(write.off_queue == nrrecd*nbQrow); // Not sure about this
-
-  if (state == TM_STATE_DATA) {
-    commit_rows(part.hdr.s.u.dhdr.mfctr, 0, nrrecd);
-    part.hdr.s.u.dhdr.mfctr += nrrecd;
+  if (blocked_input) {
+    msg(MSG_DBG(0), "Entering process_data() blocked n_rows=%d",
+      n_rows);
   }
-  tmq_retire_check();
-  int nrowsfree = allocate_rows(&buf); // sets buf
-  bufsize = nrowsfree * write.nbrow_rec;
-  if (nrowsfree > 0 && state == TM_STATE_HDR2) {
-    // copy from hdr into buf, update accordingly
-    write.off_queue = sizeof(tm_hdrs_t) - write.nbhdr_rec;
-    // This could actually happen, but it shouldn't
-    nl_assert( write.off_queue <= bufsize );
-    bufsize -= write.off_queue;
-    memcpy( buf,
-            &part.hdr.raw[write.nbhdr_rec],
-            write.off_queue );
-    buf += write.off_queue;
-    write.nb_rec -= write.off_queue;
-    state = TM_STATE_DATA;
+  while ( n_rows ) {
+    unsigned char *dest;
+    lock(__FILE__,__LINE__);
+    tmq_retire_check();
+    int n_room = allocate_rows(&dest);
+    if ( n_room ) {
+      unlock();
+      if ( n_room > n_rows ) n_room = n_rows;
+      int rawsize = n_room * tm_rcvr::nbQrow;
+      memcpy( dest, raw, rawsize );
+      commit_rows( MFCtr, 0, n_room );
+      n_rows_received += n_room;
+      raw += rawsize;
+      n_rows -= n_room;
+      MFCtr += n_room;
+      rows_processed += n_room;
+    } else {
+      unlock();
+      if (n_rows == rows_in_buf && !blocking) {
+        int min_Qrow = min_reader(first_tmqr, true);
+        if (min_Qrow > first_tmqr->Qrows_retired) {
+          // force early retirement
+          ++rows_dropped;
+        } else {
+          ++rows_forced;
+        }
+        retire_rows(first_tmqr, 1);
+      } else {
+        if (!blocked_input) {
+          msg(MSG_DBG(0), "Input blocked in process_data()");
+          blocked_input = true;
+          flags &= ~Fl_Read;
+          n_rows_when_blocked = n_rows;
+        } else if (blocked_input && n_rows == n_rows_when_blocked) {
+          ++n_times_stuck_global;
+          if (++n_times_stuck == 2)
+            msg(MSG_WARN,
+            "Stuck in process_data %d/%d", n_times_stuck,
+            n_times_stuck_global);
+        }
+      }
+    }
+    if (run_output_queue()) break;
   }
-  // Cannot override previous bufsize unless write.nb_rec < bufsize
-  if (write.nb_rec < bufsize)
-    bufsize = write.nb_rec;
-  unlock();
-  return nrrecd;
+  if (blocked_input) {
+    if (n_rows == 0) {
+      msg(MSG_DBG(0), "Input unblocked in process_data()");
+      blocked_input = false;
+      flags |= Fl_Read;
+    } else {
+      msg(MSG_DBG(0), "Leaving process_data() with Input blocked");
+    }
+  }
+  processing_data = false;
+  return rows_processed;
 }
 
-void bfr_input_client::tmq_retire_check() {
+void bfr2_input_client::tmq_retire_check() {
   while (first_tmqr && first_tmqr->ref_count == 0 &&
          first_tmqr->next_tmqr && first_tmqr->n_Qrows == 0) {
     retire_rows(first_tmqr, 0);
@@ -364,52 +173,88 @@ void bfr_input_client::tmq_retire_check() {
   if (!tmqr) return;
   nl_assert(tmqr->ref_count >= 0);
   // Now look for Qrows we can retire
-  int min_Qrow = min_reader(tmqr);
+  int min_Qrow = min_reader(tmqr, false);
   if (min_Qrow > tmqr->Qrows_retired)
     retire_rows(tmqr, min_Qrow - tmqr->Qrows_retired);
   // return tmqr;
 }
 
-int bfr_input_client::min_reader( tmq_ref *tmqr ) {
+// The number here determines which rows are absolutely
+// safe to retire. A different calculation is required
+// to determine which rows can be retired that might be
+// currently tied up in output buffers.
+int bfr2_input_client::min_reader(tmq_ref *tmqr, bool forcing) {
   if ( tmqr != first_tmqr ) return 0;
   int min = tmqr->Qrows_retired + tmqr->n_Qrows;
-  std::list<bfr_output_client *>::iterator ocbp;
-  for ( ocbp = all_readers.begin(); ocbp != all_readers.end(); ++ocbp ) {
-    bfr_output_client *ocb = *ocbp;
-    if ( ocb->data.tmqr == tmqr && ocb->data.n_Qrows < min )
-      min = ocb->data.n_Qrows;
+  std::list<bfr2_output_client *>::iterator ocp;
+  for ( ocp = all_readers.begin(); ocp != all_readers.end(); ++ocp ) {
+    bfr2_output_client *oc = *ocp;
+    if ( oc->data.tmqr == tmqr && oc->data.n_Qrows < min &&
+         (!forcing || !oc->obuf_empty()))
+      min = oc->data.n_Qrows;
   }
   return min;
 }
 
-void bfr_input_client::run_read_queue() {
-  std::list<bfr_output_client*>::iterator ocbi;
-  blocked_reader = false;
-  for (lock(__FILE__,__LINE__), ocbi = all_readers.begin(), unlock();
-       ocbi != all_readers.end();
-       lock(__FILE__,__LINE__), ++ocbi, unlock()) {
-    bfr_output_client *ocb = *ocbi;
-    if (ocb->read.ready) {
-      ocb->read.ready = false;
-      read_reply(ocb);
-      if (ocb->obuf_empty()) {
-        ocb->read.ready = true;
-      } else {
-        blocked_reader = true;
-      }
-    } else {
-      nl_assert(!ocb->obuf_empty());
-      blocked_reader = true;
-    }
+void bfr2_input_client::run_input_queue() {
+  if (blocked_input) {
+    // blocked_input = false;
+    // flags |= Fl_Read;
+    msg(MSG_DBG(0), "Calling process_message() in run_input_queue()");
+    process_message();
   }
-  run_write_queue();
 }
 
-/** TODO: Probably want to rename this function since we are
-   writing, not replying to a read request.
-   
-   read_reply(ocb) is called when we know we have
-   something to return on a read request.
+bool bfr2_input_client::run_output_queue() {
+  bool blocked_output = false;
+  std::list<bfr2_output_client*>::iterator oci;
+  for (lock(__FILE__,__LINE__), oci = all_readers.begin(), unlock();
+       oci != all_readers.end();
+       lock(__FILE__,__LINE__), ++oci, unlock()) {
+    bfr2_output_client *oc = *oci;
+    oc->transmit();
+    if (!oc->obuf_empty())
+      blocked_output = true;
+  }
+  return blocked_output;
+}
+
+bool bfr2_input_client::ready_to_quit() {
+  while (!queue_empty()) {
+    tmq_retire_check();
+    if (run_output_queue())
+      return false;
+  }
+  return true;
+}
+
+bfr2_output_client::bfr2_output_client(Authenticator *Auth,
+          const char *iname, bool is_fast)
+    : Serverside_client(Auth, iname, bfr2_output_client_ibufsize),
+      is_fast(is_fast) {
+  data.tsp = 0;
+  data.tmqr = 0;
+  data.n_Qrows = 0;
+  data.n_Qrows_pending = 0;
+  output.maxQrows = 0; // Set in first read_reply()
+  output.rows_missing = 0;
+  output.rows_output = 0;
+  output.ready = true;
+  all_readers.push_back(this);
+}
+
+bfr2_output_client::~bfr2_output_client() {
+  msg(0, "%s: Total rows output: %d", iname, output.rows_output);
+  if (output.rows_missing)
+    msg(1, "%s: %d rows dropped", iname, output.rows_missing);
+  if (data.tmqr)
+    data.tmqr = data.tmqr->dereference(false);
+  all_readers.remove(this);
+}
+
+/**
+   transmit() is called when we know we have something to send to a
+   tm_client.
    First determine either the largest complete record that is less
    than the requested size or the smallest complete record. If the
    smallest record is larger than the request size, allocate the
@@ -419,223 +264,204 @@ void bfr_input_client::run_read_queue() {
    assumption that if a small request comes in, the smallest full
    message will be chosen for output)
 
-   It is assumed that ocb has already been removed from whatever wait
+   It is assumed that oc has already been removed from whatever wait
    queue it might have been on.
 */
-void bfr_input_client::read_reply(bfr_output_client *ocb) {
-  // struct iovec iov[3];
-  // int nb;
-  
-  if (! ocb->obuf_empty()) return;
-  if (ocb->read.maxQrows == 0) {
-    ocb->read.maxQrows = ocb->is_fast ? 1 : total_Qrows;
-    // ocb->read.maxQrows = 1;
+void bfr2_output_client::transmit() {
+  if (! obuf_empty()) return;
+  nl_assert(data.n_Qrows_pending == 0);
+  if (output.maxQrows == 0) {
+    output.maxQrows = bfr2_input_client::tm_gen->total_Qrows;
   }
   
-  if ( ocb->data.tmqr == 0 ) {
-    lock(__FILE__,__LINE__);
-    if (next_tmqr(&ocb->data.tmqr)) {
-      ocb->data.n_Qrows = 0;
+  if ( data.tmqr == 0 ) {
+    // First output to this client, so send tm_init
+    bfr2_input_client::tm_gen->lock(__FILE__,__LINE__);
+    if (bfr2_input_client::tm_gen->next_tmqr(&data.tmqr)) {
+      data.n_Qrows = 0;
     
-      ocb->state = TM_STATE_HDR; // delete
-      ocb->part.hdr.s.hdr.tm_id = TMHDR_WORD;
-      ocb->part.hdr.s.hdr.tm_type = TMTYPE_INIT;
-      
-      ocb->data.tsp = ocb->data.tmqr->tsp;
+      hdr.s.hdr.tm_id = TMHDR_WORD;
+      hdr.s.hdr.tm_type = TMTYPE_INIT;
+      data.tsp = data.tmqr->tsp;
 
       // Message consists of
       //   tm_hdr_t (TMHDR_WORD, TMTYPE_INIT)
       //   tm_info_t with the current timestamp
-      ocb->iov[0].iov_base = &ocb->part.hdr.s.hdr;
-      ocb->iov[0].iov_len = sizeof(ocb->part.hdr.s.hdr);
-      // SETIOV( &ocb->iov[0], &ocb->part.hdr.s.hdr,
-        // sizeof(ocb->part.hdr.s.hdr) );
-      ocb->iov[1].iov_base = &tm_info;
-      ocb->iov[1].iov_len = sizeof(tm_info)-sizeof(tstamp_t);
-      // SETIOV( &ocb->iov[1], &tm_info, sizeof(tm_info)-sizeof(tstamp_t) );
-      ocb->iov[2].iov_base = &ocb->data.tsp->TS; // &ocb->data.tmqr->TSq->TS;
-      ocb->iov[2].iov_len = sizeof(tstamp_t);
-      // SETIOV( &ocb->iov[2], &ocb->data.tmqr->TSq->TS, sizeof(tstamp_t) );
+      iov[0].iov_base = &hdr.s.hdr;
+      iov[0].iov_len = sizeof(hdr.s.hdr);
+      // SETIOV( &iov[0], &hdr.s.hdr, sizeof(hdr.s.hdr) );
+      iov[1].iov_base = &tm_info;
+      iov[1].iov_len = sizeof(tm_info)-sizeof(tstamp_t);
+      // SETIOV( &iov[1], &tm_info, sizeof(tm_info)-sizeof(tstamp_t) );
+      iov[2].iov_base = &data.tsp->TS; // &data.tmqr->TSq->TS;
+      iov[2].iov_len = sizeof(tstamp_t);
+      // SETIOV( &iov[2], &data.tmqr->TSq->TS, sizeof(tstamp_t) );
       int nb = sizeof(tm_hdr_t) + sizeof(tm_info_t);
-      do_read_reply( ocb, nb, ocb->iov, 3 );
-    } else ocb->read.ready = true; // enqueue_read( ocb, nonblock );
-    unlock();
+      iwritev(iov, 3);
+      // do_read_reply( oc, nb, iov, 3 );
+    } else output.ready = true; // enqueue_read( oc, nonblock );
+    bfr2_input_client::tm_gen->unlock();
   } else {
-    /* I've handled ocb->data.n_Qrows */
-    tmq_ref *tmqr = ocb->data.tmqr;
+    /* I've handled data.n_Qrows */
+    tmq_ref *tmqr = data.tmqr;
 
-    lock(__FILE__,__LINE__);
+    bfr2_input_client::tm_gen->lock(__FILE__,__LINE__);
     while (tmqr) {
       int nQrows_ready;
       
       /* DQD has a total of tmqr->Qrows_retired + tmqr->n_Qrows */
-      if ( ocb->data.n_Qrows < tmqr->Qrows_retired ) {
+      if ( data.n_Qrows < tmqr->Qrows_retired ) {
         // then we've missed some data: make a note and set
-        int n_missed = tmqr->Qrows_retired - ocb->data.n_Qrows;
-        ocb->read.rows_missing += n_missed;
-        ocb->data.n_Qrows = tmqr->Qrows_retired;
+        int n_missed = tmqr->Qrows_retired - data.n_Qrows;
+        output.rows_missing += n_missed;
+        data.n_Qrows = tmqr->Qrows_retired;
       }
       nQrows_ready = tmqr->n_Qrows + tmqr->Qrows_retired
-                      - ocb->data.n_Qrows;
+                      - data.n_Qrows;
       if (nQrows_ready < 0) {
         msg(MSG_ERROR, "nQrows_ready=%d (< 0)", nQrows_ready);
         nQrows_ready = 0;
       }
       assert( nQrows_ready >= 0 );
       if ( nQrows_ready > 0 ) {
-        if ( !blocked_writer && srvr_has_shutdown() &&
-             tmqr->next_tmqr == 0 && nQrows_ready < ocb->read.maxQrows
-             && !ocb->is_fast) {
+        if ( !blocked_input && (!srvr_has_shutdown()) &&
+             tmqr->next_tmqr == 0 && nQrows_ready < output.maxQrows
+             && (!is_fast)) {
           // wait for more data
         } else {
           int XRow_Num, NMinf, Row_Num_start, n_iov;
           mfc_t MFCtr_start;
           int Qrow_start, nQ1, nQ2;
           
-          if ( nQrows_ready > ocb->read.maxQrows )
-            nQrows_ready = ocb->read.maxQrows;
-          ocb->part.hdr.s.hdr.tm_id = TMHDR_WORD;
-          ocb->part.hdr.s.hdr.tm_type = output_tm_type;
-          ocb->part.hdr.s.u.dhdr.n_rows = nQrows_ready;
-          XRow_Num = tmqr->row_start + ocb->data.n_Qrows - tmqr->Qrows_retired;
+          hdr.s.hdr.tm_id = TMHDR_WORD;
+          hdr.s.hdr.tm_type = bfr2_input_client::tm_gen->output_tm_type;
+          hdr.s.u.dhdr.n_rows = nQrows_ready;
+          XRow_Num = tmqr->row_start + data.n_Qrows -
+                      tmqr->Qrows_retired;
           NMinf = XRow_Num/tm_info.nrowminf;
           MFCtr_start = tmqr->MFCtr_start + NMinf;
           Row_Num_start = XRow_Num % tm_info.nrowminf;
-          switch ( output_tm_type ) {
+          switch ( bfr2_input_client::tm_gen->output_tm_type ) {
             case TMTYPE_DATA_T1: break;
             case TMTYPE_DATA_T2:
-              ocb->part.hdr.s.u.dhdr.mfctr = MFCtr_start;
-              ocb->part.hdr.s.u.dhdr.rownum = Row_Num_start;
+              hdr.s.u.dhdr.mfctr = MFCtr_start;
+              hdr.s.u.dhdr.rownum = Row_Num_start;
               break;
             case TMTYPE_DATA_T3:
-              ocb->part.hdr.s.u.dhdr.mfctr = MFCtr_start;
+              hdr.s.u.dhdr.mfctr = MFCtr_start;
               break;
             default:
               msg(4,"Invalid output_tm_type" );
           }
-          //SETIOV( &ocb->iov[0], &ocb->part.hdr.s.hdr, nbDataHdr );
-          ocb->iov[0].iov_base = &ocb->part.hdr.s.hdr;
-          ocb->iov[0].iov_len  = nbDataHdr;
-          Qrow_start = tmqr->Qrow + ocb->data.n_Qrows -
+          //SETIOV( &iov[0], &hdr.s.hdr, nbDataHdr );
+          iov[0].iov_base = &hdr.s.hdr;
+          iov[0].iov_len  =
+            bfr2_input_client::tm_gen->tm_queue::nbDataHdr;
+          Qrow_start = tmqr->Qrow + data.n_Qrows -
                           tmqr->Qrows_retired;
-          if ( Qrow_start >= total_Qrows )
-            Qrow_start -= total_Qrows;
+          if ( Qrow_start >= bfr2_input_client::tm_gen->total_Qrows )
+            Qrow_start -= bfr2_input_client::tm_gen->total_Qrows;
+          nl_assert(Qrow_start >= 0 &&
+            Qrow_start < bfr2_input_client::tm_gen->total_Qrows);
           nQ1 = nQrows_ready;
-          nQ2 = Qrow_start + nQ1 - total_Qrows;
+          nQ2 = Qrow_start + nQ1 -
+                bfr2_input_client::tm_gen->total_Qrows;
           if ( nQ2 > 0 ) {
             nQ1 -= nQ2;
-            // SETIOV( &ocb->iov[2], row[0], nQ2 * nbQrow );
-            ocb->iov[2].iov_base = row[0];
-            ocb->iov[2].iov_len  = nQ2 * nbQrow;
+            // SETIOV( &iov[2], row[0], nQ2 * nbQrow );
+            iov[2].iov_base = bfr2_input_client::tm_gen->row[0];
+            iov[2].iov_len  =
+              nQ2 * bfr2_input_client::tm_gen->tm_queue::nbQrow;
             n_iov = 3;
           } else n_iov = 2;
-          // SETIOV( &ocb->iov[1], row[Qrow_start],
+          // SETIOV( &iov[1], row[Qrow_start],
                       // nQ1 * nbQrow );
-          ocb->iov[1].iov_base = row[Qrow_start];
-          ocb->iov[1].iov_len  = nQ1 * nbQrow;
-          ocb->data.n_Qrows += nQrows_ready;
-          do_read_reply( ocb,
-            nbDataHdr + nQrows_ready * nbQrow,
-            ocb->iov, n_iov );
+          iov[1].iov_base = bfr2_input_client::tm_gen->row[Qrow_start];
+          iov[1].iov_len  =
+            nQ1 * bfr2_input_client::tm_gen->tm_queue::nbQrow;
+          data.n_Qrows_pending += nQrows_ready;
+          // Cannot update n_Qrows until the write is
+          // completed, else we'll get buffer corruption
+          // data.n_Qrows += nQrows_ready;
+          iwritev(iov, n_iov);
         }
         break; // out of while(tmqr)
-      } else if ( tmqr->next_tmqr ) {
-        bool do_TS = tmqr->tsp != tmqr->next_tmqr->tsp;
-        tmqr = tmqr->dereference(true);
+      } else if (bfr2_input_client::tm_gen->next_tmqr(&tmqr)) {
         nl_assert(tmqr);
-        ocb->data.tmqr = tmqr;
-        ocb->data.tsp = tmqr->tsp;
-        ocb->data.n_Qrows = 0;
+        bool do_TS = tmqr->tsp != data.tsp;
+        // tmqr = tmqr->dereference(true);
+        data.tmqr = tmqr;
+        data.tsp = tmqr->tsp;
+        data.n_Qrows = 0;
+        data.n_Qrows_pending = 0;
         if ( do_TS ) {
-          ocb->part.hdr.s.hdr.tm_id = TMHDR_WORD;
-          ocb->part.hdr.s.hdr.tm_type = TMTYPE_TSTAMP;
-          // SETIOV( &ocb->iov[0], &ocb->part.hdr.s.hdr, sizeof(tm_hdr_t) );
-          ocb->iov[0].iov_base = &ocb->part.hdr.s.hdr;
-          ocb->iov[0].iov_len  = sizeof(tm_hdr_t);
-          //SETIOV( &ocb->iov[1], &tmqr->TSq->TS, sizeof(tstamp_t) );
-          ocb->iov[1].iov_base = &tmqr->tsp->TS;
-          ocb->iov[1].iov_len  = sizeof(tstamp_t);
-          do_read_reply( ocb, sizeof(tm_hdr_t)+sizeof(tstamp_t),
-            ocb->iov, 2 );
+          hdr.s.hdr.tm_id = TMHDR_WORD;
+          hdr.s.hdr.tm_type = TMTYPE_TSTAMP;
+          // SETIOV( &iov[0], &hdr.s.hdr, sizeof(tm_hdr_t) );
+          iov[0].iov_base = &hdr.s.hdr;
+          iov[0].iov_len  = sizeof(tm_hdr_t);
+          //SETIOV( &iov[1], &tmqr->TSq->TS, sizeof(tstamp_t) );
+          iov[1].iov_base = &tmqr->tsp->TS;
+          iov[1].iov_len  = sizeof(tstamp_t);
+          iwritev(iov, 2);
+          // do_read_reply( oc, sizeof(tm_hdr_t)+sizeof(tstamp_t),
+            // iov, 2 );
           break;
-        } // else loop through again
+        } // else loop through again to evaluate actual data
       } else {
-        // enqueue_read(ocb);
         break;
       }
     }
-    unlock();
+    bfr2_input_client::tm_gen->unlock();
   }
 }
 
-void bfr_input_client::do_read_reply( bfr_output_client *ocb, int nb,
-                        struct iovec *iov, int n_parts ) {
-  nl_assert(ocb->obuf_empty());
-  ocb->iwritev(iov, n_parts);
-}
-
-
-void bfr_input_client::run_write_queue() {
-  if ( blocked_writer ) {
-    // log_event(3);
-    int new_rows = (this->*data_state_eval)();
-    if ( bufsize > 0 ) {
-      blocked_writer = false;
-      flags |= Fl_Read;
-      // log_event(4);
-      // do_write(blocked_writer, 0, new_rows);
-    }
-  }
-}
-
-bool bfr_output_client::iwritten(int ntr) {
+bool bfr2_output_client::iwritten(int ntr) {
   if (obuf_empty()) {
-    read.ready = true;
-    if (blocked_writer && bfr_input_client::tm_gen) {
-      bfr_input_client::tm_gen->run_read_queue();
+    if (data.n_Qrows_pending) {
+      data.n_Qrows += data.n_Qrows_pending;
+      output.rows_output += data.n_Qrows_pending;
+      data.n_Qrows_pending = 0;
+    }
+    output.ready = true;
+    if (blocked_input && bfr2_input_client::tm_gen) {
+      msg(MSG_DBG(0), "%s: Calling run_input_queue", iname);
+      bfr2_input_client::tm_gen->run_input_queue();
     }
   }
   return false;
 }
 
-bfr_output_client::bfr_output_client(Authenticator *Auth,
-          const char *iname, bool is_fast)
-    : Serverside_client(Auth, iname, bfr_output_client_ibufsize),
-      is_fast(is_fast) {
-  data.tmqr = 0;
-  data.n_Qrows = 0;
-  state = TM_STATE_HDR;
-  part.nbdata = 0;
-  part.dptr = 0;
-  read.maxQrows = 0; // Set in first read_reply()
-  read.rows_missing = 0;
-  read.ready = true;
-  all_readers.push_back(this);
-}
-
-bfr_output_client::~bfr_output_client() {
-  if (data.tmqr)
-    data.tmqr = data.tmqr->dereference(false);
-  all_readers.remove(this);
-}
-
 Serverside_client *new_bfr_input_client(Authenticator *Auth, SubService *SS) {
   bool blocking = (SS->name == "tm_bfr/input");
-  return new bfr_input_client(Auth, Auth->get_client_app(), blocking);
+  return new bfr2_input_client(Auth, Auth->get_client_app(), blocking);
 }
 
 Serverside_client *new_bfr_output_client(Authenticator *Auth, SubService *SS) {
   bool is_fast = (SS->name == "tm_bfr/fast");
-  return new bfr_output_client(Auth, Auth->get_client_app(), is_fast);
+  return new bfr2_output_client(Auth, Auth->get_client_app(), is_fast);
 }
 
-void add_subservices(Server *S) {
-  S->add_subservice(new SubService("tm_bfr/input", new_bfr_input_client,
-      (void *)(0), bfr_input_client::auth_hook));
-  S->add_subservice(new SubService("tm_bfr/input-nb", new_bfr_input_client,
-      (void *)(0), bfr_input_client::auth_hook));
-  S->add_subservice(new SubService("tm_bfr/optimized", new_bfr_output_client, (void *)(0)));
-  S->add_subservice(new SubService("tm_bfr/fast", new_bfr_output_client, (void *)(0)));
+
+void bfr::add_subservices() {
+  add_subservice(new SubService("tm_bfr/input", new_bfr_input_client,
+      (void *)(0), bfr2_input_client::auth_hook));
+  add_subservice(new SubService("tm_bfr/input-nb",
+      new_bfr_input_client,
+      (void *)(0), bfr2_input_client::auth_hook));
+  add_subservice(new SubService("tm_bfr/optimized",
+      new_bfr_output_client, (void *)(0)));
+  add_subservice(new SubService("tm_bfr/fast",
+      new_bfr_output_client, (void *)(0)));
+}
+
+bool bfr::ready_to_quit() {
+  if (!has_shutdown_b)
+    Server::ready_to_quit();
+  if (bfr2_input_client::tm_gen) {
+    return bfr2_input_client::tm_gen->ready_to_quit();
+  }
+  return true;
 }
 
 /* Main method */
@@ -643,10 +469,12 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   setup_rundir();
   
-  Server S("tm_bfr");
-  add_subservices(&S);
+  bfr S;
+  S.add_subservices();
   msg(0, "%s %s Starting", AppID.fullname, AppID.rev);
   S.Start(Server::server_type);
+  S.ELoop.delete_children();
+  S.ELoop.clear_delete_queue(true);
   msg(0, "Terminating");
   return 0;
 }

@@ -1,0 +1,29 @@
+<package> monarch_cmd
+<include> "monarch_cmd.h"
+<include> cmd_client
+<include> msg oui
+<follow> msg
+
+<opts> "E:"
+
+<switch>
+  case 'E':
+    monarch_set_exp(optarg);
+    break;
+
+<args>
+  monarch_set_cmd(optarg);
+  
+<synopsis>
+monarch_cmd [options] <cmd>
+
+<sort>
+  -E <exp> Override Experiment definition
+
+<unsort>
+Sends the <cmd> argument to the appropriate command server.
+
+<package> appid_default
+<include> "dasio/appid.h"
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("monarch_cmd", "Ad hoc command sender", "V1.0");

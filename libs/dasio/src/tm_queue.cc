@@ -64,6 +64,7 @@ tm_queue::tm_queue( ) {
   row = 0;
   first = last = 0;
   full = false;
+  tm_gen_quit = false;
   last_tmqr = first_tmqr = 0;
 }
 
@@ -102,6 +103,10 @@ void tm_queue::init(int n_Qrows) {
     row[i] = currow;
     currow += nbQrow;
   }
+}
+
+bool tm_queue::queue_empty() {
+  return tm_gen_quit && !full && (first == last);
 }
 
 void tm_queue::lock(const char * by, int line) {
@@ -162,7 +167,12 @@ void tm_queue::commit_rows( mfc_t MFCtr, int mfrow, int nrows ) {
     if ( last_tmqr )
       last_tmqr = last_tmqr->add_last(tmqdr);
     else first_tmqr = last_tmqr = tmqdr;
-  } else tmqdr->append_rows(nrows);
+  } else {
+    if (tmqdr->n_Qrows+nrows > total_Qrows) {
+      msg(MSG_EXIT_ABNORM, "Too many rows reference in tmqr");
+    }
+    tmqdr->append_rows(nrows);
+  }
   last += nrows;
   if ( last == total_Qrows ) last = 0;
   if ( last == first ) full = 1;
@@ -179,6 +189,10 @@ void tm_queue::commit_tstamp( mfc_t MFCtr, le_time_t time ) {
   if ( last_tmqr ) last_tmqr = last_tmqr->add_last(tmqd);
   else first_tmqr = last_tmqr = tmqd;
   unlock();
+}
+
+void tm_queue::commit_quit() {
+  tm_gen_quit = true;
 }
 
 void tm_queue::retire_rows(tmq_ref *tmqd, int n_rows ) {
@@ -233,9 +247,10 @@ bool tm_queue::next_tmqr(tmq_ref **tmqrp) {
   if (*tmqrp) {
     tmq_ref *tmqr = *tmqrp;
     if (tmqr->next_tmqr) {
-      --tmqr->ref_count;
-      tmqr = tmqr->next_tmqr;
-      ++tmqr->ref_count;
+      tmqr = tmqr->dereference(true);
+      // --tmqr->ref_count;
+      // tmqr = tmqr->next_tmqr;
+      // ++tmqr->ref_count;
       *tmqrp = tmqr;
       return true;
     } else return false;

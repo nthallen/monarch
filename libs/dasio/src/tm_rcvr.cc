@@ -16,11 +16,11 @@ namespace DAS_IO {
 
   /* Constructor method */
   tm_rcvr::tm_rcvr(Interface* interface) : interface(interface) {
-    tm_expect_hdr();
+    ncc = cp = 0;
     tm_info_ready = false;
-    cp = 0;
+    processing_message = false;
     interface->set_binary_mode();
-    tm_msg = (tm_msg_t *)&interface->buf[cp];
+    tm_expect_hdr();
   }
 
   tm_rcvr::~tm_rcvr() {}
@@ -31,6 +31,8 @@ namespace DAS_IO {
   }
 
   void tm_rcvr::process_message() {
+    if (processing_message) return;
+    processing_message = true;
     ncc = interface->nc - cp;
     while ( ncc >= toread ) {
       switch ( tm_state ) {
@@ -62,17 +64,14 @@ namespace DAS_IO {
               if ( tm_msg->hdr.tm_type != input_tm_type )
                 msg(MSG_FATAL, "%sInvalid data type: %04X", context(),
                   tm_msg->hdr.tm_type );
-              buf_mfctr = tm_msg->body.data3.mfctr;
-              cp += nbDataHdr;
-              ncc -= nbDataHdr;
-              rows_left_in_msg = tm_msg->body.data1.n_rows;
-              toread = nbQrow;
-              tm_state = TM_STATE_DATA;
+              toread = nbDataHdr;
+              tm_state = TM_STATE_DATA_HDR;
               break;
             default:
               msg(MSG_ERROR, "%sInvalid TMTYPE: %04X", context(),
                 tm_msg->hdr.tm_type );
               seek_tmid();
+              processing_message = false;
               return;
           }
           break;
@@ -88,17 +87,31 @@ namespace DAS_IO {
           ncc -= toread;
           tm_expect_hdr();
           break;
+        case TM_STATE_DATA_HDR:
+          buf_mfctr = tm_msg->body.data3.mfctr;
+          cp += toread;
+          ncc -= toread;
+          rows_left_in_msg = tm_msg->body.data1.n_rows;
+          toread = nbQrow;
+          tm_state = TM_STATE_DATA;
+          break;
         case TM_STATE_DATA:
           rows_in_buf = ncc / nbQrow;
           if (rows_left_in_msg < rows_in_buf)
             rows_in_buf = rows_left_in_msg;
           data_row = &interface->buf[cp];
           // Will process rows_in_buf
-          process_data();
-          buf_mfctr += rows_in_buf;
-          rows_left_in_msg -= rows_in_buf;
-          cp += rows_in_buf * nbQrow;
-          ncc -= rows_in_buf * nbQrow;
+          { unsigned int rows_processed = process_data();
+            if (rows_processed == 0) {
+              processing_message = false;
+              return;
+            }
+            buf_mfctr += rows_processed;
+            rows_in_buf -= rows_processed;
+            rows_left_in_msg -= rows_processed;
+            cp += rows_processed * nbQrow;
+            ncc -= rows_processed * nbQrow;
+          }
           if (rows_left_in_msg == 0) {
             tm_expect_hdr();
           }
@@ -116,6 +129,7 @@ namespace DAS_IO {
     if ( toread > interface->bufsize )
       msg( MSG_FATAL, "%sRecord size %d exceeds allocated buffer size %d",
         context(), toread, interface->bufsize );
+    processing_message = false;
   }
 
   void tm_rcvr::process_init() {

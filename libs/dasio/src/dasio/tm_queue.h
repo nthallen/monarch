@@ -31,8 +31,9 @@ class tmq_ref {
     tmq_ref(mfc_t MFCtr, int mfrow, int Qrow_in, int nrows_in, tmq_tstamp_ref *tsp);
     tmq_ref *add_last(tmq_ref *tmqr);
     /**
-     * @param tmqr Pointer to the tmq_ref which we no longer wish to reference
-     * @return If use_next, the following tmq_ref which we will now reference, else 0.
+     * @param use_next true if we will reference the next tmq_ref
+     * @return If use_next, the following tmq_ref which we will now
+     * reference, else 0.
      */
     tmq_ref *dereference(bool use_next);
     tmq_ref *next_tmqr;
@@ -93,11 +94,13 @@ class tm_queue {
   public:
     tm_queue();
     void init( int n_Qrows ); // allocate space for the queue
+    bool queue_empty();
 
   protected:
     int allocate_rows(unsigned char **rowp);
     void commit_rows( mfc_t MFCtr, int mfrow, int n_rows );
     void commit_tstamp( mfc_t MFCtr, le_time_t time );
+    void commit_quit();
     void retire_rows( tmq_ref *tmqd, int n_rows );
     // void retire_tstamp( tmq_tstamp_ref *tmqts );
     bool next_tmqr(tmq_ref **tmqrp);
@@ -107,15 +110,26 @@ class tm_queue {
     unsigned char *raw;
     unsigned char **row;
     tm_hdrw_t output_tm_type;
+    /** The number of rows the queue can hold at one time */
     int total_Qrows;
-    int nbQrow; // may differ from nbrow if stripping MFCtr & Synch
+    /** The size in bytes of one row stored in the queue.
+     *  This may differ from nbrow if stripping MFCtr & Synch.
+     */
+    int nbQrow;
+    /** The size in bytes of the header for data messages. */
     int nbDataHdr;
-    /** Row index in the tm_queue where the next row of data will be read from */
+    /** Row index in the tm_queue where the next row of data
+     *  will be read from
+     */
     int first;
-    /** Row index in the tm_queue where the next row of data will be written */
+    /** Row index in the tm_queue where the next row of data
+     *  will be written
+     */
     int last;
     /** True if tm_queue is full */
     bool full;
+    /** True if tm_generator has quit */
+    bool tm_gen_quit;
     
     tmq_ref *first_tmqr;
     tmq_ref *last_tmqr;

@@ -1,0 +1,25 @@
+<package> test_client
+<include> msg oui
+<follow> msg
+<include> "test_client.h"
+<opts> "t:S:d:"
+<sort>
+	-t <hostname> server's hostname
+  -S <scenario#> specify scenario number (1)
+  -d <delay> specify comm delay in msec (100)
+<switch>
+  case 't':
+    server_hostname = optarg;
+    break;
+  case 'S':
+    scenario = atoi(optarg);
+    break;
+  case 'd':
+    comm_delay = atoi(optarg);
+    break;
+
+
+<package> appid_default
+<include> "dasio/appid.h"
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("test_client", "test client", "V1.0");

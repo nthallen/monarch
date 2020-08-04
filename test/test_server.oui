@@ -1,0 +1,16 @@
+<package> test_server
+<include> server
+
+<include> "test_server.h"
+<opts> "d:"
+<sort>
+  -d <delay> specify comm delay in msec (100)
+<switch>
+  case 'd':
+    comm_delay = atoi(optarg);
+    break;
+
+<package> appid_default
+<include> "dasio/appid.h"
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("test_server", "test server", "V1.0");

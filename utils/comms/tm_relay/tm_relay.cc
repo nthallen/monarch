@@ -26,7 +26,7 @@ tm_relay::tm_relay() : tm_generator(), tm_client(4096, false, tm_client::tm_clie
 
 tm_relay::~tm_relay() {}
 
-void tm_relay::process_data() {
+unsigned int tm_relay::process_data() {
   /** Code copied from rdr.cc, 2019-12-10 */
   static int nrows_full_rec = 0;
   static int last_rec_full = 1;
@@ -63,6 +63,7 @@ void tm_relay::process_data() {
     }
     if (!regulated) transmit_data(false);
   }
+  return rows_in_buf; // we will process all rows
 }
 
 void tm_relay::process_tstamp() {

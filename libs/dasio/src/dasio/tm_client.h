@@ -34,7 +34,7 @@ class ext_tm_client : public tm_client {
     inline ext_tm_client(int bufsize_in, const char *hostname = 0) :
       tm_client(bufsize_in, false, hostname) {}
   protected:
-    void process_data();
+    unsigned int process_data();
 };
 
 }

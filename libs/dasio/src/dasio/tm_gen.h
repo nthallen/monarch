@@ -20,6 +20,8 @@ class tm_gen_bfr : public Client {
     tm_gen_bfr(bool collection);
     inline bool iwritev(struct iovec *iov, int nparts, const char *where);
   protected:
+    bool process_eof();
+    bool connect_failed();
     bool app_connected();
     bool iwritten(int nb);
   private:
