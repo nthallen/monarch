@@ -75,6 +75,8 @@ int main(int argc, char **argv) {
   EXTRACTION_UPDATE;
   ELoop.event_loop();
   EXTRACTION_TERM;
+  ELoop.delete_children();
+  ELoop.clear_delete_queue();
   msg( 0, "Shutdown" );
   return 0;
 }
