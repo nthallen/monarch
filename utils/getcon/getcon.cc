@@ -40,7 +40,11 @@ static void wait_for_quit(void) {
   CR->signal(SIGCHLD);
   CR->signal(SIGINT);
   CR->signal(SIGHUP);
+  msg(MSG_DEBUG, "Starting");
   ELoop.event_loop();
+  ELoop.delete_children();
+  ELoop.clear_delete_queue();
+  msg(MSG_DEBUG, "Terminating");
 }
 
 static void end_session() {
@@ -72,6 +76,7 @@ getcon_cmd::getcon_cmd()
  * should terminate
  */
 bool getcon_cmd::app_process_eof() {
+  msg(MSG_DEBUG, "%s: Received EOF", iname);
   return true;
 }
 
@@ -122,8 +127,9 @@ bool getcon_cmd::app_input() {
         report_ok(cp);
       }
     } else {
-      msg(MSG_DEBUG, "%s: Received something, no sesison ID, terminating",
-            iname);
+      msg(MSG_DEBUG,
+        "%s: Received something, no sesison ID, terminating",
+        iname);
       rv = true;
     }
   }

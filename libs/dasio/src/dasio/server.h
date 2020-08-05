@@ -23,7 +23,8 @@ namespace DAS_IO {
    * datum is already being written to by another process.
    * @return Pointer to a Socket subclass or zero if an error occurs.
    */
-  typedef Serverside_client *(* socket_clone_t)(Authenticator *, SubService *);
+  typedef Serverside_client *(* socket_clone_t)(Authenticator *,
+            SubService *);
   /**
    * Function type for determining whether to accept an inbound
    * connection.

@@ -10,8 +10,6 @@
 #include "cmdalgo.h"
 #include "nl_assert.h"
 
-static bool quit_received = false;
-
 namespace DAS_IO {
   
   Server *CmdServer;
@@ -171,7 +169,7 @@ namespace DAS_IO {
 
   void Cmd_receiver::process_quit() {
     msg( MSG_DEBUG, "Processing Quit" );
-    quit_received = quit_recd = true;
+    quit_recd = true;
     iwrite("Q\n");
     // ELoop->delete_child(this);
     cis_interfaces_close();
@@ -194,12 +192,12 @@ namespace DAS_IO {
   }
  
   /*
-   * Strategy here is:
-   * next_command->cmdlen == 0 until there is something to write
-   * next_command->next == 0 until there is something to write
-   * we cannot write unless and until obuf_empty()
-   * if there is something to write, and we can write, we write it
-   * and we set written == true
+   * next_command->next == 0 until there is something to write.
+   * next_command->cmdlen == 0 indicates a quit/shutdown command.
+   *
+   * We cannot write unless and until obuf_empty().
+   * If there is something to write, and we can write, we write it
+   * and we set written == true.
    * 
    */
   void Cmd_turf::turf_check() {
@@ -212,13 +210,23 @@ namespace DAS_IO {
       }
       if (next_command->next) {
         if (next_command->cmdlen) {
-          iwrite((const char *)next_command->command, next_command->cmdlen);
-        } else if (ELoop) {
-          ELoop->delete_child(this);
+          iwrite((const char *)next_command->command,
+                  next_command->cmdlen);
+        } else {
+          iwrite("Q\n");
+          TO.Set(1,0);
+          flags |= Fl_Timeout;
         }
         written = true;
       } else break;
     }
+  }
+  
+  bool Cmd_turf::protocol_timeout() {
+    msg(MSG_DEBUG, "%s: Received timeout after quit", iname);
+    nl_assert(ELoop);
+    ELoop->delete_child(this);
+    return false;
   }
   
   bool Cmd_turf::iwritten(int nb) {

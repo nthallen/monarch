@@ -16,11 +16,14 @@ namespace DAS_IO {
       /**
        * @param iname the interface name
        * @param bufsz the input buffer size
-       * @param hostname the remote host we are connecting to over TCP/IP
+       * @param hostname the remote host we are connecting to over
+       *   TCP/IP
        * @param service the remote service name we are connecting to
-       * @param sub_service the sub service name (without the service prefix)
-       * If hostname is 0, a Unix Domain socket is created on the local machine,
-       * otherwise a TCP socket is used.
+       * @param sub_service the sub service name (without the
+       *   service prefix)
+       *
+       * If hostname is 0, a Unix Domain socket is created on the
+       * local machine, otherwise a TCP socket is used.
        */
       Client(const char *iname, int bufsz, const char *hostname, const char *service,
                     const char *sub_service);
