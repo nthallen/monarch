@@ -18,37 +18,37 @@ static int cswarn = 0;
 
 void check_command(const char *command) {
   if (!cswarn) {
-	int rv;
+    int rv;
 
-	{ int old_response = set_response(0);
-	  if ( command == 0 ) rv = ci_sendcmd(1, command);
-	  else {
-		char *cmdnl;
-		if ( *command == '_' ) command++;
-		cmdnl = new_memory( strlen( command ) + 2 );
-		sprintf( cmdnl, "%s\n", command );
-		rv = ci_sendcmd(1, cmdnl);
-		free_memory( cmdnl );
-	  }
-	  set_response(old_response);
-	}
-	switch (CMDREP_TYPE(rv)) {
-	  case 0:
-		if ( rv != 0 ) {
-		  compile_error(1, "Command Server not found: commands untested");
-		  cswarn = 1;
-		}
-		break;
-	  case CMDREP_TYPE(CMDREP_QUIT):
-		break;
-	  case CMDREP_TYPE(CMDREP_EXECERR):
-		compile_error(4, "Unexpected Execution Error %d from CIS", rv);
-	  case CMDREP_TYPE(CMDREP_SYNERR):
-		compile_error(2, "Text Command Syntax Error:");
-		compile_error(2, "%s", command);
-		compile_error(2, "%*s", rv - CMDREP_SYNERR, "^");
-		break;
-	}
+    { int old_response = set_response(0);
+      if ( command == 0 ) rv = ci_sendcmd(1, command);
+      else {
+        char *cmdnl;
+        if ( *command == '_' ) command++;
+        cmdnl = new_memory( strlen( command ) + 2 );
+        sprintf( cmdnl, "%s\n", command );
+        rv = ci_sendcmd(1, cmdnl);
+        free_memory( cmdnl );
+      }
+      set_response(old_response);
+    }
+    switch (CMDREP_TYPE(rv)) {
+      case 0:
+        if ( rv != 0 ) {
+          compile_error(1, "Command Server not found: commands untested");
+          cswarn = 1;
+        }
+        break;
+      case CMDREP_TYPE(CMDREP_QUIT):
+        break;
+      case CMDREP_TYPE(CMDREP_EXECERR):
+        compile_error(4, "Unexpected Execution Error %d from CIS", rv);
+      case CMDREP_TYPE(CMDREP_SYNERR):
+        compile_error(2, "Text Command Syntax Error:");
+        compile_error(2, "%s", command);
+        compile_error(2, "%*s", rv - CMDREP_SYNERR, "^");
+        break;
+    }
   }
 }
 
@@ -65,14 +65,14 @@ void get_version(FILE *ofp) {
     rv = cic_query(ci_version);
     set_response(old_response);
     if (rv) {
-	  compile_error(1, "Command Server not found: %s",
-	    ci_version[0] ? "Using specified version." :
-	    "No version info.");
+      compile_error(1, "Command Server not found: %s",
+        ci_version[0] ? "Using specified version." :
+        "No version info.");
     }
   #endif
   fprintf(ofp, "%%{\n"
-	"  #include \"nl.h\"\n"
-	"  #include \"dasio/tma.h\"\n"
-	"  char ci_version[] = \"%s\";\n"
-	"%%}\n", ci_version);
+    "  #include \"nl.h\"\n"
+    "  #include \"dasio/tma.h\"\n"
+    "  char ci_version[] = \"%s\";\n"
+    "%%}\n", ci_version);
 }

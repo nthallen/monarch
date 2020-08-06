@@ -157,13 +157,13 @@ namespace DAS_IO {
     }
   }
 
-  bool Cmd_receiver::iwritten(int nb) {
-    if (obuf_empty() && quit_recd && (CmdServer != 0)) {
-      CmdServer->Shutdown(false);
-      return true;
-    }
-    return false;
-  }
+  // bool Cmd_receiver::iwritten(int nb) {
+    // if (obuf_empty() && quit_recd && (CmdServer != 0)) {
+      // CmdServer->Shutdown(false);
+      // return true;
+    // }
+    // return false;
+  // }
   
   Cmd_receiver *Cmd_receiver::new_cmd_receiver(Authenticator *auth,
       SubService *ss) {
@@ -179,6 +179,8 @@ namespace DAS_IO {
     // ELoop->delete_child(this);
     cis_interfaces_close();
     // cmdif_rd::all_closed();
+    nl_assert(CmdServer);
+    CmdServer->Shutdown(false);
   }
   
   Cmd_turf::Cmd_turf(Authenticator *auth, const char *iname, cmdif_rd *ss)

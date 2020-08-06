@@ -30,7 +30,7 @@ namespace DAS_IO {
     public:
       Cmd_receiver(Authenticator *auth, const char *iname);
       bool protocol_input();
-      bool iwritten(int nb);
+      // bool iwritten(int nb);
       static Cmd_receiver *new_cmd_receiver(Authenticator *auth,
         SubService *ss);
     protected:
