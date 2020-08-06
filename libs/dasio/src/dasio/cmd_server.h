@@ -12,7 +12,14 @@ class cmdif_rd;
 
 namespace DAS_IO {
   
-  extern Server *CmdServer;
+  class Cmd_Server : public Server {
+    public:
+      inline Cmd_Server() : Server("cmd") {}
+    protected:
+      bool ready_to_quit();
+  };
+
+  extern Cmd_Server *CmdServer;
   
   /**
    * @brief Class for cmd/server server clients.
@@ -100,7 +107,10 @@ class cmdif_rd {
     ~cmdif_rd();
     void Setup();
     void Turf(const char *fmt, ...);
+    /** Start the shutdown process */
     void Shutdown();
+    /** Release memory after client shutdowns */
+    void Teardown();
     void add_reader(DAS_IO::Cmd_turf *rdr);
     void rm_reader(DAS_IO::Cmd_turf *rdr);
     static bool all_closed();

@@ -12,7 +12,12 @@
 
 namespace DAS_IO {
   
-  Server *CmdServer;
+  bool Cmd_Server::ready_to_quit() {
+    Server::ready_to_quit();
+    return cmdif_rd::all_closed() && active_clients == 0;
+  }
+  
+  Cmd_Server *CmdServer;
   
   Cmd_receiver::Cmd_receiver(Authenticator *auth, const char *iname)
       : Serverside_client(auth, iname, CMD_MAX_COMMAND_IN) {
@@ -154,7 +159,7 @@ namespace DAS_IO {
 
   bool Cmd_receiver::iwritten(int nb) {
     if (obuf_empty() && quit_recd && (CmdServer != 0)) {
-      CmdServer->Shutdown();
+      CmdServer->Shutdown(false);
       return true;
     }
     return false;
@@ -170,10 +175,10 @@ namespace DAS_IO {
   void Cmd_receiver::process_quit() {
     msg( MSG_DEBUG, "Processing Quit" );
     quit_recd = true;
-    iwrite("Q\n");
+    // iwrite("Q\n");
     // ELoop->delete_child(this);
     cis_interfaces_close();
-    cmdif_rd::all_closed();
+    // cmdif_rd::all_closed();
   }
   
   Cmd_turf::Cmd_turf(Authenticator *auth, const char *iname, cmdif_rd *ss)
@@ -263,7 +268,7 @@ namespace DAS_IO {
 void ci_server(void) {
   cis_initialize(); // not actually implemented
   nl_assert(DAS_IO::CmdServer == 0);
-  DAS_IO::CmdServer = new DAS_IO::Server("cmd");
+  DAS_IO::CmdServer = new DAS_IO::Cmd_Server();
   nl_assert(DAS_IO::CmdServer != 0);
   DAS_IO::CmdServer->add_subservice(new DAS_IO::SubService("cmd/server",
     (DAS_IO::socket_clone_t)DAS_IO::Cmd_receiver::new_cmd_receiver, (void *)0));
@@ -282,22 +287,11 @@ cmdif_rd::cmdif_rd(const char *name)
 }
 
 /**
- * Since the cmdif_rd interfaces are statically defined, this destructor
- * is called during exit() processing. Needs to remove SubService
- * from CmdServer and also from the rdrs list (or cmdif_rd::all_closed()
- * could handle that, since it already has the position)
+ * Most processing handled in Teardown().
  */
 cmdif_rd::~cmdif_rd() {
   nl_assert(turfs.empty());
-  if (DAS_IO::CmdServer)
-    DAS_IO::CmdServer->rm_subservice(svcsname);
-  command_out_t *cmd1 = first_cmd;
-  while (cmd1) {
-    command_out_t *cmd2 = cmd1->next;
-    free_memory(cmd1);
-    cmd1 = cmd2;
-  }
-  first_cmd = last_cmd = 0;
+  nl_assert(first_cmd == 0);
 }
 
 void cmdif_rd::Setup() {
@@ -320,9 +314,6 @@ void cmdif_rd::Turf(const char *format, ...) {
   command_out_t *cmd;
   int nb;
 
-  // I think this assertion is wrong
-  // nl_assert(CmdServer &&
-  //  CmdServer->SU != NULL );
   cmd = last_cmd;
   va_start( arglist, format );
   nb = vsnprintf( cmd->command, CMD_MAX_COMMAND_OUT, format, arglist );
@@ -350,6 +341,22 @@ void cmdif_rd::Shutdown() {
   Turf("");
 }
 
+/**
+ * Needs to remove SubService from CmdServer
+ */
+void cmdif_rd::Teardown() {
+  nl_assert(turfs.empty());
+  if (DAS_IO::CmdServer)
+    DAS_IO::CmdServer->rm_subservice(svcsname);
+  command_out_t *cmd1 = first_cmd;
+  while (cmd1) {
+    command_out_t *cmd2 = cmd1->next;
+    free_memory(cmd1);
+    cmd1 = cmd2;
+  }
+  first_cmd = last_cmd = 0;
+}
+
 void cmdif_rd::add_reader(DAS_IO::Cmd_turf *rdr) {
   turfs.push_back(rdr);
 }
@@ -375,7 +382,7 @@ bool cmdif_rd::all_closed() {
     rp++;
     if ( cur_rdr->turfs.empty() ) {
       rdrs.erase(crp);
-      // delete(cur_rdr); // don't delete! These are statically allocated
+      cur_rdr->Teardown();
     }
   }
   if (rdrs.empty()) {
