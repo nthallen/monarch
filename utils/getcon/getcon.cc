@@ -147,6 +147,26 @@ void getcon_args( char *arg ) {
   } else msg( 3, "Too many arguments" );
 }
 
+void getcon_init_options(int argc, char **argv) {
+  int optltr;
+
+  optind = OPTIND_RESET;
+  opterr = 0;
+  while ((optltr = getopt(argc, argv, opt_string)) != -1) {
+    switch (optltr) {
+      case 'e': opt_end_session = true; break;
+      case '?':
+        msg(3, "Unrecognized Option -%c", optopt);
+      default:
+        break;
+    }
+  }
+  for (; optind < argc; optind++) {
+    optarg = argv[optind];
+    getcon_args(optarg);
+  }
+}
+
 int main( int argc, char **argv ) {
   char fname1[PATH_MAX], fname2[PATH_MAX];
   char *tty;

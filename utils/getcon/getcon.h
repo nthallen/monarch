@@ -12,7 +12,7 @@
  * parameter, the window name, is mandatory. The second, specifying
  * the session ID, is optional but commonly used.
  */
-extern void getcon_args( char *arg );
+extern void getcon_init_options(int argc, char **argv);
 extern bool opt_end_session;
 
 class getcon_cmd : public DAS_IO::Cmd_reader {

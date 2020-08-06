@@ -1,6 +1,7 @@
 <package> getcon
 <include> "getcon.h"
 <include> msg oui
+<follow> msg oui
 <include> cmd_reader cmd_writer
 
 <synopsis>
@@ -13,8 +14,8 @@
 <switch>
   case 'e': opt_end_session = true; break;
 
-<args>
-  getcon_args(optarg);
+<init>
+  getcon_init_options(argc, argv);
 
 <unsort>
 <blank>
