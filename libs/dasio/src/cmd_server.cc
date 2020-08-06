@@ -17,14 +17,26 @@ namespace DAS_IO {
     return cmdif_rd::all_closed() && active_clients == 0;
   }
   
+  void Cmd_Server::process_quit() {
+    if (quit_processed) return;
+    quit_processed = true;
+    msg( MSG_DEBUG, "Processing Quit" );
+    cis_interfaces_close();
+    Cmd_receiver::process_quits();
+    Shutdown(false);
+  }
+  
   Cmd_Server *CmdServer;
   
   Cmd_receiver::Cmd_receiver(Authenticator *auth, const char *iname)
       : Serverside_client(auth, iname, CMD_MAX_COMMAND_IN) {
     quit_recd = false;
+    rcvrs.push_back(this);
   }
   
-  Cmd_receiver::~Cmd_receiver() {}
+  Cmd_receiver::~Cmd_receiver() {
+    rcvrs.remove(this);
+  }
   
   /**
    * Get content from io_write() below
@@ -75,7 +87,7 @@ namespace DAS_IO {
             switch (*s) {
               case 'T': testing = 1; s++; break;
               case 'Q': quiet = 1; s++; break;
-              case 'X': process_quit(); return false;
+              case 'X': CmdServer->process_quit(); return false;
               case 'V': // handle version command
                 ver = ++s;
                 while ( *s != ']' && *s != '\0' ) s++;
@@ -133,7 +145,7 @@ namespace DAS_IO {
           case 1:
             report_ok(cp);
             if (testing) return iwrite("K\n");
-            process_quit();
+            CmdServer->process_quit();
             return true;
           case 2: /* Report Syntax Error */
             if ( nl_response ) {
@@ -156,6 +168,14 @@ namespace DAS_IO {
       }
     }
   }
+  
+  void Cmd_receiver::process_quits() {
+    std::list<Cmd_receiver *>::iterator cri;
+    for (cri = rcvrs.begin(); cri != rcvrs.end(); ++cri) {
+      Cmd_receiver *cr = *cri;
+      cr->process_quit();
+    }
+  }
 
   // bool Cmd_receiver::iwritten(int nb) {
     // if (obuf_empty() && quit_recd && (CmdServer != 0)) {
@@ -172,16 +192,22 @@ namespace DAS_IO {
     return cr;
   }
 
-  void Cmd_receiver::process_quit() {
-    msg( MSG_DEBUG, "Processing Quit" );
-    quit_recd = true;
-    iwrite("Q\n");
-    // ELoop->delete_child(this);
-    cis_interfaces_close();
-    // cmdif_rd::all_closed();
-    nl_assert(CmdServer);
-    CmdServer->Shutdown(false);
+  bool Cmd_receiver::process_timeout() {
+    msg(MSG_DEBUG, "%s: Received timeout", iname);
+    ELoop->delete_child(this);
+    return false;
   }
+  
+  void Cmd_receiver::process_quit() {
+    if (quit_recd) return;
+    quit_recd = true;
+    msg(MSG_DEBUG, "%s: Processing Quit", iname);
+    iwrite("Q\n");
+    TO.Set(1,0);
+    flags |= Fl_Timeout;
+  }
+
+  std::list<Cmd_receiver *> Cmd_receiver::rcvrs;
   
   Cmd_turf::Cmd_turf(Authenticator *auth, const char *iname, cmdif_rd *ss)
       : Serverside_client(auth, iname, CMD_MAX_COMMAND_IN), ss(ss) {

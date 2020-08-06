@@ -14,9 +14,11 @@ namespace DAS_IO {
   
   class Cmd_Server : public Server {
     public:
-      inline Cmd_Server() : Server("cmd") {}
+      inline Cmd_Server() : Server("cmd"), quit_processed(false) {}
+      void process_quit();
     protected:
       bool ready_to_quit();
+      bool quit_processed;
   };
 
   extern Cmd_Server *CmdServer;
@@ -31,12 +33,16 @@ namespace DAS_IO {
       Cmd_receiver(Authenticator *auth, const char *iname);
       bool protocol_input();
       // bool iwritten(int nb);
+      /** process quit for each Cmd_receiver */
+      static void process_quits();
       static Cmd_receiver *new_cmd_receiver(Authenticator *auth,
         SubService *ss);
     protected:
       ~Cmd_receiver();
+      bool process_timeout();
       void process_quit();
       bool quit_recd;
+      static std::list<Cmd_receiver *> rcvrs;
       static const int OBUF_SIZE = 120;
       char obuf[OBUF_SIZE];
   };
