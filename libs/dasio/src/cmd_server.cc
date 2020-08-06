@@ -175,7 +175,7 @@ namespace DAS_IO {
   void Cmd_receiver::process_quit() {
     msg( MSG_DEBUG, "Processing Quit" );
     quit_recd = true;
-    // iwrite("Q\n");
+    iwrite("Q\n");
     // ELoop->delete_child(this);
     cis_interfaces_close();
     // cmdif_rd::all_closed();
