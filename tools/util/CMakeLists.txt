@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.8)
 cmake_policy(SET CMP0048 NEW)
-project(le_das_tools_util VERSION 2.0.0)
+project(monarch_tools_util VERSION 2.0.0)
 
 find_program(SUDO_EXE sudo)
 if (SUDO_EXE)

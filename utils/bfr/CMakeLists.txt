@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.8)
 cmake_policy(SET CMP0048 NEW)
-project(le-das-bfr VERSION 2.1.0)
+project(monarch-bfr VERSION 2.1.0)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)

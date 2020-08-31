@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.8)
 cmake_policy(SET CMP0048 NEW)
-project(le_das_utils_flight VERSION 2.0.0)
+project(monarch_utils_flight VERSION 2.0.0)
 
 find_program(SUDO_EXE sudo)
 if (SUDO_EXE)
@@ -43,12 +43,12 @@ install(PROGRAMS
   DESTINATION sbin)
 
 install(PROGRAMS
-  ${CMAKE_CURRENT_SOURCE_DIR}/dasng_setup.sh
-  ${CMAKE_CURRENT_SOURCE_DIR}/dasng_reset.sh
+  ${CMAKE_CURRENT_SOURCE_DIR}/monarch_setup.sh
+  ${CMAKE_CURRENT_SOURCE_DIR}/monarch_reset.sh
   DESTINATION share/linkeng/setup)
 
 install(FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/dasng.service services
+  ${CMAKE_CURRENT_SOURCE_DIR}/monarch.service services
   DESTINATION share/linkeng/setup)
 
 if (NOT CMAKE_CROSSCOMPILING)

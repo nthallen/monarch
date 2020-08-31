@@ -25,15 +25,15 @@ add_executable(tmcalgo tmcalgo.c states.c commands.c tmcalgooui.c dot.c
     ${BISON_TMAParser_OUTPUT_SOURCE}
     ${FLEX_TMAScanner_OUTPUTS})
     
-if (DEFINED le_das_BINARY_DIR)
+if (DEFINED monarch_BINARY_DIR)
 target_include_directories(tmcalgo PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
-  ${le_das_SOURCE_DIR}/libs/dasio/src
-  ${le_das_tools_SOURCE_DIR}/cmdgen)
-else (DEFINED le_das_BINARY_DIR)
+  ${monarch_SOURCE_DIR}/libs/dasio/src
+  ${monarch_tools_SOURCE_DIR}/cmdgen)
+else (DEFINED monarch_BINARY_DIR)
 target_include_directories(tmcalgo PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR})
-endif (DEFINED le_das_BINARY_DIR)
+endif (DEFINED monarch_BINARY_DIR)
 
 target_link_libraries(tmcalgo dasio nl pthread)
 install(TARGETS tmcalgo RUNTIME

@@ -15,15 +15,15 @@ add_executable(test_server test_server.cc test_serveroui.cc)
 OUI_FILE(test_client.oui)
 OUI_FILE(test_server.oui)
 
-if (DEFINED le_das_SOURCE_DIR)
+if (DEFINED monarch_SOURCE_DIR)
   include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${le_das_SOURCE_DIR}/tools/oui/src
-    ${le_das_SOURCE_DIR}/libs/nl
-    ${le_das_SOURCE_DIR}/libs/dasio/src
+    ${monarch_SOURCE_DIR}/tools/oui/src
+    ${monarch_SOURCE_DIR}/libs/nl
+    ${monarch_SOURCE_DIR}/libs/dasio/src
   )
-else (DEFINED le_das_SOURCE_DIR)
+else (DEFINED monarch_SOURCE_DIR)
   include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
   )
-endif (DEFINED le_das_SOURCE_DIR)
+endif (DEFINED monarch_SOURCE_DIR)

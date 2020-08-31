@@ -23,8 +23,8 @@ add_executable(tmc tmcmain.c parsfunc.c pdecls.c genpcm.c place.c
     ${FLEX_TMCScanner_OUTPUTS})
 target_include_directories(tmc PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
-  ${le_das_SOURCE_DIR}/libs/dasio/src
-  ${le_das_SOURCE_DIR}/libs/nl)
+  ${monarch_SOURCE_DIR}/libs/dasio/src
+  ${monarch_SOURCE_DIR}/libs/nl)
 target_link_libraries(tmc nl m)
 install(TARGETS tmc RUNTIME
         DESTINATION bin)

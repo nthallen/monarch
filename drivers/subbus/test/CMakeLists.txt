@@ -12,7 +12,7 @@ OUI_FILE(test_ir.oui)
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/../include
-  ${le_das_SOURCE_DIR}/tools/oui/src
-  ${le_das_SOURCE_DIR}/libs/nl
-  ${le_das_SOURCE_DIR}/libs/dasio/src
+  ${monarch_SOURCE_DIR}/tools/oui/src
+  ${monarch_SOURCE_DIR}/libs/nl
+  ${monarch_SOURCE_DIR}/libs/dasio/src
 )
