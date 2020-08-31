@@ -10,18 +10,33 @@
 #include "cmdalgo.h"
 #include "nl_assert.h"
 
-static bool quit_received = false;
-
 namespace DAS_IO {
   
-  Server *CmdServer;
+  bool Cmd_Server::ready_to_quit() {
+    Server::ready_to_quit();
+    return cmdif_rd::all_closed() && active_clients == 0;
+  }
+  
+  void Cmd_Server::process_quit() {
+    if (quit_processed) return;
+    quit_processed = true;
+    msg( MSG_DEBUG, "Processing Quit" );
+    cis_interfaces_close();
+    Cmd_receiver::process_quits();
+    Shutdown(false);
+  }
+  
+  Cmd_Server *CmdServer;
   
   Cmd_receiver::Cmd_receiver(Authenticator *auth, const char *iname)
       : Serverside_client(auth, iname, CMD_MAX_COMMAND_IN) {
     quit_recd = false;
+    rcvrs.push_back(this);
   }
   
-  Cmd_receiver::~Cmd_receiver() {}
+  Cmd_receiver::~Cmd_receiver() {
+    rcvrs.remove(this);
+  }
   
   /**
    * Get content from io_write() below
@@ -72,7 +87,7 @@ namespace DAS_IO {
             switch (*s) {
               case 'T': testing = 1; s++; break;
               case 'Q': quiet = 1; s++; break;
-              case 'X': process_quit(); return false;
+              case 'X': CmdServer->process_quit(); return false;
               case 'V': // handle version command
                 ver = ++s;
                 while ( *s != ']' && *s != '\0' ) s++;
@@ -130,7 +145,7 @@ namespace DAS_IO {
           case 1:
             report_ok(cp);
             if (testing) return iwrite("K\n");
-            process_quit();
+            CmdServer->process_quit();
             return true;
           case 2: /* Report Syntax Error */
             if ( nl_response ) {
@@ -153,14 +168,22 @@ namespace DAS_IO {
       }
     }
   }
-
-  bool Cmd_receiver::iwritten(int nb) {
-    if (obuf_empty() && quit_recd && (CmdServer != 0)) {
-      CmdServer->Shutdown();
-      return true;
+  
+  void Cmd_receiver::process_quits() {
+    std::list<Cmd_receiver *>::iterator cri;
+    for (cri = rcvrs.begin(); cri != rcvrs.end(); ++cri) {
+      Cmd_receiver *cr = *cri;
+      cr->process_quit();
     }
-    return false;
   }
+
+  // bool Cmd_receiver::iwritten(int nb) {
+    // if (obuf_empty() && quit_recd && (CmdServer != 0)) {
+      // CmdServer->Shutdown(false);
+      // return true;
+    // }
+    // return false;
+  // }
   
   Cmd_receiver *Cmd_receiver::new_cmd_receiver(Authenticator *auth,
       SubService *ss) {
@@ -169,14 +192,22 @@ namespace DAS_IO {
     return cr;
   }
 
-  void Cmd_receiver::process_quit() {
-    msg( MSG_DEBUG, "Processing Quit" );
-    quit_received = quit_recd = true;
-    iwrite("Q\n");
-    // ELoop->delete_child(this);
-    cis_interfaces_close();
-    cmdif_rd::all_closed();
+  bool Cmd_receiver::process_timeout() {
+    msg(MSG_DEBUG, "%s: Received timeout", iname);
+    ELoop->delete_child(this);
+    return false;
   }
+  
+  void Cmd_receiver::process_quit() {
+    if (quit_recd) return;
+    quit_recd = true;
+    msg(MSG_DEBUG, "%s: Processing Quit", iname);
+    iwrite("Q\n");
+    TO.Set(1,0);
+    flags |= Fl_Timeout;
+  }
+
+  std::list<Cmd_receiver *> Cmd_receiver::rcvrs;
   
   Cmd_turf::Cmd_turf(Authenticator *auth, const char *iname, cmdif_rd *ss)
       : Serverside_client(auth, iname, CMD_MAX_COMMAND_IN), ss(ss) {
@@ -194,12 +225,12 @@ namespace DAS_IO {
   }
  
   /*
-   * Strategy here is:
-   * next_command->cmdlen == 0 until there is something to write
-   * next_command->next == 0 until there is something to write
-   * we cannot write unless and until obuf_empty()
-   * if there is something to write, and we can write, we write it
-   * and we set written == true
+   * next_command->next == 0 until there is something to write.
+   * next_command->cmdlen == 0 indicates a quit/shutdown command.
+   *
+   * We cannot write unless and until obuf_empty().
+   * If there is something to write, and we can write, we write it
+   * and we set written == true.
    * 
    */
   void Cmd_turf::turf_check() {
@@ -212,13 +243,23 @@ namespace DAS_IO {
       }
       if (next_command->next) {
         if (next_command->cmdlen) {
-          iwrite((const char *)next_command->command, next_command->cmdlen);
-        } else if (ELoop) {
-          ELoop->delete_child(this);
+          iwrite((const char *)next_command->command,
+                  next_command->cmdlen);
+        } else {
+          iwrite("Q\n");
+          TO.Set(1,0);
+          flags |= Fl_Timeout;
         }
         written = true;
       } else break;
     }
+  }
+  
+  bool Cmd_turf::protocol_timeout() {
+    msg(MSG_DEBUG, "%s: Received timeout after quit", iname);
+    nl_assert(ELoop);
+    ELoop->delete_child(this);
+    return false;
   }
   
   bool Cmd_turf::iwritten(int nb) {
@@ -255,7 +296,7 @@ namespace DAS_IO {
 void ci_server(void) {
   cis_initialize(); // not actually implemented
   nl_assert(DAS_IO::CmdServer == 0);
-  DAS_IO::CmdServer = new DAS_IO::Server("cmd");
+  DAS_IO::CmdServer = new DAS_IO::Cmd_Server();
   nl_assert(DAS_IO::CmdServer != 0);
   DAS_IO::CmdServer->add_subservice(new DAS_IO::SubService("cmd/server",
     (DAS_IO::socket_clone_t)DAS_IO::Cmd_receiver::new_cmd_receiver, (void *)0));
@@ -274,22 +315,11 @@ cmdif_rd::cmdif_rd(const char *name)
 }
 
 /**
- * Since the cmdif_rd interfaces are statically defined, this destructor
- * is called during exit() processing. Needs to remove SubService
- * from CmdServer and also from the rdrs list (or cmdif_rd::all_closed()
- * could handle that, since it already has the position)
+ * Most processing handled in Teardown().
  */
 cmdif_rd::~cmdif_rd() {
   nl_assert(turfs.empty());
-  if (DAS_IO::CmdServer)
-    DAS_IO::CmdServer->rm_subservice(svcsname);
-  command_out_t *cmd1 = first_cmd;
-  while (cmd1) {
-    command_out_t *cmd2 = cmd1->next;
-    free_memory(cmd1);
-    cmd1 = cmd2;
-  }
-  first_cmd = last_cmd = 0;
+  nl_assert(first_cmd == 0);
 }
 
 void cmdif_rd::Setup() {
@@ -312,9 +342,6 @@ void cmdif_rd::Turf(const char *format, ...) {
   command_out_t *cmd;
   int nb;
 
-  // I think this assertion is wrong
-  // nl_assert(CmdServer &&
-  //  CmdServer->SU != NULL );
   cmd = last_cmd;
   va_start( arglist, format );
   nb = vsnprintf( cmd->command, CMD_MAX_COMMAND_OUT, format, arglist );
@@ -342,6 +369,22 @@ void cmdif_rd::Shutdown() {
   Turf("");
 }
 
+/**
+ * Needs to remove SubService from CmdServer
+ */
+void cmdif_rd::Teardown() {
+  nl_assert(turfs.empty());
+  if (DAS_IO::CmdServer)
+    DAS_IO::CmdServer->rm_subservice(svcsname);
+  command_out_t *cmd1 = first_cmd;
+  while (cmd1) {
+    command_out_t *cmd2 = cmd1->next;
+    free_memory(cmd1);
+    cmd1 = cmd2;
+  }
+  first_cmd = last_cmd = 0;
+}
+
 void cmdif_rd::add_reader(DAS_IO::Cmd_turf *rdr) {
   turfs.push_back(rdr);
 }
@@ -367,7 +410,7 @@ bool cmdif_rd::all_closed() {
     rp++;
     if ( cur_rdr->turfs.empty() ) {
       rdrs.erase(crp);
-      // delete(cur_rdr); // don't delete! These are statically allocated
+      cur_rdr->Teardown();
     }
   }
   if (rdrs.empty()) {

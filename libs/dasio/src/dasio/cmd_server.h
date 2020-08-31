@@ -12,7 +12,16 @@ class cmdif_rd;
 
 namespace DAS_IO {
   
-  extern Server *CmdServer;
+  class Cmd_Server : public Server {
+    public:
+      inline Cmd_Server() : Server("cmd"), quit_processed(false) {}
+      void process_quit();
+    protected:
+      bool ready_to_quit();
+      bool quit_processed;
+  };
+
+  extern Cmd_Server *CmdServer;
   
   /**
    * @brief Class for cmd/server server clients.
@@ -23,37 +32,44 @@ namespace DAS_IO {
     public:
       Cmd_receiver(Authenticator *auth, const char *iname);
       bool protocol_input();
-      bool iwritten(int nb);
+      // bool iwritten(int nb);
+      /** process quit for each Cmd_receiver */
+      static void process_quits();
       static Cmd_receiver *new_cmd_receiver(Authenticator *auth,
         SubService *ss);
     protected:
       ~Cmd_receiver();
+      bool process_timeout();
       void process_quit();
       bool quit_recd;
+      static std::list<Cmd_receiver *> rcvrs;
       static const int OBUF_SIZE = 120;
       char obuf[OBUF_SIZE];
   };
   
   /**
-   * @brief Class for cmd/<turf_client> server clients.
-   * svc_data needs to link to the <cmdif_rd> object.
-   * We also need to keep track of which commands this
-   * interface has transmitted.
+   * @brief Class for cmd/<driver> server-side clients.
+   *
+   * ss links to the <cmdif_rd> object that defines the
+   * subservice.
    */
   class Cmd_turf : public Serverside_client {
     public:
       Cmd_turf(Authenticator *auth, const char *iname, cmdif_rd *ss);
-      /**
-       * Checks whether next_command is ready to transmit.
-       */
+      /** Checks whether next_command is ready to transmit. */
       void turf_check();
       bool iwritten(int nb);
       static Serverside_client *new_cmd_turf(Authenticator *auth,
         SubService *ss);
     protected:
       ~Cmd_turf();
+      /** For handling shutdown gracefully. */
+      bool protocol_timeout();
+      /** Head of a linked list of commands pending output */
       command_out_t *next_command;
+      /** true if we have written out the next_command */
       bool written;
+      /** Pointer to the cmdif_rd defining this subservice */
       cmdif_rd *ss;
   };
 
@@ -61,7 +77,7 @@ namespace DAS_IO {
 
 /**
  * @brief Class to handle command output from the
- * command server to the dev/<driver> subservices.
+ * command server to the cmd/<driver> subservices.
  */
 class command_out_t {
   public:
@@ -76,13 +92,15 @@ class command_out_t {
 };
 
 /**
- * Class to define a DG/<interface> subservice which
- * Clients (connections from drivers) can read from to
- * get specific commands. This is instantiated for
- * the cmdgen '%INTERFACE <driver>' syntax.
+ * @brief Class to define a cmd/<driver> subservice
+ *
+ * Class to define a cmd/<driver> subservice which
+ * Cmd_reader clients (connections from drivers) can
+ * read from to get driver-specific commands. This is
+ * instantiated for the cmdgen syntax '%INTERFACE <driver>'.
  * Since there may be more than one reader, the
- * reader Socket objects may need to keep track
- * of which commands have been read...
+ * server-side Cmd_turf objects need to keep track
+ * of which commands have been read.
  *
  * The cmdif_rd is the context structure that is
  * included in the SubService definition and
@@ -95,7 +113,10 @@ class cmdif_rd {
     ~cmdif_rd();
     void Setup();
     void Turf(const char *fmt, ...);
+    /** Start the shutdown process */
     void Shutdown();
+    /** Release memory after client shutdowns */
+    void Teardown();
     void add_reader(DAS_IO::Cmd_turf *rdr);
     void rm_reader(DAS_IO::Cmd_turf *rdr);
     static bool all_closed();

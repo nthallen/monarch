@@ -1,5 +1,7 @@
 <package> nctable
 <include> "dasio/nctable.h"
+<include> msg
+<follow> msg
 
 <opts> "a"
 

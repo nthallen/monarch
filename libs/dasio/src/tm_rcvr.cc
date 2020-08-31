@@ -5,6 +5,7 @@
 
 #include <string.h>
 #include "dasio/tm_rcvr.h"
+#include "dasio/loop.h"
 #include "nl.h"
 
 namespace DAS_IO {
@@ -66,6 +67,12 @@ namespace DAS_IO {
                   tm_msg->hdr.tm_type );
               toread = nbDataHdr;
               tm_state = TM_STATE_DATA_HDR;
+              break;
+            case TMTYPE_QUIT:
+              process_quit();
+              cp += toread;
+              ncc -= toread;
+              tm_expect_hdr();
               break;
             default:
               msg(MSG_ERROR, "%sInvalid TMTYPE: %04X", context(),
@@ -164,6 +171,11 @@ namespace DAS_IO {
 
   void tm_rcvr::process_tstamp() {
     tm_info.t_stmp = tm_msg->body.ts;
+  }
+  
+  void tm_rcvr::process_quit() {
+    if (interface && interface->ELoop)
+      interface->ELoop->delete_child(interface);
   }
 
   void tm_rcvr::seek_tmid() {

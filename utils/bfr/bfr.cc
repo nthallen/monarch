@@ -149,7 +149,7 @@ unsigned int bfr2_input_client::process_data() {
         }
       }
     }
-    if (run_output_queue()) break;
+    if (run_output_queue(false)) break;
   }
   if (blocked_input) {
     if (n_rows == 0) {
@@ -162,6 +162,10 @@ unsigned int bfr2_input_client::process_data() {
   }
   processing_data = false;
   return rows_processed;
+}
+
+void bfr2_input_client::process_quit() {
+  msg(MSG_ERROR, "%s: Unexpected call to process_quit()", iname);
 }
 
 void bfr2_input_client::tmq_retire_check() {
@@ -205,14 +209,14 @@ void bfr2_input_client::run_input_queue() {
   }
 }
 
-bool bfr2_input_client::run_output_queue() {
+bool bfr2_input_client::run_output_queue(bool quitting) {
   bool blocked_output = false;
   std::list<bfr2_output_client*>::iterator oci;
   for (lock(__FILE__,__LINE__), oci = all_readers.begin(), unlock();
        oci != all_readers.end();
        lock(__FILE__,__LINE__), ++oci, unlock()) {
     bfr2_output_client *oc = *oci;
-    oc->transmit();
+    oc->transmit(quitting);
     if (!oc->obuf_empty())
       blocked_output = true;
   }
@@ -222,16 +226,18 @@ bool bfr2_input_client::run_output_queue() {
 bool bfr2_input_client::ready_to_quit() {
   while (!queue_empty()) {
     tmq_retire_check();
-    if (run_output_queue())
+    if (run_output_queue(false))
       return false;
   }
-  return true;
+  run_output_queue(true); // send Quit and set TO
+  return all_readers.empty();
 }
 
 bfr2_output_client::bfr2_output_client(Authenticator *Auth,
           const char *iname, bool is_fast)
     : Serverside_client(Auth, iname, bfr2_output_client_ibufsize),
       is_fast(is_fast) {
+  quit_sent = false;
   data.tsp = 0;
   data.tmqr = 0;
   data.n_Qrows = 0;
@@ -267,13 +273,24 @@ bfr2_output_client::~bfr2_output_client() {
    It is assumed that oc has already been removed from whatever wait
    queue it might have been on.
 */
-void bfr2_output_client::transmit() {
-  if (! obuf_empty()) return;
+void bfr2_output_client::transmit(bool quitting) {
+  nl_assert(!quitting || obuf_empty());
+  if (! obuf_empty() || (quitting && quit_sent))
+    return;
   nl_assert(data.n_Qrows_pending == 0);
   if (output.maxQrows == 0) {
     output.maxQrows = bfr2_input_client::tm_gen->total_Qrows;
   }
   
+  if (quitting) {
+    hdr.s.hdr.tm_id = TMHDR_WORD;
+    hdr.s.hdr.tm_type = TMTYPE_QUIT;
+    iwrite((const char *)&hdr.s.hdr, sizeof(hdr.s.hdr));
+    TO.Set(1, 0);
+    quit_sent = true;
+    flags |= Fl_Timeout;
+    return;
+  }
   if ( data.tmqr == 0 ) {
     // First output to this client, so send tm_init
     bfr2_input_client::tm_gen->lock(__FILE__,__LINE__);
@@ -428,6 +445,14 @@ bool bfr2_output_client::iwritten(int ntr) {
       msg(MSG_DBG(0), "%s: Calling run_input_queue", iname);
       bfr2_input_client::tm_gen->run_input_queue();
     }
+  }
+  return false;
+}
+
+bool bfr2_output_client::protocol_timeout() {
+  if (quit_sent) {
+    msg(MSG_WARN, "%s: Timeout expecting EOF", iname);
+    ELoop->delete_child(this);
   }
   return false;
 }

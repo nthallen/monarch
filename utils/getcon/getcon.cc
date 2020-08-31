@@ -40,7 +40,11 @@ static void wait_for_quit(void) {
   CR->signal(SIGCHLD);
   CR->signal(SIGINT);
   CR->signal(SIGHUP);
+  msg(MSG_DEBUG, "Starting");
   ELoop.event_loop();
+  ELoop.delete_children();
+  ELoop.clear_delete_queue();
+  msg(MSG_DEBUG, "Terminating");
 }
 
 static void end_session() {
@@ -72,6 +76,7 @@ getcon_cmd::getcon_cmd()
  * should terminate
  */
 bool getcon_cmd::app_process_eof() {
+  msg(MSG_DEBUG, "%s: Received EOF", iname);
   return true;
 }
 
@@ -122,8 +127,9 @@ bool getcon_cmd::app_input() {
         report_ok(cp);
       }
     } else {
-      msg(MSG_DEBUG, "%s: Received something, no sesison ID, terminating",
-            iname);
+      msg(MSG_DEBUG,
+        "%s: Received something, no sesison ID, terminating",
+        iname);
       rv = true;
     }
   }
@@ -139,6 +145,26 @@ void getcon_args( char *arg ) {
     has_pid = true;
     pid = arg;
   } else msg( 3, "Too many arguments" );
+}
+
+void getcon_init_options(int argc, char **argv) {
+  int optltr;
+
+  optind = OPTIND_RESET;
+  opterr = 0;
+  while ((optltr = getopt(argc, argv, opt_string)) != -1) {
+    switch (optltr) {
+      case 'e': opt_end_session = true; break;
+      case '?':
+        msg(3, "Unrecognized Option -%c", optopt);
+      default:
+        break;
+    }
+  }
+  for (; optind < argc; optind++) {
+    optarg = argv[optind];
+    getcon_args(optarg);
+  }
 }
 
 int main( int argc, char **argv ) {

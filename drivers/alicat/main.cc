@@ -89,6 +89,7 @@ int main(int argc, char **argv) {
   msg(0, "%s %s Starting", DAS_IO::AppID.fullname, DAS_IO::AppID.rev);
   ELoop.event_loop();
   ELoop.delete_children();
+  ELoop.clear_delete_queue();
   msg(0, "%s Terminating", DAS_IO::AppID.name);
   return 0;
 }
