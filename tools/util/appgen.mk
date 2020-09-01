@@ -35,7 +35,7 @@ LINK.privCXX=/bin/rm -f $@; $(LINK.normCXX)
 TMCREV=tmc
 TMC=$(TMCREV) -s -o $@ $(TMCFLAGS)
 TMC.col=name=$@; $(TMC) -p -V $${name%col.cc}.pcm -c -D tm.dac $(COLFLAGS)
-OUIDIR=/usr/local/share/oui
+OUIDIR=/usr/local/share/monarch/oui
 OUI=oui -o $@
 OUIUSE=echo usemsg $@
 LIBSRC=/usr/local/share/monarch

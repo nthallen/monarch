@@ -21,13 +21,13 @@ add_executable(oui llop.c opnifile.c ouiinit.c ouimain.c
       ${FLEX_OUI_Scanner_OUTPUTS})
 
 target_compile_definitions(oui PRIVATE
-  -DPKGDATADIR="${CMAKE_INSTALL_PREFIX}/share/oui")
+  -DPKGDATADIR="${CMAKE_INSTALL_PREFIX}/share/monarch/oui")
 target_include_directories(oui PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${monarch_SOURCE_DIR}/libs/nl)
 target_link_libraries(oui nl)
 install(TARGETS oui RUNTIME DESTINATION bin)
-install (FILES oui.oui DESTINATION share/oui)
+install (FILES oui.oui DESTINATION share/monarch/oui)
 
 endif (NOT ${CMAKE_CROSSCOMPILING})
 

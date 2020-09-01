@@ -1,7 +1,7 @@
 #! /bin/bash
 opts="$*"
 find . -name .git -prune -false -o -type f |
-  xargs grep $opts -P "(?:(?:le[-_])das)|dasng|dasctl|linkeng"
+  xargs grep $opts -P "(?:(?:le[-_])das)|dasng|dasctl|linkeng|share/oui"
 
 # This demonstrates that there are essentially no
 # references to a bare 'das' or 'DAS', except of
