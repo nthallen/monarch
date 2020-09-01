@@ -48,7 +48,7 @@ for obsdir in oui linkeng; do
     echo "monarch_setup.sh: removing obsolete directory /usr/local/share/$obsdir"
     rm -rv /usr/local/share/$obsdir
   fi
-fi
+done
 
 service=/usr/local/share/monarch/setup/monarch.service 
 svcdest=/lib/systemd/system/monarch.service

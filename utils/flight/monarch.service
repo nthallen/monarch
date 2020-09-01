@@ -1,5 +1,5 @@
 [Unit]
-Description=Link Engineering Data Acquisition System ng Service
+Description=Monarch Data Acquisition Service
 After=default.target
 
 [Service]
