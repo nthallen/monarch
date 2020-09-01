@@ -159,13 +159,13 @@ function Launch {
   name=$1
   shift
   [ -n "$launch_error" ] && return 1
-  mkdir -p /var/run/linkeng/run/$Experiment
+  mkdir -p /var/run/monarch/run/$Experiment
   if { $* & }; then
     Launch_pid=$!
     msgf 0 "Launch: $Launch_pid $*"
     if [ "$name" != "-" ]; then
-      [ "$name" = "-TMC-" ] && name="/var/run/linkeng/run/$Experiment/$!"
-      [ "${name#/}" = "$name" ] && name="/var/run/linkeng/$Experiment/$name"
+      [ "$name" = "-TMC-" ] && name="/var/run/monarch/run/$Experiment/$!"
+      [ "${name#/}" = "$name" ] && name="/var/run/monarch/$Experiment/$name"
       waitfor $name 10 || {
         msgf 2 "Launch namewait failure: $*"
         launch_error=yes
@@ -184,8 +184,8 @@ statusready=no
 function isready {
   quiet=no
   [ "$1" = "quiet" ] && quiet=yes
-  msgf -2 "dasctl $TM_OPT -VS"
-  dasctl $TM_OPT -VS 2>&1 |
+  msgf -2 "monarchctl $TM_OPT -VS"
+  monarchctl $TM_OPT -VS 2>&1 |
   ( while read j; do
       [ $quiet = no ] && echo $j
       sj=${j#* Status: Ready:}
@@ -220,9 +220,9 @@ fi
 #   req: Override is required
 #   done: Override has been requested
 override=no
-dasctl_opt='-r'
+monarchctl_opt='-r'
 if [ $startup = yes -a $srcmode = realtime ]; then
-  [ -n "$batchfile" ] && dasctl_opt="-R $batchfile"
+  [ -n "$batchfile" ] && monarchctl_opt="-R $batchfile"
   if [ $SERVICE = AdHoc ]; then
     nl_error "AdHoc: Would startup flight.sh here"
   fi
@@ -236,8 +236,8 @@ if [ $startup = yes -a $srcmode = realtime ]; then
     msg -Vn doit "Running isready quiet, TM_OPT=$TM_OPT"
     isready quiet
     if [ $statusready = no ]; then
-      msg -Vn doit "running dasctl -V $TM_OPT $dasctl_opt"
-      dasctl -V $TM_OPT $dasctl_opt
+      msg -Vn doit "running monarchctl -V $TM_OPT $monarchctl_opt"
+      monarchctl -V $TM_OPT $monarchctl_opt
       isready
     fi
   fi
@@ -401,7 +401,7 @@ fi
 # the flight log
 ## This test can be made more robust
 msgf -2 "Starting memo"
-#memo=/var/run/linkeng/$Experiment/memo
+#memo=/var/run/monarch/$Experiment/memo
 #if [ ! -e $memo ]; then
   Launch memo memo -o $logfileroot.clt.log -l3
 #fi

@@ -68,9 +68,9 @@ if [ $FltNode_Access = Remote ]; then
   SSH_CMD="ssh -t flight@$FlightNode"
   SSH_TAR_CMD="ssh -T flight@$FlightNode"
   SERVICE=Installed
-elif [ -e /var/run/linkeng/$Experiment/parent -a \
-       -e /var/run/linkeng/$Experiment/parent.pid ] &&
-     [ -e /proc/`cat /var/run/linkeng/$Experiment/parent.pid` ]; then
+elif [ -e /var/run/monarch/$Experiment/parent -a \
+       -e /var/run/monarch/$Experiment/parent.pid ] &&
+     [ -e /proc/`cat /var/run/monarch/$Experiment/parent.pid` ]; then
   SERVICE=Installed
 else
   SERVICE=AdHoc
@@ -127,13 +127,13 @@ function Launch {
   set_have $shortname no
   shift
   [ -n "$launch_error" ] && return 1
-  mkdir -p /var/run/linkeng/run/$Experiment
+  mkdir -p /var/run/monarch/run/$Experiment
   if { $* & }; then
     Launch_pid=$!
     msgf -V 0 "Launch: $Launch_pid $*"
     if [ "$name" != "-" ]; then
-      [ "$name" = "-TMC-" ] && name="/var/run/linkeng/run/$Experiment/$!"
-      [ "${name#/}" = "$name" ] && name="/var/run/linkeng/$Experiment/$name"
+      [ "$name" = "-TMC-" ] && name="/var/run/monarch/run/$Experiment/$!"
+      [ "${name#/}" = "$name" ] && name="/var/run/monarch/$Experiment/$name"
       waitfor $name 20 || {
         msgf 2 "Launch namewait failure: $*"
         launch_error=yes

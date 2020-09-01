@@ -93,8 +93,8 @@ function Launch {
       parent_loop="-q -M $Launch_pid -t 5"
     fi
     if [ "$name" != "-" ]; then
-      [ "$name" = "-TMC-" ] && name="/var/run/linkeng/run/$Experiment/$!"
-      [ "${name#/}" = "$name" ] && name="/var/run/linkeng/$Experiment/$name"
+      [ "$name" = "-TMC-" ] && name="/var/run/monarch/run/$Experiment/$!"
+      [ "${name#/}" = "$name" ] && name="/var/run/monarch/$Experiment/$name"
       [ -n "$VERBOSE" ] &&
         msg -Vn flight.sh "[DEBUG] Launch: Waiting for $Launch_pid:$name"
       waitfor $name 10 || {
@@ -116,7 +116,7 @@ function Launch {
 }
 
 SUBBUS_PID=''
-subbus_name=/var/run/linkeng/$Experiment/subbus
+subbus_name=/var/run/monarch/$Experiment/subbus
 if [ -n "$SUBBUSD" -a ! -e $subbus_name ]; then
   if [ -n "$SUBBUSD_DELAY" ]; then
     msg -Vn flight.sh "sleep $SUBBUSD_DELAY for subbus"
@@ -133,11 +133,11 @@ if [ -z "$script" -a -n "$EXP_NODES" ]; then
     sleep $NETWORK_DELAY
   fi
   for node in $EXP_NODES; do
-    script=`dasctl -G $node -V`
+    script=`monarchctl -G $node -V`
     [ -n "$script" ] && break
   done
   [ -n "$script" ] &&
-    msg -Vn flight.sh "Script name '$script' received via dasctl"
+    msg -Vn flight.sh "Script name '$script' received via monarchctl"
 fi
 
 if [ -z "$script" ]; then

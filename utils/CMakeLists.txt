@@ -8,7 +8,7 @@ add_definitions( -D_POSIX_SOURCE=1 -D_XOPEN_SOURCE=500 )
 
 add_subdirectory(bfr)
 add_subdirectory(comms)
-add_subdirectory(dasctl)
+add_subdirectory(monarchctl)
 add_subdirectory(flight)
 add_subdirectory(getcon)
 add_subdirectory(lgr)

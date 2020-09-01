@@ -18,5 +18,5 @@ target_include_directories(getcon PRIVATE
 install(TARGETS getcon RUNTIME DESTINATION sbin)
 install(FILES
   getcon.cmd
-  DESTINATION share/linkeng
+  DESTINATION share/monarch/modules
 )

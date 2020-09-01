@@ -26,7 +26,7 @@ configure_file(mkexpdir.sh.in mkexpdir @ONLY)
 configure_file(mkexpactive.sh.in mkexpactive @ONLY)
 
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/mkexp.sh
-        DESTINATION /usr/local/share/linkeng/setup)
+        DESTINATION /usr/local/share/monarch/setup)
 install(PROGRAMS
         ${CMAKE_CURRENT_BINARY_DIR}/mkexpactive
         ${CMAKE_CURRENT_BINARY_DIR}/mkexpdir

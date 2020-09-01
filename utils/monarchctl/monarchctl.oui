@@ -1,7 +1,7 @@
-<package> dasctl
+<package> monarchctl
 <include> oui msg
 <follow> oui msg
-<include> "dasctl.h"
+<include> "monarchctl.h"
 
 <opts> "QrR:St:G:"
 
@@ -11,26 +11,26 @@
 	-R <script> Request restart with specified script
 	-S Request status information from parent service on flight system
 	-t <flight_hostname> Specify flight hostname (defaults to localhost)
-	-G <gse_hostname> Query dasctl on gse_hostname for startup script.
+	-G <gse_hostname> Query monarchctl on gse_hostname for startup script.
 
 <unsort>
 <blank>
-dasctl communicates with the parent service or the dasctl service in order
+monarchctl communicates with the parent service or the monarchctl service in order
 to communicate options for startup.
 <blank>
-A flight system will run dasctl with the -G option in order to query the
-dasctl service on the GSE for startup options. Use -G "" to query the local
+A flight system will run monarchctl with the -G option in order to query the
+monarchctl service on the GSE for startup options. Use -G "" to query the local
 system. The -G option cannot be combined with any of the -QrRvt options.
 <blank>
-GSE scripts will run dasctl with other options to connect with
+GSE scripts will run monarchctl with other options to connect with
 the parent service on the flight system to startup, shutdown or obtain
 status information about the current operations.
 
 <init>
-  dasctl_init_options(argc, argv);
+  monarchctl_init_options(argc, argv);
 
 <package> appid_default
 <include> "dasio/appid.h"
 <defs>
-  DAS_IO::AppID_t DAS_IO::AppID("dasctl", "DAS Control", "V1.0");
+  DAS_IO::AppID_t DAS_IO::AppID("monarchctl", "Monarch Control", "V1.0");
 

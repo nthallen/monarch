@@ -1,30 +1,30 @@
-#ifndef DASCTL_H_INCLUDED
-#define DASCTL_H_INCLUDED
+#ifndef MONARCHCTL_H_INCLUDED
+#define MONARCHCTL_H_INCLUDED
 #include "dasio/server.h"
 #include "dasio/client.h"
 
-void dasctl_init_options(int argc, char **argv);
+void monarchctl_init_options(int argc, char **argv);
 
 using namespace DAS_IO;
 
-class dasctl_ssclient : public Serverside_client {
+class monarchctl_ssclient : public Serverside_client {
   public:
-    dasctl_ssclient(Authenticator *Auth, const char *iname);
+    monarchctl_ssclient(Authenticator *Auth, const char *iname);
     // Specify how big the ibuf needs to be:
-    static const int dasctl_ssclient_ibufsize = 80;
+    static const int monarchctl_ssclient_ibufsize = 80;
     // Include whatever virtual function overrides you need here
     bool connected();
   protected:
-    ~dasctl_ssclient();
+    ~monarchctl_ssclient();
     // Include any local data here
 };
 
 /**
  * Class to send commands to a parent server
  */
-class dasctl_t : public Client {
+class monarchctl_t : public Client {
   public:
-    dasctl_t(Server *srvr);
+    monarchctl_t(Server *srvr);
     bool app_connected();
     bool app_input();
   protected:
@@ -34,11 +34,11 @@ class dasctl_t : public Client {
 };
 
 /**
- * Class to query a dasctl server
+ * Class to query a monarchctl server
  */
-class dasctlclt_t : public Client {
+class monarchctlclt_t : public Client {
   public:
-    dasctlclt_t();
+    monarchctlclt_t();
   protected:
     bool app_input();
     bool connect_failed();

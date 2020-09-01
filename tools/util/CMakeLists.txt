@@ -38,7 +38,7 @@ install(FILES
   edf2ext.awk
   edf2oui.awk
   loop.cmd
-  DESTINATION share/linkeng)
+  DESTINATION share/monarch)
 
 else (NOT CMAKE_CROSSCOMPILING)
 

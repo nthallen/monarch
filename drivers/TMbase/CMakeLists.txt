@@ -14,4 +14,4 @@ install(FILES
   TMbase.agm
   TMbase.genui.in
   TMbase.tbl.in
-  DESTINATION share/linkeng)
+  DESTINATION share/monarch/modules)

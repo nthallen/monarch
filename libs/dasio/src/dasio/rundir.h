@@ -9,11 +9,8 @@
   extern "C" {
 #endif
   
-//extern void mkfltdir(const char *dir, uid_t flt_uid, gid_t flt_gid);
-//extern void setup_rundir(void);
-//extern void delete_rundir(void);
-#define RUNDIR_UNIX "/var/run/linkeng"
-#define RUNDIR_TMC "/var/run/linkeng/run"
+#define RUNDIR_UNIX "/var/run/monarch"
+#define RUNDIR_TMC "/var/run/monarch/run"
 
 #ifdef __cplusplus
   };

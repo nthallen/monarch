@@ -17,8 +17,8 @@ ifdef CROSS_STAGE
 CPPFLAGS=-I$(CROSS_STAGE)/include $(AG_CPPFLAGS)
 AG_LIBDIR=$(CROSS_STAGE)/lib
 else
-CPPFLAGS=-I/opt/linkeng/am335x/include $(AG_CPPFLAGS)
-AG_LIBDIR=/opt/linkeng/am335x/lib
+CPPFLAGS=-I/opt/monarch/am335x/include $(AG_CPPFLAGS)
+AG_LIBDIR=/opt/monarch/am335x/lib
 endif
 else
 CPPFLAGS=-I/usr/local/include $(AG_CPPFLAGS)
@@ -38,7 +38,7 @@ TMC.col=name=$@; $(TMC) -p -V $${name%col.cc}.pcm -c -D tm.dac $(COLFLAGS)
 OUIDIR=/usr/local/share/oui
 OUI=oui -o $@
 OUIUSE=echo usemsg $@
-LIBSRC=/usr/local/share/linkeng
+LIBSRC=/usr/local/share/monarch
 CMDGEN=cmdgen -o $@
 COMPILE.clt=$(COMPILE.cc) -o $@ -D CLIENT
 COMPILE.cltnc=$(COMPILE.cc) -o $@ -D CLIENT -D NCT_INTERFACE=1
@@ -58,7 +58,7 @@ CYCLE=cycle > $@
 TABLE=phtable > $@
 NCTABLE=nctable > $@
 DATAATTR=data_attr > $@
-SERVER=srvr() { $$1 -V 2>/dev/null & waitfor /var/run/linkeng/none/cmd 3 || { echo $$1 failed >&2; return 1; }; }; srvr
+SERVER=srvr() { $$1 -V 2>/dev/null & waitfor /var/run/monarch/none/cmd 3 || { echo $$1 failed >&2; return 1; }; }; srvr
 TMAREV=tmcalgo
 TMCALGO=$(TMAREV) -o $@
 # SOLFMT=sft () { cat $$* >$@tmp; solfmt -o$@ $@tmp; rm $@tmp; }; sft

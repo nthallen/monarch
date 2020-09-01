@@ -20,5 +20,5 @@ install(FILES tmdf.h
 install(FILES
   tmdf.tmc
   tmdf_col.tmc
-  DESTINATION share/linkeng)
+  DESTINATION share/monarch/modules)
 

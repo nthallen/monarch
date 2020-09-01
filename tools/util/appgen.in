@@ -248,7 +248,7 @@ function def_source {
 
 add_member IDISTRIB Experiment.config
 add_member IDISTRIB VERSION
-add_member cmdbase /usr/local/share/linkeng/root.cmd
+add_member cmdbase /usr/local/share/monarch/modules/root.cmd
 
 #----------------------------------------------------------------
 # This is where we read in the definitions
@@ -763,7 +763,7 @@ else
   ignorefile=.gitignore
 fi
 
-echo 'include /usr/local/share/linkeng/appgen.mk'
+echo 'include /usr/local/share/monarch/appgen.mk'
 echo
 echo '.PHONY : all all-dist extdistribution distribution tidy clean clean-dist check_photon'
 echo
@@ -789,7 +789,7 @@ echo "${tab}appgen $ifile"
   echo 'check_photon :'
   echo 'ifeq ($(WPHOTON),YES)'
   echo '${tab}@for tgt in $(PHTGT); do \\'
-  echo '${tab}  cmp -s $$tgt /usr/local/share/linkeng/nulltbl.tmc && echo Remaking $$tgt && rm -f $$tgt; \\'
+  echo '${tab}  cmp -s $$tgt /usr/local/share/monarch/nulltbl.tmc && echo Remaking $$tgt && rm -f $$tgt; \\'
   echo '${tab}done; true'
   echo 'endif'
 

@@ -63,7 +63,7 @@ FILE_OPT=$1
 #----------------------------------------------------------------
 # saverun isn't legal when collection is running:
 #----------------------------------------------------------------
-[ -e /var/run/linkeng/$Experiment/tm_gen ] &&
+[ -e /var/run/monarch/$Experiment/tm_gen ] &&
   msgf 3 dg for Experiment $Experiment currently active
 
 if [ $FltNode_Access = Remote ]; then

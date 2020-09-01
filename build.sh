@@ -47,7 +47,7 @@ fi
 branch=`git rev-parse --abbrev-ref HEAD`
 if [ -n "$crname" ]; then
   crargs=" -DCMAKE_TOOLCHAIN_FILE=$relsrcroot/arm-toolchain.cmake"
-  crargs+=" -DCMAKE_STAGING_PREFIX=/opt/linkeng/am335x-$branch"
+  crargs+=" -DCMAKE_STAGING_PREFIX=/opt/monarch/am335x-$branch"
 fi
 builddir="../build$crname-$branch$subdir"
 if [ ! -d $builddir ]; then

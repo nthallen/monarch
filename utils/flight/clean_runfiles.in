@@ -4,11 +4,11 @@ function print_usage {
 cat << EOF
 clean_runfiles [-h] [-k] [-r]
 
-Examines the run directory /var/run/linkeng and
+Examines the run directory /var/run/monarch and
 removes any inactive elements. This includes:
 
   - orphaned sockets (process no longer exists)
-  - old TM client PID files under /var/run/linkeng/run
+  - old TM client PID files under /var/run/monarch/run
   - empty Experiment directories and lock files
 
 These operations should be safe to execute at any
@@ -46,7 +46,7 @@ while getopts "hkr" option; do
 done
 
 # Remove any abandoned sockets
-for socket in `find /var/run/linkeng -type s`; do
+for socket in `find /var/run/monarch -type s`; do
   if [ -f ${socket}.pid ]; then
     pid=`cat ${socket}.pid`
     if ! kill -0 $pid 2>/dev/null; then
@@ -60,8 +60,8 @@ for socket in `find /var/run/linkeng -type s`; do
 done
 
 # Remove any dead pid files under run
-if [ -d /var/run/linkeng/run ]; then
-  for pidfile in `find /var/run/linkeng/run -type f`; do
+if [ -d /var/run/monarch/run ]; then
+  for pidfile in `find /var/run/monarch/run -type f`; do
     pid=${pidfile##*/}
     if kill -0 $pid 2>/dev/null; then
       echo "TM client $pidfile is still active"
@@ -71,7 +71,7 @@ if [ -d /var/run/linkeng/run ]; then
     fi
   done
 
-  for piddir in `find /var/run/linkeng/run -mindepth 1 -type d`; do
+  for piddir in `find /var/run/monarch/run -mindepth 1 -type d`; do
     rmdir --ignore $piddir
     if [ -d $piddir ]; then
       echo "PID directory $piddir is non-empty"
@@ -82,7 +82,7 @@ if [ -d /var/run/linkeng/run ]; then
 fi
 
 # Remove any empty Experiment directories
-for lockfile in `find /var/run/linkeng -name "*.lock"`; do
+for lockfile in `find /var/run/monarch -name "*.lock"`; do
   dir=${lockfile%.lock}
   [ -d $dir ] &&
     flock --nb $lockfile rmdir --ignore $dir
@@ -101,8 +101,8 @@ done
 [ $opt_rdr = yes ] && Experiment=$Experiment.r
 
 rv=0
-if [ -d "/var/run/linkeng/$Experiment" ]; then
-  for pidfile in `find /var/run/linkeng/$Experiment -name "*.pid"`; do
+if [ -d "/var/run/monarch/$Experiment" ]; then
+  for pidfile in `find /var/run/monarch/$Experiment -name "*.pid"`; do
     pid=`cat $pidfile`
     for signal in KILL; do
       if kill -$signal $pid 2>/dev/null; then
@@ -123,8 +123,8 @@ if [ -d "/var/run/linkeng/$Experiment" ]; then
   done
 fi
 
-if [ -d "/var/run/linkeng/run/$Experiment" ]; then
-  for pidfile in `find /var/run/linkeng/run/$Experiment -type f`; do
+if [ -d "/var/run/monarch/run/$Experiment" ]; then
+  for pidfile in `find /var/run/monarch/run/$Experiment -type f`; do
     pid=${pidfile##*/}
     for signal in INT KILL; do
       if kill -$signal $pid 2>/dev/null; then
@@ -143,7 +143,7 @@ if [ -d "/var/run/linkeng/run/$Experiment" ]; then
     done
     [ -f $pidfile ] && rv=1
   done
-  rmdir --ignore /var/run/linkeng/run/$Experiment
+  rmdir --ignore /var/run/monarch/run/$Experiment
 fi
 
 exit $rv

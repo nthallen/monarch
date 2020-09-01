@@ -20,7 +20,7 @@ install(FILES alicat.h
 
 install(PROGRAMS
   TM/alicat_gen
-  DESTINATION share/linkeng)
+  DESTINATION share/monarch/modules)
 install(FILES
   TM/alicat.agm
-  DESTINATION share/linkeng)
+  DESTINATION share/monarch/modules)

@@ -9,6 +9,6 @@ if (NOT ${CMAKE_CROSSCOMPILING})
 
 install(FILES base.tmc Demo.doit Demo.spec Demo.tbl Demo.tma Demo.genui
         doit Experiment.config interact services VERSION
-        DESTINATION /usr/local/share/linkeng/setup/src)
+        DESTINATION /usr/local/share/monarch/setup/src)
 
 endif (NOT ${CMAKE_CROSSCOMPILING})

@@ -45,11 +45,11 @@ install(PROGRAMS
 install(PROGRAMS
   ${CMAKE_CURRENT_SOURCE_DIR}/monarch_setup.sh
   ${CMAKE_CURRENT_SOURCE_DIR}/monarch_reset.sh
-  DESTINATION share/linkeng/setup)
+  DESTINATION share/monarch/setup)
 
 install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/monarch.service services
-  DESTINATION share/linkeng/setup)
+  DESTINATION share/monarch/setup)
 
 if (NOT CMAKE_CROSSCOMPILING)
 

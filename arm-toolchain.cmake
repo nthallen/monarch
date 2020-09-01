@@ -23,5 +23,5 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMPILER_FLAGS} -isystem/opt/gcc-linaro-5.
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS} -isystem/media/nort/Yocto/yocto_varsomam33.u14/SDK/sysroots/cortexa8hf-neon-linux-gnueabi/usr/include/c++/5.3.1 -isystem/media/nort/Yocto/yocto_varsomam33.u14/SDK/sysroots/cortexa8hf-neon-linux-gnueabi/usr/include/c++/5.3.1/arm-linux-gnueabihf" CACHE STRING "" FORCE)
 
-set(CMAKE_STAGING_PREFIX /opt/linkeng/am335x CACHE PATH "Install Directory")
+set(CMAKE_STAGING_PREFIX /opt/monarch/am335x CACHE PATH "Install Directory")
 

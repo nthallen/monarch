@@ -34,7 +34,7 @@ install(TARGETS cmdgen RUNTIME
 install(PROGRAMS cmdgen_version
         DESTINATION bin)
 install(FILES cmdgen.skel
-        DESTINATION share/linkeng)
+        DESTINATION share/monarch/skel)
 
 endif (NOT ${CMAKE_CROSSCOMPILING})
 

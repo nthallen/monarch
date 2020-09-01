@@ -29,6 +29,6 @@ target_link_libraries(tmc nl m)
 install(TARGETS tmc RUNTIME
         DESTINATION bin)
 install(FILES colmain.skel extmain.skel
-        DESTINATION share/linkeng)
+        DESTINATION share/monarch/skel)
 
 endif (NOT ${CMAKE_CROSSCOMPILING})

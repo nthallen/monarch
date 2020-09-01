@@ -1,7 +1,7 @@
 #! /bin/bash
 # Script for initial setup of a system for Monarch.
 # This script is part of the Monarch installation onto the target system
-# It should live in /usr/local/share/linkeng/setup
+# It should live in /usr/local/share/monarch/setup
 # Obviously, it should be run *after* the basic monarch installation
 
 # Make sure we are running as root
@@ -36,12 +36,21 @@ else
   echo "monarch_setup.sh: /home/flight already exists"
 fi
 
-if [ -f /usr/local/sbin/flight.sh ]; then
-  echo "monarch_setup.sh: removing flight.sh from old location /usr/local/sbin"
-  rm -f /usr/local/sbin/flight.sh
+for obsfile in sbin/flight.sh bin/dasctl; do
+  if [ -f /usr/local/$obsfile ]; then
+    echo "monarch_setup.sh: removing obsolete file /usr/local/$obsfile"
+    rm -f /usr/local/$obsfile
+  fi
+done
+
+for obsdir in oui linkeng; do
+  if [ -d /usr/local/share/$obsdir ]; then
+    echo "monarch_setup.sh: removing obsolete directory /usr/local/share/$obsdir"
+    rm -rv /usr/local/share/$obsdir
+  fi
 fi
 
-service=/usr/local/share/linkeng/setup/monarch.service 
+service=/usr/local/share/monarch/setup/monarch.service 
 svcdest=/lib/systemd/system/monarch.service
 if [ -f $service ]; then
   if [ -f $svcdest ]; then

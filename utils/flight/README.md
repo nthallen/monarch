@@ -12,8 +12,8 @@ Installation:
 - flight.sh => /usr/local/sbin
 - add_auth_key.sh => /usr/local/sbin
 - monarch.service => /lib/systemd/system
-- monarch_setup.sh => /usr/local/share/linkeng/setup
-- monarch_reset.sh => /usr/local/share/linkeng/setup
+- monarch_setup.sh => /usr/local/share/monarch/setup
+- monarch_reset.sh => /usr/local/share/monarch/setup
 
 ### Start monarch 
 `sudo systemctl start monarch`

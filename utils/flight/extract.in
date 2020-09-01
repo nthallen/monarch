@@ -245,7 +245,7 @@ function debugterm {
 }
 
 function debug {
-  rundir=/var/run/linkeng/run/$Experiment/
+  rundir=/var/run/monarch/run/$Experiment/
   ndc0=`ls $rundir | wc -l`
   debugterm gdb $gdbinit --args $ext
   while
@@ -261,10 +261,10 @@ clean_runfiles -k || msgf 3 "Unable to shutdown earlier operations"
 
 memo -o extract.log -V &
 memo_pid=$!
-memo=/var/run/linkeng/$Experiment/memo
+memo=/var/run/monarch/$Experiment/memo
 waitfor $memo 10 || exit 1
 bfr -s Unix &
-waitfor /var/run/linkeng/$Experiment/tm_bfr 10 || exit 1
+waitfor /var/run/monarch/$Experiment/tm_bfr 10 || exit 1
 for ext in $@; do
   # echo "ext: $ext"
   if [ $debug = yes ]; then
@@ -272,7 +272,7 @@ for ext in $@; do
   else
     $ext -n "$ext" &
     extpid=$!
-    if waitfor /var/run/linkeng/run/$Experiment/$extpid 10 2>/dev/null; then
+    if waitfor /var/run/monarch/run/$Experiment/$extpid 10 2>/dev/null; then
       msgf 0 "$ext ($extpid) initialized"
     else
       msgf 0 "ERROR: $ext ($extpid) failed to initialize"

@@ -39,7 +39,7 @@ else
   
   screen -t memo memo -o TEST.log -V -l0
   screen -X select 0
-  waitfor /var/run/linkeng/$Experiment/memo 15
+  waitfor /var/run/monarch/$Experiment/memo 15
   echo "local memo has been started"
   
   screen -t rmemo ./run_server.sh local start_server_memo
@@ -61,7 +61,7 @@ else
       if [ -z "$FlightNode" ]; then
         screen -X select 0
         echo "server has been started, will wait for name"
-        waitfor /var/run/linkeng/$Experiment/test 5
+        waitfor /var/run/monarch/$Experiment/test 5
       else
         screen -X select 0
         echo "Remote server starting"

@@ -37,9 +37,9 @@ static const char *get_runexpdir() {
   if (red) return red;
   Exp = getenv("Experiment");
   if (Exp == NULL) Exp = "none";
-  nb = snprintf(NULL, 0, "%s/%s", RUNDIR, Exp);
+  nb = snprintf(NULL, 0, "%s/%s", RUNDIR_TMC, Exp);
   red = (char *)new_memory(nb+1);
-  nb2 = snprintf(red, nb+1, "%s/%s", RUNDIR, Exp);
+  nb2 = snprintf(red, nb+1, "%s/%s", RUNDIR_TMC, Exp);
   nl_assert(nb2 == nb);
   return red;
 }
@@ -79,7 +79,7 @@ void setup_rundir(void) {
   flt_uid = flt_user->pw_uid;
   flt_gid = flt_grp->gr_gid;
 
-  mkfltdir(RUNDIR, flt_uid, flt_gid);
+  mkfltdir(RUNDIR_TMC, flt_uid, flt_gid);
   delete_rundir();
   atexit(&delete_rundir);
   runexpdir = get_runexpdir();

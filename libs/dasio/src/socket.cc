@@ -77,7 +77,7 @@ Socket::~Socket() {
   }
 }
 
-const char *Socket::company = "linkeng";
+const char *Socket::company = "monarch";
 
 void Socket::common_init() {
   unix_name = 0;

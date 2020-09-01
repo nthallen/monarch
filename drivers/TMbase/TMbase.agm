@@ -5,19 +5,19 @@ ModuleDef TMbase [ FREEMEM_RATE=1 SWSnot=# SWStat=SWStat Fnot=# Fail=Fail ] {
   are both ripe for adaptation.
 }
 
-tmcbase = /usr/local/share/linkeng/tdrift.tmc
-tmcbase = /usr/local/share/linkeng/cpu_usage.tmc
-tmcbase = /usr/local/share/linkeng/tmdf.tmc
-tmcbase = freemem.tmc:/usr/local/share/linkeng/freemem_def.tmc.in
-tmcbase = /usr/local/share/linkeng/flttime.tmc
+tmcbase = /usr/local/share/monarch/modules/tdrift.tmc
+tmcbase = /usr/local/share/monarch/modules/cpu_usage.tmc
+tmcbase = /usr/local/share/monarch/modules/tmdf.tmc
+tmcbase = freemem.tmc:/usr/local/share/monarch/modules/freemem_def.tmc.in
+tmcbase = /usr/local/share/monarch/modules/flttime.tmc
 
-colbase = /usr/local/share/linkeng/tdrift_col.tmc
-colbase = /usr/local/share/linkeng/cpu_usage_col.tmc
-colbase = /usr/local/share/linkeng/tmdf_col.tmc
-colbase = /usr/local/share/linkeng/freemem_col.tmc
+colbase = /usr/local/share/monarch/modules/tdrift_col.tmc
+colbase = /usr/local/share/monarch/modules/cpu_usage_col.tmc
+colbase = /usr/local/share/monarch/modules/tmdf_col.tmc
+colbase = /usr/local/share/monarch/modules/freemem_col.tmc
 
-cmdbase = /usr/local/share/linkeng/root.cmd
-cmdbase = /usr/local/share/linkeng/getcon.cmd
+cmdbase = /usr/local/share/monarch/modules/root.cmd
+cmdbase = /usr/local/share/monarch/modules/getcon.cmd
 
 genuibase = TMbase.genui:TMbase.genui.in
 
