@@ -10,7 +10,7 @@
   // required for cmdif_dgdata
   #include "collect.h"
 #else
-  // the le-dasng version
+  // the monarch version
   #include "dasio/config.h"
 #endif
 

@@ -42,7 +42,7 @@ if [ ! -d .git ]; then
     cd ..
   done
   [ -d .git -a ../git -ef . ] || nl_error Unable to locate source root
-  [ -f le-dasng-doxygen.css ] || nl_error Not in the correct source tree
+  [ -f monarch-doxygen.css ] || nl_error Not in the correct source tree
 fi
 branch=`git rev-parse --abbrev-ref HEAD`
 if [ -n "$crname" ]; then

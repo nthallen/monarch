@@ -1,6 +1,6 @@
 # Flight utilities
 This directory holds scripts and configurations to tie
-the DASng architecture into the operating system's
+the Monarch architecture into the operating system's
 boot up process. For Linux, this means creating one or
 more systemd services. This will be handled differently
 for other operating systems.
@@ -11,16 +11,16 @@ eventually, but these are notes for that development.
 Installation:
 - flight.sh => /usr/local/sbin
 - add_auth_key.sh => /usr/local/sbin
-- dasng.service => /lib/systemd/system
-- dasng_setup.sh => /usr/local/share/linkeng/setup
-- dasng_reset.sh => /usr/local/share/linkeng/setup
+- monarch.service => /lib/systemd/system
+- monarch_setup.sh => /usr/local/share/linkeng/setup
+- monarch_reset.sh => /usr/local/share/linkeng/setup
 
-### Start dasng 
-`sudo systemctl start dasng`
+### Start monarch 
+`sudo systemctl start monarch`
 
-### Setup dasng to run at boot time (requires dasng-run)
-`sudo systemctl enable dasng`
+### Setup monarch to run at boot time (requires monarch-run)
+`sudo systemctl enable monarch`
 
 ### Get status information
-`systemctl status dasng`
+`systemctl status monarch`
 

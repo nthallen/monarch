@@ -9,7 +9,7 @@ if [ ! -d .git ]; then
     cd ..
   done
   [ -d .git -a ../git -ef . ] || nl_error Unable to locate source root
-  [ -f le-dasng-doxygen.css ] || nl_error Not in the correct source tree
+  [ -f monarch-doxygen.css ] || nl_error Not in the correct source tree
 fi
 # if [ -n "$crname" ]; then
   # crargs=" -DCMAKE_TOOLCHAIN_FILE=$relsrcroot/arm-toolchain.cmake"

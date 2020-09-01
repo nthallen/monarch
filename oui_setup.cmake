@@ -1,5 +1,5 @@
 # This file provides setup for compiling and linking in directories
-# under the le-dasng source root, including rules for running
+# under the monarch source root, including rules for running
 # oui. This should work for native and cross-compiling, and it
 # should also work whether included as part of the base build
 # or when building independently.
@@ -21,28 +21,28 @@ if (CMAKE_CROSSCOMPILING)
   link_directories( ${CMAKE_STAGING_PREFIX}/lib )
   include_directories( ${CMAKE_STAGING_PREFIX}/include )
 else (CMAKE_CROSSCOMPILING)
-  if (NOT DEFINED le_das_SOURCE_DIR)
+  if (NOT DEFINED monarch_SOURCE_DIR)
     link_directories(/usr/local/lib)
-  endif (NOT DEFINED le_das_SOURCE_DIR)
+  endif (NOT DEFINED monarch_SOURCE_DIR)
 endif (CMAKE_CROSSCOMPILING)
 
-if (DEFINED le_das_SOURCE_DIR)
+if (DEFINED monarch_SOURCE_DIR)
   include_directories(
-    ${le_das_SOURCE_DIR}/tools/oui/src
-    ${le_das_SOURCE_DIR}/libs/nl
+    ${monarch_SOURCE_DIR}/tools/oui/src
+    ${monarch_SOURCE_DIR}/libs/nl
   )
-  set(le_das_OUI_PATH
-    -I${le_das_SOURCE_DIR}/libs/dasio/src
-    -I${le_das_SOURCE_DIR}/libs/nl
-    -I${le_das_SOURCE_DIR}/tools/oui/src
+  set(monarch_OUI_PATH
+    -I${monarch_SOURCE_DIR}/libs/dasio/src
+    -I${monarch_SOURCE_DIR}/libs/nl
+    -I${monarch_SOURCE_DIR}/tools/oui/src
   )
-endif (DEFINED le_das_SOURCE_DIR)
+endif (DEFINED monarch_SOURCE_DIR)
 
-if (CMAKE_CROSSCOMPILING OR NOT DEFINED le_das_SOURCE_DIR)
+if (CMAKE_CROSSCOMPILING OR NOT DEFINED monarch_SOURCE_DIR)
   set(OUI_EXE /usr/local/bin/oui)
-else (CMAKE_CROSSCOMPILING OR NOT DEFINED le_das_SOURCE_DIR)
-  set(OUI_EXE ${le_das_BINARY_DIR}/tools/oui/src/oui)
-endif (CMAKE_CROSSCOMPILING OR NOT DEFINED le_das_SOURCE_DIR)
+else (CMAKE_CROSSCOMPILING OR NOT DEFINED monarch_SOURCE_DIR)
+  set(OUI_EXE ${monarch_BINARY_DIR}/tools/oui/src/oui)
+endif (CMAKE_CROSSCOMPILING OR NOT DEFINED monarch_SOURCE_DIR)
 
 set(OUI_VERBOSITY "" CACHE STRING "Verbosity level for OUI: set to '-v' or higher")
 
@@ -55,7 +55,7 @@ function(OUI_FILE _filename)
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.${ARGV1}
         COMMAND ${OUI_EXE}
                 -o${CMAKE_CURRENT_BINARY_DIR}/${_basename}oui.${ARGV1}
-                ${le_das_OUI_PATH} ${OUI_VERBOSITY}
+                ${monarch_OUI_PATH} ${OUI_VERBOSITY}
                 ${CMAKE_CURRENT_SOURCE_DIR}/${_filename}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         DEPENDS ${_filename} ${OUI_EXE} )

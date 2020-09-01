@@ -1,7 +1,7 @@
 TEST_MSG_OBJ=test_msg.o test_msgoui.o msg.o
 CPPFLAGS=-I/usr/local/include
 CXXFLAGS=-std=c++11 -g -Wall
-LDFLAGS=-L ~/sw/le-dasng/build-memodev/dasio/src -L/usr/local/lib
+LDFLAGS=-L ~/SW/monarch/build-memodev/dasio/src -L/usr/local/lib
 LIBS=-ldasio -ltm -lnl
 test_msg : $(TEST_MSG_OBJ)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o test_msg $(TEST_MSG_OBJ) $(LIBS)

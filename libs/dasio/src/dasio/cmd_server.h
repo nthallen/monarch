@@ -171,7 +171,7 @@ class cmdif_wr {
 /**
  * Class to make a connection to DG for DG/data based
  * on the cmdgen syntax '%INTERFACE <datum:DG/data>'.
- * In le-dasng terminology, the service is DG and the
+ * In monarch terminology, the service is DG and the
  * subservice is "data/datum", but this is handled by
  * the TM_data_sndr class.
  */

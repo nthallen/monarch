@@ -1,4 +1,4 @@
-# make include files for appgen le-das
+# make include files for monarch appgen
 
 # CXX and CXXLINK are used for compiling and linking c++ apps
 # We need to use the same compiler that is used in building

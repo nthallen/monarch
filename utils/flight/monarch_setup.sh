@@ -1,8 +1,8 @@
 #! /bin/bash
-# Script for initial setup of a system for DASng
-# This script is part of the le-dasng installation onto the target system
+# Script for initial setup of a system for Monarch.
+# This script is part of the Monarch installation onto the target system
 # It should live in /usr/local/share/linkeng/setup
-# Obviously, it should be run *after* the basic le-dasng installation
+# Obviously, it should be run *after* the basic monarch installation
 
 # Make sure we are running as root
 if [ `id -u` -ne 0 ]; then
@@ -11,10 +11,10 @@ fi
 
 # Check if flight user exists and add if necessary
 if grep -q "^flight:" /etc/passwd; then
-  echo "dasng_setup.sh: flight user already exists"
+  echo "monarch_setup.sh: flight user already exists"
 else
   adduser --disabled-password --gecos "flight user" --no-create-home flight
-  echo "dasng_setup.sh: flight user created"
+  echo "monarch_setup.sh: flight user created"
 fi
 [ -n "$SUDO_USER" ] && adduser $SUDO_USER flight
 
@@ -28,37 +28,37 @@ if [ ! -d /home/flight ]; then
     echo "Copying ssh keys from ~$SUDO_USER/.ssh"
     cp $HOMEDIR/.ssh/authorized_keys /home/flight/.ssh/
   else
-    echo "dasng_setup.sh: WARNING: authorized_keys file not found"
+    echo "monarch_setup.sh: WARNING: authorized_keys file not found"
   fi
   chown -R flight:flight /home/flight
-  echo "dasng_setup.sh: /home/flight hierarchy created"
+  echo "monarch_setup.sh: /home/flight hierarchy created"
 else
-  echo "dasng_setup.sh: /home/flight already exists"
+  echo "monarch_setup.sh: /home/flight already exists"
 fi
 
 if [ -f /usr/local/sbin/flight.sh ]; then
-  echo "dasng_setup.sh: removing flight.sh from old location /usr/local/sbin"
+  echo "monarch_setup.sh: removing flight.sh from old location /usr/local/sbin"
   rm -f /usr/local/sbin/flight.sh
 fi
 
-service=/usr/local/share/linkeng/setup/dasng.service 
-svcdest=/lib/systemd/system/dasng.service
+service=/usr/local/share/linkeng/setup/monarch.service 
+svcdest=/lib/systemd/system/monarch.service
 if [ -f $service ]; then
   if [ -f $svcdest ]; then
-    echo "dasng_setup.sh: Shutting down dasng service"
-    systemctl stop dasng
-    systemctl disable dasng
+    echo "monarch_setup.sh: Shutting down monarch service"
+    systemctl stop monarch
+    systemctl disable monarch
   fi
-  echo "dasng_setup.sh: cp -f $service $svcdest"
+  echo "monarch_setup.sh: cp -f $service $svcdest"
   cp -f $service $svcdest
-  echo "dasng_setup.sh: Copied dasng.service into /lib/systemd/system"
-  echo "dasng_setup.sh: Reloading, Enabling and Starting dasng"
+  echo "monarch_setup.sh: Copied monarch.service into /lib/systemd/system"
+  echo "monarch_setup.sh: Reloading, Enabling and Starting monarch"
   systemctl daemon-reload &&
-  systemctl enable dasng &&
-  systemctl start dasng
+  systemctl enable monarch &&
+  systemctl start monarch
   sleep 1
-  systemctl status dasng
+  systemctl status monarch
 else
-  echo "dasng_setup.sh: Skipping systemd configuration"
+  echo "monarch_setup.sh: Skipping systemd configuration"
 fi
 

@@ -63,7 +63,7 @@ bool tm_client::process_eof() {
 }
 
 /** 
- *  Edited 2019 March 7 for le-dasng
+ *  Edited 2019 March 7 for monarch
  */
 bool tm_client::app_input() {
   process_message();

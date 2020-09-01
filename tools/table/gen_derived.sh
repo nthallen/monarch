@@ -26,13 +26,13 @@ set_source_files_properties(Include.cc PROPERTIES
 add_executable(nctable $srcs)
 
 message("Pre-conditional")
-if (NOT DEFINED le_das_BINARY_DIR)
-  message("no le_das_BINARY_DIR")
+if (NOT DEFINED monarch_BINARY_DIR)
+  message("no monarch_BINARY_DIR")
   link_directories( /usr/local/lib )
-else (NOT DEFINED le_das_BINARY_DIR)
-  message("le_das_BINARY_DIR is \${le_das_BINARY_DIR}")
+else (NOT DEFINED monarch_BINARY_DIR)
+  message("monarch_BINARY_DIR is \${monarch_BINARY_DIR}")
   target_include_directories(nctable PRIVATE
-    \${le_das_SOURCE_DIR}/tools/oui/src)
+    \${monarch_SOURCE_DIR}/tools/oui/src)
 endif()
 
 target_link_libraries(nctable dasio nl ncurses pthread)

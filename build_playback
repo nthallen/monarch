@@ -34,7 +34,7 @@ subdir=utils/playback
 relsrcroot="../../../git/$subdir"
 
 [ ! -d .git ] && nl_error "Must be run in the source root directory"
-[ -f le-dasng-doxygen.css ] || nl_error Not in the correct source tree
+[ -f monarch-doxygen.css ] || nl_error Not in the correct source tree
 [ ../git -ef . ] || nl_error Unable to locate source root
 branch=`git rev-parse --abbrev-ref HEAD`
 builddir="../build-$branch/$subdir"

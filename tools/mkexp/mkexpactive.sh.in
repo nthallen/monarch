@@ -45,7 +45,7 @@ fi
 [ -e /home/$Experiment/Experiment.config ] || nl_error "missing /home/$Experiment/Experiment.config"
 
 ln -sf /home/$Experiment/Experiment.config /home/flight/Experiment.config
-systemctl restart dasng
+systemctl restart monarch
 echo "mkexpactive: finished"
 
 exit 0

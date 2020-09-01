@@ -25,14 +25,14 @@
 #ifdef USE_CAN_SOCKET
   class CAN_socket;
   #ifdef HAVE_LINUX_CAN_H
-    #define SUBBUSD_CAN_NAME "le-das CAN driver V1.1"
+    #define SUBBUSD_CAN_NAME "Monarch CAN driver V1.1"
   #else
-    #define SUBBUSD_CAN_NAME "le-das CANSIM driver V1.1"
+    #define SUBBUSD_CAN_NAME "Monarch CANSIM driver V1.1"
   #endif
 #endif
 
 #ifdef USE_SLCAN
-  #define SUBBUSD_CAN_NAME "le-das SLCAN driver V1.1"
+  #define SUBBUSD_CAN_NAME "Monarch SLCAN driver V1.1"
   #include "dasio/serial.h"
   class CAN_serial;
 #endif

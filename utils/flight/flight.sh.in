@@ -12,7 +12,7 @@
 #   script is automatically restarted whenever it terminates.
 #   Under QNX6, this is handled by tinit as configured in
 #   /etc/config/ttys. Under Linux, this is handled by
-#   systemd using /lib/systemd/system/dasng.service
+#   systemd using /lib/systemd/system/monarch.service
 export PATH=:/bin:/usr/bin:/usr/local/bin
 umask g+w
 
