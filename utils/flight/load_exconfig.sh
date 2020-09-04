@@ -139,7 +139,7 @@ function Launch {
   mkdir -p /var/run/monarch/run/$Experiment
   
   # Check to make sure name does not already exist
-  if [ -n "$wname" -a -e $wname ]; then
+  if [ -n "$wname" -a -e "$wname" ]; then
     # name already exists, so may not need to launch
     if [ -S $wname -a -f $wname.pid ]; then
       pid=`cat $wname.pid`
@@ -149,8 +149,8 @@ function Launch {
         return 1
       else
         # echo socket $socket is abandoned
-        rm $socket
-        rm ${socket}.pid
+        rm -f $wname
+        rm -f ${wname}.pid
       fi
     fi
   fi
@@ -165,7 +165,7 @@ function Launch {
         return 1
       }
     fi
-    [ $name = memo ] && msgVdefault=''
+    [ "$name" = memo ] && msgVdefault=''
     set_have "$shortname" yes
   else
     msgf 2 "Launch Error: $*"

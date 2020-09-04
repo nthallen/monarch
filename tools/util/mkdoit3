@@ -407,7 +407,7 @@ screen -X log on
 # on the local machine, and interact scripts start up their own
 # memo.
 [ -n "$lcllogfile" ] &&
-  Launch memo memo -o $lcllogfile
+  Launch memo memo -o $lcllogfile -l4
 
 if [ $cmd = start ]; then
   if [ $srcmode = playback ]; then
@@ -569,24 +569,24 @@ print $fh
     join(' -o ',
       map("-n $_", '$clt_term', @clttermvarlist)),
   " ]; then\n";
-print $fh <'EOF';
+print $fh <<'EOF';
   screen -X split
   screen -X focus
   screen -X resize 3
   screen -X select clt
   screen -X focus
-  screen -X select $doit
 EOF
 print $fh
+  "  screen -X select $screen{$display[0]}->[0]->{screenname}\n",
   "  msgf 0 \"Starting \$client\$nc \$CMD_OPT \$clt_term ",
-      join(' ', @clttermvarlist), "\n",
+      join(' ', @clttermvarlist), "\"\n",
   "  \$client\$nc \$CMD_OPT \$clt_term ",
       join(' ', @clttermvarlist), "\n",
   "else\n",
   "  msgf 2 \"Unable to run client \$client\$nc due to missing ptys\"\n",
   "fi\n";
 
-print $fh <'EOF';
+print $fh <<'EOF';
 
 # This is where we run. When the client quits,
 # we are done and need to clean up
@@ -603,6 +603,7 @@ if [ -n "$less_pid" ] && kill -0 $less_pid; then
     kill $less_pid 2>/dev/null
   fi
 fi
+EOF
 
 #=======================================================
 
