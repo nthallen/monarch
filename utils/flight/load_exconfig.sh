@@ -114,34 +114,59 @@ function msgf {
 }
 
 function set_have {
+  # name will be sanitized before getting here
   name=$1
   value=$2
-  if [ "${name#-}" = "$name" ]; then
+  if [ -n "$name" ]; then
     eval have_$name=$value
   fi
 }
 
 function Launch {
-  name=$1
-  shortname=$name
-  set_have $shortname no
-  shift
   [ -n "$launch_error" ] && return 1
+  name=$1
+  shift
+  shortname=''
+  wname=''
+  case $name in
+    -*) :;;
+    /*) wname=$name;;
+    */*) wname=/var/run/monarch/$Experiment/$name;;
+    *) wname=/var/run/monarch/$Experiment/$name
+       shortname=$name;;
+  esac
+  set_have "$shortname" no
   mkdir -p /var/run/monarch/run/$Experiment
+  
+  # Check to make sure name does not already exist
+  if [ -n "$wname" -a -e $wname ]; then
+    # name already exists, so may not need to launch
+    if [ -S $wname -a -f $wname.pid ]; then
+      pid=`cat $wname.pid`
+      if kill -0 $pid 2>/dev/null; then
+        msgf 2 "Launch Skipped: socket $name still active"
+        launch_error=yes
+        return 1
+      else
+        # echo socket $socket is abandoned
+        rm $socket
+        rm ${socket}.pid
+      fi
+    fi
+  fi
+
   if { $* & }; then
     Launch_pid=$!
     msgf -V 0 "Launch: $Launch_pid $*"
-    if [ "$name" != "-" ]; then
-      [ "$name" = "-TMC-" ] && name="/var/run/monarch/run/$Experiment/$!"
-      [ "${name#/}" = "$name" ] && name="/var/run/monarch/$Experiment/$name"
-      waitfor $name 20 || {
+    if [ -n "$wname" ]; then
+      waitfor $wname 20 || {
         msgf 2 "Launch namewait failure: $*"
         launch_error=yes
         return 1
       }
     fi
     [ $name = memo ] && msgVdefault=''
-    set_have $shortname yes
+    set_have "$shortname" yes
   else
     msgf 2 "Launch Error: $*"
     launch_error=yes

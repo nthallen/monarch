@@ -135,82 +135,108 @@ for my $disp ( @display ) {
 open( $fh, ">", $opts{o} ) ||
   die "mkdoit3: Unable to write to $opts{o}\n";
 
-print $fh <<'EOF';
-#! /bin/bash
-#ifdef __USAGE
-#%C [options]
-#  Starts Instrument operation
-#%C [options] stop
-#  Send Quit command to running system
-#%C [options] not
-#  Shuts down any straggling processes after system has stopped
-#%C [options] wait
-#  Does not interact with instrument until it is up and operating
-#
-#options:
-#	-s use screen for text-mode data display
-#	-a use ASCII chars for line-drawing
-#	-n use photon pterms for text-mode data display
-#	-p <run> play back <run>
-#	-i <host> use InetIn to read data from <host>
-#	-t use SerIn as specified in doit
-#	-S <session> specify the session (used internally)
-#
-# SerIn mode can also be indicated by setting environment
-# variable SRCMODE=SerIn, typically in Experiment.config.
-# InetIn can be specified by the same method.
-#endif
+print $fh
+  "#! /bin/bash\n",
+  "doit=$opts{o}\n";
 
-umask 2
-. ./Experiment.config
-[ -z "$Experiment" ] && Experiment=none
-export Experiment
+print $fh <<'EOFM';
 
-function nl_error {
-EOF
+function print_usage {
+cat <<EOF
+$doit [options]
+  Starts Instrument operation
+$doit [options] stop
+  Send Quit command to running system (monarch_cmd)
+$doit [options] not
+  Shuts down any straggling processes after system has stopped (monarchctl -Q)
+$doit [options] wait
+  Does not interact with instrument until it is up and operating (monarchctl -S)
 
-print $fh "  echo $opts{o}: \$* >&2\n";
+options:
+  -h display this message
+  -s use screen for text-mode data display (default)
+  -a use ASCII chars for line-drawing
+  -p <run> play back <run>
+EOFM
 
-print $fh <<'EOF';
-  exit 1
+if ( defined($serin) ) {
+  print $fh "  -t use SerIn as specified in .doit\n";
 }
 
-[ -n "$HomeDir" ] ||
-  nl_error "HomeDir undefined in Experiment.config"
-[ -z "$CltHomeDir" ] && CltHomeDir=$HomeDir
-dir=$PWD
-nnd=${dir%$CltHomeDir}
-[ "$dir" = "$nnd" ] &&
-  nl_error "Not in CltHomeDir $CltHomeDir"
-if [ -n "$nnd" ]; then
-  nd=${nnd#/net/}
-  [ "$nd" = "$nnd" ] &&
-    nl_error "Not in CltHomeDir $CltHomeDir (2)"
-  [ "$nd" = "${nd#*/}" ] ||
-    nl_error "Not in CltHomeDir $CltHomeDir (3)"
-fi
+print $fh <<'EOFM';
+EOF
+}
+EOFM
 
-# Parse options to select
-#   srcmode as one of realtime, InetIn, SerIn or playback
-#   dispmode as one of screen, pterm or photon
-session=$$
+print $fh <<'EOF';
+
+function select_arg {
+  n=$1
+  shift $n
+  echo $1
+}
+
+statusready=no
+function isready {
+  quiet=no
+  [ "$1" = "quiet" ] && quiet=yes
+  msgf -2 "monarchctl $TM_OPT -VS"
+  monarchctl $TM_OPT -VS 2>&1 |
+  ( while read j; do
+      [ $quiet = no ] && echo $j
+      sj=${j#* Status: Ready:}
+      if [ "$j" != "$sj" ]; then
+        exit 0
+      fi
+    done
+    exit 1
+  ) && statusready=yes
+}
+
+srcmode=realtime
+dispmode=screen
 ncopts=''
-while getopts "ai:p:S:snt" opt; do
+while getopts "hap:st" opt; do
   case $opt in
+    h) print_usage; exit 0;;
     a) ncopts='-a';;
-    i) srcmode=InetIn; InetSrc=$OPTARG;;
     p) srcmode=playback; Run=$OPTARG;;
     s) dispmode=screen; dispmodescreen=1;;
-    S) session=$OPTARG;;
     t) srcmode=SerIn;;
-    n) dispmode=pterm; dispmodepterm=1;;
     \?) exit 1;; # getopts reports the error
     :) exit 1;; # getopts reports the error
   esac
 done
+
+# We haven't finished parsing the arguments, but we can
+# be pretty sure whatever it is, we will need to read
+# the configuration to execute it.
+. /usr/local/libexec/load_exconfig.sh
+msgProgram=$doit
+[ -n "$CFG_ERROR" ] && msgf 3 "$CFG_ERROR"
+[ -n "$FlightNode" ] && export FlightNode
+
+arg=`select_arg $OPTIND $*`
+case "$arg" in
+  stop)
+    echo "Trying to stop the instrument"
+    monarch_cmd -V $CMD_OPT quit
+    exit 0;;
+  not)
+    echo "Trying harder to stop the instrument"
+    monarchctl $TM_OPT -VQ
+    exit 0;;
+  wait)
+    [ $srcmode = playback ] &&
+      msgf 3 "wait is not supported for playback"
+    cmd=wait;;
+  '') cmd=start;;
+  *) msgf 3 "Invalid command: '$arg'";;
+esac
+
 if [ -n "$srcmode" ]; then
-  [ -n "$InetSrc" -a -n "$Run" ] &&
-    nl_error "Cannot specify both -i and -p"
+  [ "$srcmode" = "SerIn" -a -n "$Run" ] &&
+    msgf 3 "Cannot specify both -t and -p"
 else
   case "$SRCMODE" in
     SerIn) srcmode=SerIn;;
@@ -218,40 +244,47 @@ else
     *) srcmode=realtime;;
   esac
 fi
-if [ -n "$dispmode" ]; then
-  [ -n "$dispmodescreen" -a -n "$dispmodepterm" ] &&
-    nl_error "Cannot specify both -s and -n"
-else
-  dispmode=photon
-  dispmodephoton=1
-fi
 EOF
 
 if (!defined($serin)) {
-  print $fh '[ $srcmode = SerIn ] && nl_error "SerIn is not configured"', "\n";
+  print $fh
+    '[ $srcmode = SerIn ] && msgf 3 "SerIn is not configured"', "\n";
 }
 
 print $fh <<'EOF';
-
-let sval=$OPTIND-1
-shift $sval
-option=${1:-start}
-
-gcopt=''
-if [ $srcmode = realtime -a -n "$FlightNode" ]; then
-  FltNd=/net/$FlightNode
-  gcopt="-n $FlightNode"
-else
-  FlightNode=`hostname`
-  FltNd=""
-fi
-
 case $dispmode in
   screen) nc=nc; ncopt=$ncopts;;
   pterm) nc=nc; ncopt=$ncopts;;
   photon) nc='';;
-  *) nl_error "Unknown dispmode: '$dispmode'";;
+  *) msgf 3 "Unknown dispmode: '$dispmode'";;
 esac
+
+umask 2
+
+# Check that we are running from the correct
+# location. This code was more complicated
+# under QNX to handle /net
+[ -z "$CltHomeDir" ] && CltHomeDir=$HomeDir
+dir=$PWD
+[ "$dir" = "$CltHomeDir" ] ||
+  msgf 3 "Not in CltHomeDir $CltHomeDir"
+
+# We are now in 'start' or 'wait'
+# srcmode is playback or realtime, though could eventually include
+# SerIn and/or InetIn.
+
+# mkdoit can add more logic here.
+# We do not launch lclsrvr if $srcmode = realtime -a -z "$FlightNode"
+# (i.e. running flight.sh on the local machine)
+# The other $srcmodes (SerIn, InetIn) will default to playbacksrvr,
+# but can be overridden.
+#-----------------
+# lclsrvr=playbacksrvr
+# batchfile=interact
+# client=playbackclt
+# [ $srcmode = realtime ] && client=Democlt
+# [ $srcmode = realtime -a $FltNode_Access = Local ] && lclsrvr=''
+
 EOF
 
 print $fh
@@ -278,20 +311,39 @@ for my $server ( @extract ) {
 }
 
 print $fh <<'EOF';
+# lcllogfile is the file we want local memo to write to
+# rmtlogfile is the file we would like to display with less,
+#  even if it is not really remote.
+if [ $srcmode = realtime ]; then
+  [ $FltNode_Access = Remote ] &&
+    lcllogfile=$logfileroot.clt.log
+  if [ $FltNode_Access = Remote ]; then
+    rmtlogfile=$HomeDir/$logfileroot.log
+  else
+    rmtlogfile=$logfileroot.log
+  fi
+else # not realtime
+  RemEx=$Experiment
+  Experiment=$RemEx.PB.$session
+  lcllogfile=$Experiment.log
+fi
+EOF
 
-check_path=no
-startup=no
-case $option in
-  start) startup=yes; check_path=yes;;
-  stop);;
-  not) startup=yes; batchfile=/dev/null;;
-  wait) check_path=yes;;
-  screen);;
-  *) nl_error "Invalid option: '$option'";;
-esac
+print $fh <<'EOF';
 
-[ $startup = yes -a -n "$batchfile" -a -z "$SCRIPT_OVERRIDE" ] &&
-  nl_error Cannot inhibit or alter startup without SCRIPT_OVERRIDE
+# At this point cmd can only be 'start' or 'wait'. Thus
+# a) we always want to check paths, so don't need check_path
+# b) startup var is redundant with cmd = start
+# check_path=no
+# startup=no
+# case $cmd in
+#   start) startup=yes; check_path=yes;;
+#   stop);;
+#   not);;
+#   wait) check_path=yes;;
+#   screen);;
+#   *) nl_error "Invalid option: '$option'";;
+# esac
 
 # Determine the path. Strictly speaking, this does
 # not have to happen before start, but I'd like
@@ -300,68 +352,385 @@ VERSION=1.0
 case $srcmode in
   playback)
     # Need to find the data
-    ddir=$Run
-    if [ ! -d $ddir ]; then
-      for base in . $FltNd$HomeDir; do
-        ddir=$base/$Run
-        [ -d $ddir ] && break
-        ddir=$base/raw/$Run
-        [ -d $ddir ] && break
-        for runtype in flight cal data junk; do
-          ddir=$base/raw/$runtype/$Run
-          [ -d $ddir ] && break
-        done
-        [ -d $ddir ] && break
-      done
-    fi
-    [ -d $ddir ] || nl_error "Unable to locate run $Run"
+    ddir=`locate_rundir $Run | tr : /`
+    [ -z "$ddir" ] && msgf 3 "Unable to locate run $Run"
     [ -f $ddir/VERSION ] && VERSION=`cat $ddir/VERSION`;;
   *)
-    ddir=$FltNd$HomeDir
+    ddir=$HomeDir
     [ -f VERSION ] && VERSION=`cat VERSION`;;
 esac
 
 TMBINDIR=$PWD/bin/$VERSION
 [ -d $TMBINDIR ] ||
-  nl_error "Unable to locate bin dir for VERSION $VERSION"
+  msgf 3 "Unable to locate bin dir for VERSION $VERSION"
 export PATH=$TMBINDIR:$PATH
 
-if [ $check_path = yes ]; then
-  missing=''
-  for app in $interacts; do
-    [ -x $TMBINDIR/$app$nc -o -x /usr/local/bin/$app$nc ] ||
-      missing="$missing $app$nc"
-  done
-  for app in $extracts; do
-    [ -x $TMBINDIR/$app -o -x /usr/local/bin/$app ] ||
-      missing="$missing $app"
-  done
-  [ -n "$missing" ] &&
-    nl_error "Unable to locate required application(s):$missing"
+missing=''
+for app in $interacts; do
+  f=`which $app$nc`
+  [ -n "$f" -a -x "$f" ] ||
+    missing="$missing $app$nc"
+done
+for app in $extracts; do
+  f=`which $app`
+  [ -n "$f" -a -x "$f" ] ||
+    missing="$missing $app"
+done
+[ -n "$missing" ] &&
+  msgf 3 "Unable to locate required application(s):$missing"
+
+#-----------------------------------------------------
+# Everything before this point will be executed twice,
+# once before starting screen, once after, so we should
+# limit any informational messages.
+if [ -z "$STY" ]; then
+  # echo "cmd is '$cmd' srcmode is '$srcmode' dispmode is '$dispmode'"
+  # hit_any_key
+  screen -t $doit $0 $*
+  clear # after exiting screen
+  echo "$doit completed, screen closed"
+  exit 0
 fi
 
-function Launch {
-  name=$1
-  shift
-  [ -n "$launch_error" ] && return 1
-  if { $* & }; then
-    Launch_pid=$!
-    echo "Launch: $Launch_pid $*"
-    if [ "$name" != "-" ]; then
-      [ "${name#/}" = "$name" ] && name="/dev/huarp/$Experiment/$name"
-      waitfor $name 10 || {
-        echo "Launch namewait failure: $*" >&2
-        launch_error=yes
-        return 1
-      }
+session=$$
+screen -X logfile "$doit.$session.log"
+screen -X log on
+
+# Running under screen, session $session"
+
+# Until we have sessions, the only distinction we can make
+# about where we connect is local or remote.
+#
+# Startup local memo: The only case where we would not want to
+# start a local memo is if srcmode is realtime and there is no
+# FlightNode. In that case, we are starting up an interact script
+# on the local machine, and interact scripts start up their own
+# memo.
+[ -n "$lcllogfile" ] &&
+  Launch memo memo -o $lcllogfile
+
+if [ $cmd = start ]; then
+  if [ $srcmode = playback ]; then
+    # Startup playback modules:
+    Launch tm_bfr -s Unix
+    Launch tm_gen rdr -P $ddir -a
+    #   # playbacksrvr (started later via $lclsrvr)
+  elif [ $srcmode = realtime ]; then
+    if [ $SERVICE = Installed ]; then
+      monarchctl_opt='-r'
+      [ -n "$batchfile" ] && monarchctl_opt="-R $batchfile"
+      msgf 0 "Running isready quiet, TM_OPT=$TM_OPT"
+      isready quiet
+      if [ $statusready = no ]; then
+        msgf 0 "running monarchctl -V $TM_OPT $monarchctl_opt"
+        monarchctl -V $TM_OPT $monarchctl_opt
+        isready
+      fi
+    else
+      msgf 0 "Starting flight.sh"
+      screen -t flight.sh /usr/local/sbin/flight.sh
+      msgf 0 "Waiting for tm_bfr"
+      waitfor /var/run/monarch/$Experiment/tm_bfr forever
+      msgf 0 "found tm_bfr, waiting for command server"
+      waitfor /var/run/monarch/$Experiment/server forever
     fi
-  else
-    echo "Launch Error: $*" >&2
-    launch_error=yes
-    return 1
-  fi
-  return 0
+EOF
+
+if ($serin) {
+  print $fh
+    '          elif [ $srcmode = SerIn ]; then', "\n",
+    "            Launch tm_bfr -s Unix\n",
+    "            Launch tm_gen $serin", $progopts{$serin}, "\n";
 }
+
+print $fh <<'EOF';
+  else
+    msgf 3 "srcmode='$srcmode' not implemented in start"
+  fi
+elif [ $cmd = wait ]; then
+  [ $srcmode = realtime ] || msgf 3 "Invalid srcmode '$srcmode'"
+  msgf 0 "Waiting for startup"
+  if [ $SERVICE = Installed ]; then
+    while [ statusready = no ]; do
+      isready quiet
+      sleep 1
+    done
+  else
+    waitfor /var/run/monarch/$Experiment/tm_bfr forever
+    msgf 0 "found tm_bfr, waiting for command server"
+    waitfor /var/run/monarch/$Experiment/server forever
+  fi
+else
+  msgf 3 "Unexpected invalid cmd '$cmd'"
+fi
+
+# At this point, we can assume that memo, tm_bfr and server
+# are running, so we can start all the UI clients
+# Display programs, keyboard client, etc.
+# We will point getcon and disp programs to the lclsrvr, but
+# still need to figure out how to tell lclsrvr to quit.
+# I guess I need a Stopper app to send Quit where I want.
+# That would work for this as well as 'doit stop'.
+[ -n "$lclsrvr" ] &&
+  Launch cmd $lclsrvr
+if [ -n "$rmtlogfile" ]; then
+  # log="-Logfile \"less.$session.log\" -L"
+  if [ $FltNode_Access = Remote ]; then
+    msgf 0 "Starting less on remote system"
+    screen -t logfile /bin/sh -c "echo \$\$ >less.pid.$session; exec $SSH_CMD less +F $rmtlogfile"
+  else
+    msgf 0 "Starting less on local system"
+    screen -t logfile /bin/sh -c "echo \$\$ >less.pid.$session; exec less +F $rmtlogfile"
+  fi
+fi
+
+# gcopt definition might need to be moved earlier if it
+# needs to be defined conditionally
+gcopt=-v
+EOF
+
+for my $disp ( @display ) {
+  for my $scr ( @{$screen{$disp}} ) {
+    print $fh
+      "screen -t $scr->{screenname} /usr/local/sbin/getcon ",
+      "\$gcopt $scr->{varname} \$session\n",
+      "screen -X width -w $scr->{width}\n",
+      "#screen -x height -w $scr->{height}\n";
+  }
+}
+
+print $fh <<'EOF';
+screen -t clt /usr/local/sbin/getcon -v clt $session
+screen -X height -w 2
+screen -X width -w 80
+screen -X select $doit
+
+msgf 0 Handling less.pid.$session
+less_pid=''
+if [ -f less.pid.$session ]; then
+  less_pid=`cat less.pid.$session`
+  rm -f less.pid.$session
+  msg -V "Recovered less_pid='$less_pid'"
+fi
+
+# Now collect display consoles for each disp screen and clt
+msgf 0 collecting screens
+EOF
+
+print $fh "for screen in ",
+  join( ' ', map( "$_->{varname}",
+        map( @{$screen{$_}}, @display ) ),
+        'clt' ), "; do\n";
+
+print $fh <<'EOF';
+  term=''
+  if waitfor pty.$screen.$session 3; then
+    term=`cat pty.$screen.$session`
+    rm pty.$screen.$session
+    eval ${screen}_term=$term
+  else
+    msgf 2 pty.$screen.$session did not appear
+  fi
+done
+
+EOF
+
+for my $disp ( @display ) {
+  my $scr = $screen{$disp};
+  my @scrvars = map( "\$$_->{varname}_term", @$scr);
+  print $fh
+    "if [ ", join( " -a ", map( "-n \"$_\"", @scrvars)), " ]; then\n",
+    "  msgf 0 \"Starting $disp\$nc \$ncopt \$TM_OPT ",
+        join(' ', @scrvars), "\"\n",
+    "  Launch -TMC- $disp\$nc \$ncopt \$TM_OPT ",
+        join(' ', @scrvars), "\n",
+    "else\n",
+    "  msgf 1 \"Skipping $disp\$nc\"\n",
+    "fi\n";
+}
+
+for my $ext ( @extract ) {
+  if ($ext->{cond}) {
+    print $fh '[ ', cond2sh($ext->{cond}), ' ] && ';
+  }
+  print $fh "Launch ", $ext->{name}, " ", $ext->{prog}, $ext->{opts}, "\n";
+}
+
+if ( $phrtg ) {
+  print $fh '[ $dispmode = screen ] || Launch - phrtg -C $FlightNode -P $ddir',
+    $progopts{phrtg}, "\n";
+}
+
+my @clttermvarlist =
+  map( "\$$_->{varname}_term",
+    map( @{$screen{$_}}, @display ) );
+print $fh
+  "if [ ",
+    join(' -o ',
+      map("-n $_", '$clt_term', @clttermvarlist)),
+  " ]; then\n";
+print $fh <'EOF';
+  screen -X split
+  screen -X focus
+  screen -X resize 3
+  screen -X select clt
+  screen -X focus
+  screen -X select $doit
+EOF
+print $fh
+  "  msgf 0 \"Starting \$client\$nc \$CMD_OPT \$clt_term ",
+      join(' ', @clttermvarlist), "\n",
+  "  \$client\$nc \$CMD_OPT \$clt_term ",
+      join(' ', @clttermvarlist), "\n",
+  "else\n",
+  "  msgf 2 \"Unable to run client \$client\$nc due to missing ptys\"\n",
+  "fi\n";
+
+print $fh <'EOF';
+
+# This is where we run. When the client quits,
+# we are done and need to clean up
+screen -X only
+[ $dispmode != photon ] && /usr/local/sbin/getcon -v -e $session
+[ -n "$lclsrvr" ] && monarch_cmd -V Quit
+screen -X select logfile
+sleep 3
+if [ -n "$less_pid" ] && kill -0 $less_pid; then
+  screen -X -p logfile stuff ^Cq
+  sleep 1
+  if kill -0 $less_pid 2>/dev/null; then
+    msg -Vn $doit Follow up with kill to less
+    kill $less_pid 2>/dev/null
+  fi
+fi
+
+#=======================================================
+
+sub parse_condition {
+  my $cond = shift;
+  my $lvl = 0;
+  my $toks = parse_tokens($cond);
+  my @stack;
+  my @states = qw(preterm postterm postop);
+  my $state = 'preterm';
+  while ( @$toks ) {
+    my $token = shift @$toks;
+    if ($state eq 'preterm') { # preterm, can accept monadic, lparen, keyword or term
+      $token->{prestate} = 'preterm';
+      if ($token->{type} eq 'monadic') {
+        push(@stack, $token);
+        $state = 'postop';
+      } elsif ($token->{type} eq 'keyword') {
+        push(@stack, $token);
+        $state = 'postterm';
+      } elsif ($token->{type} eq 'lparen') {
+        push(@stack, $token);
+        $state = 'preterm';
+      } elsif ($token->{type} eq 'term') {
+        push(@stack, $token);
+        $state = 'postterm';
+      } else {
+        die "Syntax error preterm\n";
+      }
+    } elsif ($state eq 'postterm') { # postterm: rparen, dyadic
+      if ($token->{type} eq 'rparen') {
+        my $expr = pop @stack || die "Stack underflow on rparen\n";
+        my $lparen = pop @stack || die "Stack underflow on rparen\n";
+        $lparen->{type} eq 'lparen' || die "rparen without matching lparen (2)\n";
+        $lparen->{arg} = $expr;
+        unshift @$toks, { type => 'term', op => $lparen };
+        $state = $lparen->{prestate};
+      } elsif ($token->{type} eq 'dyadic') {
+        push @stack, $token;
+        $state = 'postop';
+      } else {
+        die "Syntax error postterm\n";
+      }
+    } elsif ($state eq 'postop') { # postop: monadic, lparen, keyword, term
+      if ($token->{type} eq 'monadic') {
+        $token->{prestate} = 'postop';
+        push @stack, $token;
+      } elsif ($token->{type} eq 'lparen') {
+        $token->{prestate} = 'postop';
+        push @stack, $token;
+        $state = 'preterm';
+      } elsif ($token->{type} eq 'keyword' || $token->{type} eq 'term') {
+        my $op = pop(@stack) || die "Stack underflow postop kw|term,monadic\n";
+        if ($op->{type} eq 'monadic') {
+          $op->{arg} = $token;
+          $state = $op->{prestate};
+          unshift @$toks, { type => 'term', op => $op };
+        } elsif ($op->{type} eq 'dyadic') {
+          my $arg1 = pop(@stack) || die "Stack underflow postop kw|term,dyadic\n";
+          $state = $arg1->{prestate};
+          $op->{arg1} = $arg1;
+          $op->{arg2} = $token;
+          unshift @$toks, { type => 'term', op => $op };
+        } else {
+          die "Unexpected op type '" . $op->{type} . "' in postop\n";
+        }
+      } else {
+        die "Syntax error postop\n";
+      }
+    } else {
+      die "Bad state\n";
+    }
+  }
+  @stack == 1 || die "Incomplete expression\n";
+  return pop @stack;
+}
+
+sub parse_tokens {
+  my $str = shift;
+  my $istr = $str;
+  my $toks = [];
+  while ($str ne '') {
+    if ($str =~ s/^!//) {
+      push(@$toks, { type => 'monadic', op => '!' });
+    } elsif ( $str =~ s/^([|&])// ) {
+      push(@$toks, { type => 'dyadic', op => $1 });
+    } elsif ( $str =~ s/^([(])// ) {
+      push(@$toks, { type => 'lparen', op => $1 });
+    } elsif ( $str =~ s/^([)])// ) {
+      push(@$toks, { type => 'rparen', op => $1 });
+    } elsif ( $str =~ s/^(RT|realtime|PB|playback|II|InetIn|SI|SerIn|screen|pterm|photon)\b// ) {
+      my $kw = $kwabbr{$1} || $1;
+      push(@$toks, { type => 'keyword', op => $kw });
+    } else {
+      warn "Bad logic syntax in '$istr' before '$str'\n";
+      return $toks;
+    }
+  }
+  return $toks;
+}
+
+sub cond2sh {
+  my $expr = shift;
+  if ($expr->{type} eq 'monadic') {
+    return $expr->{op} . ' \( ' . cond2sh($expr->{arg}) . ' \)';
+  } elsif ($expr->{type} eq 'dyadic') {
+    my $op = ($expr->{op} eq '|') ? ' -o ' : ' -a ';
+    return cond2sh($expr->{arg1}) . $op . cond2sh($expr->{arg2});
+  } elsif ($expr->{type} eq 'keyword') {
+    my $varname = '$dispmode';
+    if ($expr->{op} =~ m/^realtime|playback|InetIn|SerIn$/ ) {
+      $varname = '$srcmode';
+    }
+    return "$varname = " . $expr->{op};
+  } elsif ($expr->{type} eq 'term') {
+    return cond2sh($expr->{op});
+  } elsif ($expr->{type} eq 'lparen') {
+    return '\( ' . cond2sh($expr->{arg}) . ' \)';
+  } else {
+    die "Invalid condition node type: " . $expr->{type};
+  }
+}
+
+my $perm = (stat $opts{o})[2] & 07777;
+my $umask = umask;
+chmod( $perm | (0111 & ~$umask), $opts{o} );
+
+__END__
 
 if [ $srcmode = realtime ]; then
   # SCRIPT_OVERRIDE is the name of a file that will
@@ -445,6 +814,7 @@ while true; do
           signaled=yes
           oppid=$ppid
           ppid=`pidin -n $FlightNode -p parent -fa 2>/dev/null | grep -v pid`
+          #`
           nw=1
           while [ -n "$ppid" -a "$ppid" = "$oppid" ]; do
             [ $nw -ge 3 ] &&
@@ -554,6 +924,8 @@ for my $disp ( @display ) {
       " "x8, "#echo height -w $scr->{height}\n";
   }
 }
+
+#-----------------------------------------
 
 print $fh <<'EOF';
   echo focus
@@ -714,123 +1086,3 @@ EOF
 my $perm = (stat $opts{o})[2] & 07777;
 my $umask = umask;
 chmod( $perm | (0111 & ~$umask), $opts{o} );
-
-sub parse_condition {
-  my $cond = shift;
-  my $lvl = 0;
-  my $toks = parse_tokens($cond);
-  my @stack;
-  my @states = qw(preterm postterm postop);
-  my $state = 'preterm';
-  while ( @$toks ) {
-    my $token = shift @$toks;
-    if ($state eq 'preterm') { # preterm, can accept monadic, lparen, keyword or term
-      $token->{prestate} = 'preterm';
-      if ($token->{type} eq 'monadic') {
-        push(@stack, $token);
-        $state = 'postop';
-      } elsif ($token->{type} eq 'keyword') {
-        push(@stack, $token);
-        $state = 'postterm';
-      } elsif ($token->{type} eq 'lparen') {
-        push(@stack, $token);
-        $state = 'preterm';
-      } elsif ($token->{type} eq 'term') {
-        push(@stack, $token);
-        $state = 'postterm';
-      } else {
-        die "Syntax error preterm\n";
-      }
-    } elsif ($state eq 'postterm') { # postterm: rparen, dyadic
-      if ($token->{type} eq 'rparen') {
-        my $expr = pop @stack || die "Stack underflow on rparen\n";
-        my $lparen = pop @stack || die "Stack underflow on rparen\n";
-        $lparen->{type} eq 'lparen' || die "rparen without matching lparen (2)\n";
-        $lparen->{arg} = $expr;
-        unshift @$toks, { type => 'term', op => $lparen };
-        $state = $lparen->{prestate};
-      } elsif ($token->{type} eq 'dyadic') {
-        push @stack, $token;
-        $state = 'postop';
-      } else {
-        die "Syntax error postterm\n";
-      }
-    } elsif ($state eq 'postop') { # postop: monadic, lparen, keyword, term
-      if ($token->{type} eq 'monadic') {
-        $token->{prestate} = 'postop';
-        push @stack, $token;
-      } elsif ($token->{type} eq 'lparen') {
-        $token->{prestate} = 'postop';
-        push @stack, $token;
-        $state = 'preterm';
-      } elsif ($token->{type} eq 'keyword' || $token->{type} eq 'term') {
-        my $op = pop(@stack) || die "Stack underflow postop kw|term,monadic\n";
-        if ($op->{type} eq 'monadic') {
-          $op->{arg} = $token;
-          $state = $op->{prestate};
-          unshift @$toks, { type => 'term', op => $op };
-        } elsif ($op->{type} eq 'dyadic') {
-          my $arg1 = pop(@stack) || die "Stack underflow postop kw|term,dyadic\n";
-          $state = $arg1->{prestate};
-          $op->{arg1} = $arg1;
-          $op->{arg2} = $token;
-          unshift @$toks, { type => 'term', op => $op };
-        } else {
-          die "Unexpected op type '" . $op->{type} . "' in postop\n";
-        }
-      } else {
-        die "Syntax error postop\n";
-      }
-    } else {
-      die "Bad state\n";
-    }
-  }
-  @stack == 1 || die "Incomplete expression\n";
-  return pop @stack;
-}
-
-sub parse_tokens {
-  my $str = shift;
-  my $istr = $str;
-  my $toks = [];
-  while ($str ne '') {
-    if ($str =~ s/^!//) {
-      push(@$toks, { type => 'monadic', op => '!' });
-    } elsif ( $str =~ s/^([|&])// ) {
-      push(@$toks, { type => 'dyadic', op => $1 });
-    } elsif ( $str =~ s/^([(])// ) {
-      push(@$toks, { type => 'lparen', op => $1 });
-    } elsif ( $str =~ s/^([)])// ) {
-      push(@$toks, { type => 'rparen', op => $1 });
-    } elsif ( $str =~ s/^(RT|realtime|PB|playback|II|InetIn|SI|SerIn|screen|pterm|photon)\b// ) {
-      my $kw = $kwabbr{$1} || $1;
-      push(@$toks, { type => 'keyword', op => $kw });
-    } else {
-      warn "Bad logic syntax in '$istr' before '$str'\n";
-      return $toks;
-    }
-  }
-  return $toks;
-}
-
-sub cond2sh {
-  my $expr = shift;
-  if ($expr->{type} eq 'monadic') {
-    return $expr->{op} . ' \( ' . cond2sh($expr->{arg}) . ' \)';
-  } elsif ($expr->{type} eq 'dyadic') {
-    my $op = ($expr->{op} eq '|') ? ' -o ' : ' -a ';
-    return cond2sh($expr->{arg1}) . $op . cond2sh($expr->{arg2});
-  } elsif ($expr->{type} eq 'keyword') {
-    my $varname = '$dispmode';
-    if ($expr->{op} =~ m/^realtime|playback|InetIn|SerIn$/ ) {
-      $varname = '$srcmode';
-    }
-    return "$varname = " . $expr->{op};
-  } elsif ($expr->{type} eq 'term') {
-    return cond2sh($expr->{op});
-  } elsif ($expr->{type} eq 'lparen') {
-    return '\( ' . cond2sh($expr->{arg}) . ' \)';
-  } else {
-    die "Invalid condition node type: " . $expr->{type};
-  }
-}
