@@ -49,7 +49,16 @@ COMPILE.tblnc=nctable
 AWK=awk > $@ -f $(LIBSRC)
 FLD2DISP=$(AWK)/fld2disp.awk
 EDF2EXT=$(AWK)/edf2ext.awk
-PROMOTE=echo promote /usr/local/sbin/promote
+# PROMOTE was a semi-secure way of making an executable setuid root.
+# It has not been necessary in Monarch. I have repurposed the stub
+# here as a hack to work around a Cygwin timing issue. The first
+# time a program is run after being compiled, Cygwin has to perform
+# a rebase operation which takes several seconds. This is a problem
+# if we are waiting for a server to indicate it is alive. Instead
+# of waiting for that to happen later in the build (when compiling
+# the algorithm), I run it here with -h to take care of the rebase.
+# PROMOTE=echo promote /usr/local/sbin/promote
+PROMOTE=cygrebase() { echo "Rebasing $$1"; ./$$1 -h >/dev/null; }; cygrebase
 SLP2CMD=$(AWK)/slp2cmd.awk
 SLP2SOL=$(AWK)/slp2sol.awk
 EDF2OUI=$(AWK)/edf2oui.awk

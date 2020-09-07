@@ -99,16 +99,16 @@ function msgf {
   code=$1
   excode=''
   case $code in
-    1) prefix='[Warn]';;
-    2) prefix='[Error]';;
-    3) prefix='[Fatal]'; excode=1;;
-    4) prefix='[Internal]'; excode=1;;
+    1) prefix='[Warn] ';;
+    2) prefix='[Error] ';;
+    3) prefix='[Fatal] '; excode=1;;
+    4) prefix='[Internal] '; excode=1;;
     -1) excode=0;;
     *) prefix='';;
   esac
   shift
   if [ $code -ge $msgDebug ]; then
-    /usr/local/bin/msg $msgV -n $msgProgram "$*"
+    /usr/local/bin/msg $msgV -n $msgProgram "$prefix$*"
   fi
   [ -n "$excode" ] && exit $excode
 }
@@ -123,7 +123,10 @@ function set_have {
 }
 
 function Launch {
-  [ -n "$launch_error" ] && return 1
+  if [ -n "$launch_error" ]; then
+    msgf 2 "Skipping Launch $1 $2 due to earlier errors"
+    return 1
+  fi
   name=$1
   shift
   shortname=''
@@ -144,7 +147,7 @@ function Launch {
     if [ -S $wname -a -f $wname.pid ]; then
       pid=`cat $wname.pid`
       if kill -0 $pid 2>/dev/null; then
-        msgf 2 "Launch Skipped: socket $name still active"
+        msgf 2 "Launch of $1 Skipped: socket $name still active"
         launch_error=yes
         return 1
       else
@@ -157,7 +160,7 @@ function Launch {
 
   if { $* & }; then
     Launch_pid=$!
-    msgf -V 0 "Launch: $Launch_pid $*"
+    msgf 0 "Launch: $Launch_pid $*"
     if [ -n "$wname" ]; then
       waitfor $wname 20 || {
         msgf 2 "Launch namewait failure: $*"

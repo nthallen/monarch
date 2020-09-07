@@ -302,7 +302,7 @@ for my $client ( @client ) {
 
 print $fh "lclsrvr=playbacksrvr\n";
 for my $server ( @extract ) {
-  if ($server->{name} eq 'cmd/server' ) {
+  if ($server->{name} eq 'cmd' ) {
     if ($server->{cond}) {
       print $fh '[ ', cond2sh($server->{cond}), ' ] && ';
     }
@@ -315,11 +315,11 @@ print $fh <<'EOF';
 # rmtlogfile is the file we would like to display with less,
 #  even if it is not really remote.
 if [ $srcmode = realtime ]; then
-  [ $FltNode_Access = Remote ] &&
-    lcllogfile=$logfileroot.clt.log
   if [ $FltNode_Access = Remote ]; then
+    lcllogfile=$logfileroot.clt.log
     rmtlogfile=$HomeDir/$logfileroot.log
   else
+    lclsrvr=''
     rmtlogfile=$logfileroot.log
   fi
 else # not realtime
@@ -428,11 +428,15 @@ if [ $cmd = start ]; then
       fi
     else
       msgf 0 "Starting flight.sh"
-      screen -t flight.sh /usr/local/sbin/flight.sh
+      screen -t flight.sh /usr/local/libexec/flight.sh
+      msgf 0 "Waiting for memo"
+      waitfor -q /var/run/monarch/$Experiment/memo forever
+      msgVdefault=''
+      sleep 1
       msgf 0 "Waiting for tm_bfr"
-      waitfor /var/run/monarch/$Experiment/tm_bfr forever
-      msgf 0 "found tm_bfr, waiting for command server"
-      waitfor /var/run/monarch/$Experiment/server forever
+      waitfor -q /var/run/monarch/$Experiment/tm_bfr forever
+      msgf 0 "found tm_bfr, waiting for cmd server"
+      waitfor -q /var/run/monarch/$Experiment/cmd forever
     fi
 EOF
 
@@ -594,7 +598,7 @@ screen -X only
 [ $dispmode != photon ] && /usr/local/sbin/getcon -v -e $session
 [ -n "$lclsrvr" ] && monarch_cmd -V Quit
 screen -X select logfile
-sleep 3
+sleep 1
 if [ -n "$less_pid" ] && kill -0 $less_pid; then
   screen -X -p logfile stuff ^Cq
   sleep 1
@@ -829,11 +833,11 @@ while true; do
           if [ $fltshstarted = no ]; then
             if [ $dispmode = screen ]; then
               echo "Starting flight.sh on /dev/con1"
-              on -t /dev/con1 /usr/local/sbin/flight.sh &
+              on -t /dev/con1 /usr/local/libexec/flight.sh &
             else
               tty=`tty`
               echo "Starting flight.sh in a pterm"
-              on -t $tty pterm /usr/local/sbin/flight.sh &
+              on -t $tty pterm /usr/local/libexec/flight.sh &
             fi
             fltshstarted=yes
           fi
