@@ -262,7 +262,7 @@ bool Loop::loop_active() {
   return(LI != S.end());
 }
 
-bool Loop::loop_iterate() {
+void Loop::loop_iterate() {
   if (list_element_deleted) {
     LI = S.erase(LI);
     list_element_deleted = false;

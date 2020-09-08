@@ -119,7 +119,7 @@ class Loop {
     InterfaceList::iterator find_child_by_fd(int fd);
     void loop_init();
     bool loop_active();
-    bool loop_iterate();
+    void loop_iterate();
 
     /** The list of child interfaces */
     InterfaceList S;
