@@ -392,11 +392,15 @@ if [ -z "$STY" ]; then
   exit 0
 fi
 
+# Running under screen
 session=$$
 screen -X logfile "$doit.$session.log"
 screen -X log on
-
-# Running under screen, session $session"
+screen -X split
+screen -X focus
+screen -X resize 3
+screen -X focus
+clear
 
 # Until we have sessions, the only distinction we can make
 # about where we connect is local or remote.
@@ -498,6 +502,7 @@ for my $disp ( @display ) {
     print $fh
       "screen -t $scr->{screenname} /usr/local/sbin/getcon ",
       "\$gcopt $scr->{varname} \$session\n",
+      "screen -X select $scr->{screenname}\n",
       "screen -X width -w $scr->{width}\n",
       "#screen -x height -w $scr->{height}\n";
   }
@@ -505,8 +510,11 @@ for my $disp ( @display ) {
 
 print $fh <<'EOF';
 screen -t clt /usr/local/sbin/getcon -v clt $session
+screen -X focus
+screen -X select clt
 screen -X height -w 2
 screen -X width -w 80
+screen -X focus
 screen -X select $doit
 
 msgf 0 Handling less.pid.$session
@@ -539,6 +547,30 @@ done
 
 EOF
 
+my @clttermvarlist =
+  map( "\$$_->{varname}_term",
+    map( @{$screen{$_}}, @display ) );
+my $clttermcond = join '',
+  "if [ ",
+    join(' -o ',
+      map("-n $_", '$clt_term', @clttermvarlist)),
+  " ]; then\n";
+
+# print $fh $clttermcond;
+# print $fh <<'EOF';
+  # screen -X split
+  # screen -X focus
+  # screen -X resize 3
+  # screen -X select clt
+  # screen -X focus
+# EOF
+# for my $disp ( reverse @display ) {
+  # my $scr = $screen{$disp};
+  # print $fh
+    # map "  screen -X select $_->{screenname}\n", reverse @$scr;
+# }
+# print $fh "fi\n\n";
+
 for my $disp ( @display ) {
   my $scr = $screen{$disp};
   my @scrvars = map( "\$$_->{varname}_term", @$scr);
@@ -547,7 +579,12 @@ for my $disp ( @display ) {
     "  msgf 0 \"Starting $disp\$nc \$ncopt \$TM_OPT ",
         join(' ', @scrvars), "\"\n",
     "  Launch -TMC- $disp\$nc \$ncopt \$TM_OPT ",
-        join(' ', @scrvars), "\n",
+        join(' ', @scrvars), "\n";
+  if ( $disp eq $display[0] ) {
+    print $fh
+      "  screen -X select $scr->[0]->{screenname}\n";
+  }
+  print $fh
     "else\n",
     "  msgf 1 \"Skipping $disp\$nc\"\n",
     "fi\n";
@@ -565,23 +602,8 @@ if ( $phrtg ) {
     $progopts{phrtg}, "\n";
 }
 
-my @clttermvarlist =
-  map( "\$$_->{varname}_term",
-    map( @{$screen{$_}}, @display ) );
+print $fh "\n$clttermcond";
 print $fh
-  "if [ ",
-    join(' -o ',
-      map("-n $_", '$clt_term', @clttermvarlist)),
-  " ]; then\n";
-print $fh <<'EOF';
-  screen -X split
-  screen -X focus
-  screen -X resize 3
-  screen -X select clt
-  screen -X focus
-EOF
-print $fh
-  "  screen -X select $screen{$display[0]}->[0]->{screenname}\n",
   "  msgf 0 \"Starting \$client\$nc \$CMD_OPT \$clt_term ",
       join(' ', @clttermvarlist), "\"\n",
   "  \$client\$nc \$CMD_OPT \$clt_term ",
