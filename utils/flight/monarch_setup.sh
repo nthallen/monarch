@@ -24,6 +24,13 @@ if [ "$(uname -o)" = "Cygwin" ]; then
     echo "Please consult with the developer"
     exit 1
   fi
+  user=$(id -un)
+  userdef=$(mkpasswd -l -u $user)
+  if [ -z "$userdef" ]; then
+    echo "Your user is apparently a domain account"
+    echo "Please consult with the developer"
+    exit 1
+  fi
 
   if [ ! -d $rundir ]; then
     echo "Creating $rundir"
@@ -35,8 +42,6 @@ if [ "$(uname -o)" = "Cygwin" ]; then
     exit 1
   else
     echo "Creating $passwd"
-    user=$(id -un)
-    userdef=$(mkpasswd -l -u $user)
     ( echo $userdef
       echo $userdef | sed -e "s/^$user:/flight:/"
     ) >$passwd
