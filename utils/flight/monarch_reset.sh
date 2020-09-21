@@ -8,6 +8,21 @@ function nl_error {
   exit 1
 }
 
+if [ "$(uname -o)" = "Cygwin" ]; then
+  rundir=/var/run/monarch
+  passwd=/etc/passwd
+  nss=/etc/nsswitch.conf
+
+  if [ -f $nss.monarch ]; then
+    echo "Performing Monarch reset for Cygwin"
+    rm -rf $rundir $passwd $nss
+    mv $nss.monarch $nss
+  else
+    nl_error $nss.monarch not found
+  fi
+  exit 0
+fi
+
 [ `id -u` -ne 0 ] && nl_error "Must be run as root"
 
 # Shutdown, disable and/or remove the monarch service(s)

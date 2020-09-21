@@ -4,6 +4,51 @@
 # It should live in /usr/local/share/monarch/setup
 # Obviously, it should be run *after* the basic monarch installation
 
+if [ "$(uname -o)" = "Cygwin" ]; then
+  rundir=/var/run/monarch
+  passwd=/etc/passwd
+  nss=/etc/nsswitch.conf
+
+  if [ -f $passwd ]; then
+    echo "You already have $passwd. Please consult with the developer"
+    exit 1
+  fi
+  if [ -f $nss.monarch ]; then
+    echo "$nss already configured"
+    exit 1
+  elif [ ! -f $nss ]; then
+    echo "$nss not found: Please consult with the developer"
+    exit 1
+  elif grep -q "^[^#]" $nss; then
+    echo "You appear to have a non-trivial Cygwin configuration."
+    echo "Please consult with the developer"
+    exit 1
+  fi
+
+  if [ ! -d $rundir ]; then
+    echo "Creating $rundir"
+    mkdir -p $rundir
+  fi
+  
+  if [ -f $passwd ]; then
+    echo "You already have $passwd. Please consult with the developer"
+    exit 1
+  else
+    echo "Creating $passwd"
+    user=$(id -un)
+    userdef=$(mkpasswd -l -u $user)
+    ( echo $userdef
+      echo $userdef | sed -e "s/^$user:/flight:/"
+    ) >$passwd
+  fi
+
+  echo "Creating $nss"  
+  cp $nss $nss.monarch
+  printf "passwd: files\ngroup: files\n" >>$nss
+  exit 0
+fi
+
+# Other operating systems
 # Make sure we are running as root
 if [ `id -u` -ne 0 ]; then
   exec sudo $0 $*
