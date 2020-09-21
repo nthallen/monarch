@@ -11,5 +11,7 @@ include( ../../oui_setup.cmake )
 OUI_FILE(monarch_cmd.oui)
 add_executable(monarch_cmd monarch_cmd.cc monarch_cmdoui.cc)
 target_link_libraries(monarch_cmd dasio nl pthread)
+target_include_directories(monarch_cmd PRIVATE
+  ${monarch_SOURCE_DIR}/tools/cmdgen)
 
 install(TARGETS monarch_cmd RUNTIME DESTINATION bin)
