@@ -5,7 +5,7 @@
 # Obviously, it should be run *after* the basic monarch installation
 
 if [ "$(uname -o)" = "Cygwin" ]; then
-  new=new
+  new=''
   rundir=/var/run/${new}monarch
   passwd=/etc/${new}passwd
   group=/etc/${new}group
