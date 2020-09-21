@@ -2,7 +2,7 @@
 
 HAVE_SUDO=@HAVE_SUDO@
 
-if [ HAVE_SUDO ]
+if [ $HAVE_SUDO = yes ]
 then
   # Make sure we are running as root
   if [ `id -u` -ne 0 ]; then
