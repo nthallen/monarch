@@ -5,12 +5,15 @@
 # Obviously, it should be run *after* the basic monarch installation
 
 if [ "$(uname -o)" = "Cygwin" ]; then
-  rundir=/var/run/monarch
-  passwd=/etc/passwd
-  nss=/etc/nsswitch.conf
+  new=new
+  rundir=/var/run/${new}monarch
+  passwd=/etc/${new}passwd
+  group=/etc/${new}group
+  nss=/etc/${new}nsswitch.conf
+  domainuser=no
 
-  if [ -f $passwd ]; then
-    echo "You already have $passwd. Please consult with the developer"
+  if [ -f $passwd -o -f $group ]; then
+    echo "You already have $passwd or $group. Please consult with the developer"
     exit 1
   fi
   if [ -f $nss.monarch ]; then
@@ -28,8 +31,13 @@ if [ "$(uname -o)" = "Cygwin" ]; then
   userdef=$(mkpasswd -l -u $user)
   if [ -z "$userdef" ]; then
     echo "Your user is apparently a domain account"
-    echo "Please consult with the developer"
-    exit 1
+    userdef=$(mkpasswd -d -u $user)
+    if [ -z "$userdef" ]; then
+      echo "Unable to get user definition from mkpasswd."
+      echo "Please consult with the developer"
+      exit 1
+    fi
+    domainuser=yes
   fi
 
   if [ ! -d $rundir ]; then
@@ -46,6 +54,18 @@ if [ "$(uname -o)" = "Cygwin" ]; then
       echo $userdef | sed -e "s/^$user:/flight:/"
     ) >$passwd
   fi
+  
+  mygrp=`id -gn`
+  if [ $domainuser = yes ]; then
+    grpdef=`mkgroup -d -g $mygrp`
+  else
+    grpdef=`mkgroup -l -g $mygrp`
+  fi
+  echo "Creating $group"
+  ( mkgroup -l
+    echo $grpdef | sed -e "s/^$mygrp:/flight:/"
+  ) >$group
+    
 
   echo "Creating $nss"  
   cp $nss $nss.monarch
