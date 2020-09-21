@@ -582,13 +582,16 @@ void serusb_if::dequeue_request(int16_t status, int n_args,
         nl_assert(cp == 1);
         cp = 0;
         while (n_parsed  < n_reads && rsize == 0 && cp < nc) {
+          uint16_t pval;
           switch ( buf[cp] ) {
             case 'm':
               repp->hdr.status = SBS_NOACK; // No acknowledge on at least one read
               // fall through
             case 'M':
               ++cp;
-              if (!read_hex(repp->data.mread.rvals[n_parsed++])) {
+              if (read_hex(pval)) {
+                repp->data.mread.rvals[n_parsed++] = pval;
+              } else {
                 report_err("%s: DACS response syntax error", iname);
                 repp->hdr.status = SBS_RESP_SYNTAX; // DACS reply syntax error
                 rsize = sizeof(subbusd_rep_hdr_t);
