@@ -5,8 +5,8 @@
 
 namespace DAS_IO {
   
-TM_data_sndr::TM_data_sndr(const char *iname, const char *hostname, const char *datum, void *data,
-        uint16_t size)
+TM_data_sndr::TM_data_sndr(const char *iname, const char *hostname,
+      const char *datum, const void *data, uint16_t size)
     : Client(iname, 10, hostname, "tm_gen", 0),
       data(data), data_len(size) {
   snprintf(sub_service, subsvc_len, "data/%s", datum);
@@ -25,7 +25,7 @@ bool TM_data_sndr::app_connected() {
 }
 
 bool TM_data_sndr::Send() {
-  if (iwrite((char *)data, data_len)) return true;
+  if (iwrite((const char *)data, data_len)) return true;
   if (ELoop) ELoop->set_gflag(0);
   return false;
 }

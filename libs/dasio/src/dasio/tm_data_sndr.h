@@ -17,8 +17,8 @@ namespace DAS_IO {
        * @param data Pointer to the data structure
        * @param size The size of the data structure
        */
-      TM_data_sndr(const char *iname, const char *hostname, const char *datum,
-        void *data, uint16_t size);
+      TM_data_sndr(const char *iname, const char *hostname,
+        const char *datum, const void *data, uint16_t size);
       bool app_input(); // read nl, write data and set gflag(0)
       bool app_connected();
       /**
@@ -29,7 +29,7 @@ namespace DAS_IO {
     private:
       static const int subsvc_len = 40;
       char sub_service[subsvc_len];
-      void *data;
+      const void *data;
       uint16_t data_len;
   };
 
