@@ -1,9 +1,45 @@
 #! @SHELL_EXE@
 
-HAVE_SUDO=@HAVE_SUDO@
+function print_usage {
+cat <<EOF
 
-if [ $HAVE_SUDO = yes ]
-then
+/usr/local/sbin/mkexpdir <Experiment>
+
+  Creates the basic directory structure for <Experiment> and
+  sets the permissions appropriately.
+  
+  The canonical directory for <Experiment> is /home/<Experiment>,
+  and the directory should belong to group flight with g+sw
+  permissions.
+  
+/usr/local/sbin/mkexpdir -h
+
+  Prints this message
+EOF
+exit 0
+}
+
+msgProgram='mkexpdir'
+
+#----------------------------------------------------------------
+# Process command line options (-h)
+#----------------------------------------------------------------
+while getopts "h" option; do
+  case $option in
+  h) print_usage;;
+  \?) echo; exit 1;;
+  *) msg -V -n $msgProgram "[ERROR] Unsupported option: -$option"; exit 1;;
+  esac
+done
+let sval=$OPTIND-1
+shift $sval
+
+HAVE_SUDO=@HAVE_SUDO@
+# If we do not have sudo, then we are most likely running
+# under Cygwin on Windows. The main limitation is that
+# we cannot chown.
+
+if [ $HAVE_SUDO = yes ]; then
   # Make sure we are running as root
   if [ `id -u` -ne 0 ]; then
     exec sudo $0 $*
@@ -13,22 +49,29 @@ fi
 # Make sure we have an Experiment name
 if [ "$1" != "" ]; then
   export Experiment=$1
-  echo "mkexpdir: Experiment named captured as [$1]"
+  echo "mkexpdir: Creating directory structure for Experiment [$1]"
 else
   echo "mkexpdir: Fatal: no Experiment name"
   exit 1
 fi
 
-# Create the Experiment directory
-mkdir /home/$Experiment
-chmod g+sw /home/$Experiment
-chown flight:flight /home/$Experiment
-
-# Create the corresponding bin directory
-mkdir /home/$Experiment/bin
-chmod g+sw /home/$Experiment/bin
-chown flight:flight /home/$Experiment/bin
-
-echo "mkexpdir: created /home/$Experiment"
+# Create the Experiment directories
+dirs="/home/$Experiment /home/$Experiment/bin"
+for dir in $dirs; do
+  if [ -d $dir ]; then
+    echo "mkexpdir: $dir already exists"
+  else
+    mkdir $dir
+    echo "mkexpdir: created $dir"
+  fi
+  if [ $HAVE_SUDO = yes ]; then
+    chown flight:flight $dir
+  else
+    chgrp flight $dir
+  fi
+  chmod g+sw $dir
+done
+echo
+ls -ld $dirs
 
 exit 0
