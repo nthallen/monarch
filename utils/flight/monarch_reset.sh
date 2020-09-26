@@ -11,17 +11,9 @@ function nl_error {
 if [ "$(uname -o)" = "Cygwin" ]; then
   new=''
   rundir=/var/run/${new}monarch
-  passwd=/etc/${new}passwd
-  group=/etc/${new}group
-  nss=/etc/${new}nsswitch.conf
 
-  if [ -f $nss.monarch ]; then
-    echo "Performing Monarch reset for Cygwin"
-    rm -rf $rundir $passwd $group $nss
-    mv $nss.monarch $nss
-  else
-    nl_error $nss.monarch not found
-  fi
+  echo "Performing Monarch reset for Cygwin"
+  rm -rf $rundir
   exit 0
 fi
 

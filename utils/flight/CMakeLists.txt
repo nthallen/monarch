@@ -45,6 +45,7 @@ install(PROGRAMS
 install(PROGRAMS
   ${CMAKE_CURRENT_SOURCE_DIR}/monarch_setup.sh
   ${CMAKE_CURRENT_SOURCE_DIR}/monarch_reset.sh
+  ${CMAKE_CURRENT_SOURCE_DIR}/monarch-win-setup.ps1
   DESTINATION share/monarch/setup)
 
 install(FILES

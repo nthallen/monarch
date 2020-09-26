@@ -7,69 +7,25 @@
 if [ "$(uname -o)" = "Cygwin" ]; then
   new=''
   rundir=/var/run/${new}monarch
-  passwd=/etc/${new}passwd
-  group=/etc/${new}group
-  nss=/etc/${new}nsswitch.conf
-  domainuser=no
 
-  if [ -f $passwd -o -f $group ]; then
-    echo "You already have $passwd or $group. Please consult with the developer"
-    exit 1
-  fi
-  if [ -f $nss.monarch ]; then
-    echo "$nss already configured"
-    exit 1
-  elif [ ! -f $nss ]; then
-    echo "$nss not found: Please consult with the developer"
-    exit 1
-  elif grep -q "^[^#]" $nss; then
-    echo "You appear to have a non-trivial Cygwin configuration."
-    echo "Please consult with the developer"
-    exit 1
-  fi
   user=$(id -un)
-  userdef=$(mkpasswd -l -u $user)
-  if [ -z "$userdef" ]; then
-    echo "Your user is apparently a domain account"
-    userdef=$(mkpasswd -d -u $user)
-    if [ -z "$userdef" ]; then
-      echo "Unable to get user definition from mkpasswd."
-      echo "Please consult with the developer"
-      exit 1
-    fi
-    domainuser=yes
-  fi
+  # Check that user is in group flight
+  id -Gn | grep -q '\bflight\b' || {
+    echo "monarch_setup: user '$user' does not appear to be a member"
+    echo "of group 'flight'. If you have not run monarch-win-setup.ps1,"
+    echo "do so now. Otherwise try restarting the system and then rerun"
+    echo "monarch_setup.sh."
+    exit 1
+  }
 
   if [ ! -d $rundir ]; then
     echo "Creating $rundir"
     mkdir -p $rundir
+    chgrp flight $rundir
+    chmod g+ws $rundir
   fi
-  
-  if [ -f $passwd ]; then
-    echo "You already have $passwd. Please consult with the developer"
-    exit 1
-  else
-    echo "Creating $passwd"
-    ( echo $userdef
-      echo $userdef | sed -e "s/^$user:/flight:/"
-    ) >$passwd
-  fi
-  
-  mygrp=`id -gn`
-  if [ $domainuser = yes ]; then
-    grpdef=`mkgroup -d -g $mygrp`
-  else
-    grpdef=`mkgroup -l -g $mygrp`
-  fi
-  echo "Creating $group"
-  ( mkgroup -l
-    echo $grpdef | sed -e "s/^$mygrp:/flight:/"
-  ) >$group
-    
+  echo "monarch_setup: Setup is completed for Cygwin."
 
-  echo "Creating $nss"  
-  cp $nss $nss.monarch
-  printf "passwd: files\ngroup: files\n" >>$nss
   exit 0
 fi
 
