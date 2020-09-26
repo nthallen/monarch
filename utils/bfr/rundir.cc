@@ -9,7 +9,7 @@
 #include "nl.h"
 #include "nl_assert.h"
 
-void mkfltdir(const char *dir, uid_t flt_uid, gid_t flt_gid) {
+void mkfltdir(const char *dir) {
   struct stat buf;
   if ( stat( dir, &buf) == -1 ) {
     if (errno == ENOENT) {
@@ -19,14 +19,10 @@ void mkfltdir(const char *dir, uid_t flt_uid, gid_t flt_gid) {
       msg(3,"Error on stat(%s): %s", dir, strerror(errno));
     }
   } else if (! S_ISDIR(buf.st_mode)) {
-    // check to make sure it's a directory
     msg(3, "%s is not a directory", dir);
   }
   /* permissions on the directories should be taken
      care of by sticky bits and umask */
-  // } else {
-  //   if (chmod(dir, 02775) == -1)
-  //     msg(3, "Error on chmod(%s): %s", dir, strerror(errno));
 }
 
 static const char *get_runexpdir() {
@@ -66,22 +62,11 @@ void delete_rundir(void) {
 }
 
 void setup_rundir(void) {
-  struct group *flt_grp;
-  struct passwd* flt_user;
-  uid_t flt_uid;
-  gid_t flt_gid;
   const char *runexpdir;
 
-  flt_user = getpwnam("flight");
-  if (flt_user == NULL) msg(3, "No flight user" );
-  flt_grp = getgrnam("flight");
-  if (flt_grp == NULL) msg(3, "No flight group" );
-  flt_uid = flt_user->pw_uid;
-  flt_gid = flt_grp->gr_gid;
-
-  mkfltdir(RUNDIR_TMC, flt_uid, flt_gid);
+  mkfltdir(RUNDIR_TMC);
   delete_rundir();
   atexit(&delete_rundir);
   runexpdir = get_runexpdir();
-  mkfltdir(runexpdir, flt_uid, flt_gid);
+  mkfltdir(runexpdir);
 }
