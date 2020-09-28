@@ -46,7 +46,7 @@ param (
 # Check here to figure out whether we have to do anything
 #   Does the $fltgrp exist
 #   Is the current user a member?
-$fltgrp = 'newflight'
+$fltgrp = 'flight'
 $fulluser = "$Env:USERDOMAIN\$Env:USERNAME"
 if ( $uninstall) {
   if (-NOT (Get-LocalGroup).Name -contains $fltgrp ) {
