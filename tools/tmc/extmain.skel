@@ -63,6 +63,29 @@ typedef TM_CLIENT_CLASS TM_CLIENT;
   #define EXTRACTION_UPDATE
 #endif
 
+#ifdef SERVER_CLASS
+
+int main(int argc, char **argv) {
+  oui_init_options(argc, argv);
+  msg( 0, "Startup" );
+  SERVER_CLASS *srvr = new SERVER_CLASS();
+  TM_CLIENT *Ext = new TM_CLIENT(4096, DAS_IO::tm_client::tm_client_hostname);
+  Loop ELoop;
+  srvr->ELoop.add_child(Ext);
+  Ext->connect();
+  EXTRACTION_INIT;
+  tminitfunc();
+  EXTRACTION_UPDATE;
+  srvr->Start(Server::server_type);
+  EXTRACTION_TERM;
+  srvr->ELoop.delete_children();
+  srvr->ELoop.clear_delete_queue();
+  msg( 0, "Shutdown" );
+  return 0;
+}
+
+#else
+
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   msg( 0, "Startup" );
@@ -80,6 +103,8 @@ int main(int argc, char **argv) {
   msg( 0, "Shutdown" );
   return 0;
 }
+
+#endif
 
 #ifdef NCTABLE_H_INCLUDED
 bool DAS_IO::nc_tm_client::serialized_signal_handler(uint32_t signals_seen) {
