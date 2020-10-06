@@ -13,6 +13,7 @@ using namespace DAS_IO;
       static char *mlf_config;
       static unsigned int file_limit;
     protected:
+      ~tmc_lgr();
       void process_data_t1();
       void process_data_t2();
       unsigned int process_data_t3();

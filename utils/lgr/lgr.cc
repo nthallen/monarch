@@ -40,6 +40,8 @@ tmc_lgr::tmc_lgr() : tm_client( 4096, false, tm_client::tm_client_hostname) {
   ofp = NULL;
 }
 
+tmc_lgr::~tmc_lgr() {}
+
 // Since we accept data from any frame, we need to copy the incoming
 // frame definition into tm_info so tm_client::process_init()
 // will be happy.
@@ -134,14 +136,13 @@ void tminitfunc() {}
 
 int main( int argc, char **argv ) {
   oui_init_options(argc, argv);
-  tmc_lgr tmc;
+  tmc_lgr *tmc = new tmc_lgr();
   Loop ELoop;
-  ELoop.add_child(&tmc);
+  ELoop.add_child(tmc);
   msg(0, "Starting");
-  tmc.connect();
+  tmc->connect();
   ELoop.event_loop();
   msg(0, "Terminating");
-  //tmc.operate(); //we eventually need to figure out a new operate() method
   return 0;
 }
 
