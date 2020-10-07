@@ -267,13 +267,6 @@ class Socket : public Interface {
     virtual Socket *new_client(const char *iname, int fd);
     
     /**
-     * Invokes new_client(fd) to clone this object into one of a different
-     * class after negotiation has completed. Will remove this socket
-     * from ELoop if defined and possible preserve the object for reuse.
-     */
-    virtual Socket *new_client();
-    
-    /**
      * This function could be moved to a more widely available location if necessary.
      * @return The VERSION string read from the VERSION file with any whitespace
      * stripped. If the file does not exist or there are errors reading from it,

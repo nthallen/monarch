@@ -455,11 +455,6 @@ Socket *Socket::new_client(const char *iname, int fd) {
   return rv;
 }
 
-Socket *Socket::new_client() {
-  Socket *rv = new_client(this->iname, this->fd);
-  return rv;
-}
-
 bool Socket::readSockError(int *sock_err) {
   socklen_t optlen = sizeof(*sock_err);
 
