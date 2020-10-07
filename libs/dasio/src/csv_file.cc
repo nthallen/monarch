@@ -110,12 +110,35 @@ csv_file::csv_file(const char *name, unsigned int n_cols,
     nan = nan_text;
   json = json_fmt ? true : false;
   fp = 0;
+  jbufsize = 0;
+  jbuf = 0;
+  jcb = 0;
+}
+
+csv_file::~csv_file() {
+  if (time_set) {
+    flush_row();
+  }
+  if (fp) {
+    fclose(fp);
+    fp = 0;
+  }
+  for (unsigned int i = 0; i < cols.size(); ++i) {
+    if ( cols[i] ) {
+      delete cols[i];
+      cols[i] = 0;
+    }
+  }
+  if (jbuf) {
+    nl_free_memory(jbuf);
+    jbuf = 0;
+  }
 }
 
 void csv_file::init() {
   signal(SIGPIPE, &terminate_on_write_err);
   if (json) {
-    fp = stdout;
+    // fp = stdout;
   } else {
     fp = fopen( filename, "w" );
     if (fp == NULL)
@@ -129,16 +152,6 @@ void csv_file::terminate_on_write_err(int sig) {
 }
 
 const char *csv_file::nan = "";
-
-csv_file::~csv_file() {
-  unsigned int i;
-  if (time_set) flush_row();
-  if (fp)
-    fclose(fp);
-  for (i = 0; i < cols.size(); ++i) {
-    if ( cols[i] ) delete cols[i];
-  }
-}
 
 void csv_file::init_col(unsigned int col_num, const char *colname,
           const char *fmt) {
@@ -166,44 +179,6 @@ void csv_file::set_time(double T) {
   cols[0]->set(T);
 }
 
-void csv_file::flush_headers() {
-  unsigned int i;
-  nl_assert(cols[0]);
-  if (!json) {
-    fprintf(fp, "%s", cols[0]->header());
-    for (i = 1; i < cols.size(); ++i) {
-      fprintf(fp, ",%s", cols[i] ? cols[i]->header() : "");
-    }
-    fprintf(fp, "\n");
-  }
-}
-
-void csv_file::flush_row() {
-  unsigned int i;
-  if (json) {
-    fprintf(fp, "{\n  \"Record\": \"%s\",\n  \"%s\": %s",
-      filename, cols[0]->header(), cols[0]->output() );
-    for (i = 1; i < cols.size(); ++i) {
-      if (cols[i]) {
-        fprintf(fp, ",\n  \"%s\": %s", cols[i]->header(), cols[i]->output() );
-        cols[i]->reset();
-      }
-    }
-    fprintf(fp, "\n}\n");
-    fflush(fp);
-  } else {
-    fprintf(fp, "%s", cols[0]->output() );
-    for (i = 1; i < cols.size(); ++i) {
-      fprintf(fp, ",");
-      if (cols[i]) {
-        fprintf(fp, "%s", cols[i]->output() );
-        cols[i]->reset();
-      }
-    }
-    fprintf(fp, "\n");
-  }
-}
-
 /**
  * This interface is not for column zero (Time)
  */
@@ -221,4 +196,73 @@ void csv_file::set_col(unsigned int col_num, const char *sval) {
   } else if (cols[col_num] == NULL) {
     msg(MSG_FATAL, "column %u undefined in csv_file::set_col", col_num);
   } else cols[col_num]->set(sval);
+}
+
+void csv_file::set_jcb(void (*jcb)(const char *buf, int nc)) {
+  this->jcb = jcb;
+}
+
+void csv_file::flush_headers() {
+  unsigned int i;
+  nl_assert(cols[0]);
+  if (!json) {
+    fprintf(fp, "%s", cols[0]->header());
+    for (i = 1; i < cols.size(); ++i) {
+      fprintf(fp, ",%s", cols[i] ? cols[i]->header() : "");
+    }
+    fprintf(fp, "\n");
+  }
+}
+
+void csv_file::process_nc(int nc, char *&jb, int &jspace, int &jneeded) {
+  jspace -= nc;
+  if (jspace > 0) {
+    jb += nc;
+  } else {
+    jspace = 0;
+  }
+  jneeded += nc;
+}
+
+void csv_file::flush_row() {
+  if (json) {
+    while (jcb) {
+      char *jb = jbuf;
+      int jspace = jbufsize;
+      int jneeded = 0;
+      int nc =
+        snprintf(jb, jspace, "{\n  \"Record\": \"%s\",\n  \"%s\": %s",
+          filename, cols[0]->header(), cols[0]->output() );
+      process_nc(nc, jb, jspace, jneeded);
+      for (unsigned int i = 1; i < cols.size(); ++i) {
+        if (cols[i]) {
+          nc = snprintf(jb, jspace, ",\n  \"%s\": %s",
+            cols[i]->header(), cols[i]->output() );
+          process_nc(nc, jb, jspace, jneeded);
+          // cols[i]->reset();
+        }
+      }
+      nc = snprintf(jb, jspace, "\n}\n");
+      process_nc(nc+1, jb, jspace, jneeded);
+      if (jneeded > jbufsize) {
+        // reallocate jbuf at jneeded + 100, say
+        if (jbuf) nl_free_memory(jbuf);
+        jbufsize = jneeded+100;
+        jbuf = (char *)new_memory(jbufsize);
+      } else {
+        jcb(jbuf, jneeded-1);
+        return;
+      }
+    }
+  } else {
+    fprintf(fp, "%s", cols[0]->output() );
+    for (unsigned int i = 1; i < cols.size(); ++i) {
+      fprintf(fp, ",");
+      if (cols[i]) {
+        fprintf(fp, "%s", cols[i]->output() );
+        cols[i]->reset();
+      }
+    }
+    fprintf(fp, "\n");
+  }
 }
