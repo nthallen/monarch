@@ -49,10 +49,20 @@ using namespace DAS_IO;
     #ifndef TM_CLIENT_CLASS
       #define TM_CLIENT_CLASS nc_tm_client
     #endif
+    #ifndef TM_CLIENT_FAST
+      #define TM_CLIENT_FAST true
+    #endif
     #ifndef EXTRACTION_UPDATE
       #define EXTRACTION_UPDATE nct_refresh()
     #endif
   #else
+    #ifndef TM_CLIENT_FAST
+      #ifdef TMC_SERVER_CLASS
+        #define TM_CLIENT_FAST true
+      #else
+        #define TM_CLIENT_FAST false
+      #endif
+    #endif
     #ifndef TM_CLIENT_CLASS
       #define TM_CLIENT_CLASS ext_tm_client
     #endif
@@ -73,7 +83,7 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   msg( 0, "Startup" );
   TMC_SERVER_CLASS *srvr = new TMC_SERVER_CLASS(TMC_SERVER_HOSTNAME);
-  TM_CLIENT *Ext = new TM_CLIENT(4096,
+  TM_CLIENT *Ext = new TM_CLIENT(4096, TM_CLIENT_FAST,
       DAS_IO::tm_client::tm_client_hostname);
   srvr->ELoop.add_child(Ext);
   Ext->connect();
@@ -94,7 +104,7 @@ int main(int argc, char **argv) {
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   msg( 0, "Startup" );
-  TM_CLIENT *Ext = new TM_CLIENT(4096, DAS_IO::tm_client::tm_client_hostname);
+  TM_CLIENT *Ext = new TM_CLIENT(4096, TM_CLIENT_FAST, DAS_IO::tm_client::tm_client_hostname);
   Loop ELoop;
   ELoop.add_child(Ext);
   Ext->connect();

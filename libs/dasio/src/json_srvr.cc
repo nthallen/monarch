@@ -1,3 +1,5 @@
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include "dasio/json_srvr.h"
 #include "nl_assert.h"
 #include "nl.h"
@@ -25,6 +27,11 @@ namespace DAS_IO {
           int ibufsize, int fd, json_server *jsrvr)
     : Socket(orig, iname, ibufsize, fd),
       jsrvr(jsrvr) {
+    int on = 1;
+    if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY,
+          &on, sizeof(on)) < 0) {
+      msg(MSG_WARN, "Received error setting TCP_NODELAY");
+    }
     flags = Fl_Read;
   }
   

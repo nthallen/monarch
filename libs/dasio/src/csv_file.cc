@@ -231,18 +231,18 @@ void csv_file::flush_row() {
       int jspace = jbufsize;
       int jneeded = 0;
       int nc =
-        snprintf(jb, jspace, "{\n  \"Record\": \"%s\",\n  \"%s\": %s",
+        snprintf(jb, jspace, "{\r\n  \"Record\": \"%s\",\r\n  \"%s\": %s",
           filename, cols[0]->header(), cols[0]->output() );
       process_nc(nc, jb, jspace, jneeded);
       for (unsigned int i = 1; i < cols.size(); ++i) {
         if (cols[i]) {
-          nc = snprintf(jb, jspace, ",\n  \"%s\": %s",
+          nc = snprintf(jb, jspace, ",\r\n  \"%s\": %s",
             cols[i]->header(), cols[i]->output() );
           process_nc(nc, jb, jspace, jneeded);
           // cols[i]->reset();
         }
       }
-      nc = snprintf(jb, jspace, "\n}\n");
+      nc = snprintf(jb, jspace, "\r\n}\r\n");
       process_nc(nc+1, jb, jspace, jneeded);
       if (jneeded > jbufsize) {
         // reallocate jbuf at jneeded + 100, say
