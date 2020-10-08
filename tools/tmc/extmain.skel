@@ -63,20 +63,25 @@ typedef TM_CLIENT_CLASS TM_CLIENT;
   #define EXTRACTION_UPDATE
 #endif
 
-#ifdef SERVER_CLASS
+#ifdef TMC_SERVER_CLASS
 
+/* The TMC_SERVER_CLASS must have a DAS_IO::Loop ELoop member.
+ * Its constructor is responsible for setting up and
+ * connecting a listening Socket.
+ */
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   msg( 0, "Startup" );
-  SERVER_CLASS *srvr = new SERVER_CLASS();
-  TM_CLIENT *Ext = new TM_CLIENT(4096, DAS_IO::tm_client::tm_client_hostname);
-  Loop ELoop;
+  TMC_SERVER_CLASS *srvr = new TMC_SERVER_CLASS(TMC_SERVER_HOSTNAME);
+  TM_CLIENT *Ext = new TM_CLIENT(4096,
+      DAS_IO::tm_client::tm_client_hostname);
   srvr->ELoop.add_child(Ext);
   Ext->connect();
   EXTRACTION_INIT;
   tminitfunc();
   EXTRACTION_UPDATE;
-  srvr->Start(Server::server_type);
+  srvr->ELoop.event_loop();
+  msg(MSG_DEBUG, "Out of loop");
   EXTRACTION_TERM;
   srvr->ELoop.delete_children();
   srvr->ELoop.clear_delete_queue();

@@ -8,6 +8,7 @@ BEGIN {
   rv = 0
   using_sps = 0
   using_csv = 0
+  using_json = 0
 }
 /^ *spreadsheet/ {
   if (using_csv) {
@@ -104,6 +105,7 @@ BEGIN {
 }
 /^ *json/ {
   json[nsps] = 1
+  using_json = 1
   next
 }
 
@@ -202,6 +204,9 @@ END {
     }
   } else {
     # print the csv_file declarations
+    if (using_json) {
+      print "  #include \"dasio/json_srvr.h\""
+    }
     for (i = 0; i <= nsps; i++) {
       if (json[i]) {
         if (nan_text[i] == "") {
@@ -237,6 +242,9 @@ END {
         printf "    " sps[i] ".init_col(" j ", \"" datum[i,j] "\""
         if ( datfmt[i,j] != "" ) printf ", \"%s\"", datfmt[i,j]
         print ");"
+      }
+      if (json[i]) {
+        print "    " sps[i] ".set_jcb(DAS_IO::json_server::jcb);"
       }
     }
     print "  }"

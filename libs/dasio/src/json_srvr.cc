@@ -13,8 +13,9 @@ namespace DAS_IO {
   }
   
   Socket *json_listener::new_client(const char *iname, int fd) {
+    msg(MSG_DEBUG, "New client connection");
     json_client *rv =
-      new json_client(this, iname, this->bufsize, fd, jsrvr);
+      new json_client(this, iname, 1024, fd, jsrvr);
     if (ELoop) ELoop->add_child(rv);
     jsrvr->add_client(rv);
     return rv;
@@ -39,9 +40,11 @@ namespace DAS_IO {
   bool json_client::protocol_input() {
     msg(MSG_DEBUG, "Received input from client");
     report_ok(nc);
+    return false;
   }
   
   bool json_client::process_eof() {
+    msg(MSG_DEBUG, "Client connection closed");
     jsrvr->rm_client(this);
     jsrvr->ELoop.delete_child(this);
     return false;

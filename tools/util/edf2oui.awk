@@ -16,6 +16,9 @@
 # spreadsheet deleteme 6
 #  1 O3Ref %6.0lf Ct24_Double
 #
+BEGIN {
+  using_json = 0
+}
 /^ *(spreadsheet|csv|json) / {
   if (printed == 0) {
     print "<package> edfoui"
@@ -31,8 +34,18 @@
   print "CSV " sps ", " $3 " columns:"
 }
 /^ *json / {
+  using_json = 1
   print "JSON " sps ", " $3 " columns:"
 }
 /^[ \t]*[0-9]/ {
   printf "  %-13s[%2d] = %s\n", sps, $1, $2
+}
+END {
+  if (using_json) {
+    print ""
+    print "<package> appid_default"
+    print "<include> \"dasio/appid.h\""
+    print "<defs>"
+    print "  DAS_IO::AppID_t DAS_IO::AppID(\"json\", \"JSON Server\", \"V2.0\");"
+  }
 }
