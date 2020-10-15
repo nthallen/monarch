@@ -46,9 +46,13 @@ class Interface {
     virtual Timeout *GetTimeout();
     /** The file descriptor for this interface */
     int fd;
-    /** Bit-mapped register to indicate which events this interface is sensitive to. */
+    /** Bit-mapped register to indicate which events this
+     * Interface is sensitive to.
+     */
     int flags;
-    /** Bit-mapped register to indicate which signals this interface is sensitive to. */
+    /** Bit-mapped register to indicate which signals this
+     * interface is sensitive to.
+     */
     uint32_t signals;
     
     /**
@@ -61,6 +65,7 @@ class Interface {
     static const int Fl_Write = 2;
     static const int Fl_Except = 4;
     static const int Fl_Timeout = 8;
+    static const int Fl_gflags = (~0U)<<4;
     /**
      * Set the threshold to a negative value to report all errors.
      * The default threshold value is 5.
@@ -238,10 +243,22 @@ class Interface {
      */
     virtual bool protocol_except();
     /**
-     * Called by ProcessData() when gflag(0) is received.
-     * @return true on a condition requiring termination of the driver
+     * @param flag What gflag bits caused this call.
+     * @return True on a condition requiring termination of the
+     * event loop.
+     *
+     * Called by ProcessData() when a gflag set in flags
+     * is received. The default calls tm_sync() if gflag(0)
+     * is set in flag.
+     */
+    virtual bool protocol_gflag(int flag);
+    /**
+     * Called by protocol_gflag() when gflag(0) is received.
+     * @return true on a condition requiring termination of the
+     * event loop.
      */
     virtual bool tm_sync();
+    
     /**
      * Callback function called when 0 bytes are read from the interface.
      * The default returns true, but this is not appropriate in all

@@ -8,7 +8,9 @@ namespace DAS_IO {
 TM_data_sndr::TM_data_sndr(const char *iname, const char *hostname,
       const char *datum, const void *data, uint16_t size)
     : Client(iname, 10, hostname, "tm_gen", 0),
-      data(data), data_len(size) {
+      data(data),
+      data_len(size),
+      gflag_no(0) {
   snprintf(sub_service, subsvc_len, "data/%s", datum);
   set_subservice(sub_service);
 }
