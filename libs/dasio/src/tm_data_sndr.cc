@@ -28,7 +28,7 @@ bool TM_data_sndr::app_connected() {
 
 bool TM_data_sndr::Send() {
   if (iwrite((const char *)data, data_len)) return true;
-  if (ELoop) ELoop->set_gflag(0);
+  if (ELoop) ELoop->set_gflag(gflag_no);
   return false;
 }
 

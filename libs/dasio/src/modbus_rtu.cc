@@ -154,17 +154,11 @@ namespace DAS_IO { namespace Modbus {
     return false;
   }
 
-  /**
-   * Reinitializes the list of poll requests.
-   * @return true if the event loop should terminate
-   */
-  bool RTU::tm_sync() {
-    if (cur_poll == polls.end()) {
-      cur_poll = polls.begin();
-    }
+  bool RTU::protocol_gflag(int flag) {
+    update_polls(flag);
     std::deque<RTU::modbus_device *>::iterator pos;
     for (pos = devices.begin(); pos != devices.end(); ++pos) {
-      (*pos)->tm_sync();
+      (*pos)->protocol_gflag(flag);
     }
     return process_requests();
   }
@@ -238,13 +232,7 @@ namespace DAS_IO { namespace Modbus {
   
   bool RTU::process_requests() {
     while (!pending) {
-      if (!cmds.empty()) {
-        pending = cmds.front();
-        cmds.pop_front();
-      } else if (cur_poll != polls.end()) {
-        pending = *cur_poll;
-        ++cur_poll;
-      }
+      pending = next_poll();
       if (pending) {
         if (pending->get_req_state() == RTU::modbus_req::Req_ready) {
           bool rv = iwrite((const char *)&pending->req_buf[0], pending->req_sz);
@@ -268,6 +256,29 @@ namespace DAS_IO { namespace Modbus {
         req_free.push_back(pending);
       }
       pending = 0;
+    }
+  }
+
+  void RTU::update_polls(int flag) {
+    if (cur_poll == polls.end()) {
+      cur_poll = polls.begin();
+    }
+  }
+
+  /**
+   * The default implementation returns either the next
+   * command request or the next poll request. If no
+   * requests are queued, it returns zero.
+   * @return the next queued request or zero
+   */
+  RTU::modbus_req *RTU::next_poll() {
+    nl_assert(!pending);
+    if (!cmds.empty()) {
+      pending = cmds.front();
+      cmds.pop_front();
+    } else if (cur_poll != polls.end()) {
+      pending = *cur_poll;
+      ++cur_poll;
     }
   }
   
@@ -633,6 +644,6 @@ namespace DAS_IO { namespace Modbus {
     MB->read_pdu_4321((uint32_t*)(req->dest), req->rep_count/2);
   }
   
-  void RTU::modbus_device::tm_sync() {}
+  void RTU::modbus_device::protocol_gflag(int flag) {}
 
 } } // Close out Modbus and DAS_IO namespaces

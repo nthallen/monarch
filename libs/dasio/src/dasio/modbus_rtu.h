@@ -55,7 +55,29 @@ class RTU : public DAS_IO::Serial {
      */
     bool protocol_input();
     bool protocol_timeout();
-    bool tm_sync();
+    
+    /**
+     * Called when telemetry synchronization messages are
+     * received. This method is tasked with initiating any
+     * requests necessary to fill the particular telemetry
+     * data request. After the requests are queued, the
+     * flag parameter is passed to each modbus_device's
+     * protocol_gflag() method in order to support the
+     * calculation and reporting of device-specific stale
+     * counters.
+     *
+     * By default, only a single telemetry
+     * data request is supported, so all data is reported
+     * at the same rate. Multiple rates can be supported by
+     * subclassing Modbus::RTU, adding additional polling
+     * queues, and overriding update_polls() and next_request().
+     * Then add additional tm_data_sndr instantiations
+     * as necessary to meet the requirements.
+     * @param flag Identifies which gflag triggered the call.
+     * @return false;
+     */
+    bool protocol_gflag(int flag);
+    // bool tm_sync();
 
     /**
      * Adds the specified device on the Modbus::RTU connection.
@@ -145,6 +167,7 @@ class RTU : public DAS_IO::Serial {
     
   protected:
     ~RTU();
+
     /**
      * If pending is not set, checks for pending commands or polls
      * and issues the next request. Called from protocol_input() after
@@ -160,6 +183,23 @@ class RTU : public DAS_IO::Serial {
      * free list or not, then clears pending.
      */
     void dispose_pending();
+    
+    /**
+     * Responsible for enqueuing requests associated with
+     * the specified gflag(s). The default assumes there is
+     * a single data rate and a single polling queue.
+     * @param flag Identifies which gflag triggered this call
+     */
+    virtual void update_polls(int flag);
+    
+    /**
+     * This method can be overridden to support multiple
+     * polling queues for different data rates or different
+     * modes of operation.
+     * @return the next pending request.
+     */
+    virtual modbus_req *next_poll();
+    
     /**
      * List of devices
      */
@@ -347,20 +387,25 @@ class RTU : public DAS_IO::Serial {
         inline uint8_t get_devID() { return devID; }
         inline const char *get_iname() { return MB ? MB->get_iname() : "unknown"; }
         inline const char *get_dev_name() { return dev_name; }
+
         /**
          * Called during RTU::add_device().
          * @param MB Pointer to the Modbus::RTU object
          */
         inline void set_MB(RTU *MB) { this->MB = MB; }
+
         /**
          * Called during RTU::add_device().
          */
         virtual void enqueue_polls() = 0;
+        
         /**
-         * Called after RTU handles tm_sync(). This can be used
-         * to increment a device-specific stale counter.
+         * Called after RTU handles protocol_gflag(flag).
+         * This can be used to increment a device-specific
+         * stale counter. The default implementation does
+         * nothing.
          */
-        virtual void tm_sync();
+        virtual void protocol_gflag(int flag);
       protected:
         /**
          * The Modbus RTU device address. Must be unique among
