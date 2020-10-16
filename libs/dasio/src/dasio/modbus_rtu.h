@@ -102,8 +102,10 @@ class RTU : public DAS_IO::Serial {
     /**
      * Adds the specified request to the polls list and marks the
      * request as persistent.
+     * @param req Pointer to the request.
+     * @param gflag_no Which gflag and hence which queue to 
      */
-    void enqueue_poll(modbus_req *req);
+    virtual void enqueue_poll(modbus_req *req, int gflag_no = 0);
     
     /**
      * @param rep pointer to buffer
@@ -231,6 +233,19 @@ class RTU : public DAS_IO::Serial {
          *
          * If the handler is omitted, a likely default method will be
          * selected.
+         *
+         * The supported function_code values are 1, 2, 3, 4, 5, 6, 8,
+         * 15 and 16.
+         *
+         * 1: Read coils (single bit inputs)
+         * 2: Read discrete inputs (packs multiple coils into word(s))
+         * 3: Read holding registers
+         * 4: Read input registers
+         * 5: Write coil (single bit output)
+         * 6: Write single holding register
+         * 8: Serial Diagnostics
+         * 15: Write multiple coils
+         * 16: Write multiple holding registers
          *
          * For function codes 1, 2 and 15 count is the number of single-bit
          * values to read or write. The number of bytes of data returned will

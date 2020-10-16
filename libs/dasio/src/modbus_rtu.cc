@@ -192,7 +192,7 @@ namespace DAS_IO { namespace Modbus {
     }
   }
 
-  void RTU::enqueue_poll(modbus_req *req) {
+  void RTU::enqueue_poll(modbus_req *req, int gflag_no) {
     if (req->get_req_state() == RTU::modbus_req::Req_ready) {
       polls.push_back(req);
       req->persistent = true;
