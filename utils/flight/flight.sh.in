@@ -33,9 +33,9 @@ echo
 msg -Vn flight.sh "Running flight.sh: `date`"
 
 . /usr/local/libexec/load_exconfig.sh
-
+msgProgram=flight.sh
 if [ -n "$CFG_ERROR" ]; then
-  msg -Vn flight.sh "$CFG_ERROR: stopping"
+  msgf 2 "$CFG_ERROR: stopping"
   exec 1>&4 2>&4 # close pipe to flight.sh.log and reopen stdout/err
   exec parent -V -S "Missing $cfile"
 fi
@@ -53,12 +53,12 @@ status_string=''
 [ -n "$LOOP_STOP_FILE" ] || LOOP_STOP_FILE=loopstop.txt
 [ -n "$LOOP_START_FILE" ] || LOOP_START_FILE=loopstart.txt
 if [ -n "$LOOP_ON_FILE" -a -e "$LOOP_ON_FILE" ]; then
-  msg -Vn flight.sh "Invoking reduce for LOOP_ON_FILE"
+  msgf 0 "Invoking reduce for LOOP_ON_FILE"
   [ -z "$REDUCE_LOG_FILE" ] && REDUCE_LOG_FILE=reducelog.txt
   exec 1>&4 2>&4 # close pipe to flight.sh.log and reopen stdout/err
   BEDTIME=yes reduce 2>&1 | tee -a $REDUCE_LOG_FILE
   if [ -e "$LOOP_ON_FILE" ]; then
-    msg -Vn flight.sh "[ERROR] reduce did not clear LOOP_ON_FILE '$LOOP_ON_FILE'" 2>&1 |
+    msgf -V 2 "reduce did not clear LOOP_ON_FILE '$LOOP_ON_FILE'" 2>&1 |
       tee -a $REDUCE_LOG_FILE
     rm -f $LOOP_STOP_FILE $LOOP_START_FILE
     exec parent $parent_srvr -V -S "reduce error"
@@ -67,11 +67,11 @@ if [ -n "$LOOP_ON_FILE" -a -e "$LOOP_ON_FILE" ]; then
   exit 0 # exit to reestablish tee log
 elif [ -e "$LOOP_STOP_FILE" ]; then
   if [ -n "$RESTART_FILE" -a -e "$RESTART_FILE" ]; then
-    msg -Vn flight.sh "Restarting"
+    msgf 0 "Restarting"
     rm -f "$RESTART_FILE"
     script=`cat $LOOP_STOP_FILE`
   else
-    msg -Vn flight.sh "Looping terminated"
+    msgf 0 "Looping terminated"
     rm -f $LOOP_STOP_FILE $LOOP_START_FILE
     script=/dev/null
   fi
@@ -80,46 +80,46 @@ elif [ -e "$LOOP_START_FILE" ]; then
   rm -f $LOOP_START_FILE
 fi
 
-function Launch {
-  name=$1
-  shift
-  [ -n "$launch_error" ] && return 1
-  [ -n "$VERBOSE" ] && msg -Vn flight.sh "[DEBUG] Launch: $*"
-  if { $* & }; then
-    Launch_pid=$!
-    msg -Vn flight.sh "Launch: $Launch_pid $*"
-    shortname=$name
-    if [ "$name" = "DG/cmd" ]; then
-      parent_loop="-q -M $Launch_pid -t 5"
-    fi
-    if [ "$name" != "-" ]; then
-      [ "$name" = "-TMC-" ] && name="/var/run/monarch/run/$Experiment/$!"
-      [ "${name#/}" = "$name" ] && name="/var/run/monarch/$Experiment/$name"
-      [ -n "$VERBOSE" ] &&
-        msg -Vn flight.sh "[DEBUG] Launch: Waiting for $Launch_pid:$name"
-      waitfor $name 10 || {
-        msg -Vn flight.sh "[ERROR] Launch: namewait failure: $*"
-        msg -Vn flight.sh "[DEBUG] Launch: name='$name'"
-        launch_error="namewait failed on $*"
-        return 1
-      }
-      [ "$shortname" = "tm_bfr" ] && have_tm_bfr='yes'
-      [ "$shortname" = "tm_gen" ] && have_tm_gen='yes'
-      [ "$shortname" = "cmd" ] && have_cmd='yes'
-    fi
-  else
-    msg -Vn flight.sh "[ERROR] Launch: $*"
-    launch_error="Launch failed on $*"
-    return 1
-  fi
-  return 0
-}
+# function Launch {
+#   name=$1
+#   shift
+#   [ -n "$launch_error" ] && return 1
+#   [ -n "$VERBOSE" ] && msg -Vn flight.sh "[DEBUG] Launch: $*"
+#   if { $* & }; then
+#     Launch_pid=$!
+#     msg -Vn flight.sh "Launch: $Launch_pid $*"
+#     shortname=$name
+#     if [ "$name" = "DG/cmd" ]; then
+#       parent_loop="-q -M $Launch_pid -t 5"
+#     fi
+#     if [ "$name" != "-" ]; then
+#       [ "$name" = "-TMC-" ] && name="/var/run/monarch/run/$Experiment/$!"
+#       [ "${name#/}" = "$name" ] && name="/var/run/monarch/$Experiment/$name"
+#       [ -n "$VERBOSE" ] &&
+#         msg -Vn flight.sh "[DEBUG] Launch: Waiting for $Launch_pid:$name"
+#       waitfor $name 10 || {
+#         msg -Vn flight.sh "[ERROR] Launch: namewait failure: $*"
+#         msg -Vn flight.sh "[DEBUG] Launch: name='$name'"
+#         launch_error="namewait failed on $*"
+#         return 1
+#       }
+#       [ "$shortname" = "tm_bfr" ] && have_tm_bfr='yes'
+#       [ "$shortname" = "tm_gen" ] && have_tm_gen='yes'
+#       [ "$shortname" = "cmd" ] && have_cmd='yes'
+#     fi
+#   else
+#     msg -Vn flight.sh "[ERROR] Launch: $*"
+#     launch_error="Launch failed on $*"
+#     return 1
+#   fi
+#   return 0
+# }
 
 SUBBUS_PID=''
 subbus_name=/var/run/monarch/$Experiment/subbus
 if [ -n "$SUBBUSD" -a ! -e $subbus_name ]; then
   if [ -n "$SUBBUSD_DELAY" ]; then
-    msg -Vn flight.sh "sleep $SUBBUSD_DELAY for subbus"
+    msgf 0 "sleep $SUBBUSD_DELAY for subbus"
     sleep $SUBBUSD_DELAY
   fi
   Launch $subbus_name subbusd_$SUBBUSD -V
@@ -129,7 +129,7 @@ fi
 if [ -z "$script" -a -n "$EXP_NODES" ]; then
   [ -z "$NETWORK_DELAY" ] && NETWORK_DELAY=3
   if [ $NETWORK_DELAY -gt 0 ]; then
-    msg -Vn flight.sh "sleep $NETWORK_DELAY to acquire network connections"
+    msgf 0 "sleep $NETWORK_DELAY to acquire network connections"
     sleep $NETWORK_DELAY
   fi
   for node in $EXP_NODES; do
@@ -137,7 +137,7 @@ if [ -z "$script" -a -n "$EXP_NODES" ]; then
     [ -n "$script" ] && break
   done
   [ -n "$script" ] &&
-    msg -Vn flight.sh "Script name '$script' received via monarchctl"
+    msgf 0 "Script name '$script' received via monarchctl"
 fi
 
 if [ -z "$script" ]; then
@@ -152,11 +152,14 @@ status_prefix=''
 status_suffix=''
 status_string="script $script"
 [ ${script#/} = "$script" ] && script=$TMBINDIR/$script
-msg -Vn flight.sh "`id`: Experiment=$Experiment script=$script"
+msgf 0 "`id`"
+msgf 0 "Experiment=$Experiment script=$script"
 if [ -r $script ]; then
+  msgProgram=${script##*/}
   . $script
+  msgProgram=flight.sh
 else
-  msg -Vn flight.sh "Specified script $script not found"
+  msgf 0 "Specified script $script not found"
   status_suffix=" not found"
 fi
 [ -n "$have_tm_bfr" -a -n "$have_tm_gen" -a -n "$have_cmd" ] &&
@@ -179,16 +182,16 @@ fi
 if [ -n "$launch_error" -o -n "$pids" ]; then
   [ $SERVICE = Installed ] && echo $script >$LOOP_STOP_FILE
   [ -z "$parent_loop" ] && parent_loop="-q"
-  # msg -Vn flight.sh \
-  #   "[DEBUG] parent $parent_srvr $parent_loop -V -S '$status_string'"
+  # msgf -2 \
+  #   "parent $parent_srvr $parent_loop -V -S '$status_string'"
 else
   parent_loop="-f $LOOP_START_FILE"
   [ -n "$SUBBUS_PID" ] && kill -SIGHUP $SUBBUS_PID
-  msg -Vn flight.sh "No subprocesses, closing flight.sh.log"
-  # msg -Vn flight.sh \
-  #   "[DEBUG] parent $parent_srvr $parent_loop -V -S '$status_string'"
+  msgf 0 "No subprocesses, closing flight.sh.log"
+  # msgf -2 \
+  #   "parent $parent_srvr $parent_loop -V -S '$status_string'"
   exec 1>&4 2>&4
 fi
 
-msg -Vn flight.sh "exec parent $parent_srvr $parent_loop -V -S '$status_string'"
+msgf 0 "exec parent $parent_srvr $parent_loop -V -S '$status_string'"
 exec parent $parent_srvr $parent_loop -V -S "$status_string"

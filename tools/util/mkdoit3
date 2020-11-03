@@ -494,7 +494,7 @@ fi
 
 # gcopt definition might need to be moved earlier if it
 # needs to be defined conditionally
-gcopt=-v
+gcopt=''
 EOF
 
 for my $disp ( @display ) {
@@ -517,16 +517,16 @@ screen -X width -w 80
 screen -X focus
 screen -X select $doit
 
-msgf 0 Handling less.pid.$session
+msgf -2 Handling less.pid.$session
 less_pid=''
 if [ -f less.pid.$session ]; then
   less_pid=`cat less.pid.$session`
   rm -f less.pid.$session
-  msg -V "Recovered less_pid='$less_pid'"
+  msgf -2 "Recovered less_pid='$less_pid'"
 fi
 
 # Now collect display consoles for each disp screen and clt
-msgf 0 collecting screens
+msgf -2 collecting screens
 EOF
 
 print $fh "for screen in ",
@@ -553,7 +553,7 @@ my @clttermvarlist =
 my $clttermcond = join '',
   "if [ ",
     join(' -o ',
-      map("-n $_", '$clt_term', @clttermvarlist)),
+      map("-n \"$_\"", '$clt_term', @clttermvarlist)),
   " ]; then\n";
 
 # print $fh $clttermcond;

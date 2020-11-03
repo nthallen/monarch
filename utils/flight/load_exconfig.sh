@@ -87,6 +87,7 @@ fi
 export TMBINDIR
 
 msgVdefault='-V'
+LaunchVdefault='-V'
 [ -z "$msgProgram" ] && msgProgram='load_exconfig.sh'
 msgDebug=-1
 
@@ -99,12 +100,13 @@ function msgf {
   code=$1
   excode=''
   case $code in
+    0) prefix='';;
     1) prefix='[Warn] ';;
     2) prefix='[Error] ';;
     3) prefix='[Fatal] '; excode=1;;
     4) prefix='[Internal] '; excode=1;;
-    -1) excode=0;;
-    *) prefix='';;
+    -1) prefix=''; excode=0;;
+    *) prefix='[Debug] ';;
   esac
   shift
   if [ $code -ge $msgDebug ]; then
@@ -124,11 +126,12 @@ function set_have {
 
 function Launch {
   if [ -n "$launch_error" ]; then
-    msgf 2 "Skipping Launch $1 $2 due to earlier errors"
+    msgf $LaunchVdefault 2 "Skipping Launch $1 $2 due to earlier errors"
     return 1
   fi
   name=$1
   shift
+  msgf $LaunchVdefault -2 "Launch: $*"
   shortname=''
   wname=''
   case $name in
@@ -139,7 +142,8 @@ function Launch {
        shortname=$name;;
   esac
   set_have "$shortname" no
-  mkdir -p /var/run/monarch/run/$Experiment
+  # bfr is supposed to create this directory
+  # mkdir -p /var/run/monarch/run/$Experiment
   
   # Check to make sure name does not already exist
   if [ -n "$wname" -a -e "$wname" ]; then
@@ -147,7 +151,7 @@ function Launch {
     if [ -S $wname -a -f $wname.pid ]; then
       pid=`cat $wname.pid`
       if kill -0 $pid 2>/dev/null; then
-        msgf 2 "Launch of $1 Skipped: socket $name still active"
+        msgf $LaunchVdefault 2 "Launch of $1 Skipped: socket $name still active"
         launch_error=yes
         return 1
       else
@@ -160,10 +164,10 @@ function Launch {
 
   if { $* & }; then
     Launch_pid=$!
-    msgf 0 "Launch: $Launch_pid $*"
+    msgf $LaunchVdefault 0 "Launch: $Launch_pid $*"
     if [ -n "$wname" ]; then
       waitfor $wname 20 || {
-        msgf 2 "Launch namewait failure: $*"
+        msgf $LaunchVdefault 2 "Launch namewait failure: $*"
         launch_error=yes
         return 1
       }
@@ -171,7 +175,7 @@ function Launch {
     [ "$name" = memo ] && msgVdefault=''
     set_have "$shortname" yes
   else
-    msgf 2 "Launch Error: $*"
+    msgf $LaunchVdefault 2 "Launch Error: $*"
     launch_error=yes
     return 1
   fi

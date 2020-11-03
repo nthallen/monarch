@@ -142,7 +142,7 @@ namespace DAS_IO {
       ++len;
       ++cp;
       while (cp < nc && (isalnum(buf[cp]) || buf[cp] == '_'
-              || buf[cp] == '-')) {
+              || buf[cp] == '-' || buf[cp] == '.')) {
         ++len;
         ++cp;
       }
