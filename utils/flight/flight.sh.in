@@ -80,41 +80,6 @@ elif [ -e "$LOOP_START_FILE" ]; then
   rm -f $LOOP_START_FILE
 fi
 
-# function Launch {
-#   name=$1
-#   shift
-#   [ -n "$launch_error" ] && return 1
-#   [ -n "$VERBOSE" ] && msg -Vn flight.sh "[DEBUG] Launch: $*"
-#   if { $* & }; then
-#     Launch_pid=$!
-#     msg -Vn flight.sh "Launch: $Launch_pid $*"
-#     shortname=$name
-#     if [ "$name" = "DG/cmd" ]; then
-#       parent_loop="-q -M $Launch_pid -t 5"
-#     fi
-#     if [ "$name" != "-" ]; then
-#       [ "$name" = "-TMC-" ] && name="/var/run/monarch/run/$Experiment/$!"
-#       [ "${name#/}" = "$name" ] && name="/var/run/monarch/$Experiment/$name"
-#       [ -n "$VERBOSE" ] &&
-#         msg -Vn flight.sh "[DEBUG] Launch: Waiting for $Launch_pid:$name"
-#       waitfor $name 10 || {
-#         msg -Vn flight.sh "[ERROR] Launch: namewait failure: $*"
-#         msg -Vn flight.sh "[DEBUG] Launch: name='$name'"
-#         launch_error="namewait failed on $*"
-#         return 1
-#       }
-#       [ "$shortname" = "tm_bfr" ] && have_tm_bfr='yes'
-#       [ "$shortname" = "tm_gen" ] && have_tm_gen='yes'
-#       [ "$shortname" = "cmd" ] && have_cmd='yes'
-#     fi
-#   else
-#     msg -Vn flight.sh "[ERROR] Launch: $*"
-#     launch_error="Launch failed on $*"
-#     return 1
-#   fi
-#   return 0
-# }
-
 SUBBUS_PID=''
 subbus_name=/var/run/monarch/$Experiment/subbus
 if [ -n "$SUBBUSD" -a ! -e $subbus_name ]; then
