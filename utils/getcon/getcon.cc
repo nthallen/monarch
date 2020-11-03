@@ -91,6 +91,10 @@ bool getcon_cmd::app_negotiation_failed() {
   return false;
 }
 
+bool getcon_cmd::app_connected() {
+  return false;
+}
+
 /**
  * Handle the case where we are unable to reach the command server
  * at all. In this case, we will just wait for a signal.
