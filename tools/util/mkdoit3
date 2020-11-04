@@ -416,7 +416,7 @@ clear
 if [ $cmd = start ]; then
   if [ $srcmode = playback ]; then
     # Startup playback modules:
-    Launch tm_bfr -s Unix
+    Launch tm_bfr bfr -s Unix
     Launch tm_gen rdr -P $ddir -a
     #   # playbacksrvr (started later via $lclsrvr)
   elif [ $srcmode = realtime ]; then
