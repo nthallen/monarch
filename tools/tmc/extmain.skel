@@ -11,6 +11,7 @@
 #include <math.h>
 #include <stdint.h>
 #include "nl.h"
+#include "dtoe.h"
 #include "oui.h"
 #include "dasio/tm_client.h"
 #include "dasio/loop.h"
