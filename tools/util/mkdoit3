@@ -311,6 +311,17 @@ for my $server ( @extract ) {
 }
 
 print $fh <<'EOF';
+
+# We need to define session and Experiment before invoking
+# screen so they will be inherited in each window. This is
+# addressed in the Screen Manual's Overview section:
+# https://www.gnu.org/software/screen/manual/screen.html#Overview
+if [ -z "$STY" ]; then
+  export session=$$
+elif [ -z "$session" ]; then
+  msgf 2 "session not defined inside screen"
+fi
+
 # lcllogfile is the file we want local memo to write to
 # rmtlogfile is the file we would like to display with less,
 #  even if it is not really remote.
@@ -326,10 +337,10 @@ else # not realtime
   RemEx=$Experiment
   Experiment=$RemEx.PB.$session
   lcllogfile=$Experiment.log
+  # srvr and bfr are necessarily local
+  TM_OPT=''
+  CMD_OPT=''
 fi
-EOF
-
-print $fh <<'EOF';
 
 # At this point cmd can only be 'start' or 'wait'. Thus
 # a) we always want to check paths, so don't need check_path
@@ -393,7 +404,6 @@ if [ -z "$STY" ]; then
 fi
 
 # Running under screen
-session=$$
 screen -X logfile "$doit.$session.log"
 screen -X log on
 screen -X split
@@ -416,7 +426,7 @@ clear
 if [ $cmd = start ]; then
   if [ $srcmode = playback ]; then
     # Startup playback modules:
-    Launch tm_bfr -s Unix
+    Launch tm_bfr bfr -s Unix
     Launch tm_gen rdr -P $ddir -a
     #   # playbacksrvr (started later via $lclsrvr)
   elif [ $srcmode = realtime ]; then
@@ -619,7 +629,7 @@ print $fh <<'EOF';
 screen -X only
 [ $dispmode != photon ] &&
   /usr/local/sbin/getcon -o /dev/null -e $session
-[ -n "$lclsrvr" ] && monarch_cmd -V Quit
+[ -n "$lclsrvr" ] && monarch_cmd -V Quit >/dev/null 2>&1
 screen -X select logfile
 sleep 1
 if [ -n "$less_pid" ] && kill -0 $less_pid; then
