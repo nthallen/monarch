@@ -388,6 +388,35 @@ if [ -n "$extbase" -o -n "$genuibase" ]; then
 fi
 
 #----------------------------------------------------------------
+# expand_deps dependents
+#  replace any shell variables with their values.
+#  This could include user-defined variables, but
+#  we probably need to come up with some safe namespace.
+# Returns TRUE if any substitutions were applied
+# Redefines global variable deps
+#----------------------------------------------------------------
+function expand_deps {
+  replaced=1
+  new_deps=''
+  for rai in $*; do
+    raivar=${rai#$}
+    if [ "$raivar" = "$rai" ]; then
+      # no change, not a var
+      new_deps="$new_deps $rai"
+    else
+      case $raivar in
+        genuibase)
+          replaced=0
+          new_deps="$new_deps $genuibase";;
+        *) nl_error "Unsupported variable '$rai'";;
+      esac
+    fi
+  done
+  deps=$new_deps
+  return $replaced
+}
+
+#----------------------------------------------------------------
 # replace_each from to rule dependents
 #   Processes the list of dependents, replacing any ending in
 #   the "from" pattern with a new dependent ending in the "to"
@@ -500,6 +529,7 @@ for i in $basetargets; do
   add_member TGT $i
   set_depname $i
   eval deps=\"\$$depname\"
+  expand_deps $deps
   use_all .edf ${i}edf.oui "${nl}${tab}\$(EDF2OUI)" $deps
   replace_each .edf ext.tmc "\$(EDF2EXT)" $deps &&
     lssp=' -lssp -lmem -lm'

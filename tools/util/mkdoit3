@@ -70,9 +70,9 @@ while (<$fh>) {
   } elsif ( m/^\s* extraction \s+ (?:\[(\S+)\] \s+)? (\w+) (?:\s+ (.*))?$/x ) {
     my $extcond = $1 || '';
     my $extprog = $2;
-    my $opts = ' -t $FlightNode' . ($3 ? " $3" : '');
+    my $opts = ' $TM_OPT' . ($3 ? " $3" : '');
     my $pcond = $extcond ne '' ? parse_condition($extcond) : undef;
-    push @extract, { prog => $extprog, name => '-', cond => $pcond, opts => $opts };
+    push @extract, { prog => $extprog, name => '-TMC-', cond => $pcond, opts => $opts };
     push @extracts, $extprog;
   } elsif ( m/^\s* server \s+ (?:\[(\S+)\] \s+)? (\S+) \s+ (\w+) (?:\s+ (.*))?$/x ) {
     my $srvcond = $1 || '';
@@ -502,6 +502,8 @@ if [ -n "$rmtlogfile" ]; then
   fi
 fi
 
+TMRUNDIR=/var/run/monarch/run/$Experiment
+[ -d $TMRUNDIR ] || mkdir $TMRUNDIR
 # gcopt definition might need to be moved earlier if it
 # needs to be defined conditionally
 gcopt=''
