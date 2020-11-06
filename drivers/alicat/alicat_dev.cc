@@ -13,7 +13,7 @@ namespace DAS_IO { namespace Modbus {
     MB->enqueue_poll(req);
   }
   
-  void alicat_device::tm_sync() {
+  void alicat_device::protocol_gflag(int flag) {
     TM->stale = TM->stale < 255 ? ++TM->stale : 255;
   }
 

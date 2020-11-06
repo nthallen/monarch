@@ -86,7 +86,8 @@ Timeout *Interface::GetTimeout() {
 
 bool Interface::ProcessData(int flag) {
   // msg(0, "%s: Interface::ProcessData(%d)", iname, flag);
-  if ((flags & flag & gflag(0)) && tm_sync())
+  if ((flags & flag & Fl_gflags) &&
+      protocol_gflag(flags & flag & Fl_gflags))
     return true;
   if ((flags&Fl_Read) && (flags&flag&(Fl_Read|Fl_Timeout))) {
     if (fillbuf(bufsize, flag)) return true;
@@ -277,6 +278,13 @@ bool Interface::protocol_timeout() {
  */
 bool Interface::protocol_except() {
   return false;
+}
+
+/**
+ * The default calls tm_sync() if gflag(0) is set.
+ */
+bool Interface::protocol_gflag(int flag) {
+  return (flag & gflag(0)) ? tm_sync() : false;
 }
 
 /**

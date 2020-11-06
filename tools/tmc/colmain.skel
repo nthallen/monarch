@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include "nl.h"
+#include "dtoe.h"
 #include "oui.h"
 #include "dasio/tm.h"
 #include "dasio/tm_gen.h"

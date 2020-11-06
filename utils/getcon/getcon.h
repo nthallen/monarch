@@ -22,6 +22,7 @@ class getcon_cmd : public DAS_IO::Cmd_reader {
     bool app_process_eof();
     bool app_input();
     bool app_negotiation_failed();
+    bool app_connected();
   private:
     bool tried_quit;
 };

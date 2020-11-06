@@ -19,18 +19,31 @@ namespace DAS_IO {
        */
       TM_data_sndr(const char *iname, const char *hostname,
         const char *datum, const void *data, uint16_t size);
-      bool app_input(); // read nl, write data and set gflag(0)
+      /**
+       * Calls Send() when sync data is received.
+       * @return false
+       */
+      bool app_input();
+      /**
+       * Calls Send() to kick off synchronization.
+       * @return the value from Send().
+       */
       bool app_connected();
       /**
        * Writes data to DG and sets gflag(0) if successful.
        * @return true if iwrite() returns true.
        */
       bool Send();
+      /**
+       * @param n The gflag index that will be set by Send().
+       */
+      inline void set_gflag_no(int n) { gflag_no = n; }
     private:
       static const int subsvc_len = 40;
       char sub_service[subsvc_len];
       const void *data;
       uint16_t data_len;
+      int gflag_no;
   };
 
 }
