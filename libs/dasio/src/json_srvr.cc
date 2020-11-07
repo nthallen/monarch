@@ -1,5 +1,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include "dasio/json_srvr.h"
 #include "nl_assert.h"
 #include "nl.h"
