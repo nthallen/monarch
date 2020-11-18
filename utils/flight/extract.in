@@ -86,15 +86,15 @@ debug=no
 gdbinit=""
 while getopts "hdrg:z:F:L:" option; do
   case $option in
-  h) print_usage;;
-	r) EXTRACT_DEPTH=1;;
-	g) time_opts="$time_opts -g $OPTARG";;
-	z) time_opts="$time_opts -z $OPTARG";;
-	F) time_opts="$time_opts -F $OPTARG";;
-	L) time_opts="$time_opts -L $OPTARG";;
-	d) debug=yes; [ -f .gdbinit ] && gdbinit="-x $PWD/.gdbinit";;
-	\?) echo; exit 1;;
-	*) echo Unsupported option: -$option; exit 1;;
+    h) print_usage;;
+    r) EXTRACT_DEPTH=1;;
+    g) time_opts="$time_opts -g $OPTARG";;
+    z) time_opts="$time_opts -z $OPTARG";;
+    F) time_opts="$time_opts -F $OPTARG";;
+    L) time_opts="$time_opts -L $OPTARG";;
+    d) debug=yes; [ -f .gdbinit ] && gdbinit="-x $PWD/.gdbinit";;
+    \?) echo; exit 1;;
+    *) echo Unsupported option: -$option; exit 1;;
   esac
 done
 let sval=$OPTIND-1
@@ -126,8 +126,8 @@ if [ -z "EXTRACT_DEPTH" -a -x $dir/extract ]; then
   export RDR_OPTS="$RDR_OPTS $time_opts"
   export EXTRACT_DEPTH=1
   if [ $# -gt 0 ]; then
-	export Extractions=""
-	for i in; do Extractions="$Extractions '$i'"; done
+    export Extractions=""
+    for i in "$@"; do Extractions="$Extractions '$i'"; done
   fi
   exec $dir/extract $dir
 fi
@@ -192,7 +192,7 @@ hasext=''
 # msgf 0 "command args list: $@"
 # msgf 0 "command args list: $*"
 
-for i in $@; do
+for i in "$@"; do
   # I'll use a for loop to get the first element of $i. I break at
   # the end of the loop rather than loop, since later elements within
   # $i are arguments to the program, not another program.
@@ -265,12 +265,17 @@ memo=/var/run/monarch/$Experiment/memo
 waitfor $memo 10 || exit 1
 bfr -s Unix &
 waitfor /var/run/monarch/$Experiment/tm_bfr 10 || exit 1
-for ext in $@; do
+for ext in "$@"; do
   # echo "ext: $ext"
   if [ $debug = yes ]; then
     debug $ext
   else
-    $ext -n "$ext" &
+    appname=ext
+    for j in $ext; do
+      appname=$j
+      break;
+    done
+    $ext -n "$appname" &
     extpid=$!
     if waitfor /var/run/monarch/run/$Experiment/$extpid 10 2>/dev/null; then
       msgf 0 "$ext ($extpid) initialized"

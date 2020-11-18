@@ -246,6 +246,38 @@ function def_source {
   esac
 }
 
+#----------------------------------------------------------------
+# expand_deps dependents
+#  replace any shell variables with their values.
+#  This could include user-defined variables, but
+#  we probably need to come up with some safe namespace.
+# Returns TRUE if any substitutions were applied
+# Redefines global variable deps
+#----------------------------------------------------------------
+function expand_deps {
+  replaced=1
+  new_deps=''
+  for rai in $*; do
+    raivar=${rai#$}
+    if [ "$raivar" = "$rai" ]; then
+      # no change, not a var
+      new_deps="$new_deps $rai"
+    else
+      case $raivar in
+        genuibase)
+          replaced=0
+          new_deps="$new_deps $genuibase";;
+        swsbase)
+          replaced=0
+          new_deps="$new_deps $swsbase";;
+        *) nl_error "Unsupported variable '$rai'";;
+      esac
+    fi
+  done
+  deps=$new_deps
+  return $replaced
+}
+
 add_member IDISTRIB Experiment.config
 add_member IDISTRIB VERSION
 add_member cmdbase /usr/local/share/monarch/modules/root.cmd
@@ -338,6 +370,7 @@ for tgt in $targets; do
     *.sft) : ;;
     *) : ;;
   esac
+  expand_deps $deps
   for i in $deps; do
     def_source $i
   done
@@ -386,35 +419,6 @@ if [ -n "$extbase" -o -n "$genuibase" ]; then
     for i in $extbase $genuibase; do def_source $i; done
   }
 fi
-
-#----------------------------------------------------------------
-# expand_deps dependents
-#  replace any shell variables with their values.
-#  This could include user-defined variables, but
-#  we probably need to come up with some safe namespace.
-# Returns TRUE if any substitutions were applied
-# Redefines global variable deps
-#----------------------------------------------------------------
-function expand_deps {
-  replaced=1
-  new_deps=''
-  for rai in $*; do
-    raivar=${rai#$}
-    if [ "$raivar" = "$rai" ]; then
-      # no change, not a var
-      new_deps="$new_deps $rai"
-    else
-      case $raivar in
-        genuibase)
-          replaced=0
-          new_deps="$new_deps $genuibase";;
-        *) nl_error "Unsupported variable '$rai'";;
-      esac
-    fi
-  done
-  deps=$new_deps
-  return $replaced
-}
 
 #----------------------------------------------------------------
 # replace_each from to rule dependents
@@ -529,7 +533,6 @@ for i in $basetargets; do
   add_member TGT $i
   set_depname $i
   eval deps=\"\$$depname\"
-  expand_deps $deps
   use_all .edf ${i}edf.oui "${nl}${tab}\$(EDF2OUI)" $deps
   replace_each .edf ext.tmc "\$(EDF2EXT)" $deps &&
     lssp=' -lssp -lmem -lm'
@@ -555,7 +558,7 @@ for i in $basetargets; do
         ldisp=' -lncurses' &&
         add_member ouis nctable;;
     *algo)
-      replace_each .sws sws.tma "\$(COMPILE.sws)" $deps;;
+      replace_all .sws ${i}sws.tma "${nl}${tab}\$(COMPILE.sws)" $deps;;
   esac
   replace_all .tmg ${i}tmg.tmc "${nl}${tab}\$(TMG2TMC)" $deps &&
         add_member ouis tmg
