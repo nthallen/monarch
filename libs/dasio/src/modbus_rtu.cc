@@ -273,13 +273,15 @@ namespace DAS_IO { namespace Modbus {
    */
   RTU::modbus_req *RTU::next_poll() {
     nl_assert(!pending);
+    RTU::modbus_req *rv = 0;
     if (!cmds.empty()) {
-      pending = cmds.front();
+      rv = cmds.front();
       cmds.pop_front();
     } else if (cur_poll != polls.end()) {
-      pending = *cur_poll;
+      rv = *cur_poll;
       ++cur_poll;
     }
+    return rv;
   }
   
   RTU::modbus_req *RTU::new_modbus_req() {
