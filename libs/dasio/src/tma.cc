@@ -111,10 +111,10 @@ void tma_new_state(unsigned int partition, const char *name) {
   tma_prtn *p;
 
   if (partition < tma_n_partitions) {
-    int log_level = -2;
+    int log_level = MSG;
     if ( *name == '_' ) {
       name++;
-      log_level--;
+      log_level = MSG_DEBUG;
     }
     msg( log_level, "%sEntering State %s", ci_time_str(), name );
     p = &tma_partitions[partition];
