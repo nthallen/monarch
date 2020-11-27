@@ -129,6 +129,11 @@ function Launch {
     msgf $LaunchVdefault 2 "Skipping Launch $1 $2 due to earlier errors"
     return 1
   fi
+  Debug=no
+  if [ "$1" = "Debug" ]; then
+    Debug=yes
+    shift
+  fi
   name=$1
   shift
   msgf $LaunchVdefault -2 "Launch: $*"
@@ -162,23 +167,37 @@ function Launch {
     fi
   fi
 
-  if { $* & }; then
+  if [ $Debug = yes -a -n "$STY" ]; then
+    sname=$*
+    sname=${sname%% *}
+    rm -f monarch_gdb_ready
+    screen -t $sname gdb --args $*
+    waitfor monarch_gdb_ready forever
+    if [ -s monarch_gdb_ready ]; then
+      msgf -V 2 "Aborting at Debug due to non-empty wait file"
+      launch_error=yes
+      rm -f monarch_gdb_ready
+      return 1
+    fi
+    rm -f monarch_gdb_ready
+    msgf $LaunchVdefault 0 "Debug: $*"
+  elif { $* & }; then
     Launch_pid=$!
     msgf $LaunchVdefault 0 "Launch: $Launch_pid $*"
-    if [ -n "$wname" ]; then
-      waitfor $wname 20 || {
-        msgf $LaunchVdefault 2 "Launch namewait failure: $*"
-        launch_error=yes
-        return 1
-      }
-    fi
-    [ "$name" = memo ] && msgVdefault=''
-    set_have "$shortname" yes
   else
     msgf $LaunchVdefault 2 "Launch Error: $*"
     launch_error=yes
     return 1
   fi
+  if [ -n "$wname" ]; then
+    waitfor $wname 20 || {
+      msgf $LaunchVdefault 2 "Launch namewait failure: $*"
+      launch_error=yes
+      return 1
+    }
+  fi
+  [ "$name" = memo ] && msgVdefault=''
+  set_have "$shortname" yes
   return 0
 }
 
