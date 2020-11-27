@@ -447,9 +447,9 @@ if [ $cmd = start ]; then
       waitfor -q /var/run/monarch/$Experiment/memo forever
       msgVdefault=''
       sleep 1
-      msgf 0 "Waiting for tm_bfr"
+      msgf -V 0 "Waiting for tm_bfr"
       waitfor -q /var/run/monarch/$Experiment/tm_bfr forever
-      msgf 0 "found tm_bfr, waiting for cmd server"
+      msgf -V 0 "found tm_bfr, waiting for cmd server"
       waitfor -q /var/run/monarch/$Experiment/cmd forever
     fi
 EOF
@@ -494,10 +494,10 @@ fi
 if [ -n "$rmtlogfile" ]; then
   # log="-Logfile \"less.$session.log\" -L"
   if [ $FltNode_Access = Remote ]; then
-    msgf 0 "Starting less on remote system"
+    msgf -V 0 "Starting less on remote system"
     screen -t logfile /bin/sh -c "echo \$\$ >less.pid.$session; exec $SSH_CMD less +F $rmtlogfile"
   else
-    msgf 0 "Starting less on local system"
+    msgf -V 0 "Starting less on local system"
     screen -t logfile /bin/sh -c "echo \$\$ >less.pid.$session; exec less +F $rmtlogfile"
   fi
 fi
@@ -588,7 +588,7 @@ for my $disp ( @display ) {
   my @scrvars = map( "\$$_->{varname}_term", @$scr);
   print $fh
     "if [ ", join( " -a ", map( "-n \"$_\"", @scrvars)), " ]; then\n",
-    "  msgf 0 \"Starting $disp\$nc \$ncopt \$TM_OPT ",
+    "  msgf -V 0 \"Starting $disp\$nc \$ncopt \$TM_OPT ",
         join(' ', @scrvars), "\"\n",
     "  Launch -TMC- $disp\$nc \$ncopt \$TM_OPT ",
         join(' ', @scrvars), "\n";
@@ -598,7 +598,7 @@ for my $disp ( @display ) {
   }
   print $fh
     "else\n",
-    "  msgf 1 \"Skipping $disp\$nc\"\n",
+    "  msgf -V 1 \"Skipping $disp\$nc\"\n",
     "fi\n";
 }
 
@@ -616,12 +616,12 @@ if ( $phrtg ) {
 
 print $fh "\n$clttermcond";
 print $fh
-  "  msgf 0 \"Starting \$client\$nc \$CMD_OPT \$clt_term ",
+  "  msgf -V 0 \"Starting \$client\$nc \$CMD_OPT \$clt_term ",
       join(' ', @clttermvarlist), "\"\n",
   "  \$client\$nc \$CMD_OPT \$clt_term ",
       join(' ', @clttermvarlist), "\n",
   "else\n",
-  "  msgf 2 \"Unable to run client \$client\$nc due to missing ptys\"\n",
+  "  msgf -V 2 \"Unable to run client \$client\$nc due to missing ptys\"\n",
   "fi\n";
 
 print $fh <<'EOF';
