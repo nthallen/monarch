@@ -21,7 +21,10 @@ monarch_cmd [options] <cmd>
   -E <exp> Override Experiment definition
 
 <unsort>
-Sends the <cmd> argument to the appropriate command server.
+Sends the <cmd> argument to the appropriate command server. Any
+command defined within the experiment's command structure may
+be sent. Note that multi-word commands need to be placed in
+quotes.
 
 <package> appid_default
 <include> "dasio/appid.h"
