@@ -33,7 +33,11 @@ bool DAS_IO::Interface::not_found(unsigned char c) {
       return false;
   }
   if ( nc ) {
-    report_err("%s: Synch char '%c' not found", iname, c );
+    if (isgraph(c)) {
+      report_err("%s: Synch char '%c' not found", iname, c );
+    } else {
+      report_err("%s: Synch char '\\x%02X' not found", iname, c );
+    }
     nc = cp = 0;
   }
   return true;
