@@ -143,7 +143,7 @@ bool Socket::unix_name_t::claim_server() {
     msg(2, "Must lock() before claim_server()");
     return false;
   }
-  if (mkdir(exp_name, 0770) && errno != EEXIST) {
+  if (mkdir(exp_name, 02775) && errno != EEXIST) {
     msg(2, "Unable to create %s dir: %s", exp_name, strerror(errno));
     return false;
     // if (errno == EEXIST) ==> not really an error

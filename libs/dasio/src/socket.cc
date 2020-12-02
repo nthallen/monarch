@@ -118,13 +118,13 @@ bool Socket::connect() {
             
         local.sun_family = AF_UNIX;
         strncpy(local.sun_path, unix_name->get_svc_name(), UNIX_PATH_MAX);
-        if (fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK) == -1) {
-          msg(MSG_FATAL, "fcntl() failure in DAS_IO::Socket(%s): %s", iname,
-            std::strerror(errno));
-        }
 
         if (is_server) {
           unlink(local.sun_path);
+          if (fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK) == -1) {
+            msg(MSG_FATAL, "fcntl() failure in DAS_IO::Socket(%s): %s", iname,
+              std::strerror(errno));
+          }
           if (bind(fd, (struct sockaddr *)&local, SUN_LEN(&local)) < 0) {
             msg(MSG_FATAL, "bind() failure in DAS_IO::Socket(%s,%s): %s", iname,
               local.sun_path, std::strerror(errno));
@@ -140,7 +140,7 @@ bool Socket::connect() {
           /* Establish the connection to the server */
           if (::connect(fd, (struct sockaddr *)&local,
                 SUN_LEN(&local)) < 0) {
-            if (errno != EINPROGRESS) {
+//          if (errno != EINPROGRESS) {
               if (!conn_fail_reported) {
                 msg(MSG_ERROR,
                   "%s: connect() failure in DAS_IO::Socket:%s: %s",
@@ -153,7 +153,11 @@ bool Socket::connect() {
                   "%s: connect() failure max retries exceeded",
                   iname);
               return connect_failed();
-            }
+//          }
+          }
+          if (fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK) == -1) {
+            msg(MSG_FATAL, "fcntl() failure in DAS_IO::Socket(%s): %s", iname,
+              std::strerror(errno));
           }
           socket_state = Socket_connecting;
           flags = Fl_Write;
