@@ -196,6 +196,7 @@ unsigned int Reader::process_data() {
       unlock();
     }
     if (!regulated) transmit_data(false);
+    if (n_room == 0) break;
   }
   return rows_processed;
 }

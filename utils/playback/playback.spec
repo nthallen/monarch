@@ -4,6 +4,7 @@ cmdbase = $(SRCDIR)/playback.cmd
 TGTDIR = $(PWD)
 prefix = playback
 %%
+CXXFLAGS = -g
 binPrograms = playbacksrvr playbackcltnc
 install : $(binPrograms)
 	cp -puv $(binPrograms) $(TGTNODE)/usr/local/bin
