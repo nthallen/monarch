@@ -44,6 +44,10 @@ class Serial : public Interface {
     void setup( int baud, int bits, char par, int stopbits,
       int min, int time );
     /**
+     * @param enable true to enable RTS/CTS flow control
+     */
+    void hwflow_enable(bool enable);
+    /**
      * Invokes fillbuf() until there is no input remaining.
      */
     void flush_input();
