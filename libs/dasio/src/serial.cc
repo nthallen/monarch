@@ -99,9 +99,9 @@ void Serial::setup( int baud, int bits, char par, int stopbits,
 
 void Serial::hwflow_enable(bool enable) {
   if (enable) {
-    termios_p.c_cflag |= CRTSXOFF | CRTSCTS;
+    termios_p.c_cflag |= CRTSCTS;
   } else {
-    termios_p.c_cflag &= ~(CRTSXOFF | CRTSCTS);
+    termios_p.c_cflag &= ~CRTSCTS;
   }
   if ( tcsetattr(fd, TCSANOW, &termios_p) )
     msg( MSG_ERROR, "Error on tcsetattr: %s", strerror(errno) );
