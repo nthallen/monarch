@@ -28,16 +28,16 @@
 #include "nl_assert.h"
 
 bool DAS_IO::Interface::not_found(unsigned char c) {
+  unsigned cp0 = cp;
   while ( cp < nc ) {
     if ( buf[cp++] == c )
       return false;
   }
   if ( nc ) {
-    if (isgraph(c)) {
-      report_err("%s: Synch char '%c' not found", iname, c );
-    } else {
-      report_err("%s: Synch char '\\x%02X' not found", iname, c );
-    }
+    unsigned discard = cp - cp0;
+    report_err(isgraph(c) ? "%s: Synch char '%c' not found -- discarding %u chars"
+                          : "%s: Synch char '\\x%02X' not found -- discarding %u chars",
+                iname, c, discard);
     nc = cp = 0;
   }
   return true;

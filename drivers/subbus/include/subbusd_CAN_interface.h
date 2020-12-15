@@ -53,7 +53,7 @@ typedef struct {
   uint8_t sb_can_seq;
   uint8_t sb_nb;
   uint8_t sb_can[256];
-  bool end_of_request;
+  // bool end_of_request;
   uint8_t *buf;
   int bufsz;
 } can_msg_t;

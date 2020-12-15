@@ -38,7 +38,7 @@ bool subbusd_CAN_client::incoming_sbreq() {
       can_msg.sb_can_seq = 0;
       can_msg.sb_nb = 1;
       can_msg.sb_can[0] = req->data.d1.data & 0xFF;
-      can_msg.end_of_request = true;
+      // can_msg.end_of_request = true;
       flavor->enqueue_request(&can_msg, (uint8_t*)&rep.data.value, 2, this);
       break;
     case SBC_MREAD:
@@ -57,7 +57,7 @@ bool subbusd_CAN_client::incoming_sbreq() {
       can_msg.sb_can[0] = req->data.d0.address & 0xFF;
       can_msg.sb_can[1] = req->data.d0.data & 0xFF;
       can_msg.sb_can[2] = (req->data.d0.data >> 8) & 0xFF;
-      can_msg.end_of_request = true;
+      // can_msg.end_of_request = true;
       flavor->enqueue_request(&can_msg, 0, 0, this);
       break;
     case SBC_GETCAPS:
@@ -188,7 +188,7 @@ void subbusd_CAN_client::process_mread() {
         can_msg.sb_nb = 2;
         can_msg.sb_can[0] = count; // count
         can_msg.sb_can[1] = arg1 & 0xFF;
-        can_msg.end_of_request = (buf[cp] == '\n');
+        // can_msg.end_of_request = (buf[cp] == '\n');
         flavor->enqueue_request(&can_msg,
           (uint8_t*)&rep.data.mread.rvals[rep.data.mread.n_reads],
           count*2, this);
@@ -225,7 +225,7 @@ void subbusd_CAN_client::process_mread() {
       can_msg.sb_can[0] = arg1&0xFF;
       can_msg.sb_can[1] = arg2&0xFF;
       can_msg.sb_nb = 2;
-      can_msg.end_of_request = (buf[cp] == '\n');
+      // can_msg.end_of_request = (buf[cp] == '\n');
       flavor->enqueue_request(&can_msg,
           (uint8_t*)&rep.data.mread.rvals[rep.data.mread.n_reads],
           arg1*2, this);
@@ -258,7 +258,7 @@ void subbusd_CAN_client::process_mread() {
       can_msg.sb_can[1] = arg2&0xFF;
       can_msg.sb_can[2] = arg3&0xFF;
       can_msg.sb_nb = 3;
-      can_msg.end_of_request = (buf[cp] == '\n');
+      // can_msg.end_of_request = (buf[cp] == '\n');
       flavor->enqueue_request(&can_msg,
           (uint8_t*)&rep.data.mread.rvals[rep.data.mread.n_reads],
           2+arg2*2, this);
@@ -326,7 +326,7 @@ void subbusd_CAN_client::format_mread_rd() {
     }
     break;
   }
-  can_msg.end_of_request = (buf[cp] == '\n');
+  // can_msg.end_of_request = (buf[cp] == '\n');
   flavor->enqueue_request(&can_msg,
     (uint8_t*)&rep.data.mread.rvals[rep.data.mread.n_reads],
     can_msg.sb_nb*2, this);

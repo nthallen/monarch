@@ -312,7 +312,7 @@ bool CAN_socket::protocol_input() {
       }
     } else {
       report_err("%s: req/rep cmd,seq mismatch: %02X/%02X",
-        iname, repfrm->data[0], reqfrm.data[0]);
+        iname, repfrm->data[0], CAN_CMD(reqfrm.data[0],rep_seq_no));
       consume(nc);
       return false;
     }
@@ -359,12 +359,11 @@ bool CAN_socket::protocol_input() {
   // update rep_seq_no
   ++rep_seq_no;
   report_ok(nc);
-  msg(MSG_DBG(1), "%s: Clearing timeout", iname);
-  TO.Clear();
   // If request is complete, call clt->request_complete
   if (rep_recd == rep_len) {
-    //reqs.pop_front();
     parent->pop_req();
+    msg(MSG_DBG(1), "%s: Clearing timeout", iname);
+    TO.Clear();
     // clearing request_pending after request_complete()
     // simply limits the depth of recursion
     request.clt->request_complete(SBS_ACK, rep_len);
@@ -463,12 +462,8 @@ bool CAN_serial::protocol_input() {
   // start processing only 't' responses
   if (nc == 0) return false;
   if (slcan_state == st_operate) {
-    if (buf[0] != 't') {
-      report_err("%s: Unexpected input type", iname);
-      consume(nc);
+    if (not_found('t'))
       return false;
-    }
-    ++cp;
     if (not_nhexdigits(3, can_id) ||
         not_nhexdigits(1, can_len)) {
       if (cp < nc) {
@@ -542,7 +537,7 @@ bool CAN_serial::protocol_input() {
         }
       } else {
         report_err("%s: req/rep cmd,seq mismatch: %02X/%02X",
-          iname, repfrm->data[0], reqfrm.data[0]);
+          iname, repfrm->data[0], CAN_CMD(reqfrm.data[0],rep_seq_no));
         consume(nc);
         return false;
       }
@@ -586,14 +581,12 @@ bool CAN_serial::protocol_input() {
     rep_recd += nbdat;
     msg(MSG_DBG(2), "Seq:%d nbdat:%d recd:%d rep_len:%d",
       rep_seq_no, nbdat, rep_recd, rep_len);
-    // update rep_seq_no
     ++rep_seq_no;
     report_ok(cp);
     // If request is complete, call clt->request_complete
     if (rep_recd == rep_len) {
       msg(MSG_DBG(1), "%s: Clearing timeout", iname);
       TO.Clear();
-      //reqs.pop_front();
       parent->pop_req();
       // clearing request_pending after request_complete()
       // simply limits the depth of recursion
