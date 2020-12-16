@@ -43,7 +43,7 @@ void CAN_interface::setup() {
 void CAN_interface::enqueue_request(can_msg_t *can_msg, uint8_t *rep_buf, int buflen,
         subbusd_CAN_client *clt) {
   nl_assert(can_msg);
-  msg(MSG_DBG(0), "enqueuing: %d", reqs.size());
+  msg(MSG_DBG(2), "enqueuing: %d", reqs.size());
   reqs.push_back(can_request(can_msg, rep_buf, buflen, clt));
   process_requests();
 }
@@ -62,7 +62,7 @@ can_request CAN_interface::curreq() {
  */
 void CAN_interface::process_requests() {
   if (iface->request_pending || request_processing || reqs.empty()) {
-    msg(MSG_DBG(0), "process_requests() no action: %s",
+    msg(MSG_DBG(2), "process_requests() no action: %s",
       iface->request_pending ? "pending" : request_processing ? "processing"
       : "reqs.empty()");
     return;
@@ -112,17 +112,16 @@ void CAN_interface::process_requests() {
       reqs.pop_front();
       memset(req.msg->buf, 0, req.msg->bufsz-iface->rep_recd);
       req.clt->request_complete(SBS_NOACK, req.msg->bufsz);
-      // req.clt->request_complete(SBS_TIMEOUT, 0);
       iface->request_pending = false;
       request_processing = false;
       return;
     }
     if (iface->request_pending) {
-      msg(MSG_DBG(1), "%s: Setting timeout", iface->get_iname());
+      msg(MSG_DBG(2), "%s: Setting timeout", iface->get_iname());
       iface->TO.Set(0,50);
       iface->flags |= DAS_IO::Interface::Fl_Timeout;
     } else {
-      msg(MSG_DBG(1), "%s: Request resolved immediately", iface->get_iname());
+      msg(MSG_DBG(2), "%s: Request resolved immediately", iface->get_iname());
     }
     #ifdef USE_CAN_SOCKET
       #ifndef HAVE_LINUX_CAN_H
@@ -317,7 +316,6 @@ bool CAN_socket::protocol_input() {
       return false;
     }
     parent->pop_req();
-    // reqs.pop_front();
     request_pending = false;
     report_ok(nc);
     TO.Clear();
@@ -350,19 +348,16 @@ bool CAN_socket::protocol_input() {
     msg(MSG_DBG(1), "CANin %s", ascii_escape());
   }
   
-  // copy data into reply
   memcpy(request.msg->buf, data, nbdat);
   request.msg->buf += nbdat;
   rep_recd += nbdat;
   msg(MSG_DBG(2), "Seq:%d nbdat:%d recd:%d rep_len:%d",
     rep_seq_no, nbdat, rep_recd, rep_len);
-  // update rep_seq_no
   ++rep_seq_no;
   report_ok(nc);
-  // If request is complete, call clt->request_complete
   if (rep_recd == rep_len) {
     parent->pop_req();
-    msg(MSG_DBG(1), "%s: Clearing timeout", iname);
+    msg(MSG_DBG(2), "%s: Clearing timeout", iname);
     TO.Clear();
     // clearing request_pending after request_complete()
     // simply limits the depth of recursion
@@ -585,7 +580,7 @@ bool CAN_serial::protocol_input() {
     report_ok(cp);
     // If request is complete, call clt->request_complete
     if (rep_recd == rep_len) {
-      msg(MSG_DBG(1), "%s: Clearing timeout", iname);
+      msg(MSG_DBG(2), "%s: Clearing timeout", iname);
       TO.Clear();
       parent->pop_req();
       // clearing request_pending after request_complete()
@@ -612,11 +607,11 @@ bool CAN_serial::protocol_input() {
 bool CAN_serial::protocol_timeout() {
   TO.Clear();
   if (request_pending) {
-    can_request request = parent->curreq(); // reqs.front();
+    can_request request = parent->curreq();
     msg(MSG_DBG(0), "%s: Timeout reading from ID:0x%X", iname,
       request.msg->device_id);
     consume(nc);
-    parent->pop_req(); // reqs.pop_front();
+    parent->pop_req();
     memset(request.msg->buf, 0, request.msg->bufsz-rep_recd);
     request.clt->request_complete(SBS_NOACK, request.msg->bufsz);
     request_pending = false;

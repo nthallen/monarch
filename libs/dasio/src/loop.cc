@@ -190,8 +190,8 @@ void Loop::event_loop() {
         }
       } else {
         msg(MSG_FATAL,
-          "DAS_IO::Loop::event_loop(): Unexpected error from select: %d",
-          errno);
+          "DAS_IO::Loop::event_loop(): Unexpected error %d from select: %s",
+          errno, strerror(errno));
       }
     } else {
       for (loop_init(); loop_active(); loop_iterate()) {

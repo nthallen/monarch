@@ -32,6 +32,7 @@ bool subbusd_CAN_client::incoming_sbreq() {
   
   switch ( req->sbhdr.command ) {
     case SBC_READACK:
+      rep.hdr.status = SBS_ACK;
       rep.hdr.ret_type = SBRT_US;
       can_msg.device_id = (req->data.d1.data >> 8) & 0xFF;
       can_msg.sb_can_cmd = CAN_CMD_CODE_RD;
@@ -46,9 +47,11 @@ bool subbusd_CAN_client::incoming_sbreq() {
       // Need to decode this and enqueue multiple requests
       // enqueue_sbreq(device_id, req->data.d4.multread_cmd,
       //              req->data.d4.n_reads);
+      rep.hdr.status = SBS_ACK;
       setup_mread();
       break;
     case SBC_WRITEACK:
+      rep.hdr.status = SBS_ACK;
       rep.hdr.ret_type = SBRT_NONE;
       can_msg.device_id = (req->data.d0.address >> 8) & 0xFF;
       can_msg.sb_can_cmd = CAN_CMD_CODE_WR_INC;
@@ -77,7 +80,9 @@ bool subbusd_CAN_client::incoming_sbreq() {
 }
 
 void subbusd_CAN_client::request_complete(int16_t status, uint16_t n_bytes) {
-  rep.hdr.status = status;
+  if (rep.hdr.status == SBS_ACK || status != SBS_ACK) {
+    rep.hdr.status = status;
+  }
   if (status < 0) {
     status_return(status);
     return;
