@@ -13,7 +13,7 @@ class memo_client: public DAS_IO::Client {
   public:
     memo_client();
     bool init();
-    void send(const char* msg);
+    void send(const char* msg, int nb);
     void cleanup();
   protected:
     ~memo_client();

@@ -58,9 +58,9 @@
     msgv = nl_verr;
   }
   
-  void memo_client::send(const char* msg) {
+  void memo_client::send(const char* msg, int nb) {
     if ((msg != 0) && (msg[0] != '\0')) {
-      if (!iwrite(msg)) {
+      if (!iwrite(msg, nb)) {
         ELoop.event_loop();
       }
     }
@@ -241,7 +241,7 @@ int msgv_func( int level, const char *fmt, va_list args ) {
   nb += snprintf( msgbuf+nb, MSG_MAX_INTERNAL-nb, "%s: ", DAS_IO::AppID.name );
   // I am guaranteed that we have not yet overflowed the buffer
   nb += vsnprintf( msgbuf+nb, MSG_MAX_INTERNAL-nb, fmt, args );
-  if ( nb > MSG_MAX_INTERNAL ) nb = MSG_MAX_INTERNAL;
+  if ( nb >= MSG_MAX_INTERNAL ) nb = MSG_MAX_INTERNAL-1;
   if ( msgbuf[nb-1] != '\n' ) msgbuf[nb++] = '\n';
   // msgbuf[nb] = '\0';
   // nb may be as big as MSG_MAX_INTERNAL+1
@@ -251,7 +251,7 @@ int msgv_func( int level, const char *fmt, va_list args ) {
 
 int msg_internal(int level, const char *msgbuf, int nb) {
   if ( write_to_memo && memo_client_instance ) {
-    memo_client_instance->send(msgbuf);
+    memo_client_instance->send(msgbuf, nb);
   }
   if ( write_to_file ) write_msg( msgbuf, nb, file_fp, "file" );
   if ( write_to_stderr ) write_msg( msgbuf, nb, stderr, "stderr" );

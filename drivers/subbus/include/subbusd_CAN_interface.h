@@ -73,6 +73,7 @@ class CAN_interface;
       bool send_packet();
       inline bool obuf_clear() { return obuf_empty(); }
       bool request_pending;
+      bool lost_packet;
     protected:
       bool iwritten(int nb);
       const char *ascii_escape();
@@ -100,6 +101,7 @@ class CAN_interface;
       bool send_packet();
       inline bool obuf_clear() { return obuf_empty(); }
       bool request_pending;
+      bool lost_packet;
       static const char *port;
       static uint32_t baud_rate;
     protected:

@@ -92,6 +92,7 @@ void CAN_interface::process_requests() {
     ++req.msg->sb_can_seq;
     if (offset+nbdata >= req.msg->sb_nb) {
       iface->request_pending = true;
+      iface->lost_packet = false;
       ++req_no;
     }
     iface->rep_seq_no = 0;
@@ -459,6 +460,8 @@ bool CAN_serial::protocol_input() {
   if (slcan_state == st_operate) {
     if (not_found('t'))
       return false;
+    if (cp > 1)
+      report_err("%s: Discarding %d chars before 't'", iname, cp-1);
     if (not_nhexdigits(3, can_id) ||
         not_nhexdigits(1, can_len)) {
       if (cp < nc) {
@@ -475,8 +478,8 @@ bool CAN_serial::protocol_input() {
       rep_frame.data[i] = can_data;
     }
     if (i < can_len) {
-      if (cp < nc) {
-        consume(nc);
+      if (cp < nc) { // This is a syntax error (already reported)
+        consume(cp);
       }
       update_tc_vmin(expected_total_chars - nc);
       return false; // wait for more chars
@@ -484,7 +487,7 @@ bool CAN_serial::protocol_input() {
     update_tc_vmin(1); // we've received everything we need
     if (not_str("\r")) {
       if (cp >= nc) return false;
-      consume(nc);
+      consume(cp);
       return false;
     }
     
@@ -521,33 +524,69 @@ bool CAN_serial::protocol_input() {
       consume(cp);
       return false;
     }
-    if (repfrm->data[0] != CAN_CMD(reqfrm.data[0],rep_seq_no)) {
-      if (CAN_CMD_CODE(repfrm->data[0]) == CAN_CMD_CODE_ERROR) {
-        if (repfrm->data[2] == CAN_ERR_NACK) {
-          memset(request.msg->buf, 0, request.msg->bufsz - rep_recd);
-          request.clt->request_complete(SBS_NOACK, request.msg->bufsz);
-        } else {
-          report_err("%s: CAN_ERR %d", iname, repfrm->data[1]);
-          request.clt->request_complete(SBS_RESP_ERROR, 0);
-        }
+    if (CAN_CMD_CODE(repfrm->data[0]) == CAN_CMD_CODE_ERROR) {
+      if (repfrm->data[2] == CAN_ERR_NACK) {
+        memset(request.msg->buf, 0, request.msg->bufsz - rep_recd);
+        request.clt->request_complete(SBS_NOACK, request.msg->bufsz);
       } else {
-        report_err("%s: req/rep cmd,seq mismatch: %02X/%02X",
-          iname, repfrm->data[0], CAN_CMD(reqfrm.data[0],rep_seq_no));
-        consume(nc);
-        return false;
+        report_err("%s: CAN_ERR %d", iname, repfrm->data[1]);
+        request.clt->request_complete(SBS_RESP_ERROR, 0);
       }
       parent->pop_req();
-      // reqs.pop_front();
       request_pending = false;
       report_ok(nc);
       TO.Clear();
       parent->process_requests();
       return false;
     }
+    if (CAN_CMD_CODE(repfrm->data[0]) != CAN_CMD_CODE(reqfrm.data[0])) {
+      report_err("%s: Expected reply cmd code %d, received %d", iname,
+        CAN_CMD_CODE(reqfrm.data[0]), CAN_CMD_CODE(repfrm->data[0]));
+      consume(cp);
+      return false;
+    }
+    uint16_t recd_seq_no = CAN_CMD_SEQ(repfrm->data[0]);
+    if (recd_seq_no != rep_seq_no) {
+      if (CAN_CMD_CODE(repfrm->data[0]) != reqfrm.data[0]) {
+        report_err("%s: req/rep cmd codes do not match:%d,%d/%d,%d. Dropping",
+          iname, reqfrm.data[0], rep_seq_no,
+          CAN_CMD_CODE(repfrm->data[0]), CAN_CMD_SEQ(repfrm->data[0])); 
+        // cmd codes do not match. Need to abandon
+        consume(nc);
+        return false;
+      }
+      report_err("%s: req/rep seq mismatch: %d,%d/%d,%d",
+        iname, reqfrm.data[0], rep_seq_no,
+        CAN_CMD_CODE(repfrm->data[0]), CAN_CMD_SEQ(repfrm->data[0]));
+      lost_packet = true;
+      while (recd_seq_no < rep_seq_no)
+        recd_seq_no += (CAN_CMD_SEQ_MAX+1);
+      // We have apparently lost recd_seq_no-rep_seq_no packets
+      // starting with rep_seq_no. We need to zero out the corresponding
+      // bytes in the reply an possibly the last byte received previously
+      // and/or the first byte in this new packet. However, none of this
+      // should apply if the indicated recd_seq_no exceeds the request length.
+      // So let's check the reply length first.
+      uint8_t lost_bytes = (recd_seq_no - rep_seq_no)*7 - (rep_seq_no==0?1:0);
+      if (rep_recd + lost_bytes >= request.msg->bufsz) {
+        report_err("%s: reply length %d exceeds request len %d after packet loss",
+          iname, rep_recd+lost_bytes, request.msg->bufsz);
+        consume(nc);
+        return false;
+      }
+      if (rep_seq_no > 0 && !(rep_seq_no & 1)) {
+        // The last packet received included LSB or a word
+        // whose MSB was lost, so zero out the LSB
+        request.msg->buf[-1] = 0;
+      }
+      memset(request.msg->buf, 0, lost_bytes);
+      request.msg->buf += lost_bytes;
+      rep_recd += lost_bytes;
+    }
     // if seq == 0, check len with request and update
     int nbdat = repfrm->can_dlc - 1; // not counting cmd byte
     uint8_t *data = &repfrm->data[1];
-    if (CAN_CMD_SEQ(repfrm->data[0]) == 0) {
+    if (recd_seq_no == 0) {
       rep_len = repfrm->data[1];
       if (rep_len > request.msg->bufsz) {
         report_err("%s: reply length %d exceeds request len %d",
@@ -558,6 +597,11 @@ bool CAN_serial::protocol_input() {
       --nbdat;
       ++data;
       msg(MSG_DBG(2), "rep_recd: %d", rep_recd);
+    } else if (recd_seq_no != rep_seq_no && !(recd_seq_no&1)) {
+      request.msg->buf[0] = 0;
+      ++request.msg->buf;
+      ++data;
+      --nbdat;
     }
     // check dlc_len against remaining request len
     if (rep_recd + nbdat > rep_len) {
@@ -585,7 +629,7 @@ bool CAN_serial::protocol_input() {
       parent->pop_req();
       // clearing request_pending after request_complete()
       // simply limits the depth of recursion
-      request.clt->request_complete(SBS_ACK, rep_len);
+      request.clt->request_complete(lost_packet ? SBS_NOACK : SBS_ACK, rep_len);
       request_pending = false;
       parent->process_requests();
     } else {
@@ -613,6 +657,9 @@ bool CAN_serial::protocol_timeout() {
     consume(nc);
     parent->pop_req();
     memset(request.msg->buf, 0, request.msg->bufsz-rep_recd);
+    // clear LSB where MSB did not arrive
+    if (rep_seq_no > 0 & !(rep_seq_no & 1))
+      request.msg->buf[-1] = 0;
     request.clt->request_complete(SBS_NOACK, request.msg->bufsz);
     request_pending = false;
     parent->process_requests();

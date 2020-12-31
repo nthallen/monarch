@@ -80,12 +80,13 @@ class subbusd_CAN : public subbusd_flavor {
 #define CAN_CMD_CODE_WR_INC 0x4
 #define CAN_CMD_CODE_WR_NOINC 0x5
 #define CAN_CMD_CODE_ERROR 0x6
-#define CAN_CMD_SEQ_MASK 0xF8 // Can report up to 112 words without wrapping
+#define CAN_CMD_SEQ_MASK 0xF8 // Can report up to 111 words without wrapping
+#define CAN_CMD_SEQ_MAX 0x1F
 #define CAN_SEQ_CMD(s) (((s)<<3)&CAN_CMD_SEQ_MASK)
 #define CAN_CMD_SEQ(c) (((c)&CAN_CMD_SEQ_MASK)>>3)
 #define CAN_CMD(cmd,seq) (CAN_CMD_CODE(cmd)|CAN_SEQ_CMD(seq))
 
-#define CAN_MAX_TXFR 224
+#define CAN_MAX_TXFR 223
 
 #define CAN_ERR_BAD_REQ_RESP 1
 #define CAN_ERR_NACK 2
