@@ -567,7 +567,7 @@ bool CAN_serial::protocol_input() {
       // and/or the first byte in this new packet. However, none of this
       // should apply if the indicated recd_seq_no exceeds the request length.
       // So let's check the reply length first.
-      uint8_t lost_bytes = (recd_seq_no - rep_seq_no)*7 - (rep_seq_no==0?1:0);
+      uint8_t lost_bytes = (recd_seq_no - rep_seq_no)*7 - ((rep_seq_no==0)?1:0);
       if (rep_recd + lost_bytes >= request.msg->bufsz) {
         report_err("%s: reply length %d exceeds request len %d after packet loss",
           iname, rep_recd+lost_bytes, request.msg->bufsz);
@@ -601,6 +601,7 @@ bool CAN_serial::protocol_input() {
       request.msg->buf[0] = 0;
       ++request.msg->buf;
       ++data;
+      ++rep_recd;
       --nbdat;
     }
     // check dlc_len against remaining request len
@@ -619,8 +620,8 @@ bool CAN_serial::protocol_input() {
     request.msg->buf += nbdat;
     rep_recd += nbdat;
     msg(MSG_DBG(2), "Seq:%d nbdat:%d recd:%d rep_len:%d",
-      rep_seq_no, nbdat, rep_recd, rep_len);
-    ++rep_seq_no;
+      recd_seq_no, nbdat, rep_recd, rep_len);
+    rep_seq_no = recd_seq_no+1;
     report_ok(cp);
     // If request is complete, call clt->request_complete
     if (rep_recd == rep_len) {
@@ -652,8 +653,13 @@ bool CAN_serial::protocol_timeout() {
   TO.Clear();
   if (request_pending) {
     can_request request = parent->curreq();
-    msg(MSG_DBG(0), "%s: Timeout reading from ID:0x%X", iname,
-      request.msg->device_id);
+    // exp:cmd,seq (as in above report_err() calls)
+    // recd:rep_recd/rep_len (to diagnose erroneous errors)
+    // This does not mean that rep_recd bytes were actually received,
+    // since there may have been earlier packets skipped as well.
+    msg(MSG_DBG(0), "%s: Timeout ID:0x%X exp:%d,%d recd:%d/%d pkts",
+      iname, request.msg->device_id, reqfrm.data[0], rep_seq_no,
+      rep_recd, rep_len);
     consume(nc);
     parent->pop_req();
     memset(request.msg->buf, 0, request.msg->bufsz-rep_recd);
