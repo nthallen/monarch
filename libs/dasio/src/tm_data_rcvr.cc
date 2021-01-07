@@ -37,7 +37,7 @@ namespace DAS_IO {
     // protocol_input() can be called when there is no input
     if (nc < def->size) return false;
     if (nc > def->size) {
-      report_err("%s: Excess input", iname);
+      report_err("%s: Excess input: %d/%d", iname, nc, def->size);
     } else {
       memcpy(def->data, buf, def->size);
       def->stale_count = 0;

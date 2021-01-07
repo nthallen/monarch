@@ -270,6 +270,9 @@ function expand_deps {
         swsbase)
           replaced=0
           new_deps="$new_deps $swsbase";;
+        extbase)
+          replaced=0
+          new_deps="$new_deps $extbase";;
         *) nl_error "Unsupported variable '$rai'";;
       esac
     fi
