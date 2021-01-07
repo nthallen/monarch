@@ -128,10 +128,18 @@ void Serial::update_tc_vmin(int new_vmin, int new_vtime) {
 }
 
 void Serial::flush_input() {
+  msg(MSG_DEBUG,"%s: flush_input()", iname);
+  int total = 0;
+  int n_reads = 0;
   do {
     nc = cp = 0;
     if (fillbuf(bufsize, Fl_Timeout)) return;
-  } while (nc > 0);
+    ++n_reads;
+    total += nc;
+  } while (nc > 0 && n_reads < 20);
+  msg(nc ? MSG_WARN : MSG_DEBUG,
+      "%s: flushed %d bytes in %d reads%s",
+      iname, total, n_reads, nc ? " (never empty)" : "");
 }
 
 }
