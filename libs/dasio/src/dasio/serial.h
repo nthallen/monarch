@@ -38,7 +38,8 @@ class Serial : public Interface {
      * @param bits number of data bits (5-8)
      * @param par 'n', 'e', 'o', 'm', 's' for none, even, odd, mark or space.
      * @param stopbits The number of stop bits: 1 or 2
-     * @param min The minimum number of characters to respond to
+     * @param min The minimum number of characters to respond to. Set to -1
+     *   to retain basic canonical mode functionality without echo.
      * @param time The time gap value
      */
     void setup( int baud, int bits, char par, int stopbits,

@@ -59,7 +59,8 @@ void Serial::setup( int baud, int bits, char par, int stopbits,
   }
   termios_init = true;
   termios_p.c_iflag = 0;
-  termios_p.c_lflag &= ~(ECHO|ICANON|ISIG|ECHOE|ECHOK|ECHONL|IEXTEN);
+  termios_p.c_lflag = (min < 0) ? ICANON : 0;
+    // &= ~(ECHO|ICANON|ISIG|ECHOE|ECHOK|ECHONL|IEXTEN);
   termios_p.c_cflag = CLOCAL|CREAD;
   termios_p.c_oflag &= ~(OPOST);
   switch (bits) {
