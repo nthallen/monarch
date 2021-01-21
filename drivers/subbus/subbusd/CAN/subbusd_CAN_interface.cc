@@ -407,10 +407,10 @@ CAN_serial::CAN_serial(CAN_interface *parent)
 
 void CAN_serial::setup() {
   init(port, O_RDWR | O_NONBLOCK);
-  DAS_IO::Serial::setup(baud_rate, 8, 'n', 1, 6, 0);
+  DAS_IO::Serial::setup(baud_rate, 8, 'n', 1, -1, 0);
   flush_input();
   issue_init();
-  update_tc_vmin(30);
+  // update_tc_vmin(30);
   flags |= DAS_IO::Interface::Fl_Timeout;
 }
 
@@ -438,7 +438,7 @@ bool CAN_serial::send_packet() {
   nl_assert(ocp < obufsize);
   obuf[ocp++] = '\r';
   msg(MSG_DBG(1), "SLCANout: %s", ::ascii_escape(obuf, ocp));
-  update_tc_vmin(5); // tAAAL
+  // update_tc_vmin(5); // tAAAL
   return iwrite(&obuf[0], ocp);
 }
 
@@ -467,7 +467,7 @@ bool CAN_serial::protocol_input() {
       if (cp < nc) {
         consume(nc);
       }
-      update_tc_vmin(5-nc);
+      // update_tc_vmin(5-nc);
       return false;
     }
     rep_frame.can_id = can_id;
@@ -481,10 +481,10 @@ bool CAN_serial::protocol_input() {
       if (cp < nc) { // This is a syntax error (already reported)
         consume(cp);
       }
-      update_tc_vmin(expected_total_chars - nc);
+      // update_tc_vmin(expected_total_chars - nc);
       return false; // wait for more chars
     }
-    update_tc_vmin(1); // we've received everything we need
+    // update_tc_vmin(1); // we've received everything we need
     if (not_str("\r")) {
       if (cp >= nc) return false;
       consume(cp);
