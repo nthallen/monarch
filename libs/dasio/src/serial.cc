@@ -92,8 +92,13 @@ void Serial::setup( int baud, int bits, char par, int stopbits,
   }
   cfsetispeed(&termios_p, get_baud_code(baud));
   cfsetospeed(&termios_p, get_baud_code(baud));
-  termios_p.c_cc[VMIN] = min;
-  termios_p.c_cc[VTIME] = time;
+  if (min >= 0) {
+    termios_p.c_cc[VMIN] = min;
+    termios_p.c_cc[VTIME] = time;
+  } else {
+    termios_p.c_cc[VEOL] = time;
+    termios_p.c_cc[VEOF] = 4;
+  }
   if ( tcsetattr(fd, TCSANOW, &termios_p) )
     msg( MSG_ERROR, "Error on tcsetattr: %s", strerror(errno) );
 }

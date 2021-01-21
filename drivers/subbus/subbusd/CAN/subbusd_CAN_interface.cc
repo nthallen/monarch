@@ -407,7 +407,7 @@ CAN_serial::CAN_serial(CAN_interface *parent)
 
 void CAN_serial::setup() {
   init(port, O_RDWR | O_NONBLOCK);
-  DAS_IO::Serial::setup(baud_rate, 8, 'n', 1, -1, 0);
+  DAS_IO::Serial::setup(baud_rate, 8, 'n', 1, -1, '\r');
   flush_input();
   issue_init();
   // update_tc_vmin(30);
