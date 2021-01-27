@@ -1,4 +1,4 @@
-TM typedef uint16_t CPU_PCT_text;
+TM typedef int32_t CPU_PCT_text;
 TM typedef uint16_t CPU_Pct_t {
   Convert CPU_PCT_text;
   text "%6.2lf";
