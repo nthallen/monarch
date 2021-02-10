@@ -169,29 +169,32 @@ void Loop::event_loop() {
           signals_seen = 0;
           keep_going = 0;
         }
-      } else if (errno == EBADF || errno == EHOSTDOWN) {
-        bool handled = false;
+      } else {
+        // We have received an error likely related to one of
+        // the fds we are monitoring, but have no clue to which.
+        // This occurs under Cygwin, for example, when a USB
+        // serial device is unplugged. This might also occur
+        // with a TCP socket if the remote host dropped off
+        // the network.
+        bool any_handled = false;
+        int saw_errno = errno;
         for (loop_init(); loop_active(); loop_iterate()) {
           Interface *P = *LI;
-          int flags = 0;
-          if (P->flags & P->Fl_Except) {
-            if ( P->ProcessData(P->Fl_Except) ) {
-              if (!is_memo_loop) {
-                msg(MSG_DBG(1), "%s: requested termination after P->ProcessData(P->Fl_Except)", P->get_iname());
-              }
-              keep_going = 0;
-            }
-            // if (children_changed) break;
-            handled = true;
+          bool handled = false;
+          if (P->protocol_unknown(handled)) {
+            msg(MSG_DBG(1),
+              "%s: requested termination after"
+              " pselect() error %d: (%s)",
+              P->get_iname(), saw_errno, strerror(saw_errno));
+            keep_going = 0;
           }
+          if (handled)
+            any_handled = true;
         }
-        if (!handled) {
-          msg(MSG_FATAL, "DAS_IO::Loop::event_loop(): Unhandled EBADF or EHOSTDOWN");
+        if (!any_handled) {
+          msg(MSG_FATAL, "Unhandled error %d from pselect(): %s",
+            saw_errno, strerror(saw_errno));
         }
-      } else {
-        msg(MSG_FATAL,
-          "DAS_IO::Loop::event_loop(): Unexpected error %d from select: %s",
-          errno, strerror(errno));
       }
     } else {
       for (loop_init(); loop_active(); loop_iterate()) {

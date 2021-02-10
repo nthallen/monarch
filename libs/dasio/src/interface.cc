@@ -281,6 +281,24 @@ bool Interface::protocol_except() {
 }
 
 /**
+ * Called on unknown errors from pselect().
+ */
+bool Interface::protocol_unknown(bool &handled) {
+  if (fd >= 0) {
+    char mybuf[2];
+    int rv = write(fd, mybuf, 0);
+    if (rv == -1) {
+      msg(MSG_ERROR, "%s: Closing due to error %d: %s",
+        iname, errno, strerror(errno));
+      handled = true;
+      close();
+      return process_eof();
+    }
+  }
+  return false;
+}
+
+/**
  * The default calls tm_sync() if gflag(0) is set.
  */
 bool Interface::protocol_gflag(int flag) {

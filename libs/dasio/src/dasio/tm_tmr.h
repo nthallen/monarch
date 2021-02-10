@@ -18,6 +18,7 @@ class tm_tmr : public Interface {
   protected:
     ~tm_tmr();
     bool protocol_input();
+    bool protocol_unknown(bool &handled);
 };
 
 }

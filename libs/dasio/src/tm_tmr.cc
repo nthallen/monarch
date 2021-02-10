@@ -45,6 +45,10 @@ bool tm_tmr::protocol_input() {
   return false;
 }
 
+bool tm_tmr::protocol_unknown(bool &handled) {
+  return false;
+}
+
 void tm_tmr::settime( int per_sec, int per_nsec ) {
   // ### Change this to start on the second
   struct itimerspec itime;

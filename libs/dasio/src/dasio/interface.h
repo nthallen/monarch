@@ -9,8 +9,8 @@
 #include "timeout.h"
 
 namespace DAS_IO {
-  
-class Loop;
+
+class Loop;  
 class Authenticator;
 class tm_rcvr;
 
@@ -19,6 +19,7 @@ class tm_rcvr;
 class Interface {
   friend class Authenticator;
   friend class tm_rcvr;
+  friend class Loop;
   public:
     /**
      * @param name The interface name, used in diagnostic messages.
@@ -242,6 +243,19 @@ class Interface {
      * @return true on a condition requiring termination of the driver
      */
     virtual bool protocol_except();
+    /**
+     * Called by Loop::event_loop() when pselect() returns an error
+     * without any indication which Interface it relates too. This
+     * method must check its fd for health and take appropriate
+     * action. The default action will try to detect any errors by
+     * writing 0 bytes to the fd. If an error is detected, it will
+     * close() the Interface and return process_eof().
+     * @param handled call should set this to true if an error was
+     * found and resolved.
+     * @return true if the event_loop() should exit as a result of
+     * this error.
+     */
+    virtual bool protocol_unknown(bool &handled);
     /**
      * @param flag What gflag bits caused this call.
      * @return True on a condition requiring termination of the
