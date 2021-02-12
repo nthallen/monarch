@@ -13,7 +13,9 @@
 namespace DAS_IO {
 
 /**
- * \brief Defines interface for tm client connection to TMbfr
+ * @brief tm_client is a pure virtual class for receiving
+ * telemetry data from tm_bfr. At a minimum, a subclass must
+ * implement tm_rcvr's process_data() method.
  */
 class tm_client : public DAS_IO::Client, public DAS_IO::tm_rcvr {
   public:
