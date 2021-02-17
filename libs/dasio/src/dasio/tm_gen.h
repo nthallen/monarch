@@ -17,6 +17,9 @@ class tm_gen_tmr;
 
 class tm_gen_bfr : public Client {
   public:
+    /**
+     * @param collection If true, uses non-blocking connection to tm_bfr.
+     */
     tm_gen_bfr(bool collection);
     inline bool iwritev(struct iovec *iov, int nparts, const char *where);
   protected:
@@ -35,17 +38,22 @@ class tm_generator : public tm_queue, public Server {
   public:
     tm_generator();
     virtual ~tm_generator();
+    /**
+     * @param nQrows The number of rows in the tm_queue
+     * @param collection If true, uses non-blocking connection to tm_bfr.
+     * @param obufsize Size of tm_gen_bfr's output buffer, if any
+     */
     void init(int nQrows, bool collection, int obufsize = 0);
     bool execute(const char *cmd);
     virtual void event(enum tm_gen_event evt);
     virtual void service_row_timer() = 0;
     static tm_generator *TM_server;
   protected:
-    bool quit; // non-zero means we are terminating
-    bool started; // True while running
-    bool regulated; // True whenever data flow is time-based
-    bool autostart;
-    bool regulation_optional;
+    bool quit; //< non-zero means we are terminating
+    bool started; //< True while running
+    bool regulated; //< True whenever data flow is time-based
+    bool autostart; //< autostart is implemented in rdr
+    bool regulation_optional; //< True when not regulating is OK
     /**
      * Called when the tm_gen_bfr Interface switches between
      * buffered and unbuffered modes. The buffered mode indicates
@@ -56,7 +64,6 @@ class tm_generator : public tm_queue, public Server {
      */
     virtual void buffering(bool bfring);
 
-    // virtual void single_step() = 0;
     void transmit_data(bool single_row);
     tmq_tstamp_ref *cur_tsp;
     tm_gen_bfr *bfr;

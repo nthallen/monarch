@@ -1,0 +1,11 @@
+<package> serin
+<include> msg oui server
+<include> "serin.h"
+<follow> msg
+
+
+<package> appid_default
+<include> "dasio/appid.h"
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("serin",
+    "serin tm_generator for remote data", "V1.0");
