@@ -302,7 +302,7 @@ class RTU : public DAS_IO::Serial {
          * @param nb size of buffer not counting 2-byte crc
          * @return the 16-bit CRC code
          */
-        uint16_t crc(uint8_t *buf, uint16_t nb);
+        static uint16_t crc(uint8_t *buf, uint16_t nb);
         static void swap32_4321(uint8_t *dest, uint8_t *src);
         static void swap16(uint8_t *dest, uint8_t *src);
         /**
