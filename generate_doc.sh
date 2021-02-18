@@ -23,6 +23,7 @@ generate tools/cmdgen
 generate tools/tmc
 generate utils/bfr
 generate utils/rdr
+generate utils/serin
 generate drivers/subbus
 
 cd ../dox
@@ -38,7 +39,7 @@ cat >index.html <<EOF
 <ul>
 EOF
 
-find . -mindepth 2 -name index.html | xargs grep "<title>" |
+find . -mindepth 2 -name annotated.html | xargs grep "<title>" |
   sed -e 's/^\(.*\):<title>\(.*\)<\/title>/<li><a href="\1">\2<\/a><\/li>/' >>index.html
 
 cat >>index.html <<EOF
