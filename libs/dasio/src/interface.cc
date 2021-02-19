@@ -15,16 +15,6 @@
 
 namespace DAS_IO {
 
-/**
- * I am assuming here that this level is low enough that I don't
- * need to have two separate invocations, once for deferred
- * initialization.
- * I am currently choosing to avoid providing an output buffer
- * here.
- * @param name An identifier for the interface to be used when
- * reporting statistics.
- * @param bufsz The size of the input buffer
- */
 Interface::Interface(const char *name, int bufsz) {
   iname = name;
   nc = cp = 0;
@@ -75,11 +65,6 @@ bool Interface::serialized_signal_handler(uint32_t signals_seen) {
   return true;
 }
 
-/**
- * Virtual method to allow an interface to bid on the select() timeout
- * along with the Loop. The minimum timeout value is used.
- * @return a Timeout * indicating the requested timeout value or NULL.
- */
 Timeout *Interface::GetTimeout() {
   return &TO;
 }
@@ -117,19 +102,6 @@ void Interface::dereference(Interface *P) {
   }
 }
 
-/**
- * Sets up a write of nc bytes from the buffer pointed to by str.
- * If the write cannot be accomplished immediately, the information
- * is saved and handled transparently. The caller is
- * responsible for allocating the output buffer(s) and ensuring
- * they are not overrun.
- * The caller can check obuf_empty() to determine whether the
- * write has completed.
- * @param str Pointer to the output buffer
- * @param nc The total number of bytes in the output buffer
- * @param cp The starting offset within the output buffer
- * @return true if a fatal error occurs
- */
 bool Interface::iwrite(const char *str, unsigned int nc, unsigned int cp) {
   if (fd < 0) {
     msg(MSG_EXIT_ABNORM, "%s: Connection closed unexpectedly", iname);
@@ -237,12 +209,12 @@ void Interface::iwrite_cancel() {
 }
 
 /**
- * The default implementation does nothing.
+ * The default implementation does nothing and returns false.
  */
 bool Interface::iwritten(int nb) { return false; }
 
 /**
- * The default implementation returns true.
+ * The default implementation reports the error and returns true.
  */
 bool Interface::iwrite_error(int my_errno) {
   msg(MSG_ERROR, "%s: write error %d: %s", iname, my_errno, strerror(my_errno));
@@ -250,7 +222,7 @@ bool Interface::iwrite_error(int my_errno) {
 }
 
 /**
- * The default function returns true.
+ * The default implementation reports the error returns true.
  */
 bool Interface::read_error(int my_errno) {
   msg(MSG_ERROR, "%s: read error %d: %s", iname, my_errno, strerror(my_errno));
@@ -280,9 +252,6 @@ bool Interface::protocol_except() {
   return false;
 }
 
-/**
- * Called on unknown errors from pselect().
- */
 bool Interface::protocol_unknown(bool &handled) {
   if (fd >= 0) {
     char mybuf[2];
@@ -423,11 +392,6 @@ const char *Interface::ascii_escape() {
   return ::ascii_escape((char*)buf, nc);
 }
 
-/**
- * Signals that a successful protocol transfer occurred,
- * reducing the qualified error count, potentially reenabling
- * logging of errors.
- */
 void Interface::report_ok(int nchars) {
   if ( n_errors > 0 ) {
     if ( --n_errors <= 0 && n_suppressed ) {

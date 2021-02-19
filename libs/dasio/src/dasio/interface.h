@@ -22,6 +22,8 @@ class Interface {
   friend class Loop;
   public:
     /**
+     * I am currently choosing to avoid providing an output buffer
+     * here.
      * @param name The interface name, used in diagnostic messages.
      * @param bufsz The input buffer size required
      */
@@ -41,7 +43,9 @@ class Interface {
      */
     virtual void adopted();
     /**
-     * @return a pointer to a Timeout object or zero if no timeout is required.
+     * Virtual method to allow an interface to bid on the select() timeout
+     * along with the Loop. The minimum timeout value is used.
+     * @return a Timeout * indicating the requested timeout value or NULL.
      * The default implementation returns a pointer to the TO member.
      */
     virtual Timeout *GetTimeout();
