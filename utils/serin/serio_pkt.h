@@ -19,7 +19,9 @@ class serio {
   public:
     static const int max_pkt_payload = 400;
     static const int max_cmd_packet_size = max_pkt_payload;
-    static const int min_cmd_packet_size = 50;
+    static const int min_pkt_payload = 10;
+    static const int pkt_hdr_size = sizeof(serio_pkt_hdr);
+    static const int min_pkt_size = pkt_hdr_size+min_pkt_payload;
 };
 
 #endif
