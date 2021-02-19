@@ -37,8 +37,11 @@ install(FILES
   appgen.mk
   edf2ext.awk
   edf2oui.awk
-  loop.cmd
   DESTINATION share/monarch)
+
+install(FILES
+  loop.cmd
+  DESTINATION share/monarch/modules)
 
 else (NOT CMAKE_CROSSCOMPILING)
 
