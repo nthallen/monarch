@@ -8,8 +8,11 @@
 namespace DAS_IO {
 
   /**
+   * @brief
    * Virtual base class for reading commands from the command
-   * server for a specific command channel. A subclass must
+   * server for a specific command channel.
+   *
+   * A subclass must
    * override Client::app_input() to parse the incoming commands.
    * Note that overriding protocol_input() instead will cause
    * Client connection to the server to fail.
