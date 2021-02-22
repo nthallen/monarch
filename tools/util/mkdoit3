@@ -32,6 +32,7 @@ my @client; # array of hashes
 my @extract; # array of hashes
 my @interact; # array of display and client programs to check in TMBINDIR
 my @extracts; # array of extractions in TMBINDIR
+my %servers; # hash of non-trivial server names
 my $serin;
 my $phrtg;
 my $batchfile;
@@ -82,6 +83,7 @@ while (<$fh>) {
     my $pcond = $srvcond ne '' ? parse_condition($srvcond) : undef;
     push @extract, { prog => $srvprog, name => $srvname, cond => $pcond, opts => $opts };
     push @extracts, $srvprog;
+    $servers{$srvname} = 1 if $srvname !~ m/^-/;
   } elsif ( m/^\s* SerIn \s+ (\w+) (?:\s+ (.*))?$/xi ) {
     $serin = $1;
     my $opts = $2 ? " $2" : '';
@@ -234,16 +236,15 @@ case "$arg" in
   *) msgf 3 "Invalid command: '$arg'";;
 esac
 
-if [ -n "$srcmode" ]; then
-  [ "$srcmode" = "SerIn" -a -n "$Run" ] &&
-    msgf 3 "Cannot specify both -t and -p"
-else
+if [ $srcmode = realtime ]; then
   case "$SRCMODE" in
     SerIn) srcmode=SerIn;;
     InetIn) srcmode=InetIn;;
     *) srcmode=realtime;;
   esac
 fi
+[ "$srcmode" = "SerIn" -a -n "$Run" ] &&
+  msgf 3 "Cannot specify both -t and -p"
 EOF
 
 if (!defined($serin)) {
@@ -278,6 +279,9 @@ dir=$PWD
 # (i.e. running flight.sh on the local machine)
 # The other $srcmodes (SerIn, InetIn) will default to playbacksrvr,
 # but can be overridden.
+#-----------------
+# Actually I want to change this: we always launch a lclsrvr.
+# Cannot implement this immediately as we need session stuff
 #-----------------
 # lclsrvr=playbacksrvr
 # batchfile=interact
@@ -456,9 +460,9 @@ EOF
 
 if ($serin) {
   print $fh
-    '          elif [ $srcmode = SerIn ]; then', "\n",
-    "            Launch tm_bfr -s Unix\n",
-    "            Launch tm_gen $serin", $progopts{$serin}, "\n";
+    '  elif [ $srcmode = SerIn ]; then', "\n",
+    "    Launch tm_bfr bfr -s Unix\n",
+    "    Launch tm_gen $serin", $progopts{$serin}, "\n";
 }
 
 print $fh <<'EOF';
@@ -476,7 +480,7 @@ elif [ $cmd = wait ]; then
   else
     waitfor /var/run/monarch/$Experiment/tm_bfr forever
     msgf 0 "found tm_bfr, waiting for command server"
-    waitfor /var/run/monarch/$Experiment/server forever
+    waitfor /var/run/monarch/$Experiment/cmd forever
   fi
 else
   msgf 3 "Unexpected invalid cmd '$cmd'"
