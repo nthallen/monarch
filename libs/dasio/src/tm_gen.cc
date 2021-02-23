@@ -10,7 +10,8 @@
 namespace DAS_IO {
 
 tm_gen_bfr::tm_gen_bfr(bool collection)
-  : Client("bfr", 80, 0, "tm_bfr", collection ? "input-nb" : "input"),
+  : Client("bfr", "bfr", "tm_bfr",
+           collection ? "input-nb" : "input", 80),
     buffering(true) {}
 
 bool tm_gen_bfr::iwritev(struct iovec *iov, int nparts, const char *where) {

@@ -1,9 +1,14 @@
 <package> collect
 <include> msg oui
+<include> host_session
 <comment>
   This package exists mostly for bookkeeping and to
   get the msghdr right. The old version included dg,
   which had archaic options.
+
+<unsort>
+Host_Session function tm_gen: To define listening sockets
+Host_Session function bfr: Where to find tm_bfr
 
 <package> appid_default
 <include> "dasio/appid.h"
