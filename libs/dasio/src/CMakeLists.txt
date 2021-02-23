@@ -35,6 +35,7 @@ install(FILES
   cmd_reader.oui
   cmd_writer.oui
   collect.oui
+  host_session.oui
   kbdclt.oui
   msg.oui
   nctable.oui

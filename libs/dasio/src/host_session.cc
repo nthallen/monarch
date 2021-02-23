@@ -1,5 +1,6 @@
 #include "dasio/host_session.h"
 #include "nl.h"
+#include "nl_assert.h"
 
 namespace DAS_IO {
 
@@ -28,10 +29,17 @@ void hs_registry::add_spec(bool host, const char *spec) {
   split_arg(spec);
   std::string s1 = func_arg;
   std::string s2 = hs_arg;
-  if (!reg->insert(std::pair<std::string,std::string>(s1,s2)).second)
-    msg(MSG_FATAL,
-      "Invalid redefinition of %s spec for function '%s'",
-      host ? "host" : "socket", func_arg);
+  if (!reg->insert(std::pair<std::string,std::string>(s1,s2)).second) {
+    std::map<std::string,std::string>::iterator pos;
+    pos = reg->find(s1);
+    nl_assert(pos != reg->end());
+    reg->erase(pos);
+    if (!reg->insert(std::pair<std::string,std::string>(s1,s2)).second) {
+      msg(MSG_FATAL,
+        "Redefinition of %s spec for function '%s' failed",
+        host ? "host" : "socket", func_arg);
+    }
+  }
 }
 
 const char *hs_registry::query_host(const char *func) {

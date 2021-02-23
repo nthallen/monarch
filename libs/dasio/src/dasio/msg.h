@@ -9,7 +9,9 @@
 #include "client.h"
 #include "loop.h"
 
-class memo_client: public DAS_IO::Client {
+namespace DAS_IO {
+
+class memo_client : public DAS_IO::Client {
   public:
     memo_client();
     bool init();
@@ -21,8 +23,10 @@ class memo_client: public DAS_IO::Client {
     bool connect_failed();
     bool iwritten(int nb);
   private:
-    DAS_IO::Loop ELoop;
+    Loop ELoop;
 };
+
+}
 
 extern "C" {
 #endif

@@ -4,7 +4,9 @@
 #include "dasio/server.h"
 #include "dasio/loop.h"
 #include "dasio/appid.h"
+#include "dasio/host_session.h"
 #include "nl.h"
+#include "nl_assert.h"
 #include "dasio/msg.h"
 
 namespace DAS_IO {
@@ -48,8 +50,10 @@ namespace DAS_IO {
   }
 
   Server_socket::Server_socket(const char *iname, const char *service,
-        Socket::socket_type_t socket_type, Server *srvr)
-      : Socket(iname, service, socket_type), srvr(srvr) {}
+        Socket::socket_type_t socket_type, Server *srvr,
+        const char *function)
+      : Socket(iname, function, service, socket_type),
+        srvr(srvr) {}
 
   Server_socket::~Server_socket() {}
   
@@ -87,7 +91,8 @@ namespace DAS_IO {
         not_word(clt_app, clt_app_len) ||
         not_str(" ") ||
         not_svc(svc, svc_len)) { // Can also check for CRC
-      msg(MSG_ERROR, "%s: Rejecting client connection at column %d", iname, cp);
+      msg(MSG_ERROR, "%s: Rejecting client connection at column %d",
+                    iname, cp);
       msg(MSG_ERROR, "%s: Auth string was '%s'", ascii_escape());
       close();
       if (ELoop)
@@ -177,11 +182,25 @@ namespace DAS_IO {
 
   Server::~Server() {}
 
-  void Server::Start(Server::Srv_type which = server_type) {
+  void Server::Start(Server::Srv_type which = server_type,
+                     const char *function) {
     signal(SIGHUP);
     signal(SIGINT);
+    if (which & Srv_Function) {
+      nl_assert(function);
+      const char *res = hs_registry::query_host(function);
+      if (res) which = Srv_TCP;
+      res = hs_registry::query_session(function);
+      if (res) {
+        if (which == Srv_TCP)
+          which = Srv_Both;
+        else
+          which = Srv_Unix;
+      }
+    }
     if (which & Srv_Unix) {
-      Unix = new Server_socket("Unix", service, Socket::Socket_Unix, this);
+      Unix = new Server_socket("Unix", service, Socket::Socket_Unix,
+                               this, function);
       Unix->reference();
       Unix->connect();
       ELoop.add_child(Unix);
@@ -192,11 +211,9 @@ namespace DAS_IO {
       TCP->connect();
       ELoop.add_child(TCP);
     }
-    // msg(0, "%s %s Starting", AppID.fullname, AppID.rev);
     do {
       ELoop.event_loop();
     } while (!ready_to_quit());
-    // msg(0, "Terminating");
   }
 
   bool Server::ready_to_quit() {

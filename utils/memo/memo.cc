@@ -8,10 +8,11 @@
 #include "dasio/appid.h"
 #include "dasio/loop.h"
 #include "dasio/server.h"
-#define MSG_INTERNAL /* Required to make we_are_memo() and msg_internal() visible */
+#include "dasio/host_session.h"
+#define MSG_INTERNAL /* to make we_are_memo(), msg_internal() visible */
 #include "dasio/msg.h"
 
-DAS_IO::AppID_t DAS_IO::AppID("memo", "memo server", "V1.0");
+DAS_IO::AppID_t DAS_IO::AppID("memo", "memo server", "V1.1");
 
 memo_socket::~memo_socket() {}
 
@@ -61,6 +62,7 @@ bool memo_sigif::serialized_signal_handler(uint32_t signals_seen) {
 }
 
 int main(int argc, char **argv) {
+  hs_registry::add_session("memosrvr:");
   oui_init_options(argc, argv);
   
   Server server("memo");
@@ -69,7 +71,7 @@ int main(int argc, char **argv) {
   server.set_sigif(sigif);
   server.add_subservice(new SubService("memo", (socket_clone_t)new_memo_socket, (void*)0));
   server.set_passive_exit_threshold(memo_quit_threshold);
-  server.Start(Server::Srv_Unix);
+  server.Start(Server::Srv_Function, "memosrvr");
   msg(0, "Terminating");
   return 0;
 }

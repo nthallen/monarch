@@ -1,0 +1,12 @@
+<package> host_session
+<include> msg oui
+<include> "dasio/host_session.h"
+
+<opts> "H:S:"
+<sort>
+  -H <function>:<hostname> Specify hostname for function
+  -S <function>:<session> Specify session for function
+
+<switch>
+  case 'H': DAS_IO::hs_registry::add_host(optarg); break;
+  case 'S': DAS_IO::hs_registry::add_session(optarg); break;

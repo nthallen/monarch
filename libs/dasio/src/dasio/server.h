@@ -85,7 +85,8 @@ namespace DAS_IO {
     friend class Authenticator;
     public:
       Server_socket(const char *iname, const char *service,
-        Socket::socket_type_t socket_type, Server *srvr);
+        Socket::socket_type_t socket_type, Server *srvr,
+        const char *function = 0);
       Socket *new_client(const char *iname, int fd);
     protected:
       ~Server_socket();
@@ -133,12 +134,13 @@ namespace DAS_IO {
         return Subs.rm_subservice(svcs);
       }
       
-      typedef enum { Srv_Unix = 1, Srv_TCP = 2, Srv_Both = 3 } Srv_type;
+      typedef enum { Srv_Unix = 1, Srv_TCP = 2, Srv_Both = 3,
+                     Srv_Function = 4 } Srv_type;
       /**
        * Creates the specified server sockets, prints a startup message,
        * runs the event loop, and then prints a termination message.
        */
-      void Start(Srv_type which);
+      void Start(Srv_type which, const char *function = 0);
       /**
        * Initiates the server shutdown sequence in a signal-safe way.
        * Processing is delayed until the event loop exits, at which time

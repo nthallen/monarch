@@ -13,9 +13,6 @@
 #include "nl_assert.h"
 #define MSG_INTERNAL
 #include "dasio/msg.h"
-// #include "tm.h" was needed for tm_dev_name
-// I hacked that out, but this needs to interface to C++ to provide proper IPC
-// with memo.
 
   static bool we_are_memo = false;
   
@@ -23,12 +20,13 @@
     we_are_memo = true;
   }
 
-  memo_client::memo_client() : DAS_IO::Client("memo", 1000, 0, "memo", 0) {
-    //do stuff
+  DAS_IO::memo_client::memo_client()
+    : DAS_IO::Client("memo", "memo", "memo", 0, 1000)
+  {
     ELoop.is_memo_loop = true;
   }
   
-  static memo_client *memo_client_instance;
+  static DAS_IO::memo_client *memo_client_instance;
 
   extern "C" {
     static void msg_cleanup(void) {
@@ -40,9 +38,9 @@
     }
   };
   
-  memo_client::~memo_client() {}
+  DAS_IO::memo_client::~memo_client() {}
   
-  bool memo_client::init() {
+  bool DAS_IO::memo_client::init() {
     atexit(msg_cleanup);
     ELoop.add_child(this);
     connect();
@@ -50,7 +48,7 @@
     return (fd >= 0);
   }
   
-  void memo_client::cleanup() {
+  void DAS_IO::memo_client::cleanup() {
     bool deref = ref_check(2);
     if (!deref) msg(MSG_ERROR, "memo_client ref_count < 2 in cleanup");
     ELoop.remove_child(this, deref);
@@ -58,7 +56,7 @@
     msgv = nl_verr;
   }
   
-  void memo_client::send(const char* msg, int nb) {
+  void DAS_IO::memo_client::send(const char* msg, int nb) {
     if ((msg != 0) && (msg[0] != '\0')) {
       if (!iwrite(msg, nb)) {
         ELoop.event_loop();
@@ -66,15 +64,15 @@
     }
   }
   
-  bool memo_client::app_connected() {
+  bool DAS_IO::memo_client::app_connected() {
     return true;
   }
   
-  bool memo_client::connect_failed() {
+  bool DAS_IO::memo_client::connect_failed() {
     return true;
   }
   
-  bool memo_client::iwritten(int nb) {
+  bool DAS_IO::memo_client::iwritten(int nb) {
     return (is_negotiated() && obuf_empty());
   }
 
@@ -144,7 +142,7 @@ void msg_init_options(int argc, char **argv) {
     // memo_fp = fopen( "memo.log", "w" );
     nl_assert(memo_client_instance == 0);
     
-    memo_client_instance = new memo_client();
+    memo_client_instance = new DAS_IO::memo_client();
     memo_client_instance->reference(); // for memo_client_instance
     if (!memo_client_instance->init()) {
       fprintf( stderr, "Unable to contact memo\n" );

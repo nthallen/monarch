@@ -17,6 +17,7 @@
 #include "dasio/socket.h"
 #include "dasio/loop.h"
 #include "dasio/msg.h"
+#include "dasio/host_session.h"
 #include "nl.h"
 #include "nl_assert.h"
 
@@ -26,10 +27,11 @@
 
 namespace DAS_IO {
 
-// TCP Socket
+// Old explicit hostname API
 Socket::Socket(const char *iname, int bufsz, const char *hostname,
                         const char *service) :
   Interface(iname, bufsz),
+  function(0),
   hostname(hostname),
   service(service),
   is_server(false),
@@ -39,12 +41,27 @@ Socket::Socket(const char *iname, int bufsz, const char *hostname,
   common_init();
 }
 
+// The new function/service API
+Socket::Socket(const char *iname, const char *function,
+                        const char *service, int bufsz) :
+  Interface(iname, bufsz),
+  function(function),
+  hostname(0),
+  service(service),
+  is_server(false),
+  socket_state(Socket_disconnected),
+  socket_type(Socket_Function)
+{
+  common_init();
+}
+
 // Server Socket
 Socket::Socket(const char *iname, const char *service,
         socket_type_t socket_type) :
   Interface(iname, 0),
+  function(0),
   service(service),
-  hostname("0.0.0.0"),
+  hostname(0),
   is_server(true),
   socket_state(Socket_disconnected),
   socket_type(socket_type)  
@@ -52,9 +69,24 @@ Socket::Socket(const char *iname, const char *service,
   common_init();
 }
 
+// Server Socket
+Socket::Socket(const char *iname, const char *function,
+      const char *service, socket_type_t socket_type) :
+  Interface(iname, 0),
+  function(function),
+  service(service),
+  hostname(0),
+  is_server(true),
+  socket_state(Socket_disconnected),
+  socket_type(socket_type)
+{
+  common_init();
+}
+
 // Clone Socket
 Socket::Socket(Socket *S, const char *iname, int bufsize, int fd) :
   Interface(iname, bufsize),
+  function(S->function),
   service(S->service),
   hostname(0),
   is_server(false),
@@ -75,15 +107,42 @@ Socket::~Socket() {
     delete(unix_name);
     unix_name = 0;
   }
+  if (session) {
+    nl_free_memory((void*)session);
+    session = 0;
+  }
 }
 
 const char *Socket::company = "monarch";
 
 void Socket::common_init() {
+  session = 0;
   unix_name = 0;
   set_retries(-1, 5, 60);
   conn_fail_reported = false;
   is_server_client = false;
+  if (socket_type == Socket_Function) {
+    nl_assert(hostname == 0);
+    hostname = hs_registry::query_host(function);
+    if (hostname) socket_type = Socket_TCP;
+  }
+  if ((socket_type == Socket_Function && hostname == 0) ||
+      (socket_type == Socket_Unix && function)) {
+    const char *sess = hs_registry::query_session(function);
+    if (sess) {
+      int nb = snprintf(0, 0, "%s%s%s", service,
+          sess[0] ? "." : "", sess)+1;
+      char *nsrv = (char *)nl_new_memory(nb);
+      snprintf(nsrv, nb, "%s%s%s", service,
+          sess[0] ? "." : "", sess);
+      session = nsrv;
+      socket_type = Socket_Unix;
+    }
+  }
+  if (socket_type == Socket_TCP && is_server &&
+      !(hostname && hostname[0])) {
+    hostname = "0.0.0.0";
+  }
 }
 
 bool Socket::connect() {
@@ -91,7 +150,7 @@ bool Socket::connect() {
     case Socket_Unix:
       if (unix_name == 0) {
         unix_name = new unix_name_t();
-        if (!unix_name->set_service(service)) {
+        if (!unix_name->set_service(session ? session : service)) {
           msg(MSG_FATAL, "%s: Invalid service name", iname);
         }
       }

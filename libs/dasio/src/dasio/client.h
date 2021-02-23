@@ -25,12 +25,27 @@ namespace DAS_IO {
        * If hostname is 0, a Unix Domain socket is created on the
        * local machine, otherwise a TCP socket is used.
        */
-      Client(const char *iname, int bufsz, const char *hostname, const char *service,
-                    const char *sub_service);
-      //bool ProcessData(int flag);
+      Client(const char *iname, int bufsz, const char *hostname,
+             const char *service, const char *sub_service);
+      /**
+       * @param iname the interface name
+       * @param bufsz the input buffer size
+       * @param hostname the remote host we are connecting to over
+       *   TCP/IP
+       * @param service the remote service name we are connecting to
+       * @param sub_service the sub service name (without the
+       *   service prefix)
+       *
+       * If hostname is 0, a Unix Domain socket is created on the
+       * local machine, otherwise a TCP socket is used.
+       */
+      Client(const char *iname, const char *function,
+             const char *service, const char *sub_service,
+             int bufsz);
     
       /**
-       * Called via ProcessData() when new data is available to Clients at the application level.
+       * Called via ProcessData() when new data is available to Clients
+       * at the application level.
        *
        * See protocol_input() for details about parsing.
        *

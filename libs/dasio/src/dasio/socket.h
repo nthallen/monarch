@@ -32,8 +32,9 @@ class Socket : public Interface {
     typedef enum { Socket_disconnected, Socket_locking, Socket_connecting,
                               Socket_listening, Socket_connected }
                          socket_state_t;
-    typedef enum { Socket_Unix, Socket_TCP, Socket_UDP, Socket_CAN }
-                         socket_type_t;
+    typedef enum { Socket_Unix, Socket_TCP, Socket_UDP, Socket_CAN,
+                   Socket_Function
+    } socket_type_t;
 
     /**
      * Create a socket connection to the specified hostname and service/port.
@@ -44,7 +45,21 @@ class Socket : public Interface {
      * @param hostname Hostname ofthe remote system
      * @param service String representing the service name or port number
      */
-    Socket(const char *iname, int bufsz, const char *hostname, const char *service);
+    Socket(const char *iname, int bufsz, const char *hostname,
+           const char *service);
+
+    /**
+     * Create a socket connection to the specified function and
+     * service/port. The socket will use the host-session registry
+     * along with command-line arguments to determine whether to
+     * use a TCP socket or a Unix Domain socket.
+     * @param iname Interface name (for debugging)
+     * @param function Application-specific function
+     * @param service The service name or port number
+     * @param bufsz The initial input buffer size
+     */
+    Socket(const char *iname, const char *function,
+           const char *service, int bufsz);
     
     /**
      * Create a server (listening) socket.
@@ -53,6 +68,18 @@ class Socket : public Interface {
      * @param socket_type Socket_Unix or Socket_TCP
      */
     Socket(const char *iname, const char *service,
+        socket_type_t socket_type);
+    
+    /**
+     * Create a server (listening) socket using hs-registry.
+     * While this type will be used for Socket_TCP, the
+     * function is not currently used
+     * @param iname Interface name (for debugging)
+     * @param function Application-specific function
+     * @param service String representing the service name or port number
+     * @param socket_type Socket_Unix or Socket_TCP
+     */
+    Socket(const char *iname, const char *function, const char *service,
         socket_type_t socket_type);
     
     /**
@@ -285,6 +312,8 @@ class Socket : public Interface {
     unix_name_t *unix_name;
     const char *hostname;
     const char *service;
+    const char *function;
+    const char *session;
     /** True if this interface is a listening socket */
     bool is_server;
     /** True if this interface was established after accept() */

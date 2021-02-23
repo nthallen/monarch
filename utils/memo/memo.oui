@@ -3,6 +3,7 @@
 <follow> msgmemo
 <include> oui
 <include> msg
+<include> host_session
 
 <opts> "l:"
 
@@ -18,5 +19,8 @@
   n clients have connected and all clients have disconnected.
   -l0 will keep memo running even after all clients have disconnected,
   which can be useful in certain testing scenarios.
+  <blank>
+  Host_Session functions:
+    memosrvr: Where we listen for connections
 
 <package> msgmemo
