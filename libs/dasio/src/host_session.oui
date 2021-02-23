@@ -1,5 +1,4 @@
 <package> host_session
-<include> msg oui
 <include> "dasio/host_session.h"
 <include> funcs_defined
 <follow> funcs_defined
@@ -8,24 +7,6 @@
 <sort>
   -H <function>:<hostname> Specify hostname for function
   -S <function>:<session> Specify session for function
-
-<defs>
-static void host_session_init_options(int argc, char **argv) {
-  int optltr;
-
-  optind = OPTIND_RESET;
-  opterr = 0;
-  while ((optltr = getopt(argc, argv, opt_string)) != -1) {
-    switch (optltr) {
-      case 'H': DAS_IO::hs_registry::add_host(optarg); break;
-      case 'S': DAS_IO::hs_registry::add_session(optarg); break;
-      case '?':
-        msg(3, "Unrecognized Option -%c", optopt);
-      default:
-        break;
-    }
-  }
-}
 
 <init>
   host_session_init_options(argc, argv);

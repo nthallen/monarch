@@ -1,5 +1,7 @@
 #ifndef HOST_SESSION_H_INCLUDED
 #define HOST_SESSION_H_INCLUDED
+
+#ifdef __cplusplus
 #include <map>
 #include <string>
 
@@ -39,5 +41,12 @@ class hs_registry {
 };
 
 }
+
+extern "C" {
+#endif // __cplusplus
+void host_session_init_options(int argc, char **argv);
+#ifdef __cplusplus
+}
+#endif
 
 #endif

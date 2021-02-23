@@ -1,6 +1,8 @@
+#include <unistd.h>
 #include "dasio/host_session.h"
 #include "nl.h"
 #include "nl_assert.h"
+#include "oui.h"
 
 namespace DAS_IO {
 
@@ -101,4 +103,21 @@ bool hs_registry::split_arg(const char *arg) {
   return true;
 }
 
+}
+
+void host_session_init_options(int argc, char **argv) {
+  int optltr;
+
+  optind = OPTIND_RESET;
+  opterr = 0;
+  while ((optltr = getopt(argc, argv, opt_string)) != -1) {
+    switch (optltr) {
+      case 'H': DAS_IO::hs_registry::add_host(optarg); break;
+      case 'S': DAS_IO::hs_registry::add_session(optarg); break;
+      case '?':
+        msg(3, "Unrecognized Option -%c", optopt);
+      default:
+        break;
+    }
+  }
 }

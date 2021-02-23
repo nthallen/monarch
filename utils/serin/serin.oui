@@ -2,7 +2,11 @@
 <include> msg oui server
 <include> "serin.h"
 <follow> msg
+<include> host_session
 
+<unsort>
+Host_Session function tm_gen: To define listening sockets
+Host_Session function bfr: Where to find tm_bfr
 
 <package> appid_default
 <include> "dasio/appid.h"

@@ -31,7 +31,7 @@ serin::serin() :
 
 void serin::start() {
   execute("TMc"); // autostart so we can send data whenever it arrives
-  Start(Server::server_type);
+  Start(Srv_Function, "tm_gen");
   ELoop.delete_children();
   ELoop.clear_delete_queue(true);
 }

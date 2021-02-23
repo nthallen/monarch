@@ -2,6 +2,7 @@
 <include> msg oui
 <include> "rdr.h"
 <follow> msg
+<include> host_session
 
 <opts> "aAP:kqF:L:"
 <sort>
@@ -12,6 +13,11 @@
 	-q quit when end of data is reached
 	-F starting file index
 	-L ending file index
+
+<unsort>
+Host_Session function tm_gen: To define listening sockets
+Host_Session function bfr: Where to find tm_bfr
+
 <init>
   rdr_init(argc, argv);
 

@@ -113,7 +113,7 @@ Reader::Reader(int nQrows, rdr_mlf *mlf)
 
 void Reader::start() {
   if (autostart) execute("TMc");
-  Start(Srv_Unix);
+  Start(Srv_Function, "tm_gen");
   ELoop.delete_children();
   ELoop.clear_delete_queue(true);
 }
