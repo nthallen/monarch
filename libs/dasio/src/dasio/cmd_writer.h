@@ -7,7 +7,6 @@ typedef enum { Cmd_Send, Cmd_Test, Cmd_Send_Quiet } CI_Cmd_Mode;
 
 #ifdef __cplusplus
 
-#include "cmd_client.h"
 #include "client.h"
 #include "loop.h"
 #include "cmdalgo.h"

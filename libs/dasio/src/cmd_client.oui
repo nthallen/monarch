@@ -1,5 +1,4 @@
 <package> cmd_client
-<include> "dasio/cmd_client.h"
 <include> host_session
 
 <comment>

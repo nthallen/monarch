@@ -3,7 +3,6 @@
 #define CMD_READER_H_INCLUDED
 
 #include "client.h"
-#include "cmd_client.h"
 
 namespace DAS_IO {
 

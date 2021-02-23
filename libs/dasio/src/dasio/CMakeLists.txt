@@ -4,7 +4,7 @@ install(FILES ascii_escape.h interface.h serial.h timeout.h
   tm_gen_cmd.h nctable.h
   tm_gen_tmr.h tm_tmr.h
   tm_data_rcvr.h tm_queue.h
-  cmd_client.h cmd_reader.h cmd_writer.h cmd_version.h cmd_server.h quit.h
+  cmd_reader.h cmd_writer.h cmd_version.h cmd_server.h quit.h
   loop.h msg.h tma.h
   csv_file.h tmctime.h nc_tm_client.h tm_rcvr.h
   cpu_usage.h json_srvr.h host_session.h
