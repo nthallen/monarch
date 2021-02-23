@@ -40,8 +40,8 @@ namespace DAS_IO {
     public:
       inline Cmd_reader(const char *iname, int bufsize,
                         const char *cmdchannel)
-          : Client(iname, bufsize, CmdServerNode, "cmd",
-                   cmdchannel) {
+          : Client(iname, "srvr", "cmd",
+                   cmdchannel, bufsize) {
         flags = Interface::Fl_Read;
       }
     protected:
