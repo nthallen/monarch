@@ -17,7 +17,10 @@ using namespace DAS_IO;
 
 #define TMR_BUFSIZE 16384
 
-tm_relay::tm_relay() : tm_generator(), tm_client(4096, false, tm_client::tm_client_hostname) {
+tm_relay::tm_relay()
+  : tm_generator(),
+    tm_client(4096, false)
+{
   autostart = true;
   regulated = false;
   have_tstamp = false;

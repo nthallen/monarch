@@ -497,7 +497,7 @@ int main(int argc, char **argv) {
   bfr S;
   S.add_subservices();
   msg(0, "%s %s Starting", AppID.fullname, AppID.rev);
-  S.Start(Server::server_type);
+  S.Start(Server::Srv_Function, "bfr");
   S.ELoop.delete_children();
   S.ELoop.clear_delete_queue(true);
   msg(0, "Terminating");

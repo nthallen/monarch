@@ -21,7 +21,7 @@ class Cmd_writer : public Client {
   friend const char *::ci_time_str();
   friend void ::ci_settime(int32_t time);
   public:
-    Cmd_writer(const char *iname, const char *hostname);
+    Cmd_writer(const char *iname);
     bool app_input();
     bool app_connected();
 

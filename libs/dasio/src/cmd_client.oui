@@ -1,17 +1,16 @@
 <package> cmd_client
 <include> "dasio/cmd_client.h"
+<include> host_session
 
 <comment>
   oui package for command server clients, including those using Cmd_reader
   and/or Cmd_writer classes to receive or transmit commands from/to the
   command server.
   Applications must provide appropriate AppID initialization
+  
+<unsort>
+Host_Session function srvr: Where to find 'cmd' server for read or write
 
-<opts> "C:"
-<sort>
-	-C <hostname> system where command server is located
-<switch>
-  case 'C': cic_set_server_node(optarg); break;
 
 <package> appid_default
 <include> "dasio/appid.h"

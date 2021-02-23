@@ -17,8 +17,8 @@ static void host_session_init_options(int argc, char **argv) {
   opterr = 0;
   while ((optltr = getopt(argc, argv, opt_string)) != -1) {
     switch (optltr) {
-  case 'H': DAS_IO::hs_registry::add_host(optarg); break;
-  case 'S': DAS_IO::hs_registry::add_session(optarg); break;
+      case 'H': DAS_IO::hs_registry::add_host(optarg); break;
+      case 'S': DAS_IO::hs_registry::add_session(optarg); break;
       case '?':
         msg(3, "Unrecognized Option -%c", optopt);
       default:

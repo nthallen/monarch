@@ -63,8 +63,8 @@ fi
 # echo "load_exconfig: TM_OPT: [$TM_OPT]"
 
 if [ $FltNode_Access = Remote ]; then
-  TM_OPT="-t $FlightNode"
-  CMD_OPT="-C $FlightNode"
+  TM_OPT="-H bfr:$FlightNode"
+  CMD_OPT="-H srvr:$FlightNode"
   SSH_CMD="ssh -t flight@$FlightNode"
   SSH_TAR_CMD="ssh -T flight@$FlightNode"
   SERVICE=Installed

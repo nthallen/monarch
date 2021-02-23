@@ -84,8 +84,7 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   msg( 0, "Startup" );
   TMC_SERVER_CLASS *srvr = new TMC_SERVER_CLASS(TMC_SERVER_HOSTNAME);
-  TM_CLIENT *Ext = new TM_CLIENT(4096, TM_CLIENT_FAST,
-      DAS_IO::tm_client::tm_client_hostname);
+  TM_CLIENT *Ext = new TM_CLIENT(4096, TM_CLIENT_FAST);
   srvr->ELoop.add_child(Ext);
   Ext->connect();
   EXTRACTION_INIT;
@@ -105,7 +104,7 @@ int main(int argc, char **argv) {
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   msg( 0, "Startup" );
-  TM_CLIENT *Ext = new TM_CLIENT(4096, TM_CLIENT_FAST, DAS_IO::tm_client::tm_client_hostname);
+  TM_CLIENT *Ext = new TM_CLIENT(4096, TM_CLIENT_FAST);
   Loop ELoop;
   ELoop.add_child(Ext);
   Ext->connect();

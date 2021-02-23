@@ -1,14 +1,10 @@
 <package> tm_client
 <include> "dasio/tm_client.h"
 <include> msg oui
-<opts> "t:"
-<sort>
-	-t <TMbfr node>
-<switch>
-  case 't':
-    //tm_set_srcnode(optarg);
-    DAS_IO::tm_client::tm_client_hostname = optarg;
-    break;
+<include> host_session
+
+<unsort>
+Host_Session function bfr: Where to find bfr to receive telemetry
 
 <package> appid_default
 <include> "dasio/appid.h"

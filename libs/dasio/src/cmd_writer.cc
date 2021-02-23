@@ -16,8 +16,8 @@ namespace DAS_IO {
 Cmd_writer *Cmd_writer::Cmd = 0;
 bool Cmd_writer::playback = false;
 
-Cmd_writer::Cmd_writer(const char *iname, const char *hostname)
-      : Client(iname, 128, hostname, "cmd", "server") {
+Cmd_writer::Cmd_writer(const char *iname)
+      : Client(iname, "srvr", "cmd", "server", 128) {
   if (Cmd) {
     msg(MSG_FATAL, "%s: More than one Cmd_writer instance", iname);
   } else {
@@ -179,7 +179,7 @@ void cic_set_playback(bool playback) {
 bool cic_init() {
   if (DAS_IO::Cmd_writer::Cmd)
     return false;
-  DAS_IO::Cmd_writer *cmd = new DAS_IO::Cmd_writer("Cmd", DAS_IO::CmdServerNode);
+  DAS_IO::Cmd_writer *cmd = new DAS_IO::Cmd_writer("Cmd");
   if (DAS_IO::Cmd_writer::playback)
     return false;
   cmd->connect();
