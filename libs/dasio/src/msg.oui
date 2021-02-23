@@ -1,5 +1,6 @@
 <package> msg
 <include> host_session
+<follow> host_session
 
 <comment>
   package for memo clients
@@ -30,7 +31,7 @@
 	-o <error filename> Write (append) to specified file
 	-V write to stderr
 <unsort>
-  Host_session function memo
+Host_Session function memo: Where messages are sent
 
 <include> "dasio/msg.h"
 <init>

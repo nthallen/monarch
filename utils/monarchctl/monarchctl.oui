@@ -3,13 +3,13 @@
 <follow> oui msg
 <include> "monarchctl.h"
 
-<opts> "QrR:St:G:"
+<opts> "QrR:Tt:G:"
 
 <sort>
 	-Q Force quit via parent service (doit not)
 	-r Request restart from parent service using defaults
 	-R <script> Request restart with specified script
-	-S Request status information from parent service on flight system
+	-T Request status information from parent service on flight system
 	-t <flight_hostname> Specify flight hostname (defaults to localhost)
 	-G <gse_hostname> Query monarchctl on gse_hostname for startup script.
 

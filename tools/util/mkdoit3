@@ -152,7 +152,7 @@ $doit [options] stop
 $doit [options] not
   Shuts down any straggling processes after system has stopped (monarchctl -Q)
 $doit [options] wait
-  Does not interact with instrument until it is up and operating (monarchctl -S)
+  Does not interact with instrument until it is up and operating (monarchctl -T)
 
 options:
   -h display this message
@@ -182,8 +182,8 @@ statusready=no
 function isready {
   quiet=no
   [ "$1" = "quiet" ] && quiet=yes
-  msgf -2 "monarchctl $TM_OPT -VS"
-  monarchctl $TM_OPT -VS 2>&1 |
+  msgf -2 "monarchctl $TM_OPT -VT"
+  monarchctl $TM_OPT -VT 2>&1 |
   ( while read j; do
       [ $quiet = no ] && echo $j
       sj=${j#* Status: Ready:}

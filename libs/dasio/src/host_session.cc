@@ -28,16 +28,24 @@ void hs_registry::add_spec(bool host, const char *spec) {
 
   split_arg(spec);
   std::string s1 = func_arg;
-  std::string s2 = hs_arg;
-  if (!reg->insert(std::pair<std::string,std::string>(s1,s2)).second) {
+  if (hs_arg[0] == '-') {
     std::map<std::string,std::string>::iterator pos;
     pos = reg->find(s1);
-    nl_assert(pos != reg->end());
-    reg->erase(pos);
+    if (pos != reg->end()) {
+      reg->erase(pos);
+    }
+  } else {
+    std::string s2 = hs_arg;
     if (!reg->insert(std::pair<std::string,std::string>(s1,s2)).second) {
-      msg(MSG_FATAL,
-        "Redefinition of %s spec for function '%s' failed",
-        host ? "host" : "socket", func_arg);
+      std::map<std::string,std::string>::iterator pos;
+      pos = reg->find(s1);
+      nl_assert(pos != reg->end());
+      reg->erase(pos);
+      if (!reg->insert(std::pair<std::string,std::string>(s1,s2)).second) {
+        msg(MSG_FATAL,
+          "Redefinition of %s spec for function '%s' failed",
+          host ? "host" : "socket", func_arg);
+      }
     }
   }
 }

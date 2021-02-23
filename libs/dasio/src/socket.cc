@@ -136,8 +136,8 @@ void Socket::common_init() {
       snprintf(nsrv, nb, "%s%s%s", service,
           sess[0] ? "." : "", sess);
       session = nsrv;
-      socket_type = Socket_Unix;
     }
+    socket_type = Socket_Unix;
   }
   if (socket_type == Socket_TCP && is_server &&
       !(hostname && hostname[0])) {

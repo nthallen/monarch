@@ -2,20 +2,20 @@
 <include> <stdlib.h>
 <include> "parent.h"
 <include> msg oui server
-<opts> "qt:M:f:S:"
+<opts> "qt:M:f:T:"
 <sort>
 	-q Quit when childless
 	-t <seconds> Send HUP to children after specified delay
 	-M <pid> Do not invoke -t until <pid> has terminated
 	-f <scriptfile> Name of file to write script file to.
-	-S <status string> Specify status to return to monarchctl
+	-T <status string> Specify status to return to monarchctl
 
 <switch>
   case 'M': monitor_pid = strtol(optarg, NULL, 10); break;
   case 'q': quit_when_childless = 1; break;
   case 't': parent_timeout = atoi(optarg); break;
   case 'f': script_file = optarg; break;
-  case 'S': status_string = optarg; break;
+  case 'T': status_string = optarg; break;
 
 <package> appid_default
 <include> "dasio/appid.h"

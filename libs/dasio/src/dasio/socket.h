@@ -328,6 +328,13 @@ class Socket : public Interface {
     socket_type_t socket_type;
   private:
     static const int MAXPENDING = 5;
+    /**
+     * Handles Socket_Function resolution so connect()
+     * should never see that. The resolution is:
+     *   - Use TCP if there is a host specification
+     *   - Use Unix if there is a session specification
+     * If neither is specified, it will default to Unix.
+     */
     void common_init();
 
     /**

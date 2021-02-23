@@ -14,4 +14,4 @@
 <sort>
 	-a Use ASCII graphics characters
 <unsort>
-	term tty on which to display the first screen
+term: tty on which to display the first screen

@@ -6,7 +6,7 @@
 #include "nl.h"
 
 bool opt_Q = false;
-bool opt_S = false;
+bool opt_T = false;
 bool opt_r = false;
 const char *restart_script = 0;
 const char *flight_host = 0;
@@ -24,7 +24,7 @@ void monarchctl_init_options(int argc, char **argv) {
       case 'Q': ++nqrs; opt_Q = true; break;
       case 'r': ++nqrs; opt_r = true; break;
       case 'R': ++nqrs; restart_script = optarg; break;
-      case 'S': ++nqrs; opt_S = true; break;
+      case 'T': ++nqrs; opt_T = true; break;
       case 't': flight_host = optarg; break;
       case 'G': gse_host = optarg; break;
       case '?':
@@ -74,13 +74,13 @@ bool monarchctl_t::app_connected() {
     rs += restart_script;
     return iwrite(rs);
   }
-  if (opt_S) return iwrite("S\n");
+  if (opt_T) return iwrite("S\n");
   msg(MSG_FATAL, "Expected option Q, r, R or S in app_connected");
   return false; // Never reached
 }
 
 bool monarchctl_t::app_input() {
-  if (opt_S) {
+  if (opt_T) {
     // just display the text.
     msg(0, "%s", &buf[0]);
   } else {
@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
     monarchctl_t *monarchctl = new monarchctl_t(&S);
     S.ELoop.add_child(monarchctl);
     monarchctl->connect();
-    if (opt_S) {
+    if (opt_T) {
       S.ELoop.event_loop();
       S.ELoop.delete_children();
     } else {

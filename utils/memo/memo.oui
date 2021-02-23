@@ -14,13 +14,21 @@
 	memo_init_options(argc, argv);
 
 <unsort>
-  <blank>
-  With a quit threshold value n > 0, memo will terminate after 
-  n clients have connected and all clients have disconnected.
-  -l0 will keep memo running even after all clients have disconnected,
-  which can be useful in certain testing scenarios.
-  <blank>
-  Host_Session functions:
-    memosrvr: Where we listen for connections
+<blank>
+With a quit threshold value n > 0, memo will terminate after 
+n clients have connected and all clients have disconnected.
+-l0 will keep memo running even after all clients have disconnected,
+which can be useful in certain testing scenarios.
+<blank>
+Host_Session function memosrvr: Where we listen for connections
 
 <package> msgmemo
+<comment>
+This eliminates the -m "write to memo" msg option, which makes
+no sense while we are memo. See msg.oui for details.
+
+<package> memofunc
+<include> "dasio/host_session.h"
+<preceed> funcs_defined
+<init>
+  hs_registry::add_session("memosrvr:");

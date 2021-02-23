@@ -62,7 +62,6 @@ bool memo_sigif::serialized_signal_handler(uint32_t signals_seen) {
 }
 
 int main(int argc, char **argv) {
-  hs_registry::add_session("memosrvr:");
   oui_init_options(argc, argv);
   
   Server server("memo");

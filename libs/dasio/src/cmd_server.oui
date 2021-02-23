@@ -1,10 +1,13 @@
 <package> cmd_server
-<include> server
+<include> host_session
 <include> cmd_version
 <follow> cmd_version
 <comment>
   This is the OUI definition for data acquisition system
   command server applications, formerly known as server.oui
+
+<unsort>
+Host_Session function srvr: Define listening sockets
 
 <package> appid_default
 <include> "dasio/appid.h"
@@ -12,3 +15,10 @@
 <preceed> msg oui
 <defs>
   DAS_IO::AppID_t DAS_IO::AppID("srvr", "Command Server", "V3.0");
+
+<package> cmd_server_init
+<include> funcs_defined
+<preceed> funcs_defined
+<include> host_session
+<init>
+  DAS_IO::hs_registry::add_session("srvr:");

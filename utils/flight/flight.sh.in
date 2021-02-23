@@ -37,7 +37,7 @@ msgProgram=flight.sh
 if [ -n "$CFG_ERROR" ]; then
   msgf 2 "$CFG_ERROR: stopping"
   exec 1>&4 2>&4 # close pipe to flight.sh.log and reopen stdout/err
-  exec parent -V -S "Missing $cfile"
+  exec parent -V -T "Missing $cfile"
 fi
 
 launch_error=""
@@ -61,7 +61,7 @@ if [ -n "$LOOP_ON_FILE" -a -e "$LOOP_ON_FILE" ]; then
     msgf -V 2 "reduce did not clear LOOP_ON_FILE '$LOOP_ON_FILE'" 2>&1 |
       tee -a $REDUCE_LOG_FILE
     rm -f $LOOP_STOP_FILE $LOOP_START_FILE
-    exec parent $parent_srvr -V -S "reduce error"
+    exec parent $parent_srvr -V -T "reduce error"
   fi
   [ -f $LOOP_STOP_FILE ] && mv $LOOP_STOP_FILE $LOOP_START_FILE
   exit 0 # exit to reestablish tee log
@@ -148,15 +148,15 @@ if [ -n "$launch_error" -o -n "$pids" ]; then
   [ $SERVICE = Installed ] && echo $script >$LOOP_STOP_FILE
   [ -z "$parent_loop" ] && parent_loop="-q"
   # msgf -2 \
-  #   "parent $parent_srvr $parent_loop -V -S '$status_string'"
+  #   "parent $parent_srvr $parent_loop -V -T '$status_string'"
 else
   parent_loop="-f $LOOP_START_FILE"
   [ -n "$SUBBUS_PID" ] && kill -SIGHUP $SUBBUS_PID
   msgf 0 "No subprocesses, closing flight.sh.log"
   # msgf -2 \
-  #   "parent $parent_srvr $parent_loop -V -S '$status_string'"
+  #   "parent $parent_srvr $parent_loop -V -T '$status_string'"
   exec 1>&4 2>&4
 fi
 
-msgf 0 "exec parent $parent_srvr $parent_loop -V -S '$status_string'"
-exec parent $parent_srvr $parent_loop -V -S "$status_string"
+msgf 0 "exec parent $parent_srvr $parent_loop -V -T '$status_string'"
+exec parent $parent_srvr $parent_loop -V -T "$status_string"

@@ -1,0 +1,7 @@
+<package> funcs_defined
+<preceed> msg oui host_session
+<comment>
+This is a sorting package. Any host/session defaults
+should preceed this package, and the host/session
+option handling will follow it. Any packages that
+create sockets should then follow host_session
