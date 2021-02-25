@@ -196,6 +196,8 @@ namespace DAS_IO {
           which = Srv_Both;
         else
           which = Srv_Unix;
+      } else if (which != Srv_TCP) {
+        which = Srv_Unix;
       }
     }
     if (which & Srv_Unix) {
