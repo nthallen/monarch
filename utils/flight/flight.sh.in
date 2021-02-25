@@ -29,6 +29,12 @@ else
   shift # may not be relevant after removing adhoc arg
 fi
 
+# flight.sh for now should never run as a SESSION but should be
+# global. Interactive doit scripts do define SESSION before
+# launching screen and hence before launching flight.sh, so
+# we need to clear it here.
+SESSION=
+
 echo
 msg -Vn flight.sh "Running flight.sh: `date`"
 
