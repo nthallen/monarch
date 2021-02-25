@@ -68,12 +68,16 @@ if [ $FltNode_Access = Remote ]; then
   SSH_CMD="ssh -t flight@$FlightNode"
   SSH_TAR_CMD="ssh -T flight@$FlightNode"
   SERVICE=Installed
-elif [ -e /var/run/monarch/$Experiment/parent -a \
-       -e /var/run/monarch/$Experiment/parent.pid ] &&
-     [ -e /proc/`cat /var/run/monarch/$Experiment/parent.pid` ]; then
-  SERVICE=Installed
 else
-  SERVICE=AdHoc
+  TM_OPT="-S bfr:"
+  CMD_OPT="-S srvr:"
+  if [ -e /var/run/monarch/$Experiment/parent -a \
+         -e /var/run/monarch/$Experiment/parent.pid ] &&
+       [ -e /proc/`cat /var/run/monarch/$Experiment/parent.pid` ]; then
+    SERVICE=Installed
+  else
+    SERVICE=AdHoc
+  fi
 fi
 
 VERSION=1.0

@@ -38,8 +38,6 @@ my $phrtg;
 my $batchfile;
 my $memo;
 my $logfileroot = '$Experiment';
-push @client, { prog => 'playbackclt', cond => undef,
-      opts => '' };
 while (<$fh>) {
   next if m/^\s*(?:#.*)?$/;
   s/\s*$//;
@@ -105,6 +103,12 @@ while (<$fh>) {
   }
 }
 close $fh || warn "Error closing source file\n";
+
+# Default client and server
+push @client, { prog => 'playbackclt', cond => undef,
+      opts => '' };
+push @extract, { prog => 'playbacksrvr', name => 'cmd', cond => undef, opts => '' };
+
 if ( $opts{M} ) {
   open( $fh, ">", "$opts{o}.dep" ) ||
     die "mkdoit3: Unable to write to $opts{o}.dep\n";
@@ -271,23 +275,7 @@ dir=$PWD
   msgf 3 "Not in CltHomeDir $CltHomeDir"
 
 # We are now in 'start' or 'wait'
-# srcmode is playback or realtime, though could eventually include
-# SerIn and/or InetIn.
-
-# mkdoit can add more logic here.
-# We do not launch lclsrvr if $srcmode = realtime -a -z "$FlightNode"
-# (i.e. running flight.sh on the local machine)
-# The other $srcmodes (SerIn, InetIn) will default to playbacksrvr,
-# but can be overridden.
-#-----------------
-# Actually I want to change this: we always launch a lclsrvr.
-# Cannot implement this immediately as we need session stuff
-#-----------------
-# lclsrvr=playbacksrvr
-# batchfile=interact
-# client=playbackclt
-# [ $srcmode = realtime ] && client=Democlt
-# [ $srcmode = realtime -a $FltNode_Access = Local ] && lclsrvr=''
+# srcmode is playback, SerIn or realtime
 
 EOF
 
@@ -297,20 +285,28 @@ print $fh
   "extracts='", join( ' ', @extracts ), "';\n";
 print $fh "batchfile=$batchfile\n" if defined $batchfile;
 
-for my $client ( @client ) {
-  if ($client->{cond}) {
-    print $fh '[ ', cond2sh($client->{cond}), ' ] && ';
-  }
-  print $fh 'client=', $client->{prog}, "\n";
-}
-
-print $fh "lclsrvr=playbacksrvr\n";
-for my $server ( @extract ) {
-  if ($server->{name} eq 'cmd' ) {
-    if ($server->{cond}) {
-      print $fh '[ ', cond2sh($server->{cond}), ' ] && ';
+{
+  my $clientset = 0;
+  my $conditionset = 0;
+  for my $client ( @client ) {
+    if ($clientset) {
+      warn "client '", $client->{prog}, "' precluded by preceeding definition\n";
+      print $fh "# client=", $client->{prog}, " # would never be selected\n";
+    } else {
+      if ($client->{cond}) {
+        print $fh
+          $conditionset ? "elif" : "if",
+          ' [ ', cond2sh($client->{cond}), ' ]; then', "\n  ";
+        $conditionset = 1;
+      } else {
+        $clientset = 1;
+        $conditionset && print $fh "else\n  ";
+      }
+      print $fh 'client=', $client->{prog}, "\n";
     }
-    print $fh "lclsrvr='", $server->{prog}, $server->{opts}, "'\n";
+  }
+  if ($conditionset) {
+    print $fh "fi\n";
   }
 }
 
@@ -330,35 +326,29 @@ fi
 # rmtlogfile is the file we would like to display with less,
 #  even if it is not really remote.
 if [ $srcmode = realtime ]; then
+  lcllogfile=$logfileroot.RT.$session.log
   if [ $FltNode_Access = Remote ]; then
-    lcllogfile=$logfileroot.clt.log
     rmtlogfile=$HomeDir/$logfileroot.log
   else
-    lclsrvr=''
     rmtlogfile=$logfileroot.log
   fi
-else # not realtime
-  RemEx=$Experiment
-  Experiment=$RemEx.PB.$session
-  lcllogfile=$Experiment.log
-  # srvr and bfr are necessarily local
+elif [ $srcmode = playback ]; then
+  lcllogfile=$logfileroot.PB.$session.log
+  rmtlogfile=$lcllogfile
   TM_OPT=''
   CMD_OPT=''
+elif [ $srcmode = SerIn ]; then
+  lcllogfile=$logfileroot.SI.$session.log
+  rmtlogfile=$lcllogfile
+  TM_OPT=''
+  CMD_OPT=''
+else
+  msgf 4 "Unsupported srcmode '$srcmode'"
 fi
 
 # At this point cmd can only be 'start' or 'wait'. Thus
 # a) we always want to check paths, so don't need check_path
 # b) startup var is redundant with cmd = start
-# check_path=no
-# startup=no
-# case $cmd in
-#   start) startup=yes; check_path=yes;;
-#   stop);;
-#   not);;
-#   wait) check_path=yes;;
-#   screen);;
-#   *) nl_error "Invalid option: '$option'";;
-# esac
 
 # Determine the path. Strictly speaking, this does
 # not have to happen before start, but I'd like
@@ -416,22 +406,15 @@ screen -X resize 3
 screen -X focus
 clear
 
-# Until we have sessions, the only distinction we can make
-# about where we connect is local or remote.
-#
-# Startup local memo: The only case where we would not want to
-# start a local memo is if srcmode is realtime and there is no
-# FlightNode. In that case, we are starting up an interact script
-# on the local machine, and interact scripts start up their own
-# memo.
-[ -n "$lcllogfile" ] &&
-  Launch memo memo -o $lcllogfile -l4
+# Always startup a local memo
+[ -n "$lcllogfile" ] || msgf 4 "lcllogfile undefined"
+Launch memo memo -o $lcllogfile -l4 -S:$session
 
 if [ $cmd = start ]; then
   if [ $srcmode = playback ]; then
     # Startup playback modules:
-    Launch tm_bfr bfr -s Unix
-    Launch tm_gen rdr -P $ddir -a
+    Launch tm_bfr bfr -S:$session
+    Launch tm_gen rdr -P $ddir -a -S:$session
     #   # playbacksrvr (started later via $lclsrvr)
   elif [ $srcmode = realtime ]; then
     if [ $SERVICE = Installed ]; then
@@ -461,8 +444,8 @@ EOF
 if ($serin) {
   print $fh
     '  elif [ $srcmode = SerIn ]; then', "\n",
-    "    Launch tm_bfr bfr -s Unix\n",
-    "    Launch tm_gen $serin", $progopts{$serin}, "\n";
+    "    Launch tm_bfr bfr -S:\$session\n",
+    "    Launch tm_gen $serin -S:\$session", $progopts{$serin}, "\n";
 }
 
 print $fh <<'EOF';
@@ -486,15 +469,57 @@ else
   msgf 3 "Unexpected invalid cmd '$cmd'"
 fi
 
-# At this point, we can assume that memo, tm_bfr and server
-# are running, so we can start all the UI clients
+# At this point, we can assume that memo and tm_bfr are
+# running and server as well except under PB and SI,
+# so we can start all the UI clients.
 # Display programs, keyboard client, etc.
-# We will point getcon and disp programs to the lclsrvr, but
-# still need to figure out how to tell lclsrvr to quit.
-# I guess I need a Stopper app to send Quit where I want.
-# That would work for this as well as 'doit stop'.
-[ -n "$lclsrvr" ] &&
-  Launch cmd $lclsrvr
+# All programs will get the $session argument to point
+# to local servers. disp/ext/client will use TM_OPT and
+# CMD_OPT for their specific functions.
+# We still need to figure out how to tell lclsrvr to quit.
+# It could use cmd/Quit pointing the real server (if such
+# exists).
+# Note that monarch_cmd can now be pointed to the local
+# server if necessary.
+EOF
+
+sub uniq {
+  my %seen;
+  return grep { !$seen{$_}++ } @_;
+}
+
+my @servernames = uniq(grep { $_ =~ m/^[^-]/ } map($_->{name}, @extract));
+for my $servername ( @servernames ) {
+  my $serverset = 0;
+  my $conditionset = 0;
+  for my $server ( @extract ) {
+    if ($server->{name} eq $servername ) {
+      if ($serverset) {
+        warn "server '", $server->{prog}, "' precluded by preceeding definition\n";
+        print $fh "# Launch ", $server->{prog}, " # would never be selected\n";
+      } else {
+        if ($server->{cond}) {
+          print $fh
+            $conditionset ? "elif" : "if",
+            ' [ ', cond2sh($server->{cond}), " ]; then\n";
+          $conditionset = 1;
+        } else {
+          $serverset = 1;
+          if ($conditionset) {
+            print $fh "else\n";
+          }
+        }
+        print $fh "  Launch $servername ", $server->{prog},
+          ' -S:$session', $server->{opts}, "\n";
+      }
+    }
+  }
+  if ($conditionset) {
+    print $fh "fi\n";
+  }
+}
+
+print $fh <<'EOF';
 if [ -n "$rmtlogfile" ]; then
   # log="-Logfile \"less.$session.log\" -L"
   if [ $FltNode_Access = Remote ]; then
@@ -510,7 +535,7 @@ TMRUNDIR=/var/run/monarch/run/$Experiment
 [ -d $TMRUNDIR ] || mkdir $TMRUNDIR
 # gcopt definition might need to be moved earlier if it
 # needs to be defined conditionally
-gcopt=''
+gcopt="-S:$session"
 EOF
 
 for my $disp ( @display ) {
@@ -572,21 +597,6 @@ my $clttermcond = join '',
       map("-n \"$_\"", '$clt_term', @clttermvarlist)),
   " ]; then\n";
 
-# print $fh $clttermcond;
-# print $fh <<'EOF';
-  # screen -X split
-  # screen -X focus
-  # screen -X resize 3
-  # screen -X select clt
-  # screen -X focus
-# EOF
-# for my $disp ( reverse @display ) {
-  # my $scr = $screen{$disp};
-  # print $fh
-    # map "  screen -X select $_->{screenname}\n", reverse @$scr;
-# }
-# print $fh "fi\n\n";
-
 for my $disp ( @display ) {
   my $scr = $screen{$disp};
   my @scrvars = map( "\$$_->{varname}_term", @$scr);
@@ -594,7 +604,7 @@ for my $disp ( @display ) {
     "if [ ", join( " -a ", map( "-n \"$_\"", @scrvars)), " ]; then\n",
     "  msgf -V 0 \"Starting $disp\$nc \$ncopt \$TM_OPT ",
         join(' ', @scrvars), "\"\n",
-    "  Launch -TMC- $disp\$nc \$ncopt \$TM_OPT ",
+    "  Launch -TMC- $disp\$nc -S:\$session \$ncopt \$TM_OPT ",
         join(' ', @scrvars), "\n";
   if ( $disp eq $display[0] ) {
     print $fh
@@ -606,21 +616,26 @@ for my $disp ( @display ) {
     "fi\n";
 }
 
-for my $ext ( @extract ) {
-  if ($ext->{cond}) {
-    print $fh '[ ', cond2sh($ext->{cond}), ' ] && ';
+for my $server ( @extract ) {
+  if ($server->{name} =~ m/^-/ ) {
+    if ($server->{cond}) {
+      print $fh '[ ', cond2sh($server->{cond}), ' ] && ';
+    }
+    print $fh "Launch ", $server->{name}, " ",
+        $server->{prog}, ' -S:$session', $server->{opts}, "\n";
   }
-  print $fh "Launch ", $ext->{name}, " ", $ext->{prog}, $ext->{opts}, "\n";
 }
 
 if ( $phrtg ) {
-  print $fh '[ $dispmode = screen ] || Launch - phrtg -C $FlightNode -P $ddir',
+  print $fh
+    '[ $dispmode = screen ] ||', "\n",
+    '  Launch - phrtg -S:$session $CMD_OPT -P $ddir',
     $progopts{phrtg}, "\n";
 }
 
 print $fh "\n$clttermcond";
 print $fh
-  "  msgf -V 0 \"Starting \$client\$nc \$CMD_OPT \$clt_term ",
+  "  msgf -V 0 \"Starting \$client\$nc -S:\$session \$CMD_OPT \$clt_term ",
       join(' ', @clttermvarlist), "\"\n",
   "  \$client\$nc \$CMD_OPT \$clt_term ",
       join(' ', @clttermvarlist), "\n",
@@ -634,8 +649,8 @@ print $fh <<'EOF';
 # we are done and need to clean up
 screen -X only
 [ $dispmode != photon ] &&
-  /usr/local/sbin/getcon -o /dev/null -e $session
-[ -n "$lclsrvr" ] && monarch_cmd -V Quit >/dev/null 2>&1
+  /usr/local/sbin/getcon -S:$session -o /dev/null -e $session
+monarch_cmd -S:$session -V Quit >/dev/null 2>&1
 screen -X select logfile
 sleep 1
 if [ -n "$less_pid" ] && kill -0 $less_pid; then
