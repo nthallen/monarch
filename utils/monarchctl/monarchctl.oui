@@ -1,6 +1,7 @@
 <package> monarchctl
 <include> oui msg
 <follow> oui msg
+<include> host_session
 <include> "monarchctl.h"
 
 <opts> "QrR:Tt:G:"
@@ -10,10 +11,11 @@
 	-r Request restart from parent service using defaults
 	-R <script> Request restart with specified script
 	-T Request status information from parent service on flight system
-	-t <flight_hostname> Specify flight hostname (defaults to localhost)
 	-G <gse_hostname> Query monarchctl on gse_hostname for startup script.
 
 <unsort>
+Host_Session function parent: Where to find parent server
+Host_Session function monarchctl: Where to listen
 <blank>
 monarchctl communicates with the parent service or the monarchctl service in order
 to communicate options for startup.

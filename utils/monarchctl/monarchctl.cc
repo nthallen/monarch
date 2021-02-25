@@ -9,7 +9,6 @@ bool opt_Q = false;
 bool opt_T = false;
 bool opt_r = false;
 const char *restart_script = 0;
-const char *flight_host = 0;
 const char *gse_host = 0;
 bool script_delivered = false;
 
@@ -25,7 +24,6 @@ void monarchctl_init_options(int argc, char **argv) {
       case 'r': ++nqrs; opt_r = true; break;
       case 'R': ++nqrs; restart_script = optarg; break;
       case 'T': ++nqrs; opt_T = true; break;
-      case 't': flight_host = optarg; break;
       case 'G': gse_host = optarg; break;
       case '?':
         msg(3, "Unrecognized Option -%c", optopt);
@@ -52,7 +50,7 @@ void query_gse() {
 }
 
 monarchctl_t::monarchctl_t(Server *srvr)
-  : Client("parent", 80, flight_host, "parent", 0),
+  : Client("parent", "parent", "parent", 0, 80),
     srvr(srvr),
     waiting_for_parent(false) {
   conn_fail_reported = true;
@@ -160,8 +158,8 @@ int main(int argc, char **argv) {
       S.ELoop.delete_children();
     } else {
       S.add_subservice(new SubService("monarchctl",
-	new_monarchctl_ssclient, (void *)0));
-      S.Start(flight_host ? Server::Srv_TCP : Server::Srv_Unix);
+        new_monarchctl_ssclient, (void *)0));
+      S.Start(Server::Srv_Function, "monarchctl");
     }
   }
   return 0;

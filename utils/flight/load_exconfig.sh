@@ -10,11 +10,12 @@
 # SERVICE: Either 'Installed' or 'AdHoc'
 # TM_OPT: Options to access tm_bfr on the flight node
 # CMD_OPT: Options to access cmd on the flight node
+# MC_OPT: Options for monarchctl to access parent
 # VERSION: Read from the VERSION file or defaults to 1.0
 # TMBINDIR: Where the experiment-specific binaries are located
 # PATH is updated to include TMBINDIR
 #
-# session is not defined here, but is referenced in Launch
+# SESSION is not defined here, but is referenced in Launch
 #
 # Experiment and TMBINDIR are exported as required by virtually
 # all the dasio-cognizent programs
@@ -67,12 +68,14 @@ fi
 if [ $FltNode_Access = Remote ]; then
   TM_OPT="-H bfr:$FlightNode"
   CMD_OPT="-H srvr:$FlightNode"
+  MC_OPT="-H parent:$FlightNode -H monarchctl: -S:$SESSION"
   SSH_CMD="ssh -t flight@$FlightNode"
   SSH_TAR_CMD="ssh -T flight@$FlightNode"
   SERVICE=Installed
 else
   TM_OPT="-S bfr:"
   CMD_OPT="-S srvr:"
+  MC_OPT=""
   if [ -e /var/run/monarch/$Experiment/parent -a \
          -e /var/run/monarch/$Experiment/parent.pid ] &&
        [ -e /proc/`cat /var/run/monarch/$Experiment/parent.pid` ]; then
@@ -99,6 +102,7 @@ msgDebug=-1
 
 function msgf {
   msgV=$msgVdefault
+  sarg=''
   if [ "$1" = '-V' ]; then
     msgV=-V
     shift
@@ -116,7 +120,7 @@ function msgf {
   esac
   shift
   if [ $code -ge $msgDebug ]; then
-    /usr/local/bin/msg $msgV -n $msgProgram "$prefix$*"
+    /usr/local/bin/msg $msgV -S:$SESSION -n $msgProgram "$prefix$*"
   fi
   [ -n "$excode" ] && exit $excode
 }
@@ -142,7 +146,7 @@ function Launch {
   fi
   name=$1
   sname=$name
-  [ -n "$session" ] && sname=$name.$session
+  [ -n "$SESSION" ] && sname=$name.$SESSION
   shift
   msgf $LaunchVdefault -2 "Launch: $*"
   shortname=''

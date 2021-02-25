@@ -186,8 +186,8 @@ statusready=no
 function isready {
   quiet=no
   [ "$1" = "quiet" ] && quiet=yes
-  msgf -2 "monarchctl $TM_OPT -VT"
-  monarchctl $TM_OPT -VT 2>&1 |
+  msgf -2 "monarchctl $MC_OPT -VT"
+  monarchctl $MC_OPT -VT 2>&1 |
   ( while read j; do
       [ $quiet = no ] && echo $j
       sj=${j#* Status: Ready:}
@@ -214,6 +214,16 @@ while getopts "hap:st" opt; do
   esac
 done
 
+# We need to define SESSION and Experiment before invoking
+# screen so they will be inherited in each window. This is
+# addressed in the Screen Manual's Overview section:
+# https://www.gnu.org/software/screen/manual/screen.html#Overview
+if [ -z "$STY" ]; then
+  export SESSION=$$
+elif [ -z "$SESSION" ]; then
+  msgf 2 "SESSION not defined inside screen"
+fi
+
 # We haven't finished parsing the arguments, but we can
 # be pretty sure whatever it is, we will need to read
 # the configuration to execute it.
@@ -230,7 +240,7 @@ case "$arg" in
     exit 0;;
   not)
     echo "Trying harder to stop the instrument"
-    monarchctl $TM_OPT -VQ
+    monarchctl $MC_OPT -VQ
     exit 0;;
   wait)
     [ $srcmode = playback ] &&
@@ -312,33 +322,23 @@ print $fh "batchfile=$batchfile\n" if defined $batchfile;
 
 print $fh <<'EOF';
 
-# We need to define session and Experiment before invoking
-# screen so they will be inherited in each window. This is
-# addressed in the Screen Manual's Overview section:
-# https://www.gnu.org/software/screen/manual/screen.html#Overview
-if [ -z "$STY" ]; then
-  export session=$$
-elif [ -z "$session" ]; then
-  msgf 2 "session not defined inside screen"
-fi
-
 # lcllogfile is the file we want local memo to write to
 # rmtlogfile is the file we would like to display with less,
 #  even if it is not really remote.
 if [ $srcmode = realtime ]; then
-  lcllogfile=$logfileroot.RT.$session.log
+  lcllogfile=$logfileroot.RT.$SESSION.log
   if [ $FltNode_Access = Remote ]; then
     rmtlogfile=$HomeDir/$logfileroot.log
   else
     rmtlogfile=$logfileroot.log
   fi
 elif [ $srcmode = playback ]; then
-  lcllogfile=$logfileroot.PB.$session.log
+  lcllogfile=$logfileroot.PB.$SESSION.log
   rmtlogfile=$lcllogfile
   TM_OPT=''
   CMD_OPT=''
 elif [ $srcmode = SerIn ]; then
-  lcllogfile=$logfileroot.SI.$session.log
+  lcllogfile=$logfileroot.SI.$SESSION.log
   rmtlogfile=$lcllogfile
   TM_OPT=''
   CMD_OPT=''
@@ -398,7 +398,7 @@ if [ -z "$STY" ]; then
 fi
 
 # Running under screen
-screen -X logfile "$doit.$session.log"
+screen -X logfile "$doit.$SESSION.log"
 screen -X log on
 screen -X split
 screen -X focus
@@ -408,23 +408,23 @@ clear
 
 # Always startup a local memo
 [ -n "$lcllogfile" ] || msgf 4 "lcllogfile undefined"
-Launch memo memo -o $lcllogfile -l4 -S:$session
+Launch memo memo -o $lcllogfile -l4 -S:$SESSION
 
 if [ $cmd = start ]; then
   if [ $srcmode = playback ]; then
     # Startup playback modules:
-    Launch tm_bfr bfr -S:$session
-    Launch tm_gen rdr -P $ddir -a -S:$session
+    Launch tm_bfr bfr -S:$SESSION
+    Launch tm_gen rdr -P $ddir -a -S:$SESSION
     #   # playbacksrvr (started later via $lclsrvr)
   elif [ $srcmode = realtime ]; then
     if [ $SERVICE = Installed ]; then
       monarchctl_opt='-r'
       [ -n "$batchfile" ] && monarchctl_opt="-R $batchfile"
-      msgf 0 "Running isready quiet, TM_OPT=$TM_OPT"
+      msgf 0 "Running isready quiet, MC_OPT=$MC_OPT"
       isready quiet
       if [ $statusready = no ]; then
-        msgf 0 "running monarchctl -V $TM_OPT $monarchctl_opt"
-        monarchctl -V $TM_OPT $monarchctl_opt
+        msgf 0 "running monarchctl -V $MC_OPT $monarchctl_opt"
+        monarchctl -V $MC_OPT $monarchctl_opt
         isready
       fi
     else
@@ -444,8 +444,8 @@ EOF
 if ($serin) {
   print $fh
     '  elif [ $srcmode = SerIn ]; then', "\n",
-    "    Launch tm_bfr bfr -S:\$session\n",
-    "    Launch tm_gen $serin -S:\$session", $progopts{$serin}, "\n";
+    "    Launch tm_bfr bfr -S:\$SESSION\n",
+    "    Launch tm_gen $serin -S:\$SESSION", $progopts{$serin}, "\n";
 }
 
 print $fh <<'EOF';
@@ -473,7 +473,7 @@ fi
 # running and server as well except under PB and SI,
 # so we can start all the UI clients.
 # Display programs, keyboard client, etc.
-# All programs will get the $session argument to point
+# All programs will get the $SESSION argument to point
 # to local servers. disp/ext/client will use TM_OPT and
 # CMD_OPT for their specific functions.
 # We still need to figure out how to tell lclsrvr to quit.
@@ -510,7 +510,7 @@ for my $servername ( @servernames ) {
           }
         }
         print $fh "  Launch $servername ", $server->{prog},
-          ' -S:$session', $server->{opts}, "\n";
+          ' -S:$SESSION', $server->{opts}, "\n";
       }
     }
   }
@@ -521,13 +521,13 @@ for my $servername ( @servernames ) {
 
 print $fh <<'EOF';
 if [ -n "$rmtlogfile" ]; then
-  # log="-Logfile \"less.$session.log\" -L"
+  # log="-Logfile \"less.$SESSION.log\" -L"
   if [ $FltNode_Access = Remote ]; then
     msgf -V 0 "Starting less on remote system"
-    screen -t logfile /bin/sh -c "echo \$\$ >less.pid.$session; exec $SSH_CMD less +F $rmtlogfile"
+    screen -t logfile /bin/sh -c "echo \$\$ >less.pid.$SESSION; exec $SSH_CMD less +F $rmtlogfile"
   else
     msgf -V 0 "Starting less on local system"
-    screen -t logfile /bin/sh -c "echo \$\$ >less.pid.$session; exec less +F $rmtlogfile"
+    screen -t logfile /bin/sh -c "echo \$\$ >less.pid.$SESSION; exec less +F $rmtlogfile"
   fi
 fi
 
@@ -535,14 +535,14 @@ TMRUNDIR=/var/run/monarch/run/$Experiment
 [ -d $TMRUNDIR ] || mkdir $TMRUNDIR
 # gcopt definition might need to be moved earlier if it
 # needs to be defined conditionally
-gcopt="-S:$session"
+gcopt="-S:$SESSION"
 EOF
 
 for my $disp ( @display ) {
   for my $scr ( @{$screen{$disp}} ) {
     print $fh
       "screen -t $scr->{screenname} /usr/local/sbin/getcon ",
-      "\$gcopt $scr->{varname} \$session\n",
+      "\$gcopt $scr->{varname} \$SESSION\n",
       "screen -X select $scr->{screenname}\n",
       "screen -X width -w $scr->{width}\n",
       "#screen -x height -w $scr->{height}\n";
@@ -550,7 +550,7 @@ for my $disp ( @display ) {
 }
 
 print $fh <<'EOF';
-screen -t clt /usr/local/sbin/getcon $gcopt clt $session
+screen -t clt /usr/local/sbin/getcon $gcopt clt $SESSION
 screen -X focus
 screen -X select clt
 screen -X height -w 2
@@ -558,11 +558,11 @@ screen -X width -w 80
 screen -X focus
 screen -X select $doit
 
-msgf -2 Handling less.pid.$session
+msgf -2 Handling less.pid.$SESSION
 less_pid=''
-if [ -f less.pid.$session ]; then
-  less_pid=`cat less.pid.$session`
-  rm -f less.pid.$session
+if [ -f less.pid.$SESSION ]; then
+  less_pid=`cat less.pid.$SESSION`
+  rm -f less.pid.$SESSION
   msgf -2 "Recovered less_pid='$less_pid'"
 fi
 
@@ -577,12 +577,12 @@ print $fh "for screen in ",
 
 print $fh <<'EOF';
   term=''
-  if waitfor pty.$screen.$session 3; then
-    term=`cat pty.$screen.$session`
-    rm pty.$screen.$session
+  if waitfor pty.$screen.$SESSION 3; then
+    term=`cat pty.$screen.$SESSION`
+    rm pty.$screen.$SESSION
     eval ${screen}_term=$term
   else
-    msgf 2 pty.$screen.$session did not appear
+    msgf 2 pty.$screen.$SESSION did not appear
   fi
 done
 
@@ -604,7 +604,7 @@ for my $disp ( @display ) {
     "if [ ", join( " -a ", map( "-n \"$_\"", @scrvars)), " ]; then\n",
     "  msgf -V 0 \"Starting $disp\$nc \$ncopt \$TM_OPT ",
         join(' ', @scrvars), "\"\n",
-    "  Launch -TMC- $disp\$nc -S:\$session \$ncopt \$TM_OPT ",
+    "  Launch -TMC- $disp\$nc -S:\$SESSION \$ncopt \$TM_OPT ",
         join(' ', @scrvars), "\n";
   if ( $disp eq $display[0] ) {
     print $fh
@@ -622,22 +622,22 @@ for my $server ( @extract ) {
       print $fh '[ ', cond2sh($server->{cond}), ' ] && ';
     }
     print $fh "Launch ", $server->{name}, " ",
-        $server->{prog}, ' -S:$session', $server->{opts}, "\n";
+        $server->{prog}, ' -S:$SESSION', $server->{opts}, "\n";
   }
 }
 
 if ( $phrtg ) {
   print $fh
     '[ $dispmode = screen ] ||', "\n",
-    '  Launch - phrtg -S:$session $CMD_OPT -P $ddir',
+    '  Launch - phrtg -S:$SESSION $CMD_OPT -P $ddir',
     $progopts{phrtg}, "\n";
 }
 
 print $fh "\n$clttermcond";
 print $fh
-  "  msgf -V 0 \"Starting \$client\$nc -S:\$session \$CMD_OPT \$clt_term ",
+  "  msgf -V 0 \"Starting \$client\$nc -S:\$SESSION \$CMD_OPT \$clt_term ",
       join(' ', @clttermvarlist), "\"\n",
-  "  \$client\$nc -S:\$session \$CMD_OPT \$clt_term ",
+  "  \$client\$nc -S:\$SESSION \$CMD_OPT \$clt_term ",
       join(' ', @clttermvarlist), "\n",
   "else\n",
   "  msgf -V 2 \"Unable to run client \$client\$nc due to missing ptys\"\n",
@@ -649,8 +649,8 @@ print $fh <<'EOF';
 # we are done and need to clean up
 screen -X only
 [ $dispmode != photon ] &&
-  /usr/local/sbin/getcon -S:$session -o /dev/null -e $session
-monarch_cmd -S:$session -V Quit >/dev/null 2>&1
+  /usr/local/sbin/getcon -S:$SESSION -o /dev/null -e $SESSION
+monarch_cmd -S:$SESSION -V Quit >/dev/null 2>&1
 screen -X select logfile
 sleep 1
 if [ -n "$less_pid" ] && kill -0 $less_pid; then
