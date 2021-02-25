@@ -6,9 +6,3 @@
 <unsort>
   Prints a one-off message to
   the command line via memo.
-
-<package> msgfunc
-<include> "dasio/host_session.h"
-<preceed> funcs_defined
-<init>
-  hs_registry::add_session("memo:");

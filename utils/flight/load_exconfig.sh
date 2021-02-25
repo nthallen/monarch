@@ -14,6 +14,8 @@
 # TMBINDIR: Where the experiment-specific binaries are located
 # PATH is updated to include TMBINDIR
 #
+# session is not defined here, but is referenced in Launch
+#
 # Experiment and TMBINDIR are exported as required by virtually
 # all the dasio-cognizent programs
 #
@@ -139,15 +141,17 @@ function Launch {
     shift
   fi
   name=$1
+  sname=$name
+  [ -n "$session" ] && sname=$name.$session
   shift
   msgf $LaunchVdefault -2 "Launch: $*"
   shortname=''
   wname=''
   case $name in
     -*) :;;
-    /*) wname=$name;;
-    */*) wname=/var/run/monarch/$Experiment/$name;;
-    *) wname=/var/run/monarch/$Experiment/$name
+    /*) wname=$sname;;
+    */*) wname=/var/run/monarch/$Experiment/$sname;;
+    *) wname=/var/run/monarch/$Experiment/$sname
        shortname=$name;;
   esac
   set_have "$shortname" no

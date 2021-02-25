@@ -21,4 +21,4 @@ Host_Session function srvr: Define listening sockets
 <preceed> funcs_defined
 <include> host_session
 <init>
-  DAS_IO::hs_registry::add_session("srvr:");
+  DAS_IO::hs_registry::add_session(":");

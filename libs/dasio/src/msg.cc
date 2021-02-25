@@ -145,7 +145,8 @@ void msg_init_options(int argc, char **argv) {
     memo_client_instance = new DAS_IO::memo_client();
     memo_client_instance->reference(); // for memo_client_instance
     if (!memo_client_instance->init()) {
-      fprintf( stderr, "Unable to contact memo\n" );
+      fprintf( stderr, "%s: Unable to contact memo\n",
+                DAS_IO::AppID.name );
       write_to_stderr = 1;
       write_to_memo = 0;
     }

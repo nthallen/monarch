@@ -31,4 +31,4 @@ no sense while we are memo. See msg.oui for details.
 <include> "dasio/host_session.h"
 <preceed> funcs_defined
 <init>
-  hs_registry::add_session("memosrvr:");
+  hs_registry::add_session(":");
