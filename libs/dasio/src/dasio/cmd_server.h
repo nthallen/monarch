@@ -165,7 +165,8 @@ class cmdif_wr {
   private:
     cmdif_wr_clt *client;
     char obuf[CMD_MAX_COMMAND_OUT];
-    // const char *path;
+    const char *wrname;
+    const char *wrpath;
 };
 
 /**

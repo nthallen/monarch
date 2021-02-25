@@ -477,8 +477,15 @@ void cmdif_wr_clt::Turf(const char *cmd, int cmdlen) {
 
 std::list<cmdif_rd *> rdrs;
 
-cmdif_wr::cmdif_wr(const char *name, const char *path) {
-  char *ss = nl_strdup(path);
+cmdif_wr::cmdif_wr(const char *name, const char *path)
+  : wrname(name),
+    wrpath(path) {}
+
+cmdif_wr::~cmdif_wr() {}
+
+void cmdif_wr::Setup() {
+  nl_assert(DAS_IO::CmdServer != 0);
+  char *ss = nl_strdup(wrpath);
   const char *service = (const char *)ss;
   const char *subservice;
   int i;
@@ -492,14 +499,7 @@ cmdif_wr::cmdif_wr(const char *name, const char *path) {
       break;
     }
   }
-  client = new cmdif_wr_clt(name, service, subservice);
-  // this->path = path;
-}
-
-cmdif_wr::~cmdif_wr() {}
-
-void cmdif_wr::Setup() {
-  nl_assert(DAS_IO::CmdServer != 0);
+  client = new cmdif_wr_clt(wrname, service, subservice);
   DAS_IO::CmdServer->ELoop.add_child(client);
   client->connect();
 }

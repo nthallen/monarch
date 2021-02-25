@@ -17,11 +17,13 @@ hs_registry *hs_registry::instantiate() {
 void hs_registry::add_host(const char *spec) {
   hs_registry *reg = instantiate();
   reg->add_spec(true, spec);
+  msg(MSG_DBG(1), "add_host(%s)", spec);
 }
 
 void hs_registry::add_session(const char *spec) {
   hs_registry *reg = instantiate();
   reg->add_spec(false, spec);
+  msg(MSG_DBG(1), "add_session(%s)", spec);
 }
 
 void hs_registry::add_spec(bool host, const char *spec) {
@@ -54,12 +56,18 @@ void hs_registry::add_spec(bool host, const char *spec) {
 
 const char *hs_registry::query_host(const char *func) {
   hs_registry *reg = instantiate();
-  return reg->query(true, func);
+  const char *res = reg->query(true, func);
+  msg(MSG_DBG(1), "query_host(%s) returns %s",
+    func, res ? res : "0");
+  return res;
 }
 
 const char *hs_registry::query_session(const char *func) {
   hs_registry *reg = instantiate();
-  return reg->query(false, func);
+  const char *res = reg->query(false, func);
+  msg(MSG_DBG(1), "query_session(%s) returns %s",
+    func, res ? res : "0");
+  return res;
 }
 
 const char *hs_registry::query(bool host, const char *func) {

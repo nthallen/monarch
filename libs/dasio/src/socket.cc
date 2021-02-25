@@ -86,7 +86,7 @@ Socket::Socket(const char *iname, const char *function,
 // Clone Socket
 Socket::Socket(Socket *S, const char *iname, int bufsize, int fd) :
   Interface(iname, bufsize),
-  function(S->function),
+  function(0),
   service(S->service),
   hostname(0),
   is_server(false),
