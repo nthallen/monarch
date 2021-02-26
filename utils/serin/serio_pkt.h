@@ -2,6 +2,7 @@
 #define SERIO_PKT_H_INCLUDED
 
 enum serio_pkt_type : uint8_t {
+  pkt_type_NULL = 0,
   pkt_type_TM = 'T',
   pkt_type_PNG_Start = 'P',
   pkt_type_PNG_Cont = 'N',

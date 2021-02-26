@@ -91,6 +91,7 @@ void serin::process_tm(serio_pkt_hdr *hdr) {
       // sem_wait(&it_sem);
     }
   }
+  if (!regulated) transmit_data(false);
 }
 
 serin_serin::serin_serin(Authenticator *auth, const char *iname,
