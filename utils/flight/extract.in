@@ -72,6 +72,7 @@ exit 0
 Ex_sav="$Extractions"
 Prod_sav="$ExtProducts"
 Ropt_sav="$RDR_OPTS"
+SESSION=$$
 
 # load_exconfig.sh guarantees that Experiment is defined
 . /usr/local/libexec/load_exconfig.sh
@@ -137,8 +138,10 @@ fi
 # instead of the whole .node.pid. Only one rdr allowed per
 # experiment per node.
 #----------------------------------------------------------------
-
-Experiment=${Experiment}.r
+# 2/26/2021 Modified again to use a private session, allowing
+# any number of extractions to run simultaneously
+#----------------------------------------------------------------
+# Experiment=${Experiment}.r
 
 Extractions="$Ex_sav"
 ExtProducts="$Prod_sav"
@@ -175,12 +178,8 @@ function eval_dir {
 }
 
 eval_dir bin/$VERSION
-# This looks like it is for the case where data is archived on an
-# external disk along with binaries for extraction, but the
-# condition does not make sense. If these are actually the same
-# directory, we don't need to list them separately in the PATH
-# [ $dir/../bin/$VERSION -ef bin/$VERSION ] ||
-#   eval_dir $dir/../bin/$VERSION
+[ $dir/../bin/$VERSION -ef bin/$VERSION ] ||
+  eval_dir $dir/../bin/$VERSION
 
 [ -z "$MYPATH" ] &&
   msgf 3 "Unable to locate valid bin directory for version $VERSION"
@@ -225,7 +224,7 @@ done
 # itself.
 #----------------------------------------------------------------
 extdir=$EXTRACT_DIR
-[ -z "$extdir" ] && extdir=anal/Ext.$$
+[ -z "$extdir" ] && extdir=anal/Ext.$SESSION
 [ -d $extdir ] || mkdir -p $extdir
 [ -d $extdir ] || msgf 3 "Unable to create directory $extdir"
 rootdir=$PWD
@@ -259,12 +258,16 @@ function debug {
 
 clean_runfiles -k || msgf 3 "Unable to shutdown earlier operations"
 
-memo -o extract.log -V &
-memo_pid=$!
-memo=/var/run/monarch/$Experiment/memo
-waitfor $memo 10 || exit 1
-bfr -s Unix &
-waitfor /var/run/monarch/$Experiment/tm_bfr 10 || exit 1
+Launch memo memo -S memosrvr:$SESSION -o extract.log -V || exit 1
+memo_pid=`cat /var/run/monarch/$Experiment/memo.$SESSION.pid`
+#memo -S memosrvr:$SESSION -o extract.log -V &
+#memo_pid=$!
+#memo=/var/run/monarch/$Experiment/memo.$SESSION
+#waitfor $memo 10 || exit 1
+
+Launch tm_bfr bfr -S:$SESSION || exit 1
+#bfr -s Unix &
+#waitfor /var/run/monarch/$Experiment/tm_bfr 10 || exit 1
 for ext in "$@"; do
   # echo "ext: $ext"
   if [ $debug = yes ]; then
@@ -275,21 +278,24 @@ for ext in "$@"; do
       appname=$j
       break;
     done
-    $ext -n "$appname" &
-    extpid=$!
-    if waitfor /var/run/monarch/run/$Experiment/$extpid 10 2>/dev/null; then
-      msgf 0 "$ext ($extpid) initialized"
-    else
-      msgf 0 "ERROR: $ext ($extpid) failed to initialize"
-    fi
+    Launch -TMC- $ext -S:$SESSION -n "$appname" ||
+      msgf 0 "ERROR: $ext failed to initialize"
+    # $ext -n "$appname" &
+    # extpid=$!
+    # if waitfor /var/run/monarch/run/$Experiment/$extpid 10 2>/dev/null; then
+    #   msgf 0 "$ext ($extpid) initialized"
+    # else
+    #   msgf 0 "ERROR: $ext ($extpid) failed to initialize"
+    # fi
   fi
   shift
 done
-msgf 0 extract "rdr $RDR_OPTS $time_opts -AqP $dir"
-rdr $RDR_OPTS $time_opts -AqP $dir || rv=1
+msgf 0 extract "rdr -S:$SESSION $RDR_OPTS $time_opts -AqP $dir"
+rdr -S:$SESSION $RDR_OPTS $time_opts -AqP $dir || rv=1
 while kill -0 $memo_pid 2>/dev/null; do
   sleep 1
 done
+msgVdefault='-V'
 
 cd $rootdir
 [ $rv != 0 ] && msgf 3 "Partial result may be in $extdir"
