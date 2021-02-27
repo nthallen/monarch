@@ -55,7 +55,7 @@ void serin::process_tm(serio_pkt_hdr *hdr) {
       // make tstamp with current time and MFCtr
       commit_tstamp(MFCtr, time(0));
       have_tstamp = true;
-    } else if (MFCtr < next_minor_frame) {
+    } else if (MFCtr < tm_info.t_stmp.mfc_num) {
       if (MFCtr < ROLLOVER_MFC) {
         // Just make a new tstamp: must have restarted
         commit_tstamp(MFCtr, time(0));
