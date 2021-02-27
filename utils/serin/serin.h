@@ -13,6 +13,7 @@ class serin : public tm_generator {
     void service_row_timer();
     void process_tm(serio_pkt_hdr *hdr);
   protected:
+    void commit_tstamp(mfc_t MFCtr, le_time_t time);
     bool have_tstamp;
     uint16_t next_minor_frame;
     static const uint16_t TS_MFC_LIMIT = 32767;

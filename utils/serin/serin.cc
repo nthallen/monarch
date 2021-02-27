@@ -94,6 +94,12 @@ void serin::process_tm(serio_pkt_hdr *hdr) {
   if (!regulated) transmit_data(false);
 }
 
+void serin::commit_tstamp(mfc_t MFCtr, le_time_t time) {
+  tm_info.t_stmp.mfc_num = MFCtr;
+  tm_info.t_stmp.secs = time;
+  tm_generator::commit_tstamp(MFCtr, time);
+}
+
 serin_serin::serin_serin(Authenticator *auth, const char *iname,
                          serin *srvr)
     : Serverside_client(auth, iname, serin_serin_bufsize),
