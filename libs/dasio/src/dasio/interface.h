@@ -123,10 +123,19 @@ class Interface {
     virtual ~Interface();
     /**
      * Sets up a write of nc bytes from the buffer pointed to by str.
+     *
      * If the write cannot be accomplished immediately, the information
-     * is saved and handled transparently. The caller is
-     * responsible for allocating the output buffer(s) and ensuring
-     * they are not overrun.
+     * is saved and handled transparently. If an output buffer has been
+     * created via set_obufsize(), then any unwritten data is copied
+     * to the output buffer, and the memory referenced by str may be
+     * immediately reused.
+     *
+     * If no output buffer has been created, then
+     * the unwritten data remains where it is, and the memory cannot be
+     * reused until the write is completed and obuf_empty() is true.
+     *
+     * As a rule, any of the iwrite() methods should not be called
+     * unless obuf_empty() is true.
      * 
      * If an error occurs during writing, iwrite_error(errno) is called,
      * and it's return value is returned.
@@ -138,25 +147,55 @@ class Interface {
     bool iwrite(const char *str, unsigned int nc, unsigned int cp = 0);
     /**
      * Sets up a write of the string s by invoking iwrite(str, nc, 0).
-     * There are risks associated with this invocation if the resulting
-     * string is not transmitted immediately. The string argument must
-     * remain unmodified until entirely transmitted.
+     *
+     * If an output buffer has been
+     * created via set_obufsize(), then any unwritten data is copied
+     * to the output buffer, and the memory referenced by s may be
+     * immediately reused.
+     * If no output buffer has been created, then
+     * the unwritten data remains in str, and the memory cannot be
+     * reused until the write is completed and obuf_empty() is true.
+     *
+     * As a rule, any of the iwrite() methods should not be called
+     * unless obuf_empty() is true.
      * @param s The string to output
      * @return true if event loop should terminate.
      */
     bool iwrite(const std::string &s);
     /**
-     * Sets up a write of the string s by invoking iwrite(str, strlen(str), 0).
-     * The string must remain unmodified until the data has been entirely
-     * transmitted.
-     * @param str The string to output
+     * Sets up a write of the nul-terminated string str by invoking
+     * iwrite(str, strlen(str), 0).
+     *
+     * If an output buffer has been
+     * created via set_obufsize(), then any unwritten data is copied
+     * to the output buffer, and the memory referenced may be
+     * immediately reused.
+     *
+     * If no output buffer has been created, then
+     * the unwritten data remains where it is, and the memory cannot be
+     * reused until the write is completed and obuf_empty() is true.
+     *
+     * As a rule, any of the iwrite() methods should not be called
+     * unless obuf_empty() is true.
+     * @param str The nul-terminated string to output
      * @return true if event loop should terminate.
      */
     bool iwrite(const char *str);
     /**
-     * Sets up a multi-part write. The Interface retains a
-     * pointer to the iov array and will modify it in the event
-     * of an incomplete write.
+     * Sets up a multi-part write.
+     *
+     * If the write cannot be accomplished immediately, the information
+     * is saved and handled transparently. If an output buffer has been
+     * created via set_obufsize(), then any unwritten data is copied
+     * to the output buffer, and the memory referenced may be
+     * immediately reused.
+     *
+     * If no output buffer has been created, then
+     * the unwritten data remains where it is, and the memory cannot be
+     * reused until the write is completed and obuf_empty() is true.
+     *
+     * As a rule, any of the iwrite() methods should not be called
+     * unless obuf_empty() is true.
      * @param iov pointer to an array of iovec structs
      * @param nparts the number of elements in the iov array
      * @return true if event loop should terminate.
