@@ -92,7 +92,7 @@ while (<$fh>) {
     die "mkdoit3: phrtg specified more than once\n" if defined $phrtg;
     $phrtg = 1;
     $progopts{phrtg} = $opts;
-  } elsif ( m/^\s*batchfile\s+(\w+)\s*$/ ) {
+  } elsif ( m/^\s*batchfile\s+([\w\.]+)\s*$/ ) {
     die "mkdoit3: Only one batchfile allowed\n" if defined $batchfile;
     $batchfile = $1;
   } elsif ( m/^\s*memo(?:\s+(\w+)\.log)?\s*$/ ) {
