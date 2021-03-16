@@ -299,11 +299,14 @@ while true; do
         mode='#';;
       swsbase)
         for i in $deps; do
-          add_member tmcbase SWData.tmc
-          add_member tmcbase SWData.h
-          add_member colbase SWData_col.tmc
-          add_member cmdbase SWData.cmd
-          add_member cmdbase SWData.h
+          case $i in
+            *.sws)
+              add_member tmcbase SWData.tmc
+              add_member tmcbase SWData.h
+              add_member colbase SWData_col.tmc
+              add_member cmdbase SWData.cmd
+              add_member cmdbase SWData.h;;
+          esac
         done;;
       qclibase)
         for i in $deps; do
@@ -718,7 +721,7 @@ done
 #----------------------------------------------------------------
 # Clean up a little
 #----------------------------------------------------------------
-unset -f replace_each replace_all
+unset -f replace_each
 
 # output_macro name definition
 # outputs name=definition, but adds continuation characters
@@ -842,8 +845,14 @@ for i in $targets; do
 done
 
 if [ -n "$swsbase" ]; then
-  echo "SWData.h SWData.tmc SWData_col.tmc SWData.cmd : $swsbase"
-  echo "${tab}swscomp -o SWData $swsbase"
+  deps=''
+  for i in $swsbase; do
+    case $i in
+      *.sws) deps="$deps $i";;
+    esac
+  done
+  [ -n "$deps" ] &&
+    echo "SWData.h SWData.tmc SWData_col.tmc SWData.cmd :$deps${nl}${tab}swscomp -o SWData$deps"
 fi
 
 if [ -n "$qclibase" ]; then
