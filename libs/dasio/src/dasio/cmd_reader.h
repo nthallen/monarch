@@ -31,7 +31,7 @@ namespace DAS_IO {
    * Within cmdgen, a command channel is defined using the syntax
    * '%INTERFACE <cmdchannel>' (for a channel named 'cmdchannel').
    * Within the cmdgen source, commands can be written to the
-   * channel using the syntax: cmdchannel_if.Turf(fmt, args ...)
+   * channel using the syntax: if_cmdchannel.Turf(fmt, args ...)
    * where cmdchannel is replaced with the channel name, and fmt
    * and args are standard printf-style arguments.
    */
