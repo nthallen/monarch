@@ -19,18 +19,21 @@ if [ "$1" = "--help" -o "$1" = "-h" ]; then
 fi
 
 crargs=''
-if [ "$1" = "cross" ]; then
-  shift
-  crname='-cross'
-else
-  crname=''
-fi
-
-if [ -n "$1" ]; then
-  msg "Unrecognized option: '$1'"
-  print_usage
-  exit 0
-fi
+crname=''
+install=''
+while [ -n "$1" ]; do
+  if [ "$1" = "cross" ]; then
+    shift
+    crname='-cross'
+  elif [ "$1" = "install" ]; then
+    shift
+    install=install
+  else
+    msg "Unrecognized option: '$1'"
+    print_usage
+    exit 0
+  fi
+done
 
 subdir=''
 relsrcroot='../git'
@@ -54,9 +57,15 @@ if [ ! -d $builddir ]; then
   msg Creating build $builddir
   mkdir -p $builddir
   cd $builddir
-  cmake -DCMAKE_BUILD_TYPE=Debug $crargs $relsrcroot$subdir && make
+  cmake -DCMAKE_BUILD_TYPE=Debug $crargs $relsrcroot$subdir ||
+    nl_error "cmake failed. You will probably need to delete the build directory"
 else
   msg Using existing $builddir
   cd $builddir
-  make
+fi
+make $install
+if [ "$install" = "install" ]; then
+  [ -d ../git ] || nl_error "Expected to be in build dir: cannot see ../git"
+  cd ../git
+  ./build_playback && ./build_playback install
 fi
