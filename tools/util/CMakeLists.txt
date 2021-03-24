@@ -40,6 +40,7 @@ install(FILES
   DESTINATION share/monarch)
 
 install(FILES
+  Version.agm
   loop.cmd
   DESTINATION share/monarch/modules)
 

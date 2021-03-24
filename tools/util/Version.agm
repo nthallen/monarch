@@ -1,0 +1,10 @@
+Moduledef Version [ src= ] {
+  The module's purpose is to support multiple instrument configurations
+  via multiple .spec files. Since different configurations usually
+  require different VERSIONs, it makes sense to associate the
+  version with each .spec file.
+}
+
+- : VERSION:@src@
+IGNORE = VERSION
+
