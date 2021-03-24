@@ -52,7 +52,8 @@ namespace DAS_IO {
   }
   
   void TM_data_rcvr::synch() {
-    iwrite("\n");
+    if (obuf_empty())
+      iwrite("\n");
   }
   
   void TM_data_rcvr_def::synch() {
