@@ -21,6 +21,12 @@ class Timeout {
      */
     void Set( le_time_t secs, long msecs );
     /**
+     * Adds the specified delay to the current timeout value.
+     * @param secs Seconds
+     * @param msecs Milleseconds
+     */
+    void Add( le_time_t secs, long msecs );
+    /**
      * Clears any current timeout setting.
      */
     void Clear();

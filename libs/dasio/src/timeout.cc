@@ -13,11 +13,15 @@ Timeout::Timeout() {
 }
 
 void Timeout::Set( le_time_t secs, long msecs ) {
-  int whole_secs;
   int rv = clock_gettime(CLOCK_REALTIME, &when);
   if ( rv == -1 )
     msg(MSG_FATAL, "Error from clock_gettime(); '%s'",
       strerror(errno) );
+  Add(secs, msecs);
+}
+
+void Timeout::Add( le_time_t secs, long msecs ) {
+  int whole_secs;
   msecs += when.tv_nsec/1000000L;
   whole_secs = secs + msecs/1000;
   when.tv_sec += whole_secs;
