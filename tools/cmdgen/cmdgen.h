@@ -1,30 +1,9 @@
 /* cmdgen.h Definitions for Command Parser Generator
- * $Log$
- * Revision 1.6  2007/05/01 17:42:27  ntallen
- * Added %INTERFACE <name> spec
- *
- * Revision 1.5  2004/10/08 17:07:09  nort
- * Mostly keyword differences
- *
- * Revision 1.4  1994/09/08  13:45:54  nort
- * Removed new_memory() and free_memory() definitions now provided
- * by nortlib
- *
- * Revision 1.3  1992/10/27  08:38:20  nort
- * Added command line options
- *
- * Revision 1.2  1992/10/22  18:37:14  nort
- * Removed pipe_tail() prototype
- *
- * Revision 1.1  1992/10/20  19:55:06  nort
- * Initial revision
- *
- * Revision 1.1  1992/07/09  18:36:44  nort
- * Initial revision
- *
  */
 #include <stdio.h>
 #include <stdbool.h>
+
+#define CMDGEN_VERSION "V2.1"
 
 #define TABSIZE 4
 struct vtyp {
@@ -78,6 +57,7 @@ struct sub_item_t {
 typedef union {
   char *str_val;
   bool bool_val;
+  int int_val;
   struct nt_t *nt_val;
   struct sub_t *sub_val;
   struct sub_item_t *subi_val;
@@ -131,6 +111,10 @@ typedef struct stt {
   unsigned short nonterm_offset; /* offset into non_terminals[] */
 } state;
 
+#define IF_USE_FLIGHT 1
+#define IF_USE_TX 2
+#define IF_USE_COORD 3
+
 extern YYSTYPE yyval, yylval;
 int yyparse(void); /* yyparse.y */
 void app_error(unsigned int level, char *s, ...); /* yyparse.y */
@@ -161,7 +145,7 @@ void output_prompts(void); /* prompts.c */
 void output_shifts(void); /* states.c */
 void output_states(void); /* states.c */
 void output_rules(void); /* rules.c */
-void new_interface( char *int_name );
+void new_interface(char *int_name, int usage);
 void output_interfaces(void);
 
 extern void cmdgen_init_options(int argc, char **argv);

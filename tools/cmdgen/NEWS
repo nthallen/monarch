@@ -1,2 +1,4 @@
+Arbitrarily set version at V2.1 2021-03-025
+  Added hooks for transmitting commands to a remote instrument
 Development moved from arp-das to monarch 2018-12-16
 Added automake/autoconf stuff 2007-04-25

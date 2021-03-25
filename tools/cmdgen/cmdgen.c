@@ -228,7 +228,7 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   Skel_open("cmdgen.skel");
   time_of_day = time(NULL);
-  fprintf(ofile, "/* cmdgen output */\n"); // Formerly included date
+  fprintf(ofile, "/* cmdgen " CMDGEN_VERSION " output */\n"); // Formerly included date
   Skel_copy(ofile, "headers", 1);
   if (yyparse() != 0) msg(3, "Parsing failed\n");
   if (error_level == 0) {

@@ -33,26 +33,30 @@
 %token <str_val> TK_C_CODE
 %token <str_val> TK_PROMPT
 %token <str_val> TK_INTERFACE
+%token <str_val> TK_INTERFACE_TX
+%token <str_val> TK_INTERFACE_COORD
 %token <str_val> TK_BLOCK_KB
 %type <nt_val> Rule
 %type <nt_val> nt_spec
 %type <type_val> type_spec
+%type <sub_val> sub_rule
 %type <sub_val> sub_items
 %type <subi_val> sub_item
 %type <str_val> var_prmpt
 %type <bool_val> opt_block
+%type <int_val> interface
 %%
 Rules     :
           | Rules Rule ';' {
               if ($2->rules.first == NULL)
                 compile_error(3, "Non-terminal has no rules");
             }
-          | Rules TK_INTERFACE TK_TYPE_SPEC {
-              new_interface( $3 );
+          | Rules interface TK_TYPE_SPEC {
+              new_interface($3, $2);
             }
           ;
 Rule	  : nt_spec
-          | Rule ':' sub_items {
+          | Rule ':' sub_rule {
               /* If Rule is a Client nt, check for dummy nts
                  and make them client nts also.
               */
@@ -84,18 +88,20 @@ nt_spec	  : TK_NON_TERMINAL type_spec {
 type_spec : { $$ = NULL; }
           | TK_TYPE_SPEC { $$ = get_vtype($1); }
           ;
+sub_rule  : sub_items { $$ = $1; }
+          | sub_items opt_block TK_C_CODE {
+              if ($1->action != NULL) dmy_non_term($1);
+              $1->action = $3;
+              $1->kb_block = $2;
+              $$ = $1;
+            }
+          ;
 sub_items : { $$ = new_sub(); }
           | sub_items sub_item {
               if ($1->action != NULL) dmy_non_term($1);
               if ($1->items.last == NULL)
                 $1->items.first = $1->items.last = $2;
               else $1->items.last = $1->items.last->next = $2;
-              $$ = $1;
-            }
-          | sub_items opt_block TK_C_CODE {
-              if ($1->action != NULL) dmy_non_term($1);
-              $1->action = $3;
-              $1->kb_block = $2;
               $$ = $1;
             }
           ;
@@ -126,4 +132,8 @@ var_prmpt : { $$ = NULL; }
           ;
 opt_block : { $$ = false; }
           | TK_BLOCK_KB { $$ = true; }
+          ;
+interface : TK_INTERFACE       { $$ = IF_USE_FLIGHT; }
+          | TK_INTERFACE_TX    { $$ = IF_USE_TX; }
+          | TK_INTERFACE_COORD { $$ = IF_USE_COORD; }
           ;

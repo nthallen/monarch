@@ -71,6 +71,19 @@ struct nt_t *non_terminal(char *name) {
 /* Dummy non-terminals are given names beginning with '_'.
    These could later be changed to '&' if they are part of
    a Client reduction.
+   
+   These were created in order to support actions before the
+   end of a rule expansion:
+     : foo bar { printf("We are at bar\n"); } baz * { $0 = 7; }
+   This is restructured as:
+     : foo bar &_34 baz * { $0 = 7; }
+     ;
+     &_34 : { printf("We are at bar\n"); }
+     ;
+   The only motivation for providing those actions I can think
+   of is for debugging the parser generator. I have restructured
+   the grammar to disallow their use, so dmy_non_term should
+   never be reached.
 */
 void dmy_non_term(struct sub_t *sub) {
   static int dummy_num = 0;

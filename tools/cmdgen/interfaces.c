@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
+#include <stdbool.h>
 #include "cmdgen.h"
 #include "compiler.h"
 #include "nl.h"
@@ -8,17 +9,19 @@
 typedef struct if_list_s {
   struct if_list_s *next;
   int if_type;
+  int if_usage;
   char *if_name;
   char *if_path;
 } if_list_t;
 static if_list_t *if_list, *if_last;
+static const char *transmitting_if;
 
 #define IFT_READ 1
 #define IFT_WRITE 2
 #define IFT_DGDATA 3
 #define IFT_SUBBUS 4
 
-void new_interface( char *if_name ) {
+void new_interface(char *if_name, int usage) {
   const char *cmd_class = 0;
   char *s;
 
@@ -32,6 +35,7 @@ void new_interface( char *if_name ) {
   if_last = new_if;
   new_if->next = NULL;
   new_if->if_name = if_name;
+  new_if->if_usage = usage;
   new_if->if_path = NULL;
   for ( s = if_name; *s; ++s ) {
     if ( *s == ':' ) {
@@ -57,7 +61,26 @@ void new_interface( char *if_name ) {
     new_if->if_type = IFT_READ;
   }
   if (cmd_class) {
-    fprintf( ofile, "#ifdef SERVER\n" );
+    const char *condition;
+    switch (usage) {
+      case IF_USE_TX:
+        condition = "defined(SERVER) && defined(TRANSMITTING)";
+        if (transmitting_if)
+          msg(1,
+            "Ignoring redefinition of transmitting interface if_%s with if_%s",
+            transmitting_if, if_name);
+        else transmitting_if = if_name;
+        break;
+      case IF_USE_FLIGHT:
+        condition = "defined(SERVER) && !defined(TRANSMITTING)";
+        break;
+      case IF_USE_COORD:
+        condition = "defined(SERVER)";
+        break;
+      default:
+        msg(4, "Invalid usage code %d for interface %s", new_if->if_usage, if_name);
+    }
+    fprintf( ofile, "#if %s\n", condition);
     switch (new_if->if_type) {
       case IFT_WRITE:
         fprintf( ofile, "  %s if_%s(\"%s\", \"%s\");\n",
@@ -80,38 +103,84 @@ void new_interface( char *if_name ) {
 
 void output_interfaces(void) {
   if_list_t *cur_if;
+  const char *condition;
+  bool conditioned = false;
   fprintf( ofile, "\n#ifdef SERVER\n" );
   fprintf( ofile, "  void cis_interfaces(void) {\n" );
-  for ( cur_if = if_list; cur_if; cur_if = cur_if->next ) {
-    switch (cur_if->if_type) {
-      case IFT_READ:
-      case IFT_WRITE:
-      case IFT_DGDATA:
-        fprintf( ofile, "    if_%s.Setup();\n", cur_if->if_name );
+  for (int usage = IF_USE_COORD; usage >= IF_USE_FLIGHT; --usage) {
+    // That's COORD, TX and FLIGHT, in that order
+    switch (usage) {
+      case IF_USE_FLIGHT:
+        condition = transmitting_if ? "#else" : 0;
         break;
-      case IFT_SUBBUS:
-        break; // initialization is handled by subbus.oui
-      default:
-        msg(4, "Unexpected interface type: %d", cur_if->if_type );
+      case IF_USE_TX:
+        condition = "#ifdef TRANSMITTING";
+        break;
+      case IF_USE_COORD:
+        condition = 0;
+        break;
     }
-    // fprintf( ofile, "    if_%s = cis_setup_rdr(\"%s\");\n",
-    //    cur_if->if_name, cur_if->if_name );
+    for ( cur_if = if_list; cur_if; cur_if = cur_if->next ) {
+      if (cur_if->if_usage == usage) {
+        if (condition) {
+          fprintf(ofile, "  %s\n", condition);
+          condition = 0;
+          conditioned = true;
+        }
+        switch (cur_if->if_type) {
+          case IFT_READ:
+          case IFT_WRITE:
+          case IFT_DGDATA:
+            fprintf( ofile, "    if_%s.Setup();\n", cur_if->if_name );
+            break;
+          case IFT_SUBBUS:
+            break; // initialization is handled by subbus.oui
+          default:
+            msg(4, "Unexpected interface type: %d", cur_if->if_type );
+        }
+      }
+    }
   }
+  if (conditioned)
+    fprintf(ofile, "  #endif\n");
   fprintf( ofile, "  };\n\n" );
   fprintf( ofile, "  void cis_interfaces_close(void) {\n" );
-  for ( cur_if = if_list; cur_if; cur_if = cur_if->next ) {
-    switch (cur_if->if_type) {
-      case IFT_READ:
-      case IFT_WRITE:
-      case IFT_DGDATA:
-        fprintf( ofile, "    if_%s.Shutdown();\n", cur_if->if_name );
+  for (int usage = IF_USE_COORD; usage >= IF_USE_FLIGHT; --usage) {
+    // That's COORD, TX and FLIGHT, in that order
+    switch (usage) {
+      case IF_USE_FLIGHT:
+        condition = transmitting_if ? "#else" : 0;
         break;
-      case IFT_SUBBUS:
-        fprintf( ofile, "    subbus_quit();\n" );
+      case IF_USE_TX:
+        condition = "#ifdef TRANSMITTING";
         break;
-      default:
-    msg(4, "Unexpected interface type: %d", cur_if->if_type );
+      case IF_USE_COORD:
+        condition = 0;
+        break;
+    }
+    for ( cur_if = if_list; cur_if; cur_if = cur_if->next ) {
+      if (cur_if->if_usage == usage) {
+        if (condition) {
+          fprintf(ofile, "  %s\n", condition);
+          condition = 0;
+          conditioned = true;
+        }
+        switch (cur_if->if_type) {
+          case IFT_READ:
+          case IFT_WRITE:
+          case IFT_DGDATA:
+            fprintf( ofile, "    if_%s.Shutdown();\n", cur_if->if_name );
+            break;
+          case IFT_SUBBUS:
+            fprintf( ofile, "    subbus_quit();\n" );
+            break;
+          default:
+            msg(4, "Unexpected interface type: %d", cur_if->if_type );
+        }
+      }
     }
   }
+  if (conditioned)
+    fprintf(ofile, "  #endif\n");
   fprintf( ofile, "  }\n#endif\n\n" );
 }
