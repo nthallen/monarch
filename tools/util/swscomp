@@ -32,6 +32,7 @@ my $prefix = $opts{o} || "SWData";
 my $iprefix = $opts{p} || $prefix;
 my $curvar;
 my $tma_output = 0;
+my $transmitting = 0;
 
 if ( $opts{A} ) {
   $prefix .= ".tma" unless $prefix =~ m/\.tma$/;
@@ -106,6 +107,8 @@ for my $file ( @ARGV ) {
     } elsif ( $line =~ s/^\s+:\s+/: / ) {
       chomp($line);
       push(@{$cmds{$curvar}}, "  $line");
+    } elsif ( $line =~ m/^\s*transmitting/i ) {
+      $transmitting = 1;
     } elsif ( $line =~ m/^\s*(?:#.*)?$/ ) {
       # Comment or empty line
     } else {
@@ -182,6 +185,7 @@ EOF
   close $of || warn "Error closing ${prefix}_col.tmc\n";
 
   # $prefix.cmd
+  my $cmdroot = $transmitting ? "&^command" : "&command";
   open($of, ">", "${prefix}.cmd") ||
     die "Unable to write to ${prefix}.cmd\n";
   print $of <<EOF;
@@ -194,7 +198,7 @@ EOF
 
 %INTERFACE <$prefix:DG/data>
 
-&command
+$cmdroot
   : &SWTM * { if_$prefix.Turf(); }
   ;
 &SWTM

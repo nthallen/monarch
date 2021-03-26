@@ -129,6 +129,7 @@ namespace DAS_IO {
           consume(nc);
           return iwrite("E4: Invalid character in command or text after newline\n");
         }
+        ++s;
         msg( quiet ? -2 : 0, "%s: %*.*s",
           mnemonic, len, len, cmd );
         cmd_init();
