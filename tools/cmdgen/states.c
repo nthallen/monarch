@@ -245,7 +245,7 @@ void eval_states(void) {
          has any sub items, we can't.
       */
       if (ntl->nt->rules.first == NULL)
-        compile_error(2, "non-terminal %s is undefined", ntl->nt->name);
+        compile_error(2, "non-terminal %s has no rules", ntl->nt->name);
       nst = new_state();
       for (rl = st->rules; rl != NULL; rl = rl->next) {
         if (rl->si != NULL

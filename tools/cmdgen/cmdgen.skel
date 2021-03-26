@@ -428,6 +428,10 @@ static int ibufidx;
   int cgc_exit_code = 0;
 #endif
 
+#if defined(CMD_BATCH_MODE) && defined(TRANSMITTING)
+  static char *cmd_base;
+#endif
+
 %typedefs%
 
 #define VSTACK_SIZE 20
@@ -713,9 +717,6 @@ static void con_cleanup( void ) {
 
 #ifdef CMD_BATCH_MODE
   static char *cmd_input;
-  #ifdef TRANSMITTING
-    static char *cmd_base;
-  #endif
 #endif
 
 static unsigned short input(void) {

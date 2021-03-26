@@ -47,10 +47,7 @@
 %type <int_val> interface
 %%
 Rules     :
-          | Rules Rule ';' {
-              if ($2->rules.first == NULL)
-                compile_error(3, "Non-terminal has no rules");
-            }
+          | Rules Rule ';'
           | Rules interface TK_TYPE_SPEC {
               new_interface($3, $2);
             }

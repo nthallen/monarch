@@ -4,8 +4,8 @@
   #include "nl.h"
 %}
 
-%INTERFACE <tm_gen:tm_gen/cmd>
-%INTERFACE <Quit>
+%INTERFACE(Coord) <tm_gen:tm_gen/cmd>
+%INTERFACE(Coord) <Quit>
 
 &start
   : &commands Quit * %BLOCK_KB {

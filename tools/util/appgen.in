@@ -370,7 +370,7 @@ for tgt in $targets; do
     *dispnc) deps="$tmcbase $deps";;
     *clt) deps="$cmdbase $deps";;
     *cltnc) deps="$cmdbase $deps";;
-    *srvr) deps="$cmdbase $deps"; SERVER=$tgt;;
+    *srvr) deps="$cmdbase $deps"; [ -z "$SERVER" ] && SERVER=$tgt;;
     *doit) : ;;
     *.dccc) : ;;
     *.sft) : ;;
@@ -629,7 +629,9 @@ for i in $basetargets; do
         nl_error Client $i with no cmd.cc files
       fi;;
     *srvr)
-      if replace_each cmd.cc srvr.o "\$(COMPILE.srvr)" -h "$hdeps" $deps
+      srvrsuffix=srvr
+      [ "${i: -6}" = txsrvr ] && srvrsuffix=txsrvr
+      if replace_each cmd.cc $srvrsuffix.o "\$(COMPILE.$srvrsuffix)" -h "$hdeps" $deps
       then
         add_member ouis cmd_server
         add_member ouis seteuid

@@ -18,13 +18,13 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <assert.h>
+#include <stdbool.h>
 #include "cmdgen.h"
 #include "compiler.h"
 
 #define IND_NOT_SET 10000
 #define ELT_HAS_VAL 1
 #define ELT_IS_NT 2
-#define ELT_IS_TX 4
 #define MAXELTS 20
 #define CASEINDENT 4
 #define CONDINDENT (CASEINDENT+2)
@@ -39,6 +39,7 @@ static void output_action(unsigned short rnum) {
   unsigned char eflags[MAXELTS], n_elts = 0;
   char *members[MAXELTS];
   struct sub_item_t *si;
+  bool tx_rule = false;
 
   for (si = rules[rnum]->items.first; si != NULL; si = si->next) {
     if (n_elts >= MAXELTS)
@@ -71,7 +72,7 @@ static void output_action(unsigned short rnum) {
       members[n_elts] = rules[rnum]->reduces->type->member;
     }
     if (transmitting_if && rules[rnum]->reduces->name[0] == '^') {
-      eflags[n_elts] |= ELT_IS_TX;
+      tx_rule = true;
     }
   }
 
@@ -83,9 +84,16 @@ static void output_action(unsigned short rnum) {
     indent(BASEINDENT);
     fprintf(ofile, "if (ioflags & IOF_EXECUTE)\n");
     indent(BASEINDENT);
-    if (transmitting_if)
+    if (transmitting_if && tx_rule) {
       fprintf(ofile, "#if %sdefined(TRANSMITTING)\n",
-        eflags[n_elts] & ELT_IS_TX ? "" : "!");
+        tx_rule ? "" : "!");
+      indent(BASEINDENT+2);
+      fprintf(ofile,
+        "if_%s.Turf(\"\%%s\", cmd_base);\n", transmitting_if);
+      indent(BASEINDENT);
+      fprintf(ofile, "#else\n");
+      indent(BASEINDENT);
+    }
     while (*act != '\0') switch(*act) {
       case '\n':
         for (nsp = 0;; act++) {
@@ -157,10 +165,9 @@ static void output_action(unsigned short rnum) {
         break;
     }
     putc('\n', ofile);
-    if (transmitting_if) {
-      fprintf(ofile,
-        "if_%s.Turf(\"\%%s\", cmd_base);\n"
-        "#endif\n", transmitting_if); // close out the TRANSMITTING condition
+    if (transmitting_if && tx_rule) {
+      indent(BASEINDENT);
+      fprintf(ofile, "#endif\n"); // close out the TRANSMITTING condition
     }
     if (rules[rnum]->reduces->name[0] != '&') {
       indent(CONDINDENT);

@@ -43,6 +43,7 @@ CMDGEN=cmdgen -o $@
 COMPILE.clt=$(COMPILE.cc) -o $@ -D CLIENT
 COMPILE.cltnc=$(COMPILE.cc) -o $@ -D CLIENT -D NCT_INTERFACE=1
 COMPILE.srvr=$(COMPILE.cc) -o $@ -D SERVER
+COMPILE.txsrvr=$(COMPILE.cc) -o $@ -D SERVER -D TRANSMITTING
 COMPILE.sws=swscomp -o $@ -p SWData -A
 COMPILE.tbl=phtable
 COMPILE.tblnc=nctable

@@ -109,15 +109,15 @@
     yylval.nt_val = non_terminal(yytext+1);
     return(TK_NON_TERMINAL);
   }
-%INTERFACE(Tx) {
+%INTERFACE\(Tx\) {
     yylval.str_val = "";
     return( TK_INTERFACE_TX );
   }
-%INTERFACE(Flight) {
+%INTERFACE\(Flight\) {
     yylval.str_val = "";
     return( TK_INTERFACE );
   }
-%INTERFACE(Coord) {
+%INTERFACE\(Coord\) {
     yylval.str_val = "";
     return( TK_INTERFACE_COORD );
   }
