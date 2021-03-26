@@ -123,16 +123,12 @@ namespace DAS_IO {
 
         // Now s points to a command we want to parse.
         // Make sure it's kosher
-        while ( *s ) {
-          if ( ! isprint(*s) && *s != '\n' ) {
-            report_err("%s: Invalid character in command", iname);
-            consume(nc);
-            return iwrite("E4: Invalid character in command\n");
-          }
-          len++;
-          s++;
+        for ( ; isprint(*s); ++s, ++len) {}
+        if (*s != '\n' || s[1] != '\0' ) {
+          report_err("%s: Invalid character or text after newline", iname);
+          consume(nc);
+          return iwrite("E4: Invalid character in command or text after newline\n");
         }
-        if ( len > 0 && cmd[len-1] == '\n' ) len--;
         msg( quiet ? -2 : 0, "%s: %*.*s",
           mnemonic, len, len, cmd );
         cmd_init();
