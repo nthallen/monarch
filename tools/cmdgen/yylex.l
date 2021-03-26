@@ -105,7 +105,7 @@
   yylval.str_val = strdup(act);
   return(TK_C_CODE);
 }
-\&\&?[a-z][a-z_0-9]+ {
+\&[\&^]?[a-z][a-z_0-9]+ {
     yylval.nt_val = non_terminal(yytext+1);
     return(TK_NON_TERMINAL);
   }

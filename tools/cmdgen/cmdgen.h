@@ -132,6 +132,7 @@ struct nt_t *non_terminal(char *name); /* dstructs.c */
 void dmy_non_term(struct sub_t *sub); /* dstructs.c */
 struct sub_t *new_sub(void); /* dstructs.c */
 struct sub_item_t *new_sub_item(unsigned type); /* dstructs.c */
+extern const char *transmitting_if; /* interfaces.c */
 extern state **states; /* states.c */
 extern unsigned short n_states; /* states.c */
 extern unsigned short max_tokens; /* states.c */

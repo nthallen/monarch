@@ -1,34 +1,5 @@
 /* rules.c
  *
- * $Log$
- * Revision 1.7  1997/01/06 00:18:43  nort
- * Moved default case to top of rule_action() to eliminate warnings.
- *
- * Revision 1.6  1995/05/25  17:21:24  nort
- * Use standard nortlib compiler functions
- *
- * Revision 1.5  1994/02/14  21:23:12  nort
- * Older changes.
- * Added a redundant exit(1) after CMD_ERROR()
- *
- * Revision 1.4  1993/07/27  18:48:44  nort
- * Added default to rule_action(switch(){})
- *
- * Revision 1.3  1993/05/18  13:11:19  nort
- * Client/Server Support in output
- *
- * Revision 1.2  1992/10/27  01:09:39  nort
- * Added conditional around user actions
- *
- * Revision 1.1  1992/10/20  20:28:46  nort
- * Initial revision
- *
- * Revision 1.3  1992/09/03  16:06:44  nort
- * Moved vsp++ before the nterm_shift when generating rules.
- *
- * Revision 1.2  1992/07/10  19:31:47  nort
- * Resolved many stack inconsistencies.
- *
  * Revision 1.1  1992/07/09  18:36:44  nort
  * Initial revision
  *
@@ -53,6 +24,7 @@
 #define IND_NOT_SET 10000
 #define ELT_HAS_VAL 1
 #define ELT_IS_NT 2
+#define ELT_IS_TX 4
 #define MAXELTS 20
 #define CASEINDENT 4
 #define CONDINDENT (CASEINDENT+2)
@@ -93,20 +65,27 @@ static void output_action(unsigned short rnum) {
     n_elts++;
   }
   eflags[n_elts] = 0;
-  if (rules[rnum]->reduces != NULL
-      && rules[rnum]->reduces->type != NULL) {
-    eflags[n_elts] = ELT_HAS_VAL;
-    members[n_elts] = rules[rnum]->reduces->type->member;
+  if (rules[rnum]->reduces != NULL) {
+    if (rules[rnum]->reduces->type != NULL) {
+      eflags[n_elts] |= ELT_HAS_VAL;
+      members[n_elts] = rules[rnum]->reduces->type->member;
+    }
+    if (transmitting_if && rules[rnum]->reduces->name[0] == '^') {
+      eflags[n_elts] |= ELT_IS_TX;
+    }
   }
 
   act = rules[rnum]->action;
   if (act != NULL) {
     indent(CONDINDENT);
-    fprintf(ofile, "#ifdef %s_ACTIONS\n",
+    fprintf(ofile, "#if defined(%s_ACTIONS)\n",
       rules[rnum]->reduces->name[0] == '&' ? "CLIENT" : "SERVER");
     indent(BASEINDENT);
     fprintf(ofile, "if (ioflags & IOF_EXECUTE)\n");
     indent(BASEINDENT);
+    if (transmitting_if)
+      fprintf(ofile, "#if %sdefined(TRANSMITTING)\n",
+        eflags[n_elts] & ELT_IS_TX ? "" : "!");
     while (*act != '\0') switch(*act) {
       case '\n':
         for (nsp = 0;; act++) {
@@ -178,6 +157,11 @@ static void output_action(unsigned short rnum) {
         break;
     }
     putc('\n', ofile);
+    if (transmitting_if) {
+      fprintf(ofile,
+        "if_%s.Turf(\"\%%s\", cmd_base);\n"
+        "#endif\n", transmitting_if); // close out the TRANSMITTING condition
+    }
     if (rules[rnum]->reduces->name[0] != '&') {
       indent(CONDINDENT);
       fprintf(ofile, "#else\n");

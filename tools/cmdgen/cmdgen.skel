@@ -713,6 +713,9 @@ static void con_cleanup( void ) {
 
 #ifdef CMD_BATCH_MODE
   static char *cmd_input;
+  #ifdef TRANSMITTING
+    static char *cmd_base;
+  #endif
 #endif
 
 static unsigned short input(void) {
@@ -1199,7 +1202,10 @@ void cmd_init(void) {
   ioflags = IOF_UPDATE | IOF_EXECUTE | IOF_INTERACTIVE;
   iomode = IOMODE_INIT;
   #ifdef CMD_BATCH_MODE
-    cmd_input = NULL;
+    cmd_input = 0;
+  #ifdef TRANSMITTING
+    cmd_base = 0;
+  #endif
   #endif
   tsp = -1;
   #ifdef NEED_VALUES
@@ -1279,11 +1285,14 @@ static int cmd_exec(void) {
     short old_iomode;
     int retval;
 
-    assert(cmd != NULL);
+    assert(cmd != 0);
     assert(ioflags & IOF_INTERACTIVE);
-    assert(cmd_input == NULL);
+    assert(cmd_input == 0);
     old_iomode = iomode;
     iomode = 0;
+    #ifdef TRANSMITTING
+      cmd_base =
+    #endif
     cmd_input = cmd;
     ioflags &= ~IOF_INTERACTIVE;
     flaghold = ioflags & IOF_EXECUTE;
@@ -1293,7 +1302,10 @@ static int cmd_exec(void) {
     if (retval == CMDREP_SYNERR) retval += (cmd_input - cmd);
     ioflags = (ioflags & ~IOF_EXECUTE) | flaghold | IOF_INTERACTIVE;
     iomode = old_iomode;
-    cmd_input = NULL;
+    #ifdef TRANSMITTING
+      cmd_base =
+    #endif
+    cmd_input = 0;
     return retval;
   }
 #endif

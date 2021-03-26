@@ -14,7 +14,7 @@ typedef struct if_list_s {
   char *if_path;
 } if_list_t;
 static if_list_t *if_list, *if_last;
-static const char *transmitting_if;
+const char *transmitting_if;
 
 #define IFT_READ 1
 #define IFT_WRITE 2
