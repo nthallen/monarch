@@ -334,12 +334,12 @@ if [ $srcmode = realtime ]; then
   fi
 elif [ $srcmode = playback ]; then
   lcllogfile=$logfileroot.PB.$SESSION.log
-  rmtlogfile=$lcllogfile
+  # rmtlogfile=$lcllogfile
   TM_OPT=''
   CMD_OPT=''
 elif [ $srcmode = SerIn ]; then
   lcllogfile=$logfileroot.SI.$SESSION.log
-  rmtlogfile=$lcllogfile
+  # rmtlogfile=$lcllogfile
   TM_OPT=''
   CMD_OPT=''
 else
@@ -523,12 +523,15 @@ print $fh <<'EOF';
 if [ -n "$rmtlogfile" ]; then
   # log="-Logfile \"less.$SESSION.log\" -L"
   if [ $FltNode_Access = Remote ]; then
-    msgf -V 0 "Starting less on remote system"
+    msgf -V 0 "Starting less $rmtlogfile on remote system"
     screen -t logfile /bin/sh -c "echo \$\$ >less.pid.$SESSION; exec $SSH_CMD less +F $rmtlogfile"
   else
-    msgf -V 0 "Starting less on local system"
+    msgf -V 0 "Starting less $rmtlogfile on local system"
     screen -t logfile /bin/sh -c "echo \$\$ >less.pid.$SESSION; exec less +F $rmtlogfile"
   fi
+else
+  msgf -V 0 "Starting less $lcllogfile on local system"
+  screen -t logfile /bin/sh -c "echo \$\$ >less.pid.$SESSION; exec less +F $lcllogfile"
 fi
 
 TMRUNDIR=/var/run/monarch/run/$Experiment

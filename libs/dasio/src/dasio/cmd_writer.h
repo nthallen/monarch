@@ -102,10 +102,9 @@ void cic_set_playback(bool playback);
 
 /**
  * If not in playback mode,
- * Locates the command server using either the default node
- * information or the information set by cic_options -C <node>.
- * Once located, if ci_version is
- * non-empty, the version is queried.
+ * Locates the command server using the standard host/socket
+ * resolution rules (-H/-S) and the service function "srvr".
+ * Once located, if ci_version is non-empty, the version is queried.
  *
  * This version does not connect to cmd/Quit, since that needs
  * to happen at a different level.
