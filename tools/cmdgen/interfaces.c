@@ -110,14 +110,15 @@ void output_interfaces(void) {
   for (int usage = IF_USE_COORD; usage >= IF_USE_FLIGHT; --usage) {
     // That's COORD, TX and FLIGHT, in that order
     switch (usage) {
-      case IF_USE_FLIGHT:
-        condition = transmitting_if ? "#else" : 0;
+      case IF_USE_COORD:
+        condition = 0;
         break;
       case IF_USE_TX:
         condition = "#ifdef TRANSMITTING";
         break;
-      case IF_USE_COORD:
-        condition = 0;
+      case IF_USE_FLIGHT:
+        condition = conditioned ?
+          "#else" : "#ifndef TRANSMITTING";
         break;
     }
     for ( cur_if = if_list; cur_if; cur_if = cur_if->next ) {
@@ -143,19 +144,21 @@ void output_interfaces(void) {
   }
   if (conditioned)
     fprintf(ofile, "  #endif\n");
+  conditioned = false;
   fprintf( ofile, "  };\n\n" );
   fprintf( ofile, "  void cis_interfaces_close(void) {\n" );
   for (int usage = IF_USE_COORD; usage >= IF_USE_FLIGHT; --usage) {
     // That's COORD, TX and FLIGHT, in that order
     switch (usage) {
-      case IF_USE_FLIGHT:
-        condition = transmitting_if ? "#else" : 0;
+      case IF_USE_COORD:
+        condition = 0;
         break;
       case IF_USE_TX:
         condition = "#ifdef TRANSMITTING";
         break;
-      case IF_USE_COORD:
-        condition = 0;
+      case IF_USE_FLIGHT:
+        condition = conditioned ?
+          "#else" : "#ifndef TRANSMITTING";
         break;
     }
     for ( cur_if = if_list; cur_if; cur_if = cur_if->next ) {

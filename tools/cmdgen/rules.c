@@ -71,7 +71,7 @@ static void output_action(unsigned short rnum) {
       eflags[n_elts] |= ELT_HAS_VAL;
       members[n_elts] = rules[rnum]->reduces->type->member;
     }
-    if (transmitting_if && rules[rnum]->reduces->name[0] == '^') {
+    if (rules[rnum]->reduces->name[0] == '^') {
       tx_rule = true;
     }
   }
@@ -84,14 +84,16 @@ static void output_action(unsigned short rnum) {
     indent(BASEINDENT);
     fprintf(ofile, "if (ioflags & IOF_EXECUTE)\n");
     indent(BASEINDENT);
-    if (transmitting_if && tx_rule) {
+    if (tx_rule) {
       fprintf(ofile, "#if %sdefined(TRANSMITTING)\n",
-        tx_rule ? "" : "!");
-      indent(BASEINDENT+2);
-      fprintf(ofile,
-        "if_%s.Turf(\"\%%s\", cmd_base);\n", transmitting_if);
-      indent(BASEINDENT);
-      fprintf(ofile, "#else\n");
+        transmitting_if ? "" : "!");
+      if (transmitting_if) {
+        indent(BASEINDENT+2);
+        fprintf(ofile,
+          "if_%s.Turf(\"\%%s\", cmd_base);\n", transmitting_if);
+        indent(BASEINDENT);
+        fprintf(ofile, "#else\n");
+      }
       indent(BASEINDENT);
     }
     while (*act != '\0') switch(*act) {
@@ -165,7 +167,7 @@ static void output_action(unsigned short rnum) {
         break;
     }
     putc('\n', ofile);
-    if (transmitting_if && tx_rule) {
+    if (tx_rule) {
       indent(BASEINDENT);
       fprintf(ofile, "#endif\n"); // close out the TRANSMITTING condition
     }
@@ -212,6 +214,12 @@ static void output_action(unsigned short rnum) {
 void output_rules(void) {
   unsigned short rnum;
   
+  if (!transmitting_if) {
+    fprintf(ofile,
+      "#ifdef TRANSMITTING\n"
+      "  #error TRANSMITTING with no transmitting interface defined\n"
+      "#endif\n");
+  }
   fprintf(ofile, "static int rule_action(unsigned short rule) {\n");
   fprintf(ofile, "  switch (rule) {\n");
   indent(CASEINDENT);
