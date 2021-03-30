@@ -49,25 +49,25 @@ enum state_t {
   TM_STATE_HDR, TM_STATE_HDR2, TM_STATE_INFO, TM_STATE_DATA
 };
 
-class bfr2_output_client;
+class bfr_output_client;
 
-class bfr2_input_client : public Serverside_client, public tm_rcvr,
+class bfr_input_client : public Serverside_client, public tm_rcvr,
                          public tm_queue {
-  friend class bfr2_output_client;
+  friend class bfr_output_client;
   public:
-    bfr2_input_client(Authenticator *Auth, const char *iname,
+    bfr_input_client(Authenticator *Auth, const char *iname,
           bool blocking);
-    ~bfr2_input_client();
+    ~bfr_input_client();
     /**
      * @return true if some output client is blocking
      */
     bool run_output_queue(bool quitting);
     bool ready_to_quit();
 
-    static const int bfr2_input_client_ibufsize = 4096*3;
+    static const int bfr_input_client_ibufsize = 4096*3;
     static bool auth_hook(Authenticator *Auth, SubService *SS);
     static bool tmg_opened;
-    static bfr2_input_client *tm_gen;
+    static bfr_input_client *tm_gen;
   protected:
     bool protocol_input();
     bool process_eof();
@@ -83,7 +83,7 @@ class bfr2_input_client : public Serverside_client, public tm_rcvr,
      */
     void process_quit();
     void run_input_queue();
-    void read_reply(bfr2_output_client *ocb);
+    void read_reply(bfr_output_client *ocb);
     /**
        Handles the actual trasmission after the message
        has been packed into struct iovecs. It may allocate a
@@ -94,7 +94,7 @@ class bfr2_input_client : public Serverside_client, public tm_rcvr,
        @param iov The struct iovec vector
        @param n_parts The number of elements in iov
      */
-    void do_read_reply(bfr2_output_client *ocb, int nb,
+    void do_read_reply(bfr_output_client *ocb, int nb,
                         struct iovec *iov, int n_parts);
     /**
      * Delete unreferenced tmq_refs from the head of the chain,
@@ -107,7 +107,7 @@ class bfr2_input_client : public Serverside_client, public tm_rcvr,
      * @param if true, only report minimum of rows referenced
      * by clients with non-empty output buffers.
      * @return The minimum number of Qrows that have been processed
-     * by all of the bfr2_output_clients in all_readers.
+     * by all of the bfr_output_clients in all_readers.
      */
     int min_reader(tmq_ref *tmqr, bool forcing = false);
     /**
@@ -126,16 +126,16 @@ class bfr2_input_client : public Serverside_client, public tm_rcvr,
     
   private:
     bool process_tm_info();
-    // int (bfr2_input_client::*data_state_eval)();
+    // int (bfr_input_client::*data_state_eval)();
     // int data_state_T3();
 };
 
-class bfr2_output_client : public Serverside_client {
-  friend class bfr2_input_client;
+class bfr_output_client : public Serverside_client {
+  friend class bfr_input_client;
   public:
-    bfr2_output_client(Authenticator *Auth, const char *iname, bool is_fast);
-    ~bfr2_output_client();
-    static const int bfr2_output_client_ibufsize = 80;
+    bfr_output_client(Authenticator *Auth, const char *iname, bool is_fast);
+    ~bfr_output_client();
+    static const int bfr_output_client_ibufsize = 80;
   protected:
     void transmit(bool quitting);
     bool iwritten(int nb);
