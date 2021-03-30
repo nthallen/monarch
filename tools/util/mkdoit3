@@ -412,10 +412,7 @@ Launch memo memo -o $lcllogfile -l4 -S:$SESSION
 
 if [ $cmd = start ]; then
   if [ $srcmode = playback ]; then
-    # Startup playback modules:
     Launch tm_bfr bfr -S:$SESSION
-    Launch tm_gen rdr -P $ddir -a -S:$SESSION
-    #   # playbacksrvr (started later via $lclsrvr)
   elif [ $srcmode = realtime ]; then
     if [ $SERVICE = Installed ]; then
       monarchctl_opt='-r'
@@ -635,6 +632,12 @@ if ( $phrtg ) {
     '  Launch - phrtg -S:$SESSION $CMD_OPT -P $ddir',
     $progopts{phrtg}, "\n";
 }
+
+print $fh <<'EOF';
+
+[ $cmd = start -a $srcmode = playback ] &&
+  Launch tm_gen rdr -P $ddir -a -S:$SESSION
+EOF
 
 print $fh "\n$clttermcond";
 print $fh
