@@ -1,6 +1,5 @@
 [Unit]
 Description=Monarch Data Acquisition Service
-After=default.target
 
 [Service]
 RuntimeDirectory=monarch
@@ -11,5 +10,4 @@ WorkingDirectory=~
 Restart=always
 
 [Install]
-WantedBy=default.target
-
+WantedBy=basic.target
