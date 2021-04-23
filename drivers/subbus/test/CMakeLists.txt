@@ -5,9 +5,11 @@ add_executable(test_bmm test_bmm.cc test_sboui.cc)
 add_executable(test_serusb test_serusb.cc test_sboui.cc)
 add_executable(test_ir test_ir.cc test_iroui.cc)
 add_executable(test_udacs test_udacs.cc test_sboui.cc)
+add_executable(sbswitch sbswitch.cc sbswitchoui.cc)
 
 OUI_FILE(test_sb.oui)
 OUI_FILE(test_ir.oui)
+OUI_FILE(sbswitch.oui)
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16,3 +18,7 @@ include_directories(
   ${monarch_SOURCE_DIR}/libs/nl
   ${monarch_SOURCE_DIR}/libs/dasio/src
 )
+
+install(TARGETS sbswitch
+        RUNTIME DESTINATION bin)
+

@@ -1,0 +1,33 @@
+<package> sbswitch
+<include> msg oui
+<include> "sbswitch.h"
+
+<opts> "N:M:A:"
+<synopsis>
+%C [options] [mask]
+<sort>
+  -A addr : subbus address to read: 0x7
+  -N svc : servce name of the subbus: 'subbus'
+  -M sub : subservice name: 'serusb'
+<unsort>
+<blank>
+Reads the switches from the named subbus service
+and writes the result as two hex digits.
+The mask is specified using standard C syntax,
+and the default value is 0xF. Unmasked bits
+are set to 1 (flight mode!)
+<blank>
+
+<switch>
+  case 'A': subbus_addr = optarg; break;
+  case 'N': subbus_svc = optarg; break;
+  case 'M': subbus_subsvc = optarg; break;
+<args>
+  switch_mask = optarg;
+
+<package> appid_default
+<include> "dasio/appid.h"
+<include> msg
+<preceed> msg
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("sbswitch", "Subbus Switch Utility", "V2.0");
