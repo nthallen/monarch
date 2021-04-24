@@ -2,28 +2,43 @@
 <include> msg oui
 <include> "sbswitch.h"
 
-<opts> "N:M:A:"
+<opts> "N:M:A:Q"
 <synopsis>
-%C [options] [mask]
+%C [options] [mask] [invert]
 <sort>
   -A addr : subbus address to read: 0x7
   -N svc : servce name of the subbus: 'subbus'
   -M sub : subservice name: 'serusb'
+  -Q : Request subbusd to quit if any masked bits are zero
 <unsort>
 <blank>
 Reads the switches from the named subbus service
 and writes the result as two hex digits.
 The mask is specified using standard C syntax,
 and the default value is 0xF. Unmasked bits
-are set to 1 (flight mode!)
+are set to 1 (flight mode!). After masking, any
+bits set in the invert value are inverted.
 <blank>
+If -Q is selected, this is treated as a binary decision:
+flight mode or not. Flight mode means all masked bits
+are one, so if any masked bits are zero, this is not
+flight mode, and we will request subbusd to quit. In
+addition, instead of printing the value, the program
+will exit with the exit value set to 1 (failure) for
+flight mode and 0 (success) otherwise. The principle
+is to default to flight mode if we are not able to
+successfully read the switches, since in unattended
+operation, failure to start due to an unrelated
+misconfiguration could be an expensive failure.
+
 
 <switch>
   case 'A': subbus_addr = optarg; break;
   case 'N': subbus_svc = optarg; break;
   case 'M': subbus_subsvc = optarg; break;
+  case 'Q': quit_if_nonzero = true; break;
 <args>
-  switch_mask = optarg;
+  sbswitch_args(optarg);
 
 <package> appid_default
 <include> "dasio/appid.h"
