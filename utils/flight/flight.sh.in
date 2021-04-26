@@ -151,18 +151,19 @@ else
 fi
 
 if [ -n "$launch_error" -o -n "$pids" ]; then
+  msgf -V 0 "SERVICE='$SERVICE'"
   [ $SERVICE = Installed ] && echo $script >$LOOP_STOP_FILE
+  lsf_exists=no
+  [ -e "$LOOP_STOP_FILE" ] && lsf_exists=yes
+  msgf -V 0 "LOOP_STOP_FILE=$LOOP_STOP_FILE exists:$lsf_exists"
   [ -z "$parent_loop" ] && parent_loop="-q"
-  # msgf -2 \
-  #   "parent $parent_srvr $parent_loop -V -T '$status_string'"
+  msgf -V 0 "exec parent $parent_srvr $parent_loop -V -T '$status_string'"
 else
   parent_loop="-f $LOOP_START_FILE"
   [ -n "$SUBBUS_PID" ] && kill -SIGHUP $SUBBUS_PID
-  msgf 0 "No subprocesses, closing flight.sh.log"
-  # msgf -2 \
-  #   "parent $parent_srvr $parent_loop -V -T '$status_string'"
+  msgf -V 0 "No subprocesses, closing flight.sh.log"
+  msgf -V 0 "exec parent $parent_srvr $parent_loop -V -T '$status_string'"
   exec 1>&4 2>&4
 fi
 
-msgf 0 "exec parent $parent_srvr $parent_loop -V -T '$status_string'"
 exec parent $parent_srvr $parent_loop -V -T "$status_string"

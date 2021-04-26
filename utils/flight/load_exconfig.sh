@@ -76,9 +76,10 @@ else
   TM_OPT="-S bfr:"
   CMD_OPT="-S srvr:"
   MC_OPT=""
-  if [ -e /var/run/monarch/$Experiment/parent -a \
-         -e /var/run/monarch/$Experiment/parent.pid ] &&
-       [ -e /proc/`cat /var/run/monarch/$Experiment/parent.pid` ]; then
+  if [ /home/flight/Experiment.config -ef $cfile ]; then
+  # if [ -e /var/run/monarch/$Experiment/parent -a \
+     #   -e /var/run/monarch/$Experiment/parent.pid ] &&
+     # [ -e /proc/`cat /var/run/monarch/$Experiment/parent.pid` ]; then
     SERVICE=Installed
   else
     SERVICE=AdHoc
