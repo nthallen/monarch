@@ -55,7 +55,7 @@ fi
 typeset tgt ans opts
 cp_cmd='/bin/cp'
 case `uname` in
-  CYGWIN*) cp_opts=vpu;;
+  CYGWIN*) cp_opts=vu;;
   QNX) cp_opts=vpn;;
   Linux) cp_opts=vpu;;
   *) nl_error "Unsupported operating system '`uname`'";;
