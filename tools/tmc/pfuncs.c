@@ -9,7 +9,7 @@
 #include "tmcstr.h"
 #include "tmc.h"
 
-#define NULLFUNCDECL "\nstatic void " NULLFUNCNAME "(void)"
+#define NULLFUNCDECL "\nstatic inline void " NULLFUNCNAME "(void)"
 #define MVSLOTS_IN 0
 #define MVSLOTS_OUT 1
 
@@ -402,8 +402,8 @@ void print_funcs(void) {
   }
   print_indent("}\n");
   
-  /* output a null function declaration */
-  fprintf(ofile, NULLFUNCDECL ";");
+  /* output a null function definition */
+  fprintf(ofile, NULLFUNCDECL " {}");
   
   assert(sltlist != NULL);
   per = sltlist->per;
@@ -416,16 +416,16 @@ void print_funcs(void) {
     gen_func(slot);
   }
   fprintf(ofile, "\nstatic void (*efuncs[%d])() = {\n  ", per);
-  for (need_nfunc = 0, row = 0; row < per; row++) {
+  for (/* need_nfunc = 0, */ row = 0; row < per; row++) {
     if (row != 0) fprintf(ofile, ",\n  ");
     slot = get_slot(per, row);
     if (slot->bfunc != NULL) fprintf(ofile, "%s", slot->bfunc);
     else {
       fprintf(ofile, NULLFUNCNAME);
-      need_nfunc = 1;
+      // need_nfunc = 1;
     }
   }
   fprintf(ofile, "\n};\n");
-  if (gen_ivfuncs() || need_nfunc)
-    fprintf(ofile, NULLFUNCDECL "{}");
+  // if (gen_ivfuncs() || need_nfunc)
+  //   fprintf(ofile, NULLFUNCDECL "{}");
 }
