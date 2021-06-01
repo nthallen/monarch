@@ -316,7 +316,8 @@ cmdif_rd::cmdif_rd(const char *name)
  */
 cmdif_rd::~cmdif_rd() {
   nl_assert(turfs.empty());
-  nl_assert(first_cmd == 0);
+  if (first_cmd)
+    msg(MSG_WARN, "first_cmd != 0 in ~cmdif_rd()");
 }
 
 void cmdif_rd::Setup() {
