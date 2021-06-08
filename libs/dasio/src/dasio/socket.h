@@ -287,6 +287,16 @@ class Socket : public Interface {
     virtual bool connect_failed();
     
     /**
+     * @param reason The reason for not reconnecting
+     * @return true if the program should exit the event loop
+     * Called by reset() if the automatic retry mechanism has been
+     * exhausted or defeated. The default will output an error
+     * and return true. This method can be overridden to quiet
+     * the complaints if appropriate.
+     */
+    virtual bool not_reconnecting(const char *reason);
+    
+    /**
      * Copy all parameters from this Socket except iname and fd,
      * set is_server false and set is_server_client true.
      * Adds the new client to ELoop if defined.
@@ -308,6 +318,16 @@ class Socket : public Interface {
      * require no more than 6 characters, including the terminating NUL.
      */
     bool get_service_port(const char *service, char *port);
+    
+    /**
+     * @param secs Seconds for timeout on connect()
+     * @param msecs Milliseconds for timeout on connect()
+     * By default, both are zero and no timeout will be set.
+     */
+    inline void set_connect_timeout(le_time_t secs, long msecs) {
+      connect_timeout_secs = secs;
+      connect_timeout_msecs = msecs;
+    }
 
     unix_name_t *unix_name;
     const char *hostname;
@@ -324,6 +344,8 @@ class Socket : public Interface {
     int reconn_max; /**< The maximum number of retries */
     int reconn_seconds_min; /**< Seconds delay for first retry */
     int reconn_seconds_max; /**< Max seconds delay after multiple retries */
+    le_time_t connect_timeout_secs;
+    long connect_timeout_msecs;
     socket_state_t socket_state;
     socket_type_t socket_type;
   private:

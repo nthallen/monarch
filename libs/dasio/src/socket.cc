@@ -143,6 +143,8 @@ void Socket::common_init() {
       !(hostname && hostname[0])) {
     hostname = "0.0.0.0";
   }
+  connect_timeout_secs = 0;
+  connect_timeout_msecs = 0;
 }
 
 bool Socket::connect() {
@@ -199,20 +201,18 @@ bool Socket::connect() {
           /* Establish the connection to the server */
           if (::connect(fd, (struct sockaddr *)&local,
                 SUN_LEN(&local)) < 0) {
-//          if (errno != EINPROGRESS) {
-              if (!conn_fail_reported) {
-                msg(MSG_ERROR,
-                  "%s: connect() failure in DAS_IO::Socket:%s: %s",
-                  iname, unix_name->get_svc_name(),
-                  std::strerror(errno));
-                conn_fail_reported = true;
-              }
-              if (reset())
-                msg(MSG_FATAL,
-                  "%s: connect() failure max retries exceeded",
-                  iname);
-              return connect_failed();
-//          }
+            if (!conn_fail_reported) {
+              msg(MSG_ERROR,
+                "%s: connect() failure in DAS_IO::Socket:%s: %s",
+                iname, unix_name->get_svc_name(),
+                std::strerror(errno));
+              conn_fail_reported = true;
+            }
+            if (reset())
+              msg(MSG_FATAL,
+                "%s: connect() failure max retries exceeded",
+                iname);
+            return connect_failed();
           }
           if (fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK) == -1) {
             msg(MSG_FATAL, "fcntl() failure in DAS_IO::Socket(%s): %s", iname,
@@ -327,6 +327,11 @@ bool Socket::connect() {
         "%s: DAS_IO_Socket::Socket::connect: not implemented for socket_type %d",
           iname, socket_type);
   }
+  if ((socket_state == Socket_connecting) &&
+      (connect_timeout_secs || connect_timeout_msecs)) {
+    TO.Set(connect_timeout_secs, connect_timeout_msecs);
+    flags |= Fl_Timeout;
+  }
   return false;
 }
 
@@ -395,9 +400,10 @@ bool Socket::ProcessData(int flag) {
     case Socket_disconnected:
       // Handle timeout (i.e. attempt reconnection)
       if (TO.Expired()) {
-        // msg(0, "%s: reconnecting after timeout", iname);
-        TO.Clear();
-        return connect();
+        if (reconn_max < 0 || reconn_retries < reconn_max) {
+          TO.Clear();
+          return connect();
+        } else return protocol_timeout();
       }
       break;
     case Socket_connected:
@@ -432,11 +438,9 @@ void Socket::close() {
 bool Socket::reset() {
   close();
   if (reconn_max == 0) {
-    msg(MSG_ERROR, "%s: DAS_IO::Socket::reset(): No retries requested", iname);
-    return true;
+    return not_reconnecting("DAS_IO::Socket::reset(): No retries requested");
   } else if (reconn_max > 0 && reconn_retries++ >= reconn_max) {
-    msg(MSG_ERROR, "%s: DAS_IO::Socket::reset(): Maximum connection retries exceeded", iname);
-    return true;
+    return not_reconnecting("DAS_IO::Socket::reset(): Maximum connection retries exceeded");
   }
   int delay_secs = reconn_seconds;
   reconn_seconds *= 2;
@@ -445,6 +449,11 @@ bool Socket::reset() {
   TO.Set(delay_secs,0);
   flags |= Fl_Timeout;
   return false;
+}
+
+bool Socket::not_reconnecting(const char *reason) {
+  msg(MSG_ERROR, "%s: %s", iname, reason);
+  return true;
 }
 
 bool Socket::read_error(int my_errno) {
