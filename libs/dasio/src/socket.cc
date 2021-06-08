@@ -219,7 +219,7 @@ bool Socket::connect() {
               std::strerror(errno));
           }
           socket_state = Socket_connecting;
-          flags = Fl_Write;
+          flags |= Fl_Write;
         }
         flags |= Fl_Read | Fl_Except;
       }
@@ -317,7 +317,7 @@ bool Socket::connect() {
             }
           }
           socket_state = Socket_connecting;
-          flags = Fl_Write;
+          flags |= Fl_Write;
         }
         flags |= Fl_Read | Fl_Except;
       }
