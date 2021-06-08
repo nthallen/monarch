@@ -344,6 +344,9 @@ bool Socket::ProcessData(int flag) {
   int sock_err;
 
   // msg(0, "%s: Socket::ProcessData(%d)", iname, flag);
+  if ((flags & flag & Fl_gflags) &&
+      protocol_gflag(flags & flag & Fl_gflags))
+    return true;
   switch (socket_state) {
     case Socket_locking:
       return connect();
