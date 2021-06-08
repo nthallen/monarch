@@ -92,7 +92,7 @@ void csv_col::set(const char *tval) {
   sz = snprintf(dsval, dsval_size, "%s", &tval[n_whitespace]);
   if (sz >= dsval_size) {
     dsval_resize(sz+5);
-    sz = snprintf(dsval, dsval_size, "%s", tval);
+    sz = snprintf(dsval, dsval_size, "%s", &tval[n_whitespace]);
     nl_assert(sz < dsval_size);
   }
 }
