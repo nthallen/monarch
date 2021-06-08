@@ -55,7 +55,8 @@ void csv_col::set(const char *tval) {
   const char *s = tval;
   bool is_num = true;
   // Check tval for numeric. If non, warn once, and replace text with nan
-  while ( isspace(*s) ) ++s;
+  int n_whitespace = 0;
+  while ( isspace(*s) ) { ++s; ++n_whitespace; }
   if ( *s == '-' || *s == '+') ++s;
   if ( isdigit(*s) ) {
     while (isdigit(*s)) ++s;
@@ -88,7 +89,7 @@ void csv_col::set(const char *tval) {
     }
     tval = csv_file::nan;
   }
-  sz = snprintf(dsval, dsval_size, "%s", tval);
+  sz = snprintf(dsval, dsval_size, "%s", &tval[n_whitespace]);
   if (sz >= dsval_size) {
     dsval_resize(sz+5);
     sz = snprintf(dsval, dsval_size, "%s", tval);
