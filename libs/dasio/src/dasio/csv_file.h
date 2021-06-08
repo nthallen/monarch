@@ -40,7 +40,7 @@ class csv_file {
     void set_jcb(void (*jcb)(const char *buf, int nc));
     static void terminate_on_write_err(int sig);
     static const char *nan;
-  private:
+  protected:
     void flush_headers();
     void flush_row();
     void process_nc(int nc, char *&jb, int &jspace, int &jneeded);
