@@ -25,7 +25,7 @@ namespace DAS_IO {
       int size;
     protected:
       TM_data_rcvr *interface;
-      uint16_t stale_count;
+      uint32_t stale_count;
   };
   
   /**

@@ -57,13 +57,14 @@ namespace DAS_IO {
   }
   
   void TM_data_rcvr_def::synch() {
-    ++stale_count;
     if (interface != 0)
       interface->synch();
   }
   
   uint16_t TM_data_rcvr_def::Stale(uint16_t limit) {
-    return (stale_count > limit) ? limit : stale_count;
+    uint16_t rv = (stale_count > limit) ? limit : stale_count;
+    ++stale_count;
+    return rv;
   }
   
   void TM_data_rcvr_def::close() {
