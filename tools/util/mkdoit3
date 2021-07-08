@@ -453,7 +453,7 @@ elif [ $cmd = wait ]; then
   [ $srcmode = realtime ] || msgf 3 "Invalid srcmode '$srcmode'"
   msgf 0 "Waiting for startup"
   if [ $SERVICE = Installed ]; then
-    while [ statusready = no ]; do
+    while [ $statusready = no ]; do
       isready quiet
       sleep 1
     done
