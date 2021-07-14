@@ -12,7 +12,10 @@ namespace DAS_IO {
   // Server TM_server("DG");
   
   TM_data_rcvr::TM_data_rcvr(Authenticator *auth, const char *iname, TM_data_rcvr_def *def)
-        : Serverside_client(auth, iname, 128), def(def) {
+        : Serverside_client(auth, iname, 128),
+          def(def),
+          overrun_ibuf(false),
+          underrun_ibuf(false) {
     def->interface = this;
   }
   
@@ -35,14 +38,21 @@ namespace DAS_IO {
   
   bool TM_data_rcvr::protocol_input() {
     // protocol_input() can be called when there is no input
-    if (nc < def->size) return false;
-    if (nc > def->size) {
-      report_err("%s: Excess input: %d/%d", iname, nc, def->size);
-    } else {
+    while (nc-cp >= def->size) {
       memcpy(def->data, buf, def->size);
       def->stale_count = 0;
+      cp += def->size;
+      if (nc > cp && !overrun_ibuf) {
+        msg(MSG_WARN, "%s: Excess input: %d/%d", iname, nc, def->size);
+        overrun_ibuf = true;
+      }
     }
-    consume(nc);
+    consume(cp);
+    if (nc > 0 && !underrun_ibuf) {
+      msg(MSG_WARN, "%s: TM data underrun: %d/%d",
+            iname, nc, def->size);
+      underrun_ibuf = true;
+    }
     return false;
   }
   

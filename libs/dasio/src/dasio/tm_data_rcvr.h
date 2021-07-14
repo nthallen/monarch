@@ -41,6 +41,8 @@ namespace DAS_IO {
     protected:
       ~TM_data_rcvr();
       TM_data_rcvr_def *def;
+      bool overrun_ibuf;
+      bool underrun_ibuf;
   };
 
   // extern Server TM_server;

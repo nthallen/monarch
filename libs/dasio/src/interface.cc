@@ -106,7 +106,9 @@ bool Interface::iwrite(const char *str, unsigned int nc, unsigned int cp) {
   if (fd < 0) {
     msg(MSG_EXIT_ABNORM, "%s: Connection closed unexpectedly", iname);
   }
-  nl_assert(obuf_empty());
+  if (!obuf_empty()) {
+    msg(MSG_EXIT_ABNORM, "%s: iwrite() while !obuf_empty()", iname);
+  }
   pvt_iov.iov_base = (void *)(str+cp);
   pvt_iov.iov_len = nc - cp;
   return iwritev(&pvt_iov, 1);

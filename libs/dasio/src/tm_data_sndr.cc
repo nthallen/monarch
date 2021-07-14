@@ -10,7 +10,8 @@ TM_data_sndr::TM_data_sndr(const char *iname, const char *hostname,
     : Client(iname, 10, hostname, "tm_gen", 0),
       data(data),
       data_len(size),
-      gflag_no(0) {
+      gflag_no(0),
+      overrun_obuf(false) {
   snprintf(sub_service, subsvc_len, "data/%s", datum);
   set_subservice(sub_service);
 }
@@ -27,8 +28,14 @@ bool TM_data_sndr::app_connected() {
 }
 
 bool TM_data_sndr::Send() {
-  if (iwrite((const char *)data, data_len)) return true;
-  if (ELoop) ELoop->set_gflag(gflag_no);
+  if (obuf_empty()) {
+    if (iwrite((const char *)data, data_len))
+      return true;
+    if (ELoop) ELoop->set_gflag(gflag_no);
+  } else if (!overrun_obuf) {
+    msg(MSG_ERROR, "%s: TM Send() skipped", iname);
+    overrun_obuf = true;
+  }
   return false;
 }
 

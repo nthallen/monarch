@@ -44,6 +44,7 @@ namespace DAS_IO {
       const void *data;
       uint16_t data_len;
       int gflag_no;
+      bool overrun_obuf;
   };
 
 }
