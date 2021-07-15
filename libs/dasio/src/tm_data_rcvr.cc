@@ -11,15 +11,21 @@ namespace DAS_IO {
   
   // Server TM_server("DG");
   
-  TM_data_rcvr::TM_data_rcvr(Authenticator *auth, const char *iname, TM_data_rcvr_def *def)
-        : Serverside_client(auth, iname, 128),
+  TM_data_rcvr::TM_data_rcvr(Authenticator *auth, const char *iname,
+                             TM_data_rcvr_def *def)
+        : Serverside_client(auth, iname, def->size*3),
           def(def),
           overrun_ibuf(false),
           underrun_ibuf(false) {
     def->interface = this;
+    set_binary_mode();
   }
   
-  TM_data_rcvr::~TM_data_rcvr() {}
+  TM_data_rcvr::~TM_data_rcvr() {
+    if (def) {
+      def->interface = 0;
+    }
+  }
   
   Serverside_client *TM_data_rcvr::new_tm_data_rcvr(Authenticator *auth, SubService *ss) {
     // Set iname from client_app and datum
