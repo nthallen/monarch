@@ -18,7 +18,7 @@ class Timeout {
      * timeout value. Note that secs and msecs should meet the criteria for
      * the Add() method, i.e. msecs must be non-negative.
      * @param secs Seconds
-     * @param msecs Milleseconds
+     * @param msecs Milleseconds, must be non-negative
      */
     void Set( le_time_t secs, long msecs );
     /**
@@ -27,7 +27,7 @@ class Timeout {
      * can be accommodated by making appropriate adjustments to the secs
      * parameter, e.g. TO.Add(-1, 800) to achieve a -200 msecs offset.
      * @param secs Seconds
-     * @param msecs Milleseconds
+     * @param msecs Milleseconds, must be non-negative
      */
     void Add( le_time_t secs, long msecs );
     /**
