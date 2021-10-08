@@ -15,13 +15,17 @@ class Timeout {
     /**
      * Specifies a desired timeout relative to the current time. The event loop
      * will subtract the then-current time to determine the correct relative
-     * timeout value.
+     * timeout value. Note that secs and msecs should meet the criteria for
+     * the Add() method, i.e. msecs must be non-negative.
      * @param secs Seconds
      * @param msecs Milleseconds
      */
     void Set( le_time_t secs, long msecs );
     /**
      * Adds the specified delay to the current timeout value.
+     * The msecs parameter must be non-negative, although negative offsets
+     * can be accommodated by making appropriate adjustments to the secs
+     * parameter, e.g. TO.Add(-1, 800) to achieve a -200 msecs offset.
      * @param secs Seconds
      * @param msecs Milleseconds
      */

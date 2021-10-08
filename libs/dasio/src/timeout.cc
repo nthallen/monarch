@@ -21,9 +21,8 @@ void Timeout::Set( le_time_t secs, long msecs ) {
 }
 
 void Timeout::Add( le_time_t secs, long msecs ) {
-  int whole_secs;
   msecs += when.tv_nsec/1000000L;
-  whole_secs = secs + msecs/1000;
+  int whole_secs = secs + msecs/1000;
   when.tv_sec += whole_secs;
   when.tv_nsec = ((msecs%1000)*1000000L) +
                   (when.tv_nsec%1000000L);
