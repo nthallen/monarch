@@ -10,7 +10,7 @@
 #	-j generate .cdf for json instead of .edf
 #       -o <filename> specify output .cdf or .edf explicitly
 #
-# Generates p$mnemonic, g$mnemonic, ui_$mnemonic and .edf outputs
+# Generates p$mnemonic, g$mnemonic, ui_$mnemonic, dfs_$mnemonic and .edf outputs
 #
 # Input file format:
 #
@@ -98,7 +98,7 @@ while (<>) {
   } elsif ( m/^ROWS\s+(\d+)/ ) {
     $ui_limit = $1;
   } elsif ( m|^\s*(\d+(?:/\d+)?(?:\#\d+(?:/\d+)?)?) # rate
-               \s+(\w+(?::\w+:\d+)?)(?::([-+*/]\S+))? # mnemonic
+               \s+(\w+(?::\w+:\d+)?) (?::([-+*/]\S+))? # mnemonic, scale
                \s+(\w+(?::\w+)?) # group
                \s+(\w+) # plot
                (?:\s+(%\S+))? # format
@@ -328,10 +328,79 @@ if ($matdir) {
     "ne_dialg(f, 'resize');\n";
   close UI || warn "Error closing ui_$experiment.m\n";
 
+  my $rt_filename = "rt_$experiment.m";
+  open( DFS, ">", "${matdir}/$rt_filename" ) ||
+    die "Unable to open $rt_filename\n";
+  $generated{$rt_filename} = 1;
+  print DFS
+    "% $rt_filename script\n",
+    "dfs = data_fields('h_leading', 5, 'txt_fontsize', 12, 'title', '$header');\n";
+  $ui_rows = 0;
+
+  for my $panel (@panel) {
+    if ($usepanels) {
+      my $paneltext = $panel;
+      $paneltext =~ s/_/ /g;
+      print DFS
+        "% dfs.new_tab('$paneltext');\n";
+      $ui_rows = 0;
+    }
+    print DFS
+      "dfs.start_col;\n";
+    for my $grp (@{$panel{$panel}->{groups}}) {
+      my $group = $longname{$grp};
+      my @plots = @{$group{$grp}};
+      my $grouptext = $group;
+      $grouptext =~ s/^\w+://;
+      $grouptext =~ s/_/ /g;
+      $grouptext =
+        join " ", grep /./, split( /([A-Z][a-z]+)/, $grouptext );
+      $grouptext =~ s/  +/ /g;
+      if ( $ui_rows > 0 && $ui_rows + @plots + 1 > $ui_limit ) {
+        print DFS
+          "dfs.end_col;\n",
+          "dfs.start_col;\n";
+        $ui_rows = 0;
+      }
+      print DFS
+        "dfs.data_plot('$grp', 'label', '$grouptext', 'plots', {",
+        join(",",map("'$_'", @plots)),
+        "});\n";
+      $ui_rows += @plots + 1;
+      for my $plt ( @plots ) {
+        my $plot = $longname{$plt};
+        $plot =~ s/^$grp://;
+        my $plottext = $plot;
+        $plottext =~ s/_/ /g;
+        $plottext =
+          join " ", grep /./, split( /([A-Z][a-z]+)/,
+            $plottext );
+        $plottext =~ s/  +/ /g;
+
+        # At the moment, I will ignore scale and bit plotting
+        # I think if I just pass the mnemonics through, they
+        # will just be ignored by dfs
+        my @mnemonics =
+          map { ref($_) ? $_->{mnc} . $_->{scale} : $_ } @{$plot{$plt}};
+
+        print DFS
+          "dfs.data_plot('$plt','label','$plottext','vars',{",
+          join(",",map("'$_'", @mnemonics)),
+          "});\n";
+      }
+    }
+  }
+  print DFS
+    "dfs.end_col;\n",
+    "dfs.resize;\n",
+    "dfs.set_connection('127.0.0.1', 1080);\n";
+  close DFS || warn "Error closing $rt_filename\n";
+
   my @mfiles = grep !$generated{$_}, sort map { s,^$matdir/,,; $_; }
     <$matdir/*.m>;
   if (@mfiles) {
     warn "The following mfiles are not generated or referenced by genui:\n", map "  $_\n", @mfiles;
   }
+
 }
 
