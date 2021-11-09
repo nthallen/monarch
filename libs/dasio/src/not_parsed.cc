@@ -214,7 +214,8 @@ bool DAS_IO::Interface::not_fix(int fix, int16_t &val) {
     while ( ++saw_decimals <= fix ) val *= 10;
   }
   if ( !saw_digits ) {
-    report_err("%s: No digits in not_fix at col %d", iname, cp);
+    if (cp < nc)
+      report_err("%s: No digits in not_fix at col %d", iname, cp);
     return true;
   }
   if (saw_neg) val = -val;
