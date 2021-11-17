@@ -20,6 +20,9 @@
 # Experiment and TMBINDIR are exported as required by virtually
 # all the dasio-cognizent programs
 #
+# If RUNFILE_DOIT is defined, it will overwrite any RUNFILE
+# value in Experiment.config
+#
 # Determination of the SERVICE status is heuristic and based on
 # circumstantial evidence. Anytime FlightNode is defined it is
 # assumed the service is installed on the FlightNode, which is
@@ -54,6 +57,8 @@ else
 fi
 
 export Experiment
+
+[ -n "$RUNFILE_DOIT" ] && RUNFILE=$RUNFILE_DOIT
 
 # Determine whether we are running on the FlightNode (local) or
 # on a separate GSE (remote)

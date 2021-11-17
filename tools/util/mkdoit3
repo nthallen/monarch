@@ -293,7 +293,7 @@ print $fh
   "logfileroot=$logfileroot\n",
   "interacts='", join( ' ', @interact ), "';\n",
   "extracts='", join( ' ', @extracts ), "';\n";
-print $fh "batchfile=$batchfile\n" if defined $batchfile;
+print $fh "export RUNFILE_DOIT=$batchfile\n" if defined $batchfile;
 
 {
   my $clientset = 0;
@@ -416,7 +416,7 @@ if [ $cmd = start ]; then
   elif [ $srcmode = realtime ]; then
     if [ $SERVICE = Installed ]; then
       monarchctl_opt='-r'
-      [ -n "$batchfile" ] && monarchctl_opt="-R $batchfile"
+      [ -n "$RUNFILE_DOIT" ] && monarchctl_opt="-R $RUNFILE_DOIT"
       msgf 0 "Running isready quiet, MC_OPT=$MC_OPT"
       isready quiet
       if [ $statusready = no ]; then
