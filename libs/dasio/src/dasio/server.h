@@ -21,7 +21,8 @@ namespace DAS_IO {
    * refused for reasons beyond the authentication. For example, the
    * TM_server class will refuse a new connection if the specified
    * datum is already being written to by another process.
-   * @return Pointer to a Socket subclass or zero if an error occurs.
+   * @return Pointer to a Serverside_client subclass or zero if an
+   * error occurs.
    */
   typedef Serverside_client *(* socket_clone_t)(Authenticator *,
             SubService *);
@@ -133,7 +134,17 @@ namespace DAS_IO {
       inline bool rm_subservice(std::string svcs) {
         return Subs.rm_subservice(svcs);
       }
-      
+
+      /**
+       * Defines what type of server sockets should be created.
+       * @param Srv_Unix indicates a Unix Domain socket
+       * @param Srv_TCP indicates a TCP socket
+       * @param Srv_Both indicates both a Unix Domain socket and
+       * a TCP socket.
+       * @param Srv_Function indicates the decision should be
+       * based on the standard host/session command line options
+       * (-H, -S)
+       */
       typedef enum { Srv_Unix = 1, Srv_TCP = 2, Srv_Both = 3,
                      Srv_Function = 4 } Srv_type;
       /**

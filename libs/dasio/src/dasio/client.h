@@ -20,7 +20,7 @@ namespace DAS_IO {
        *   TCP/IP
        * @param service the remote service name we are connecting to
        * @param sub_service the sub service name (without the
-       *   service prefix)
+       *   service prefix). 0 or "" indicates no sub_service is required.
        *
        * If hostname is 0, a Unix Domain socket is created on the
        * local machine, otherwise a TCP socket is used.
