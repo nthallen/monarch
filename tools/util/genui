@@ -332,9 +332,23 @@ if ($matdir) {
   open( DFS, ">", "${matdir}/$rt_filename" ) ||
     die "Unable to open $rt_filename\n";
   $generated{$rt_filename} = 1;
-  print DFS
-    "% $rt_filename script\n",
-    "dfs = data_fields('h_leading', 5, 'txt_fontsize', 12, 'title', '$header');\n";
+  print DFS <<EOF;
+function dfs_out = rt_$experiment(dfs)
+% dfs = rt_$experiment()
+%   Create a data_fields object and setup all the buttons for realtime
+%   plots
+% dfs_out = rt_$experiment(dfs)
+%   Use the data_fields object and setup all the buttons for realtime plots
+if nargin < 1
+  dfs = data_fields('title', '$header', ...
+    'Color', [.8 .8 1], ...
+    'h_leading', 8, 'v_leading', 2, ...
+    'btn_fontsize', 12, ...
+    'txt_fontsize', 12);
+  context_level = dfs.rt_init;
+end
+EOF
+
   $ui_rows = 0;
 
   for my $panel (@panel) {
@@ -342,7 +356,7 @@ if ($matdir) {
       my $paneltext = $panel;
       $paneltext =~ s/_/ /g;
       print DFS
-        "% dfs.new_tab('$paneltext');\n";
+        "dfs.start_tab('$paneltext');\n";
       $ui_rows = 0;
     }
     print DFS
@@ -388,6 +402,9 @@ if ($matdir) {
           join(",",map("'$_'", @mnemonics)),
           "});\n";
       }
+    }
+    if ($usepanels) {
+      print DFS "dfs.end_tab;\n";
     }
   }
   print DFS
