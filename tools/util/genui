@@ -346,6 +346,8 @@ if nargin < 1
     'btn_fontsize', 12, ...
     'txt_fontsize', 12);
   context_level = dfs.rt_init;
+else
+  context_level = 1;
 end
 EOF
 
