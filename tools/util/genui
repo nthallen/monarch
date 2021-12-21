@@ -377,7 +377,7 @@ EOF
         $ui_rows = 0;
       }
       print DFS
-        "dfs.data_plot('$grp', 'label', '$grouptext', 'plots', {",
+        "dfs.plot('$grp', 'label', '$grouptext', 'plots', {",
         join(",",map("'$_'", @plots)),
         "});\n";
       $ui_rows += @plots + 1;
@@ -398,8 +398,13 @@ EOF
           map { ref($_) ? $_->{mnc} . $_->{scale} : $_ } @{$plot{$plt}};
 
         print DFS
-          "dfs.data_plot('$plt','label','$plottext','vars',{",
-          join(",",map("'$_'", @mnemonics)),
+          "dfs.plot('$plt','label','$plottext','vars',{",
+          join(",",
+            map({ my @kw = split(/:/,$_);
+                  @kw == 3
+                    ? "{'name','$kw[0]','var_name','$kw[1]','bit_number',$kw[2]}"
+                    : "'$kw[0]'";
+                } @mnemonics)) .
           "});\n";
       }
     }
@@ -409,8 +414,11 @@ EOF
   }
   print DFS
     "dfs.end_col;\n",
-    "dfs.resize;\n",
-    "dfs.set_connection('127.0.0.1', 1080);\n";
+    "dfs.resize(context_level);\n",
+    "dfs.set_connection('127.0.0.1', 1080);\n",
+    "if nargout > 0\n",
+    "  dfs_out = dfs;\n",
+    "end\n";
   close DFS || warn "Error closing $rt_filename\n";
 
   my @mfiles = grep !$generated{$_}, sort map { s,^$matdir/,,; $_; }
