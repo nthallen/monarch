@@ -74,7 +74,7 @@ bool Interface::ProcessData(int flag) {
   if ((flags & flag & Fl_gflags) &&
       protocol_gflag(flags & flag & Fl_gflags))
     return true;
-  if ((flags&Fl_Read) && (flags&flag&(Fl_Read|Fl_Timeout))) {
+  if (flags&flag&Fl_Read) {
     if (fillbuf(bufsize, flag)) return true;
     if (fd < 0) return false;
     cp = 0;
