@@ -64,8 +64,7 @@ else
   cd $builddir
 fi
 make $install
-if [ "$install" = "install" ]; then
-  [ -d ../git ] || nl_error "Expected to be in build dir: cannot see ../git"
+if [ "$install" = "install" -a  -d ../git ]; then
   cd ../git
   ./build_playback && ./build_playback install
 fi

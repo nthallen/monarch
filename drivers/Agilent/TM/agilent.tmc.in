@@ -1,0 +1,82 @@
+%{
+  #include "agilent.h"
+  #include <sstream>
+  #include <iomanip>
+
+  class agostream {
+    public:
+      agostream();
+      const char *str(double val);
+      static agostream agos;
+    private:
+      std::ostringstream os;
+  };
+  agostream::agostream() {
+    os << std::showpos << std::scientific << std::uppercase
+      << std::setprecision(8);
+  }
+  const char *agostream::str(double val) {
+    os.str("");
+    os << val;
+    return os.str().c_str();
+  }
+  agostream agostream::agos;
+
+  const char *agilent_text(double val) {
+    return agostream::agos.str(val);
+  }
+%}
+TM typedef double Agilent_t { text "%+15.8le" agilent_text(); }
+TM typedef Agilent_t Ag_RESISTANCE;
+TM typedef Agilent_t Ag_VOLTAGE;
+TM typedef uint8_t Ag_UCHAR { text "%3u"; }
+
+TM @Rate@ Hz Ag_RESISTANCE R0;
+TM @Rate@ Hz Ag_RESISTANCE R1;
+TM @Rate@ Hz Ag_RESISTANCE R2;
+TM @Rate@ Hz Ag_RESISTANCE R3;
+TM @Rate@ Hz Ag_RESISTANCE R4;
+TM @Rate@ Hz Ag_RESISTANCE R5;
+TM @Rate@ Hz Ag_RESISTANCE R6;
+TM @Rate@ Hz Ag_RESISTANCE R7;
+TM @Rate@ Hz Ag_RESISTANCE R8;
+TM @Rate@ Hz Ag_RESISTANCE R9;
+TM @Rate@ Hz Ag_RESISTANCE R10;
+TM @Rate@ Hz Ag_RESISTANCE R11;
+TM @Rate@ Hz Ag_RESISTANCE R12;
+TM @Rate@ Hz Ag_RESISTANCE R13;
+TM @Rate@ Hz Ag_RESISTANCE R14;
+TM @Rate@ Hz Ag_RESISTANCE R15;
+TM @Rate@ Hz Ag_RESISTANCE R16;
+TM @Rate@ Hz Ag_RESISTANCE R17;
+TM @Rate@ Hz Ag_UCHAR count;
+TM @Rate@ Hz Ag_UCHAR AgDrvStale;
+TM @Rate@ Hz Ag_UCHAR AgDevStale;
+
+TM "Receive" Agilent 1;
+
+Group Agilent_Group (R0, R1, R2, R3, R4, R5, R6, R7, R8, R9,
+                R10, R11, R12, R13, R14, R15, R16, R17,
+                AgCount, AgAgStale) {
+  R0 = Agilent.data[0];
+  R1 = Agilent.data[1];
+  R2 = Agilent.data[2];
+  R3 = Agilent.data[3];
+  R4 = Agilent.data[4];
+  R5 = Agilent.data[5];
+  R6 = Agilent.data[6];
+  R7 = Agilent.data[7];
+  R8 = Agilent.data[8];
+  R9 = Agilent.data[9];
+  R10 = Agilent.data[10];
+  R11 = Agilent.data[11];
+  R12 = Agilent.data[12];
+  R13 = Agilent.data[13];
+  R14 = Agilent.data[14];
+  R15 = Agilent.data[15];
+  R16 = Agilent.data[16];
+  R17 = Agilent.data[17];
+  AgCount = Agilent.count;
+  AgDevStale = Agilent.stale;
+  AgDrvStale = Agilent_obj->stale(255);
+}

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16.3...3.20.0)
 cmake_policy(SET CMP0048 NEW)
-project(monarch-agilent VERSION 2.0.0)
+project(monarch-drivers-agilent VERSION 2.0.0)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -20,6 +20,9 @@ install(FILES agilent.h
 # install(PROGRAMS
   # TM/alicat_gen
   # DESTINATION share/monarch/modules)
-# install(FILES
-  # TM/alicat.agm
-  # DESTINATION share/monarch/modules)
+install(FILES
+    TM/Agilent.agm
+    TM/agilent.genui.in
+    TM/agilent.tmc.in
+    TM/agilent_col.tmc
+  DESTINATION share/monarch/modules/Agilent)

@@ -1,0 +1,6 @@
+ModuleDef Agilent [ Rate=1 Panel= ] {
+}
+
+tmcbase = agilent.tmc:agilent.tmc.in
+colbase = agilent_col.tmc
+genuibase = agilent.genui:agilent.genui.in
