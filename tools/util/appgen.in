@@ -92,6 +92,7 @@ shift $sval
 typeset ifile
 if [ -n "$1" ]; then
   if [ -r $1 ]; then ifile=$1
+  elif [ -r "$1.spec" ]; then ifile=$1.spec
   else nl_error Cannot find or read input file $1
   fi
 else

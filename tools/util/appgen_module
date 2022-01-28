@@ -29,7 +29,8 @@ my $rlvl_limit = 3;
 #   ../*/TM/ and ../*/*/TM/
 my @searchpath = $module =~ m|/| ? ('') :
   map "$_/", ('.',<../*/TM>, <../Peripherals/*/TM>,
-      '/usr/local/share/monarch/modules');
+      '/usr/local/share/monarch/modules',
+      </usr/local/share/monarch/modules/*/>);
 pathcheck: while (@searchpath) {
   my $dir = shift(@searchpath);
   # Eliminated '' as a suffix 5/24/20
@@ -40,7 +41,7 @@ pathcheck: while (@searchpath) {
   }
 }
 
-$path || die "Unable to located module '$module'\n";
+$path || die "Unable to locate module '$module'\n";
 print "# Processing module '$module' at '$path'\n";
 print "specdepbase = $path\n";
 if ($path =~ m|^(.*)/[^/]+$|) {
