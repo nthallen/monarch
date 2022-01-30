@@ -49,7 +49,7 @@ TM @Rate@ Hz Ag_RESISTANCE R14;
 TM @Rate@ Hz Ag_RESISTANCE R15;
 TM @Rate@ Hz Ag_RESISTANCE R16;
 TM @Rate@ Hz Ag_RESISTANCE R17;
-TM @Rate@ Hz Ag_UCHAR count;
+TM @Rate@ Hz Ag_UCHAR AgCount;
 TM @Rate@ Hz Ag_UCHAR AgDrvStale;
 TM @Rate@ Hz Ag_UCHAR AgDevStale;
 
@@ -57,7 +57,7 @@ TM "Receive" Agilent 1;
 
 Group Agilent_Group (R0, R1, R2, R3, R4, R5, R6, R7, R8, R9,
                 R10, R11, R12, R13, R14, R15, R16, R17,
-                AgCount, AgAgStale) {
+                AgCount, AgDevStale, AgDrvStale) {
   R0 = Agilent.data[0];
   R1 = Agilent.data[1];
   R2 = Agilent.data[2];
@@ -78,5 +78,5 @@ Group Agilent_Group (R0, R1, R2, R3, R4, R5, R6, R7, R8, R9,
   R17 = Agilent.data[17];
   AgCount = Agilent.count;
   AgDevStale = Agilent.stale;
-  AgDrvStale = Agilent_obj->stale(255);
+  AgDrvStale = Agilent_obj->Stale(255);
 }
