@@ -1,5 +1,6 @@
 %{
   #include "agilent.h"
+  #include <cstring>
   #include <sstream>
   #include <iomanip>
 
@@ -7,6 +8,7 @@
     public:
       agostream();
       const char *str(double val);
+      char buf[20];
       static agostream agos;
     private:
       std::ostringstream os;
@@ -18,7 +20,9 @@
   const char *agostream::str(double val) {
     os.str("");
     os << val;
-    return os.str().c_str();
+    const char *cs = os.str().c_str();
+    strncpy(buf, cs, 15);
+    return buf;
   }
   agostream agostream::agos;
 

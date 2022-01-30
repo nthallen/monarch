@@ -235,12 +235,18 @@ export TMBINPATH=$MYPATH
 rv=0
 
 function debugterm {
-  OS=`uname -o`
-  case $OS in
-    Cygwin) cygstart mintty $*;;
-    GNU/Linux) gnome-terminal -x $*;;
-    *) msgf 3 "debugterm does not support OS '$OS'";;
-  esac
+  if [ -n "$STY" ]; then
+    sname=$*
+    sname=${sname%% *}
+    screen -t $sname gdb --args $*
+  else
+    OS=`uname -o`
+    case $OS in
+      Cygwin) cygstart mintty $*;;
+      GNU/Linux) gnome-terminal -x $*;;
+      *) msgf 3 "debugterm does not support OS '$OS'";;
+    esac
+  fi
 }
 
 function debug {

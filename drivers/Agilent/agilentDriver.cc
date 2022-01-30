@@ -19,7 +19,7 @@ agilent_ctrl::agilent_ctrl(TM_data_sndr *TM)
       TM(TM),
       state(ctrl_idle),
       saveCount(0) {
-  flags |= Fl_Read;
+  flags |= Fl_Read | Fl_Timeout;
 }
 
 void agilent_ctrl::Request() {
@@ -48,9 +48,9 @@ bool agilent_ctrl::protocol_input() {
 
       for (;;) {
         double val;
+	if (cp < nc && buf[cp] == '+') ++cp;
         if (not_double(val)) {
           if (cp < nc) {
-            report_err("%s: syntax error on Read?:", iname);
             consume(nc);
             state = ctrl_idle;
             break;
@@ -58,16 +58,20 @@ bool agilent_ctrl::protocol_input() {
         }
         Agilent.data[count++] = val;
         if (cp >= nc) return false; // partial record: wait
-        if (buf[cp] == '\n') {
+        if (buf[cp] == ',') {
+	  ++cp;
+        } else if (buf[cp] == '\n') {
           if (saveCount == 0) {
             saveCount = count;
-            msg(MSG, "%s: Number of data points is: %d", saveCount);
+            msg(MSG, "%s: Number of data points is: %d",
+		      iname, saveCount);
             for (int i = saveCount; i < 20; i++ )
                     Agilent.data[i] = 0;
           }
           if (saveCount != count) {
-            msg(MSG_ERROR, "Number of data points changed from %d to %d",
-              saveCount, count);
+            msg(MSG_ERROR,
+	      "%s: Number of data points changed from %d to %d",
+              iname, saveCount, count);
             saveCount = count;
             for (int i = saveCount; i < 20; i++ )
                     Agilent.data[i] = 0;
@@ -75,8 +79,8 @@ bool agilent_ctrl::protocol_input() {
           Agilent.stale = 0;
           Agilent.count = count;
           break;
-        } else if (buf[cp] != ',') {
-          report_err("%s: syntax error after double", iname);
+	} else {
+          report_err("%s: syntax error after double at col %u", iname, cp);
           consume(nc);
           state = ctrl_idle;
           break;
@@ -91,6 +95,7 @@ bool agilent_ctrl::protocol_input() {
     case ctrl_info:
       msg(MSG, "%s", buf);
       state = ctrl_idle;
+      report_ok(nc);
       break;
     case ctrl_idle:
       report_err("%s: Unexpected input", iname);
