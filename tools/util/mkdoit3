@@ -406,10 +406,6 @@ screen -X resize 3
 screen -X focus
 clear
 
-# Always startup a local memo
-[ -n "$lcllogfile" ] || msgf 4 "lcllogfile undefined"
-Launch memo memo -o $lcllogfile -l4 -S:$SESSION
-
 if [ $cmd = start ]; then
   if [ $srcmode = playback ]; then
     Launch tm_bfr bfr -S:$SESSION
@@ -465,6 +461,10 @@ elif [ $cmd = wait ]; then
 else
   msgf 3 "Unexpected invalid cmd '$cmd'"
 fi
+
+# Always startup a local memo
+[ -n "$lcllogfile" ] || msgf 4 "lcllogfile undefined"
+Launch memo memo -o $lcllogfile -l4 -S:$SESSION
 
 # At this point, we can assume that memo and tm_bfr are
 # running and server as well except under PB and SI,
