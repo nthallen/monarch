@@ -408,7 +408,9 @@ clear
 
 if [ $cmd = start ]; then
   if [ $srcmode = playback ]; then
-    Launch tm_bfr bfr -S:$SESSION
+    # Delay this until after memo is launched
+    # Launch tm_bfr bfr -S:$SESSION
+    true;
   elif [ $srcmode = realtime ]; then
     if [ $SERVICE = Installed ]; then
       monarchctl_opt='-r'
@@ -465,6 +467,9 @@ fi
 # Always startup a local memo
 [ -n "$lcllogfile" ] || msgf 4 "lcllogfile undefined"
 Launch memo memo -o $lcllogfile -l4 -S:$SESSION
+# Then startup bfr if we skipped that earlier
+[ $cmd = start -a $srcmode = playback ] &&
+  Launch tm_bfr bfr -S:$SESSION
 
 # At this point, we can assume that memo and tm_bfr are
 # running and server as well except under PB and SI,
@@ -602,8 +607,8 @@ for my $disp ( @display ) {
   my @scrvars = map( "\$$_->{varname}_term", @$scr);
   print $fh
     "if [ ", join( " -a ", map( "-n \"$_\"", @scrvars)), " ]; then\n",
-    "  msgf -V 0 \"Starting $disp\$nc \$ncopt \$TM_OPT ",
-        join(' ', @scrvars), "\"\n",
+   #"  msgf -V 0 \"Starting $disp\$nc \$ncopt \$TM_OPT ",
+   #    join(' ', @scrvars), "\"\n",
     "  Launch -TMC- $disp\$nc -S:\$SESSION \$ncopt \$TM_OPT ",
         join(' ', @scrvars), "\n";
   if ( $disp eq $display[0] ) {

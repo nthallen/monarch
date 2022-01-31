@@ -1,6 +1,16 @@
-ModuleDef Agilent [ Rate=1 Panel= ] {
+ModuleDef Agilent [ Rate=1 Panel= ConvType=RESISTANCE ConvWidth=15 ConvUnits=Ohms ALL=# ] {
+  ConvType is the suffix for the TM type of the primary data variables Rn.
+    The actual typename is Ag_@ConvType@
+  ConvWidth is the space to allocate for the converted text on screens
+  ConvUnits is the unit to display on screens beside the Rn data.
+  
+  Compatible selections:
+  ConvType:  RESISTANCE   VOLTAGE   T30K
+  ConvWidth:   15           15       6
+  ConvUnits:   Ohms         V        C
 }
 
 tmcbase = agilent.tmc:agilent.tmc.in
 colbase = agilent_col.tmc
 genuibase = agilent.genui:agilent.genui.in
+- : agilent_base.tbl:agilent_base.tbl.in

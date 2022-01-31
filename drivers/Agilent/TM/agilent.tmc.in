@@ -3,6 +3,7 @@
   #include <cstring>
   #include <sstream>
   #include <iomanip>
+  #include <math.h>
 
   class agostream {
     public:
@@ -29,30 +30,42 @@
   const char *agilent_text(double val) {
     return agostream::agos.str(val);
   }
+
+  double ag_conv_30Kr_to_C(double R) {
+    static const double a0 = 9.367974310127305e-04;
+    static const double a1 = 2.208979577504335e-04;
+    static const double a3 = 1.276369168630689e-07;
+    double logR = log(R);
+    double T = 1/(a0 + a1*logR + a3*logR*logR*logR) - 273.15;
+    return T;
+  }
+
 %}
 TM typedef double Agilent_t { text "%+15.8le" agilent_text(); }
+TM typedef double AgCelcius_t { text "%6.2lf"; }
 TM typedef Agilent_t Ag_RESISTANCE;
 TM typedef Agilent_t Ag_VOLTAGE;
+TM typedef Ag_RESISTANCE Ag_T30K { text "%6.2lf"; convert AgCelcius_t ag_conv_30Kr_to_C(); }
 TM typedef uint8_t Ag_UCHAR { text "%3u"; }
 
-TM @Rate@ Hz Ag_RESISTANCE R0;
-TM @Rate@ Hz Ag_RESISTANCE R1;
-TM @Rate@ Hz Ag_RESISTANCE R2;
-TM @Rate@ Hz Ag_RESISTANCE R3;
-TM @Rate@ Hz Ag_RESISTANCE R4;
-TM @Rate@ Hz Ag_RESISTANCE R5;
-TM @Rate@ Hz Ag_RESISTANCE R6;
-TM @Rate@ Hz Ag_RESISTANCE R7;
-TM @Rate@ Hz Ag_RESISTANCE R8;
-TM @Rate@ Hz Ag_RESISTANCE R9;
-TM @Rate@ Hz Ag_RESISTANCE R10;
-TM @Rate@ Hz Ag_RESISTANCE R11;
-TM @Rate@ Hz Ag_RESISTANCE R12;
-TM @Rate@ Hz Ag_RESISTANCE R13;
-TM @Rate@ Hz Ag_RESISTANCE R14;
-TM @Rate@ Hz Ag_RESISTANCE R15;
-TM @Rate@ Hz Ag_RESISTANCE R16;
-TM @Rate@ Hz Ag_RESISTANCE R17;
+TM @Rate@ Hz Ag_@ConvType@ R0;
+TM @Rate@ Hz Ag_@ConvType@ R1;
+TM @Rate@ Hz Ag_@ConvType@ R2;
+TM @Rate@ Hz Ag_@ConvType@ R3;
+TM @Rate@ Hz Ag_@ConvType@ R4;
+TM @Rate@ Hz Ag_@ConvType@ R5;
+TM @Rate@ Hz Ag_@ConvType@ R6;
+TM @Rate@ Hz Ag_@ConvType@ R7;
+TM @Rate@ Hz Ag_@ConvType@ R8;
+TM @Rate@ Hz Ag_@ConvType@ R9;
+TM @Rate@ Hz Ag_@ConvType@ R10;
+TM @Rate@ Hz Ag_@ConvType@ R11;
+TM @Rate@ Hz Ag_@ConvType@ R12;
+TM @Rate@ Hz Ag_@ConvType@ R13;
+TM @Rate@ Hz Ag_@ConvType@ R14;
+TM @Rate@ Hz Ag_@ConvType@ R15;
+TM @Rate@ Hz Ag_@ConvType@ R16;
+TM @Rate@ Hz Ag_@ConvType@ R17;
 TM @Rate@ Hz Ag_UCHAR AgCount;
 TM @Rate@ Hz Ag_UCHAR AgDrvStale;
 TM @Rate@ Hz Ag_UCHAR AgDevStale;

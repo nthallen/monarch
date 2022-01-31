@@ -23,6 +23,7 @@ install(FILES agilent.h
 install(FILES
     TM/Agilent.agm
     TM/agilent.genui.in
+    TM/agilent_base.tbl.in
     TM/agilent.tmc.in
     TM/agilent_col.tmc
   DESTINATION share/monarch/modules/Agilent)

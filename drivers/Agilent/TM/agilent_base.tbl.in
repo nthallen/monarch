@@ -1,0 +1,30 @@
+AgData {
+  HBox {
+    {
+@ALL@ R0:   (R0,@ConvWidth@)  @ConvUnits@;
+      R1:   (R1,@ConvWidth@)  @ConvUnits@;
+      R2:   (R2,@ConvWidth@)  @ConvUnits@;
+      R3:   (R3,@ConvWidth@)  @ConvUnits@;
+      R4:   (R4,@ConvWidth@)  @ConvUnits@;
+      R5:   (R5,@ConvWidth@)  @ConvUnits@;
+      R6:   (R6,@ConvWidth@)  @ConvUnits@;
+      R7:   (R7,@ConvWidth@)  @ConvUnits@;
+      R8:   (R8,@ConvWidth@)  @ConvUnits@;
+    };
+@ALL@ |; {
+@ALL@ R9:   (R9,@ConvWidth@)   @ConvUnits@;
+@ALL@ R10:  (R10,@ConvWidth@)  @ConvUnits@;
+@ALL@ R11:  (R11,@ConvWidth@)  @ConvUnits@;
+@ALL@ R12:  (R12,@ConvWidth@)  @ConvUnits@;
+@ALL@ R13:  (R13,@ConvWidth@)  @ConvUnits@;
+@ALL@ R14:  (R14,@ConvWidth@)  @ConvUnits@;
+@ALL@ R15:  (R15,@ConvWidth@)  @ConvUnits@;
+@ALL@ R16:  (R16,@ConvWidth@)  @ConvUnits@;
+@ALL@ R17:  (R17,@ConvWidth@)  @ConvUnits@;
+@ALL@    }
+  }
+}
+
+AgStale {
+  Stale: (AgDevStale,3) (AgDrvStale,3);
+}
