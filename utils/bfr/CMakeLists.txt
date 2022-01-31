@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 2.8.8...3.20.0)
 cmake_policy(SET CMP0048 NEW)
 project(monarch-bfr VERSION 2.1.0)
 set(CMAKE_CXX_STANDARD 11)
