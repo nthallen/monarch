@@ -120,7 +120,7 @@ open(my $cmd, ">", "$Name.cmd") ||
 # Open the rest here also
 
 my ($datadef, $coldef, @grpmem, $tbldef, $hktbldef, $cmddef,
-    @status_genui);
+    @status_genui, $tbldef2);
 
 if ($have_digital) {
   $datadef = "TM $Rate Hz ${Name}_Stale_t ${Name}_Stale;\n";
@@ -209,6 +209,10 @@ for (my $i = 0; $i < $n_channels; ++$i) {
   my $datumtbl =
     "  ${datum}: $setdisp (${datum}_VolFlow,7) $VFunits;\n";
   $tbldef .= $datumtbl;
+
+  $datumtbl =
+    "  ${datum}: $setdisp (${datum}_VolFlow,7)  (${datum}_MassFlow,7);\n";
+  $tbldef2 .= $datumtbl;
 
   if ($D->{type} eq 'digital') {
     $datumtbl =
@@ -304,10 +308,17 @@ if ($have_digital) {
     "  HBox { +-; Title: \"$Name HK\"; -+ };\n" ,
     '  ""    >Temp<    "" >Pres< "" >Status< >Stale<;' . "\n",
     $hktbldef,
-    "}\n";
+    "}\n\n";
 } else {
   print $tbl "}\n\n";
 }
+
+print $tbl
+  "${Name}_flows2 {\n" ,
+  "  HBox { +-; Title: $Name; -+ };\n" ,
+  '  ""    >Set<        >ccm<             >nccm<;' . "\n",
+  $tbldef2,
+  "}\n";
 
 print $cmd <<EOF
 %INTERFACE <$Name>
