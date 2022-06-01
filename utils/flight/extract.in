@@ -238,7 +238,7 @@ function debugterm {
   if [ -n "$STY" ]; then
     sname=$*
     sname=${sname%% *}
-    screen -t $sname gdb --args $*
+    screen -t $sname $*
   else
     OS=`uname -o`
     case $OS in
