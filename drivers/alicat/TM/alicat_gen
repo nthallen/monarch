@@ -271,10 +271,15 @@ for (my $i = 0; $i < $n_channels; ++$i) {
     }
     my @text = split(' ', "$text Flow SetPoint");
     my $fword = scalar(@text)+1;
+    my @text2 = split(' ', "$text Set Control Loop Variable to");
+    my $fword2 = scalar(@text2)+1;
     if ($D->{type} eq 'digital') {
       $cmddef .=
         "  : " . join(' ', @text, '%f', "($MFunits)", $MFunits, '*') .
         " { ${Name}_set($channel, \$$fword); }\n";
+      $cmddef .=
+        "  : " . join(' ', @text2, '&Alicat_ctrl', '*') .
+        " { ${Name}_control($channel, \$$fword2); }\n";
     } else {
       die "Unsupported type";
     }
@@ -338,6 +343,26 @@ print $cmd <<EOF
       ID, 16, 1009, ((rawset>>16) & 0xFFFF),
       (rawset & 0xFFFF));
   }
+  
+  void Alicat_control(int ID, int ctrl_var_id) {
+    // ctrl_var_id is on of:
+    //  0: Mass Flow
+    //  1: Volumetric Flow
+    //  2: Diff Pressure
+    //  3: Absolute Pressure
+    //  4: Gauge Pressure
+
+    // WII:FF:AAAA:NN:DD:DD...
+    // II is the device ID
+    // FF is the Modbus function code
+    // AA is the register address
+    // NN is the number of registers
+    // DD are the register values
+    // All values are in hex
+    
+    if_Alicat.Turf("W%X:%X:%X:2:%X:%X\\n",
+      ID, 16, 1000, 11, ctrl_var_id);
+  }
   #endif
 %}
 
@@ -348,6 +373,11 @@ if ( $cmddef ) {
 print $cmd <<EOF
 &command
 $cmddef  ;
+
+&Alicat_ctrl <int>
+  : Mass Flow { \$0 = 0; }
+  : Volumetric Flow { \$0 = 1; }
+  ;
 EOF
 ;
 }
