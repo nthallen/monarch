@@ -252,7 +252,7 @@ function debugterm {
 function debug {
   rundir=/var/run/monarch/run/$Experiment/
   ndc0=`ls $rundir | wc -l`
-  debugterm gdb $gdbinit --args $ext
+  debugterm gdb $gdbinit --args $ext -S:$SESSION
   while
     ndc1=`ls $rundir | wc -l`;
     [ $ndc0 = $ndc1 ];
