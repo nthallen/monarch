@@ -116,8 +116,18 @@ sub opt_vars {
 
 sub subvars {
   my ($line, $vars) = @_;
-  for my $var (keys %$vars) {
+  my $nsubs = 0;
+  while ($line =~ m/\@([a-zA-Z]\w*)\@/) {
+    if (++$nsubs >= 10) {
+      die "$path:$linenum: Macro recursion limit exceeded\n"
+    }
+    my $var = $1;
+    # print "Substituting var '$var'\n";
     my $val = $vars->{$var};
+    if (! defined($val)) {
+      warn "$path:$linenum: Macro '\@$var\@' undefined\n";
+      $val = '';
+    }
     $line =~ s/\@$var\@/$val/g;
   }
   return $line;
