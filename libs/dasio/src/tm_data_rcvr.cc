@@ -45,7 +45,7 @@ namespace DAS_IO {
   bool TM_data_rcvr::protocol_input() {
     // protocol_input() can be called when there is no input
     while (nc-cp >= def->size) {
-      memcpy(def->data, buf, def->size);
+      memcpy(def->data, buf+cp, def->size);
       def->stale_count = 0;
       cp += def->size;
       if (nc > cp && !overrun_ibuf) {
