@@ -1,6 +1,6 @@
 <package> tm_relay
 <include> oui
-<include> tm_client msg server
+<include> tm_client tm_gen msg server
 <include> "tm_relay.h"
 <include> "dasio/tm.h"
 

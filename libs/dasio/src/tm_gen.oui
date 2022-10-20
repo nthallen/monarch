@@ -1,0 +1,11 @@
+<package> tm_gen
+<include> msg oui
+<include> host_session
+
+<unsort>
+Host_Session function bfr-input: Where to find bfr to send telemetry
+
+<package> appid_default
+<include> "dasio/appid.h"
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("tm_gen", "TM Generator", "V2.0");

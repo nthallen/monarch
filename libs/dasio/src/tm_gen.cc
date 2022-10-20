@@ -10,7 +10,7 @@
 namespace DAS_IO {
 
 tm_gen_bfr::tm_gen_bfr(bool collection)
-  : Client("bfr", "bfr", "tm_bfr",
+  : Client("bfr", "bfr-input", "tm_bfr",
            collection ? "input-nb" : "input", 80),
     buffering(true)
     {}

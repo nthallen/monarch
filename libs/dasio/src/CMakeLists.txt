@@ -44,6 +44,7 @@ install(FILES
   server.oui
   seteuid.oui
   tm_client.oui
+  tm_gen.oui
   tma.oui
   DESTINATION share/monarch/oui
 )
