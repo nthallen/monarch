@@ -15,12 +15,27 @@ namespace DAS_IO {
 
 /**
  * @brief Class for command server clients
+ *
+ * The capabilities of this class are most commonly accessed
+ * using the C API functions ci_sendcmd() and ci_sendfcmd().
+ * If additional control is required, for example to specify
+ * the Client function designation, the constructor can
+ * be called before invoking any of the C-level functions.
  */
 class Cmd_writer : public Client {
   friend const char *::ci_time_str();
   friend void ::ci_settime(int32_t time);
   public:
-    Cmd_writer(const char *iname);
+    /**
+     * @param iname Interface mnemonic for logging
+     * @param function Function designation for accessing server
+     *
+     * The function designation allows an application to
+     * distinguish between command servers when addressing more
+     * than one. The Host/Session options (-H/-S) are used
+     * specify where to locate the given function.
+     */
+    Cmd_writer(const char *iname, const char *function = "srvr");
     bool app_input();
     bool app_connected();
 

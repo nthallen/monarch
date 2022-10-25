@@ -37,9 +37,27 @@ namespace DAS_IO {
    */
   class Cmd_reader : public Client {
     public:
+      /**
+       * @param iname Interface mnemonic
+       * @param bufsize Size of the input buffer
+       * @param cmdchannel The label specifying which commands to receive
+       * @param function Optional function name for Client connection
+       * Defaults to "srvr"
+       *
+       * iname is arbitrary and used only in log messages to help
+       * clarify which interface is involved.
+       *
+       * cmdchannel matches the corresponding cmdgen %INTERFACE definition.
+       *
+       * function only needs to be specified to differentiate access
+       * between more than on command server. This is true for a command
+       * relay application, or for any program that needs to address
+       * both a local (session) server and a remote command server.
+       */
       inline Cmd_reader(const char *iname, int bufsize,
-                        const char *cmdchannel)
-          : Client(iname, "srvr", "cmd",
+                        const char *cmdchannel,
+                        const char *function = "srvr")
+          : Client(iname, function, "cmd",
                    cmdchannel, bufsize) {
         flags = Interface::Fl_Read;
       }
