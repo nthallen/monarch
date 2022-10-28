@@ -1278,7 +1278,7 @@ static int cmd_exec(void) {
   int command_serial_number = 0;
 #endif
 
-  int cmd_batch(cmd_hdr_parser *CHPP) {
+  int cmd_batch(DAS_IO::cmd_hdr_parser *CHPP) {
     #ifdef TRANSMITTING
       if (CHPP->SN == 0)
         CHPP->SN = ++command_serial_number;
