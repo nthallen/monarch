@@ -76,7 +76,7 @@ namespace DAS_IO {
     }
     msg( quiet ? -2 : 0, "%s: %s", CHP.hdrID(), CHP.cmd );
     cmd_init();
-    rv = cmd_batch((const char *)CHP.cmd, testing);
+    rv = cmd_batch(&CHP);
     switch ( CMDREP_TYPE(rv) ) {
       case 0:
         report_ok(nc);

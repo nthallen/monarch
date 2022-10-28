@@ -429,6 +429,8 @@ static int ibufidx;
 #endif
 
 #if defined(CMD_BATCH_MODE) && defined(TRANSMITTING)
+  // cmd_base points to the full formatted command
+  // that will be transmitted.
   static const char *cmd_base;
 #endif
 
@@ -1272,6 +1274,24 @@ static int cmd_exec(void) {
 }
 
 #ifdef CMD_BATCH_MODE
+#ifdef TRANSMITTING
+  int command_serial_number = 0;
+#endif
+
+  int cmd_batch(cmd_hdr_parser *CHPP) {
+    #ifdef TRANSMITTING
+      if (CHPP->SN == 0)
+        CHPP->SN = ++command_serial_number;
+    #endif
+    int cmdlen = CHPP->format();
+    if (cmdlen) {
+#ifdef TRANSMITTING
+      cmd_base = CHPP->fmtcmd;
+#endif
+      return cmd_batch((const char *)CHPP->cmd, CHPP->mode == 'T');
+    } else return 1;
+  }
+
   /* Parses the specified command, executing if test == 0.
      Returns non-zero if an error occurred. Possible errors:
        CMDREP_QUIT Command execution resulted in termination
@@ -1291,10 +1311,11 @@ static int cmd_exec(void) {
     assert(cmd_input == 0);
     old_iomode = iomode;
     iomode = 0;
-    #ifdef TRANSMITTING
-      cmd_base =
-    #endif
     cmd_input = cmd;
+    #ifdef TRANSMITTING
+      if (!cmd_base)
+        cmd_base = cmd;
+    #endif
     ioflags &= ~IOF_INTERACTIVE;
     flaghold = ioflags & IOF_EXECUTE;
     if (test) ioflags &= ~IOF_EXECUTE;

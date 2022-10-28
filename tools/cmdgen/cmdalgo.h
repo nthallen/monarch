@@ -12,7 +12,10 @@
 #else
   // the monarch version
   #include "dasio/config.h"
+  #include "dasio/cmd_server.h"
 #endif
+
+int cmd_batch(DAS_IO::cmd_hdr_parser *CHPP);
 
 extern "C" {
 #endif // __cplusplus
