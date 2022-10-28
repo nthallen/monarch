@@ -3,6 +3,7 @@
 // #include <stdlib.h>
 #include "nl.h"
 #include "dasio/msg.h"
+#include "dasio/cmd_server.h"
 #include "cmdalgo.h"
 
 typedef struct cmd_lev {
@@ -13,7 +14,7 @@ typedef struct cmd_lev {
 
 static cmd_level *cur = NULL;
 static short int curpos = 0;
-static char cmdbuf[CMD_INTERP_MAX];
+static char cmdbuf[DAS_IO::Cmd_Server::MAX_COMMAND_IN];
 
 void cic_transmit(char *buf, int n_chars, int transmit) {
   int c;
@@ -26,7 +27,7 @@ void cic_transmit(char *buf, int n_chars, int transmit) {
       else c = ' ';
     }
     cmdbuf[curpos++] = c;
-    if (curpos > CMD_INTERP_MAX)
+    if (curpos > DAS_IO::Cmd_Server::MAX_COMMAND_IN)
       msg(MSG_FATAL, "Maximum transmissable command length exceeded");
   }
   if (transmit) {

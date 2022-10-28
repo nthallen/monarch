@@ -7,8 +7,8 @@
 #include "dasio/cmd_server.h"
 #include "dasio/cmd_version.h"
 #include "dasio/msg.h"
-#include "cmdalgo.h"
 #include "nl_assert.h"
+#include "cmdalgo.h"
 
 namespace DAS_IO {
   
@@ -29,7 +29,7 @@ namespace DAS_IO {
   Cmd_Server *CmdServer;
   
   Cmd_receiver::Cmd_receiver(Authenticator *auth, const char *iname)
-      : Serverside_client(auth, iname, CMD_MAX_COMMAND_IN) {
+      : Serverside_client(auth, iname, Cmd_Server::MAX_COMMAND_IN) {
     quit_recd = false;
     rcvrs.push_back(this);
   }
@@ -51,8 +51,63 @@ namespace DAS_IO {
    */
   bool Cmd_receiver::protocol_input() {
     int status;
+    int verlen, len;
+    int testing = 0;
+    int quiet = 0;
+    int rv;
 
-    if ( nc > CMD_MAX_COMMAND_IN ) {
+    if (CHP.parse(buf)) return false;
+    switch (CHP.mode) {
+      case 'T': testing = 1; break;
+      case 'Q': quiet = 1; break;
+      case 'X': CmdServer->process_quit(); return false;
+      case 'V': // handle version command
+        verlen = strlen(ci_version);
+        if (strncmp((const char *)CHP.cmd, ci_version, verlen) == 0 &&
+            CHP.cmd[verlen] == '\n') {
+          report_ok(nc);
+          return iwrite("K\n");
+        } else {
+          report_err("%s: Command Versions don't match", iname);
+          consume(nc);
+          return iwrite("E2: Command Versions don't match\n");
+        }
+      default: break;
+    }
+    msg( quiet ? -2 : 0, "%s: %s", CHP.hdrID(), CHP.cmd );
+    cmd_init();
+    rv = cmd_batch((const char *)CHP.cmd, testing);
+    switch ( CMDREP_TYPE(rv) ) {
+      case 0:
+        report_ok(nc);
+        return iwrite("K\n");
+      case 1:
+        report_ok(nc);
+        if (testing) return iwrite("K\n");
+        CmdServer->process_quit();
+        return true;
+      case 2: /* Report Syntax Error */
+        if ( nl_response ) {
+          msg( MSG_ERROR, "%s: Syntax Error", CHP.hdrID() );
+          msg( MSG_ERROR, "%s", CHP.cmd);
+          msg( MSG_ERROR, "%*s", rv - CMDREP_SYNERR, "^");
+        }
+        len = snprintf(obuf, OBUF_SIZE,
+          "S%d: Syntax Error at column %d\n",
+          rv - CMDREP_SYNERR, rv - CMDREP_SYNERR);
+        consume(cp);
+        return iwrite(obuf, len);
+      default:
+        len = snprintf(obuf, OBUF_SIZE, "E5: I/O error %d\n",
+          rv - CMDREP_EXECERR);
+        report_err("%s: %s", iname, obuf);
+        consume(cp);
+        return iwrite(obuf, len);
+    }
+
+//-------------------------------------------------
+#ifdef OLD_CODE
+    if ( nc > Cmd_Server::MAX_COMMAND_IN ) {
       report_err("%s: Command too long", iname);
       consume(nc);
       return false;
@@ -164,6 +219,7 @@ namespace DAS_IO {
         }
       }
     }
+#endif // OLD_CODE
   }
   
   void Cmd_receiver::process_quits() {
@@ -207,7 +263,7 @@ namespace DAS_IO {
   std::list<Cmd_receiver *> Cmd_receiver::rcvrs;
   
   Cmd_turf::Cmd_turf(Authenticator *auth, const char *iname, cmdif_rd *ss)
-      : Serverside_client(auth, iname, CMD_MAX_COMMAND_IN), ss(ss) {
+      : Serverside_client(auth, iname, Cmd_Server::MAX_COMMAND_IN), ss(ss) {
     next_command = ss->first_cmd;
     ++ss->first_cmd->ref_count;
     written = false;
@@ -342,9 +398,9 @@ void cmdif_rd::Turf(const char *format, ...) {
 
   cmd = last_cmd;
   va_start( arglist, format );
-  nb = vsnprintf( cmd->command, CMD_MAX_COMMAND_OUT, format, arglist );
+  nb = vsnprintf(cmd->command, DAS_IO::Cmd_Server::MAX_COMMAND_OUT, format, arglist);
   va_end( arglist );
-  if ( nb >= CMD_MAX_COMMAND_OUT ) {
+  if ( nb >= DAS_IO::Cmd_Server::MAX_COMMAND_OUT ) {
     msg( MSG_ERROR, "%s: Output buffer overflow", svcsname.c_str());
     cmd->command[0] = '\0';
   } else {
@@ -515,9 +571,9 @@ void cmdif_wr::Turf(const char *format, ...) {
     // return;
   // }
   va_start( arglist, format );
-  nb = vsnprintf( obuf, CMD_MAX_COMMAND_OUT, format, arglist );
+  nb = vsnprintf( obuf, DAS_IO::Cmd_Server::MAX_COMMAND_OUT, format, arglist );
   va_end( arglist );
-  if ( nb >= CMD_MAX_COMMAND_OUT ) {
+  if ( nb >= DAS_IO::Cmd_Server::MAX_COMMAND_OUT ) {
     msg( MSG_ERROR, "%s: Output buffer overflow", client->get_iname());
   } else if (nb == 0) {
     if (client->ELoop)

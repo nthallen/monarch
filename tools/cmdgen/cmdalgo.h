@@ -19,7 +19,7 @@ extern "C" {
 
 void cmd_init(void); // cmdgen.skel, called from library
 void cmd_interact(void); // cmdgen.skel if CMD_INTERACT_MODE. called from library
-int cmd_batch(char *cmd, int test); // cmdgen.skel if !CMD_CLIENT. called from library
+int cmd_batch(const char *cmd, int test); // cmdgen.skel if !CMD_CLIENT. called from library
 typedef struct {
   unsigned short state;
   unsigned short value;
@@ -47,7 +47,7 @@ void cis_interfaces_close(void); /* generated */
   #define CMD_VERSION_MAX 80
 #endif
 #define CMDSRVR_NAME "cmd/server"
-#define CMD_INTERP_MAX 256
+// define CMD_INTERP_MAX 256
 
 #ifdef __cplusplus
 };

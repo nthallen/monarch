@@ -9,7 +9,8 @@ typedef enum { Cmd_Send, Cmd_Test, Cmd_Send_Quiet } CI_Cmd_Mode;
 
 #include "client.h"
 #include "loop.h"
-#include "cmdalgo.h"
+// #include "cmdalgo.h"
+#include "cmd_server.h"
 
 namespace DAS_IO {
 
@@ -68,6 +69,13 @@ class Cmd_writer : public Client {
     int sendcmd(CI_Cmd_Mode mode, const char *cmdtext);
     
     /**
+     * @brief Sends a command to the command server
+     * Called by sendcmd(mode, cmdtext) and provides the same return
+     * codes
+     */
+    int sendcmd(cmd_hdr_parser *CHPP);
+    
+    /**
      * @return A string which is appropriate for
      * output of algorithm time when in playback mode.
      * If not in playback mode, or if settime() has not
@@ -97,6 +105,7 @@ class Cmd_writer : public Client {
     int ret_code;
     int32_t ci_time;
     Loop PvtLoop;
+    cmd_hdr_parser CHP;
 };
 
 }

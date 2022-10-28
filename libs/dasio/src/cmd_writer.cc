@@ -94,10 +94,10 @@ bool Cmd_writer::app_input() {
 bool Cmd_writer::app_connected() {
   if (!version_verified && ci_version[0] != '\0') {
     char *vcheck;
-    int nb = snprintf( vcheck, 0, "[%s:V%s]\n",
+    int nb = snprintf( vcheck, 0, "[%s:V]%s\n",
       AppID.name, ci_version );
     vcheck = (char *)new_memory(nb+1);
-    snprintf(vcheck, nb+1, "[%s:V%s]\n",
+    snprintf(vcheck, nb+1, "[%s:V]%s\n",
       AppID.name, ci_version );
     if (iwrite(vcheck, nb)) return true;
     nl_assert(obuf_empty());
@@ -107,43 +107,73 @@ bool Cmd_writer::app_connected() {
 }
 
 int Cmd_writer::sendcmd(CI_Cmd_Mode mode, const char *cmdtext) {
-  const char *cmdopts = "";
-  int clen, rv;
-  char buf[CMD_MAX_COMMAND_IN+1];
-  
   if (sent_quit) return(1);
-  // if (!playback && cis_fd < 0 && cic_init() != 0) return(1);
-  ret_code = CMDREP_NOREPLY;
-  if (cmdtext == NULL) {
-    cmdopts = ":X";
-    cmdtext = "";
-    msg(-3, "Sending Quit to Server");
-    sent_quit = true;
-  } else {
+  if (CHP.parse((const unsigned char *)cmdtext)) return CMDREP_SYNERR;
+  if (mode && !CHP.mode) {
     switch (mode) {
-      case 1: cmdopts = ":T"; break;
-      case 2: cmdopts = ":Q"; break;
+      case Cmd_Test: CHP.mode = 'T'; break;
+      case Cmd_Send_Quiet: CHP.mode = 'Q'; break;
       default: break;
     }
-    clen = strlen(cmdtext);
-    { int len = clen;
-      const char *ts = time_str();
+  }
+  return sendcmd(&CHP);
+}
 
-      if (len > 0 && cmdtext[len-1]=='\n') len--;
-      msg( mode == 2 ? -4 : -3,
-          "%s%*.*s", ts, len, len, cmdtext);
-    }
+int Cmd_writer::sendcmd(cmd_hdr_parser *CHPP) {
+  int clen = strlen((const char *)CHPP->cmd);
+  { int len = clen;
+    const char *ts = time_str();
+
+    if (len > 0 && CHPP->cmd[len-1]=='\n') len--;
+    msg( CHPP->mode == 'Q' ? -4 : -3,
+        "%s%*.*s", ts, len, len, CHPP->cmd);
   }
   if (playback) return(0);
-  clen = snprintf( buf, CMD_MAX_COMMAND_IN+1, "[%s%s]%s",
-    AppID.name, cmdopts, cmdtext );
-  if ( clen > CMD_MAX_COMMAND_IN ) {
+  clen = CHPP->format();
+  if ( !clen ) {
     msg( MSG_ERROR, "Command too long" );
-    return true;
+    return 1;
   }
-  iwrite(buf, clen);
+  iwrite(CHPP->fmtcmd, clen);
   wait();
   return ret_code;
+
+  // const char *cmdopts = "";
+  // int clen, rv;
+  // char buf[CMD_MAX_COMMAND_IN+1];
+  
+  // if (sent_quit) return(1);
+  // ret_code = CMDREP_NOREPLY;
+  // if (cmdtext == NULL) {
+    // cmdopts = ":X";
+    // cmdtext = "";
+    // msg(-3, "Sending Quit to Server");
+    // sent_quit = true;
+  // } else {
+    // switch (mode) {
+      // case Cmd_Test: cmdopts = ":T"; break;
+      // case Cmd_Send_Quiet: cmdopts = ":Q"; break;
+      // default: break;
+    // }
+    // clen = strlen(cmdtext);
+    // { int len = clen;
+      // const char *ts = time_str();
+
+      // if (len > 0 && cmdtext[len-1]=='\n') len--;
+      // msg( mode == 2 ? -4 : -3,
+          // "%s%*.*s", ts, len, len, cmdtext);
+    // }
+  // }
+  // if (playback) return(0);
+  // clen = snprintf( buf, CMD_MAX_COMMAND_IN+1, "[%s%s]%s",
+    // AppID.name, cmdopts, cmdtext );
+  // if ( clen > CMD_MAX_COMMAND_IN ) {
+    // msg( MSG_ERROR, "Command too long" );
+    // return true;
+  // }
+  // iwrite(buf, clen);
+  // wait();
+  // return ret_code;
 }
 
 void Cmd_writer::wait() {
@@ -196,7 +226,7 @@ int ci_sendcmd(CI_Cmd_Mode mode, const char *cmdtext) {
 
 int ci_sendfcmd(CI_Cmd_Mode mode, const char *fmt, ...) {
   va_list arg;
-  char cmdbuf[CMD_INTERP_MAX];
+  char cmdbuf[DAS_IO::Cmd_Server::MAX_COMMAND_IN];
 
   va_start(arg, fmt);
   vsprintf(cmdbuf, fmt, arg);

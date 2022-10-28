@@ -429,7 +429,7 @@ static int ibufidx;
 #endif
 
 #if defined(CMD_BATCH_MODE) && defined(TRANSMITTING)
-  static char *cmd_base;
+  static const char *cmd_base;
 #endif
 
 %typedefs%
@@ -716,7 +716,7 @@ static void con_cleanup( void ) {
 #endif
 
 #ifdef CMD_BATCH_MODE
-  static char *cmd_input;
+  static const char *cmd_input;
 #endif
 
 static unsigned short input(void) {
@@ -1281,7 +1281,7 @@ static int cmd_exec(void) {
                     character position where the error occurred.
        >=CMDREP_EXECERR Execution error. Error code + CMDREP_EXECERR
   */
-  int cmd_batch(char *cmd, int test) {
+  int cmd_batch(const char *cmd, int test) {
     short flaghold;
     short old_iomode;
     int retval;

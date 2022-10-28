@@ -16,12 +16,63 @@ namespace DAS_IO {
     public:
       inline Cmd_Server() : Server("cmd"), quit_processed(false) {}
       void process_quit();
+      /** The maximum input command length, including headers */
+      static const int MAX_COMMAND_IN = 300;
+      /** The maximum message size out to drivers */
+      static const int MAX_COMMAND_OUT = 160;
     protected:
       bool ready_to_quit();
       bool quit_processed;
   };
 
   extern Cmd_Server *CmdServer;
+  
+  class cmd_hdr_parser {
+    public:
+      cmd_hdr_parser();
+      ~cmd_hdr_parser();
+      /**
+       * @param ibuf Pointer to command string
+       * The string at ibuf must remain unchanged until the
+       * command has been fully processed.
+       * Checks the command string for header data and sets
+       * hdrID_buf, SN, mode and cmd values accordingly.
+       * If no header is present, hdrID_buf[0], SN and mode
+       * will all be set to zero.
+       * @return true if a syntax error is found.
+       */
+      bool parse(const unsigned char *ibuf);
+      /**
+       * Formats the previously parsed command into fmtcmd.
+       * @return The number of characters in fmtcmd or zero
+       * on overflow.
+       */
+      int format();
+      inline const char *hdrID() {
+        return hdrID_buf[0] ? hdrID_buf : hdrID_default;
+      }
+      char *hdrID_default; // Initialized from AppID.name
+      char *hdrID_buf; // allocated and extended as necessary
+      int SN;
+      char mode;
+      const unsigned char *cmd; // points into ibuf, assumed to remain constant
+      char fmtcmd[Cmd_Server::MAX_COMMAND_IN];
+    private:
+      int hdrID_len;
+      /**
+       * @param ibuf The source string
+       * @param suffix The required suffix string
+       * @return true if ibuf ends with the suffix string
+       */
+      bool chk_trailing(const unsigned char *ibuf, const char *suffix);
+      int inline remaining(int nc) {
+        return nc < Cmd_Server::MAX_COMMAND_IN ?
+          Cmd_Server::MAX_COMMAND_IN-nc : 0;
+      }
+      int inline retcode(int nc) {
+        return nc < Cmd_Server::MAX_COMMAND_IN ? nc : 0;
+      }
+  };
   
   /**
    * @brief Class for cmd/server server clients.
@@ -39,6 +90,7 @@ namespace DAS_IO {
         SubService *ss);
     protected:
       ~Cmd_receiver();
+      cmd_hdr_parser CHP;
       bool process_timeout();
       void process_quit();
       bool quit_recd;
@@ -87,7 +139,7 @@ class command_out_t {
     command_out_t *free_command(command_out_t *cmd);
     command_out_t *next; // forms a linked list
     int ref_count;
-    char command[CMD_MAX_COMMAND_OUT];
+    char command[DAS_IO::Cmd_Server::MAX_COMMAND_OUT];
     int cmdlen;
 };
 
@@ -142,10 +194,10 @@ class cmdif_wr_clt : public DAS_IO::Client {
 };
 
 /**
- * Class to make a connection to initiate a connection
- * to a server to forward commands. This is instantiated
- * for the cmdgen '%INTERFACE <driver:service/subservice>'
- * syntax, specifically for <tm_gen:tm_gen/cmd>. No response
+ * Class to make a connection to a server to forward
+ * commands. This is instantiated for the cmdgen
+ * '%INTERFACE <driver:service/subservice>' syntax,
+ * specifically for <tm_gen:tm_gen/cmd>. No response
  * is expected from the server.
  *
  * The name_in and path_in come directly from the
@@ -164,7 +216,7 @@ class cmdif_wr {
     void Shutdown();
   private:
     cmdif_wr_clt *client;
-    char obuf[CMD_MAX_COMMAND_OUT];
+    char obuf[DAS_IO::Cmd_Server::MAX_COMMAND_OUT];
     const char *wrname;
     const char *wrpath;
 };
