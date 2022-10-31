@@ -107,7 +107,6 @@ bool Cmd_writer::app_connected() {
 }
 
 int Cmd_writer::sendcmd(CI_Cmd_Mode mode, const char *cmdtext) {
-  if (sent_quit) return(1);
   if (CHP.parse((const unsigned char *)cmdtext)) return CMDREP_SYNERR;
   if (mode && !CHP.mode) {
     switch (mode) {
@@ -120,6 +119,7 @@ int Cmd_writer::sendcmd(CI_Cmd_Mode mode, const char *cmdtext) {
 }
 
 int Cmd_writer::sendcmd(cmd_hdr_parser *CHPP) {
+  if (sent_quit) return(1);
   int clen = strlen((const char *)CHPP->cmd);
   { int len = clen;
     const char *ts = time_str();
@@ -128,6 +128,7 @@ int Cmd_writer::sendcmd(cmd_hdr_parser *CHPP) {
     msg( CHPP->mode == 'Q' ? -4 : -3,
         "%s%*.*s", ts, len, len, CHPP->cmd);
   }
+  if (CHPP->mode == 'X') sent_quit = 1;
   if (playback) return(0);
   clen = CHPP->format();
   if ( !clen ) {
@@ -202,19 +203,20 @@ void Cmd_writer::settime(int32_t time) {
 
 }
 
-void cic_set_playback(bool playback) {
-  DAS_IO::Cmd_writer::playback = playback;
-}
-
-bool cic_init() {
+bool cic_init(DAS_IO::Cmd_writer *cmd) {
   if (DAS_IO::Cmd_writer::Cmd)
     return false;
-  DAS_IO::Cmd_writer *cmd = new DAS_IO::Cmd_writer("Cmd");
+  if (cmd == 0)
+    cmd = new DAS_IO::Cmd_writer("Cmd");
   if (DAS_IO::Cmd_writer::playback)
     return false;
   cmd->connect();
   cmd->wait();
   return ! cmd->is_negotiated();
+}
+
+void cic_set_playback(bool playback) {
+  DAS_IO::Cmd_writer::playback = playback;
 }
 
 int ci_sendcmd(CI_Cmd_Mode mode, const char *cmdtext) {

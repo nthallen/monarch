@@ -1,0 +1,11 @@
+<package> cmd_relay
+<include> msg oui
+
+<unsort>
+Host_Session function txsrvr: Where commands come from
+Host_Session function rxsrvr: Where to send commands
+
+<package> appid_default
+<include> "dasio/appid.h"
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("cmdrly", "command relay", "V1.0");

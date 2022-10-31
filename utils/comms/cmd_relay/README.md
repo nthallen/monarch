@@ -1,4 +1,6 @@
 # cmd_relay
-This utility is currently being developed under the
-KK-SCoPEx project. It should be moved into Monarch
-after testing.
+Reads commands from a txsrvr and forwards them to a
+remote command server. Specifically developed to forward
+commands to the SCoPEx relay to facilitate sattelite
+phone communications, but could also be used in any remote
+situation.

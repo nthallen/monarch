@@ -110,6 +110,18 @@ class Cmd_writer : public Client {
 
 }
 
+/**
+ * If not in playback mode,
+ * Locates the command server using the standard host/socket
+ * resolution rules (-H/-S) and the service function "srvr".
+ * Once located, if ci_version is non-empty, the version is queried.
+ *
+ * This version does not connect to cmd/Quit, since that needs
+ * to happen at a different level.
+ * @return true on error.
+ */
+bool cic_init(DAS_IO::Cmd_writer *cmd = 0);
+
 extern "C" {
 
 #else // __cplusplus
@@ -123,18 +135,6 @@ extern "C" {
  * @param playback Indicates if this is a playback session. Defaults to false.
  */
 void cic_set_playback(bool playback);
-
-/**
- * If not in playback mode,
- * Locates the command server using the standard host/socket
- * resolution rules (-H/-S) and the service function "srvr".
- * Once located, if ci_version is non-empty, the version is queried.
- *
- * This version does not connect to cmd/Quit, since that needs
- * to happen at a different level.
- * @return true on error.
- */
-bool cic_init();
 
 /**
  * @brief Sends a command to the command server.
