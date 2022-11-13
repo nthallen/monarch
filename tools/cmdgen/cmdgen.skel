@@ -1274,15 +1274,14 @@ static int cmd_exec(void) {
 }
 
 #ifdef CMD_BATCH_MODE
-#ifdef TRANSMITTING
-  int command_serial_number = 0;
-#endif
 
   int cmd_batch(DAS_IO::cmd_hdr_parser *CHPP) {
-    #ifdef TRANSMITTING
-      if (CHPP->SN == 0)
-        CHPP->SN = ++command_serial_number;
-    #endif
+#ifdef TRANSMITTING
+    CHPP->assign_sn();
+#else
+    if (CHPP->check_sn())
+      return 0;
+#endif
     int cmdlen = CHPP->format();
     if (cmdlen) {
 #ifdef TRANSMITTING

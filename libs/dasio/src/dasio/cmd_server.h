@@ -48,6 +48,15 @@ namespace DAS_IO {
        * on overflow.
        */
       int format();
+      /**
+       * Sets SN and warns if the message already has one assigned.
+       */
+      void assign_sn();
+      /**
+       * Checks whether the SN has already been executed.
+       * @return true if it has already been executed
+       */
+      bool check_sn();
       inline const char *hdrID() {
         return hdrID_buf[0] ? hdrID_buf : hdrID_default;
       }
@@ -59,6 +68,16 @@ namespace DAS_IO {
       char fmtcmd[Cmd_Server::MAX_COMMAND_IN];
     private:
       int hdrID_len;
+      static int latest_SN;
+      static const int N_SN = 5;
+      static struct {
+        int SN;
+        int retrans;
+        int next_idx;
+      } recent_SN[N_SN];
+      static int first_SN_idx;
+      static int last_SN_idx;
+      static int unused_SN_idx;
       /**
        * @param ibuf The source string
        * @param suffix The required suffix string

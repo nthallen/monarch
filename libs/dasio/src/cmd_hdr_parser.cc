@@ -137,4 +137,43 @@ int cmd_hdr_parser::format() {
   return retcode(nc);
 }
 
+int cmd_hdr_parser::latest_SN;
+
+void cmd_hdr_parser::assign_sn() {
+  if (SN == 0) {
+    SN = ++latest_SN;
+  } else {
+    msg(MSG_WARN, "assign_sn: already assigned");
+  }
+}
+
+struct {
+  int SN;
+  int retrans;
+  int next;
+} cmd_hdr_parser::recent_SN[N_SN];
+int cmd_hdr_parser::first_SN_idx = -1;
+int cmd_hdr_parser::last_SN_idx = -1;
+int cmd_hdr_parser::unused_SN_idx = 0;
+
+bool cmd_hdr_parser::check_sn() {
+  if (SN) {
+    Search through the list for value >= SN
+    if !at end && equal {
+      ++retrans
+      return true
+    } else if (at beginning and size < N_SN) or
+            (! at beginning)
+      insert
+      if size < N_SN
+        pop_front
+      return false
+    } else {
+      // record really old SN
+      return true
+    }
+  }
+  return false;
+}
+
 }
