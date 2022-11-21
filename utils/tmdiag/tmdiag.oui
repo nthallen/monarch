@@ -1,0 +1,11 @@
+<package> tmdiag
+<include> msg oui
+<include> "tmdiag.h"
+
+<args>
+  tmd.process_file(optarg);
+
+<package> appid_default
+<include> "dasio/appid.h"
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("tmdiag", "Telemetry Diagnostic Utility", "V1.0");
