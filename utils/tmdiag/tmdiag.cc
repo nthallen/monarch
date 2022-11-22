@@ -202,8 +202,9 @@ bool tmdiag::process_data_t3(struct tm_msg *rec) {
   uint64_t cur_time = ((uint64_t)cur_ts.secs)*tm_info.tm.nrowsper +
     ((uint64_t)(rec->body.data3.mfctr - cur_ts.mfc_num))*tm_info.tm.nsecsper;
   if (next_time > 0 && cur_time != next_time) {
-    double time_adjust = ((double)(cur_time-next_time))/tm_info.tm.nrowsper;
-    msg(0, "%s:%5d: DT3 Time adjust %.3lf secs", curfile, offset, time_adjust);
+    int64_t diff = cur_time - next_time;
+    double time_adjust = ((double)diff)/tm_info.tm.nrowsper;
+    msg(0, "%s:%5d: DT3 Time adjust %+.3lf secs", curfile, offset, time_adjust);
   }
   next_time = cur_time + ((double)rec->body.data3.n_rows)*tm_info.tm.nsecsper;
 
