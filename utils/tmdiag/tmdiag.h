@@ -7,6 +7,7 @@
 #ifndef TMDIAG_H_INCLUDED
 #define TMDIAG_H_INCLUDED
 #include <stdio.h>
+#include "dasio/tm.h"
 
 extern void process_file(const char *filename);
 
@@ -52,6 +53,7 @@ class tmdiag {
     char *buf;
     size_t fsize;
     int offset;
+    mfc_t next_mfctr;
 };
 
 extern tmdiag tmd;

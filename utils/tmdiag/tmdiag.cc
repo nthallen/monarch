@@ -3,9 +3,9 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h> // for optind, opterr
+#include <time.h>
 #include "tmdiag.h"
 #include "dasio/msg.h"
-#include "dasio/tm.h"
 #include "oui.h"
 
 tmdiag tmd;
@@ -20,7 +20,11 @@ tmdiag::tmdiag() :
     curfile(0),
     curfp(0),
     bufsize(20000),
-    buf(0) {
+    buf(0),
+    fsize(0),
+    offset(0),
+    next_mfctr(0)
+{
   buf = (char*)new_memory(bufsize);
 }
 
@@ -62,7 +66,7 @@ void tmdiag::process_file(const char *filename) {
     return;
   }
   // Read in the file
-  size_t rc = fread(buf, fsize, 1, curfp);
+  size_t rc = fread(buf, 1, fsize, curfp);
   // This error will be confusing
   if (check_logic_error(rc != fsize, "wrong read length from fread()"))
     return;
@@ -130,26 +134,69 @@ bool tmdiag::process_record(const char *rawrec) {
 }
 
 bool tmdiag::process_init(struct tm_msg *rec) {
+  int recsize = sizeof(tm_hdr_t)+sizeof(tm_info_t);
+  if (check_file_error(offset+recsize > fsize,
+      "Incomplete INIT record"))
+    return true;
   tm_info_t *tmi = &rec->body.init;
   tm_dac_t *tmdac = &tmi->tm;
+  msg(0, "%s:%d: TM_INIT", curfile, offset);
+  if (strcmp((char*)tmdac->tmid.version, (char*)tm_info.tm.tmid.version))
+    msg(MSG_ERROR, "INIT.tmid.version does not match tm.dac");
+  if (memcmp(tmdac->tmid.md5, tm_info.tm.tmid.md5, 16))
+    msg(MSG_ERROR, "INIT.tmid.md5 does not match tm.dac");
+  if (tmdac->nbrow != tm_info.tm.nbrow)
+    msg(MSG_ERROR, "INIT.nbrow does not match tm.dac");
   // Compare tmdac to tm_info.tm
   //   Compare tmdac->tmid.version
   //   Compare tmdac->tmid.md5
   //   Compare tmdac->nbminf
-  if (check_file_error(offset+sizeof(tm_hdr_t)+sizeof(tm_info_t) > fsize,
-      "Incomplete TM_INIT record"))
-    return true;
+  offset += recsize;
   return false;
 }
 
 bool tmdiag::process_tstamp(struct tm_msg *rec) {
-  return true;
+  int recsize = sizeof(tm_hdr_t)+sizeof(tstamp_t);
+  if (check_file_error(offset+recsize > fsize,
+      "Incomplete TSTAMP record"))
+    return true;
+  tstamp_t *ts = &rec->body.ts;
+  time_t tt = ts->secs;
+  char tbuf[30];
+  strncpy(tbuf,asctime(gmtime(&tt)),30);
+  tbuf[29] = '\0';
+  msg(0, "%s:%d: Time Stamp: %u:%d %s", curfile, offset,
+      ts->mfc_num, ts->secs, tbuf);
+  offset += recsize;
+  return false;
 }
 
 bool tmdiag::process_data_t3(struct tm_msg *rec) {
-  return true;
+  int recsize = sizeof(tm_hdr_t)+sizeof(tm_hdrw_t)+sizeof(mfc_t);
+  if (check_file_error(offset+recsize > fsize,
+      "Incomplete DATA_T3 record"))
+    return true;
+  
+  recsize += rec->body.data3.n_rows * (tm_info.tm.nbrow-4);
+  if (check_file_error(offset+recsize > fsize,
+      "Incomplete DATA_T3 record"))
+    return true;
+
+  if (rec->body.data3.mfctr != next_mfctr) {
+    uint16_t diff = rec->body.data3.mfctr - next_mfctr;
+    msg(0, "%s:%5d DT3 Missed %u rows", curfile, offset, diff);
+  }
+  msg(0, "%s:%5d DT3 mfc:%5u %u rows of %u bytes", curfile, offset,
+          rec->body.data3.mfctr,
+          rec->body.data3.n_rows, tm_info.tm.nbrow-4);
+  next_mfctr = rec->body.data3.mfctr + rec->body.data3.n_rows;
+  offset += recsize;
+  return false;
 }
 
 bool tmdiag::process_quit(struct tm_msg *rec) {
-  return true;
+  int recsize = sizeof(tm_hdr_t);
+  msg(0, "%s:%d: QUIT", curfile, offset);
+  offset += recsize;
+  return false;
 }
