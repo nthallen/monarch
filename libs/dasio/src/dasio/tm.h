@@ -71,7 +71,7 @@ typedef struct {
  * tm_dac_t defines the core parameters of a telemetry frame
  * including the MD5 digest of the .pcm frame summary, which
  * includes signal names and their placement in the frame.
- * This information in stored in tm.dac, which is stored
+ * This information is stored in tm.dac, which is stored
  * along with the data. If the tm.dac data does not match,
  * then the format is probably incompatible.
  *
