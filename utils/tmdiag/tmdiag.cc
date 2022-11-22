@@ -23,9 +23,12 @@ tmdiag::tmdiag() :
     buf(0),
     fsize(0),
     offset(0),
-    next_mfctr(0)
+    next_mfctr(0),
+    next_time(0)
 {
   buf = (char*)new_memory(bufsize);
+  cur_ts.mfc_num = 0;
+  cur_ts.secs = 0;
 }
 
 void tmdiag::process_args(int argc, char **argv) {
@@ -161,12 +164,19 @@ bool tmdiag::process_tstamp(struct tm_msg *rec) {
       "Incomplete TSTAMP record"))
     return true;
   tstamp_t *ts = &rec->body.ts;
-  time_t tt = ts->secs;
-  char tbuf[30];
-  strncpy(tbuf,asctime(gmtime(&tt)),30);
-  tbuf[29] = '\0';
-  msg(0, "%s:%d: Time Stamp: %u:%d %s", curfile, offset,
-      ts->mfc_num, ts->secs, tbuf);
+  bool new_ts = ts->mfc_num != cur_ts.mfc_num ||
+      ts->secs != cur_ts.secs;
+  if (V(2) || (V(1) && new_ts)) {
+    time_t tt = ts->secs;
+    char tbuf[30];
+    strncpy(tbuf,asctime(gmtime(&tt)),30);
+    tbuf[29] = '\0';
+    msg(0, "%s:%5d: Time Stamp: %5u:%d %s", curfile, offset,
+        ts->mfc_num, ts->secs, tbuf);
+  }
+  if (new_ts) {
+    cur_ts = *ts;
+  }
   offset += recsize;
   return false;
 }
@@ -182,13 +192,31 @@ bool tmdiag::process_data_t3(struct tm_msg *rec) {
       "Incomplete DATA_T3 record"))
     return true;
 
-  if (rec->body.data3.mfctr != next_mfctr) {
-    uint16_t diff = rec->body.data3.mfctr - next_mfctr;
-    msg(0, "%s:%5d DT3 Missed %u rows", curfile, offset, diff);
+  bool display = V(2);
+  if (rec->body.data3.mfctr < cur_ts.mfc_num) {
+    msg(MSG_ERROR, "%s:%5d DT3 mfctr < cur_ts.mfc_num",
+      curfile, offset);
+    display = true;
   }
-  msg(0, "%s:%5d DT3 mfc:%5u %u rows of %u bytes", curfile, offset,
-          rec->body.data3.mfctr,
-          rec->body.data3.n_rows, tm_info.tm.nbrow-4);
+
+  uint64_t cur_time = ((uint64_t)cur_ts.secs)*tm_info.tm.nrowsper +
+    ((uint64_t)(rec->body.data3.mfctr - cur_ts.mfc_num))*tm_info.tm.nsecsper;
+  if (next_time > 0 && cur_time != next_time) {
+    double time_adjust = ((double)(cur_time-next_time))/tm_info.tm.nrowsper;
+    msg(0, "%s:%5d: DT3 Time adjust %.3lf secs", curfile, offset, time_adjust);
+  }
+  next_time = cur_time + ((double)rec->body.data3.n_rows)*tm_info.tm.nsecsper;
+
+  // if (rec->body.data3.mfctr != next_mfctr) {
+    // uint16_t diff = rec->body.data3.mfctr - next_mfctr;
+    // msg(0, "%s:%5d DT3 Missed %u rows", curfile, offset, diff);
+    // display = true;
+  // }
+  if (display) {
+    msg(0, "%s:%5d: DT3 mfc:%5u %u rows of %u bytes", curfile, offset,
+            rec->body.data3.mfctr,
+            rec->body.data3.n_rows, tm_info.tm.nbrow-4);
+  }
   next_mfctr = rec->body.data3.mfctr + rec->body.data3.n_rows;
   offset += recsize;
   return false;

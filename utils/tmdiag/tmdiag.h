@@ -8,6 +8,7 @@
 #define TMDIAG_H_INCLUDED
 #include <stdio.h>
 #include "dasio/tm.h"
+#include "nl.h"
 
 extern void process_file(const char *filename);
 
@@ -47,6 +48,7 @@ class tmdiag {
      * Currently just closes the file.
      */
     void cleanup_error();
+    static bool V(int lvl) { return nl_debug_level < -lvl; }
     const char *curfile;
     FILE *curfp;
     int bufsize;
@@ -54,6 +56,8 @@ class tmdiag {
     size_t fsize;
     int offset;
     mfc_t next_mfctr;
+    tstamp_t cur_ts;
+    uint64_t next_time; // in 1/nrowsper units
 };
 
 extern tmdiag tmd;
