@@ -188,19 +188,44 @@ function Launch {
   if [ $Debug = yes -a -n "$STY" ]; then
     sname=$*
     sname=${sname%% *}
-    rm -f monarch_gdb_ready
-    screen -t $sname gdb --args $*
-    waitfor monarch_gdb_ready forever
-    if [ -s monarch_gdb_ready ]; then
-      msgf -V 2 "Aborting at Debug due to non-empty wait file"
-      launch_error=yes
+    if [ "X$name" = "X-TMC-" ]; then
+      rm -f monarch_gdb_pid.txt
+      screen -t $sname gdb -x /usr/local/share/monarch/gdb/TMC_debug.gdb --args $*
+      waitfor monarch_gdb_pid.txt forever
+      read gdb_pid <monarch_gdb_pid.txt
+      gdb_pid=${gdb_pid##* }
+      if [ -n "$gdb_pid" ]; then
+        waitfor /var/run/monarch/run/$Experiment/$pid forever ||
+          gdb_pid=''
+      fi
+      if [ -z "$gdb_pid" ]; then
+        msgf -V 2 "Aborting at Debug due to failed startup"
+        launch_error=yes
+        rm -f monarch_gdb_pid.txt
+        return 1
+      fi
+      rm -f monarch_gdb_pid.txt
+    else
       rm -f monarch_gdb_ready
-      return 1
+      screen -t $sname gdb --args $*
+      [ "$name" = "-" ] && wname=monarch_gdb_ready
+      if [ -n "$wname" ]; then
+        waitfor $wname forever
+        if [ ! -f "$wname" ]; then
+          msgf -V 2 "Aborting at Debug due to launch failure"
+          launch_error=yes
+          rm -f monarch_gdb_ready
+          return 1
+        fi
+      fi
+      rm -f monarch_gdb_ready
+      wname=''
     fi
-    rm -f monarch_gdb_ready
     msgf $LaunchVdefault 0 "Debug: $*"
   elif { $* & }; then
     Launch_pid=$!
+    [ "$name" = "-TMC-" ] &&
+      wname=/var/run/monarch/run/$Experiment/$Launch_pid
     msgf $LaunchVdefault 0 "Launch: $Launch_pid $*"
   else
     msgf $LaunchVdefault 2 "Launch Error: $*"

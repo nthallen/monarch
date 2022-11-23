@@ -42,6 +42,10 @@ install(PROGRAMS
   ${CMAKE_CURRENT_SOURCE_DIR}/dump_exconfig.sh
   DESTINATION sbin)
 
+install(PROGRAMS
+  ${CMAKE_CURRENT_SOURCE_DIR}/TMC_debug.gdb
+  DESTINATION share/monarch/gdb)
+
 if (NOT CMAKE_CROSSCOMPILING)
 
 else (NOT CMAKE_CROSSCOMPILING)
