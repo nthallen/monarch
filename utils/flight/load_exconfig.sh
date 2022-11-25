@@ -36,7 +36,7 @@
 # parent registered for this Experiment
 # is deemed strong enough evidence that the service is installed.
 #----------------------------------------------------------------
-export PATH=:/bin:/usr/bin:/usr/local/bin
+export PATH=/bin:/usr/bin:/usr/local/bin
 umask g+w
 
 #----------------------------------------------------------------
@@ -133,10 +133,10 @@ function msgf {
 
 function set_have {
   # name will be sanitized before getting here
-  name=$1
-  value=$2
-  if [ -n "$name" ]; then
-    eval have_$name=$value
+  sh_name=$1
+  sh_value=$2
+  if [ -n "$sh_name" ]; then
+    eval have_$sh_name=$sh_value
   fi
 }
 
@@ -147,23 +147,28 @@ function Launch {
   fi
   Debug=no
   if [ "$1" = "Debug" ]; then
-    Debug=yes
+    if [ -n "$STY" ]; then
+      Debug=yes
+    else
+      msgf $LaunchVdefault 1 "Launch: debug must be run from within a gnu screen session"
+    fi
     shift
   fi
-  name=$1
+  name="$1"
   sname=$name
   [ -n "$SESSION" ] && sname=$name.$SESSION
   shift
   msgf $LaunchVdefault -2 "Launch: $*"
   shortname=''
   wname=''
-  case $name in
+  case "$name" in
     -*) :;;
     /*) wname=$sname;;
     */*) wname=/var/run/monarch/$Experiment/$sname;;
     *) wname=/var/run/monarch/$Experiment/$sname
        shortname=$name;;
   esac
+
   set_have "$shortname" no
   # bfr is supposed to create this directory
   # mkdir -p /var/run/monarch/run/$Experiment
@@ -188,17 +193,26 @@ function Launch {
   if [ $Debug = yes -a -n "$STY" ]; then
     sname=$*
     sname=${sname%% *}
+    gdbinit=''
+    [ -f .gdbinit ] && gdbinit="-x $PWD/.gdbinit"
+    screen -X chdir $PWD
+    screen -X setenv PATH $PATH
+    screen -X setenv Experiment $Experiment
+    screen -X setenv TMBINDIR $TMBINDIR
     if [ "X$name" = "X-TMC-" ]; then
       rm -f monarch_gdb_pid.txt
-      screen -t $sname gdb -x /usr/local/share/monarch/gdb/TMC_debug.gdb --args $*
+      screen -t $sname gdb -x /usr/local/share/monarch/gdb/TMC_debug.gdb $gdbinit --args "$@"
+      screen -X setenv PATH /bin:/usr/bin:/usr/local/bin
+      screen -X unsetenv Experiment
+      screen -X unsetenv TMBINDIR
       waitfor monarch_gdb_pid.txt forever
       read gdb_pid <monarch_gdb_pid.txt
       gdb_pid=${gdb_pid##* }
       if [ -n "$gdb_pid" ]; then
-        waitfor /var/run/monarch/run/$Experiment/$pid forever ||
+        msgf $LaunchVdefault 0 "Launch: $gdb_pid $*"
+        waitfor /var/run/monarch/run/$Experiment/$gdb_pid forever ||
           gdb_pid=''
-      fi
-      if [ -z "$gdb_pid" ]; then
+      else
         msgf -V 2 "Aborting at Debug due to failed startup"
         launch_error=yes
         rm -f monarch_gdb_pid.txt
@@ -207,7 +221,11 @@ function Launch {
       rm -f monarch_gdb_pid.txt
     else
       rm -f monarch_gdb_ready
-      screen -t $sname gdb --args $*
+      screen -t $sname gdb --args "$@"
+      msgf $LaunchVdefault 0 "Launch: gdb $*"
+      screen -X setenv PATH /bin:/usr/bin:/usr/local/bin
+      screen -X unsetenv Experiment
+      screen -X unsetenv TMBINDIR
       [ "$name" = "-" ] && wname=monarch_gdb_ready
       if [ -n "$wname" ]; then
         waitfor $wname forever
@@ -221,7 +239,6 @@ function Launch {
       rm -f monarch_gdb_ready
       wname=''
     fi
-    msgf $LaunchVdefault 0 "Debug: $*"
   elif { $* & }; then
     Launch_pid=$!
     [ "$name" = "-TMC-" ] &&
