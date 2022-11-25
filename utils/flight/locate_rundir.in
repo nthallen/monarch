@@ -15,9 +15,7 @@ locate_rundir <run>
 
 locate_rundir only looks for the run on the local
 system. It is up to the caller to determine whether
-to continue the search on a remote system. The -r
-option is primarily (or exclusively) intended for
-running on a remote system.
+to continue the search on a remote system.
 EOF
 exit 0
 }
