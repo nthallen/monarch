@@ -8,7 +8,7 @@ extract [-h] [-g <time>] [-z <time>] <directory> [prog ...]
  -z <time> specify end time (see "use rdr")
  -F <no> specify the first data file number
  -L <no> specify the last data file number
- -d invoke pterm gdb on each extraction
+ -d invoke gdb on each extraction
  -h print this message
 
  Run extraction programs on data in specified directory
@@ -72,7 +72,7 @@ exit 0
 Ex_sav="$Extractions"
 Prod_sav="$ExtProducts"
 Ropt_sav="$RDR_OPTS"
-SESSION=$$
+[ -n "$SESSION" ] || SESSION=$$
 
 # load_exconfig.sh guarantees that Experiment is defined
 . /usr/local/libexec/load_exconfig.sh
@@ -83,9 +83,8 @@ msgProgram='extract'
 # Handle arguments
 #----------------------------------------------------------------
 time_opts=""
-debug=no
-gdbinit=""
-while getopts "hdrg:z:F:L:" option; do
+debug=""
+while getopts "hdrg:z:F:L:S:" option; do
   case $option in
     h) print_usage;;
     r) EXTRACT_DEPTH=1;;
@@ -93,16 +92,18 @@ while getopts "hdrg:z:F:L:" option; do
     z) time_opts="$time_opts -z $OPTARG";;
     F) time_opts="$time_opts -F $OPTARG";;
     L) time_opts="$time_opts -L $OPTARG";;
-    d) debug=yes; [ -f .gdbinit ] && gdbinit="-x $PWD/.gdbinit";;
+    d) debug=Debug;;
     \?) echo; exit 1;;
     *) echo Unsupported option: -$option; exit 1;;
   esac
 done
-let sval=$OPTIND-1
-shift $sval
 
-dir=$1
-shift
+# When debugging, we need to reinvoke extract under gnu screen,
+# so we need to preserve the initial command line. We will
+# eliminate the use of 'shift' and instead use indexing
+sval=$OPTIND
+dir=${!sval}
+let sval=sval+1
 
 [ -n "$dir" ] || print_usage
 
@@ -133,16 +134,6 @@ if [ -z "EXTRACT_DEPTH" -a -x $dir/extract ]; then
   exec $dir/extract $dir
 fi
 
-#----------------------------------------------------------------
-# Modified to modify Experiment only if it is defined. Add .r
-# instead of the whole .node.pid. Only one rdr allowed per
-# experiment per node.
-#----------------------------------------------------------------
-# 2/26/2021 Modified again to use a private session, allowing
-# any number of extractions to run simultaneously
-#----------------------------------------------------------------
-# Experiment=${Experiment}.r
-
 Extractions="$Ex_sav"
 ExtProducts="$Prod_sav"
 RDR_OPTS="$Ropt_sav"
@@ -157,16 +148,6 @@ unset Ex_sav Prod_sav Ropt_sav
 [ -z "$VERSION" ] && VERSION="1.0"
 [ -f "$dir/tm.dac" ] || msgf -1 "Unable to locate $dir/tm.dac"
 
-[ -f VERSION ] && cur_version=`cat VERSION`
-[ -z "$cur_version" ] && cur_version="1.0"
-if [ -f tm.dac -a "$VERSION" = "$cur_version" ]; then
-  if cmp -s $dir/tm.dac tm.dac; then
-    MYPATH="$PWD:"
-  else
-    msgf 0 "WARNING!: $PWD/tm.dac differs but VERSIONs do not"
-  fi
-fi
-
 function eval_dir {
   bin=$1
   if [ -d $bin ]; then
@@ -177,27 +158,30 @@ function eval_dir {
   fi
 }
 
+# load_exconfig.sh updates PATH to include the current VERSION's
+# bin directory, but this is not necessarily appropriate for
+# extract, where we may be working on an older VERSION. So
+# we will rebuild our PATH:
+PATH=/bin:/usr/bin:/usr/local/bin
 eval_dir bin/$VERSION
+# Allow storage of binaries with raw data in archival storage
 [ $dir/../bin/$VERSION -ef bin/$VERSION ] ||
   eval_dir $dir/../bin/$VERSION
 
 [ -z "$MYPATH" ] &&
   msgf 3 "Unable to locate valid bin directory for version $VERSION"
 PATH=$MYPATH${PATH#:}
+# Similarly, TMBINDIR was set to the current VERSION
+TMBINDIR=${MYPATH%%:*}
 
 rv=''
 hasext=''
 
-# msgf 0 "command args list: $@"
-# msgf 0 "command args list: $*"
-
-for i in "$@"; do
+for ((ii=sval; ii<=$#; ii++)); do
+  i=${!ii}
   # I'll use a for loop to get the first element of $i. I break at
   # the end of the loop rather than loop, since later elements within
   # $i are arguments to the program, not another program.
-  
-  # msgf 0 "arg: $i"
-  
   for j in $i; do
     wext=`which $j 2>/dev/null`
     [ -n "$wext" -a -x "$wext" ] || rv="$rv '$j'"
@@ -207,6 +191,13 @@ for i in "$@"; do
 done
 [ -n "$rv" ] && msgf 3 "Unable to locate extraction(s):$rv"
 [ -n "$hasext" ] || msgf 3 "No extractions specified"
+
+if [ -n "$debug" -a -z "$STY" ]; then
+  export SESSION
+  screen $0 "$@"
+  clear
+  exit 0
+fi
 
 #----------------------------------------------------------------
 # Create an empty directory in which to run the extractions
@@ -234,69 +225,24 @@ export TMLOGDIR=$dir
 export TMBINPATH=$MYPATH
 rv=0
 
-function debugterm {
-  if [ -n "$STY" ]; then
-    sname=$*
-    sname=${sname%% *}
-    screen -t $sname $*
-  else
-    OS=`uname -o`
-    case $OS in
-      Cygwin) cygstart mintty $*;;
-      GNU/Linux) gnome-terminal -x $*;;
-      *) msgf 3 "debugterm does not support OS '$OS'";;
-    esac
-  fi
-}
-
-function debug {
-  rundir=/var/run/monarch/run/$Experiment/
-  ndc0=`ls $rundir | wc -l`
-  debugterm gdb $gdbinit --args $ext -S:$SESSION
-  while
-    ndc1=`ls $rundir | wc -l`;
-    [ $ndc0 = $ndc1 ];
-  do
-    msgf 0 "Waiting for gdb $ext to initialize"
-    sleep 5
-  done
-}
-
 clean_runfiles -k || msgf 3 "Unable to shutdown earlier operations"
 
 Launch memo memo -S memosrvr:$SESSION -o extract.log -V || exit 1
 memo_pid=`cat /var/run/monarch/$Experiment/memo.$SESSION.pid`
-#memo -S memosrvr:$SESSION -o extract.log -V &
-#memo_pid=$!
-#memo=/var/run/monarch/$Experiment/memo.$SESSION
-#waitfor $memo 10 || exit 1
-
 Launch tm_bfr bfr -S:$SESSION || exit 1
-#bfr -s Unix &
-#waitfor /var/run/monarch/$Experiment/tm_bfr 10 || exit 1
-for ext in "$@"; do
-  # echo "ext: $ext"
-  if [ $debug = yes ]; then
-    debug $ext
-  else
-    appname=ext
-    for j in $ext; do
-      appname=$j
-      break;
-    done
-    Launch -TMC- $ext -S:$SESSION -n "$appname" ||
-      msgf 0 "ERROR: $ext failed to initialize"
-    # $ext -n "$appname" &
-    # extpid=$!
-    # if waitfor /var/run/monarch/run/$Experiment/$extpid 10 2>/dev/null; then
-    #   msgf 0 "$ext ($extpid) initialized"
-    # else
-    #   msgf 0 "ERROR: $ext ($extpid) failed to initialize"
-    # fi
-  fi
-  shift
+
+for ((ii=sval; ii<=$#; ii++)); do
+  ext=${!ii}
+  appname=ext
+  for j in $ext; do
+    appname=$j
+    break;
+  done
+  Launch $debug -TMC- $ext -S:$SESSION -n "$appname" ||
+    msgf 0 "ERROR: $ext failed to initialize"
 done
-msgf 0 extract "rdr -S:$SESSION $RDR_OPTS $time_opts -AqP $dir"
+[ -n "$debug" -a -n "$STY" ] && screen -X chdir $rootdir
+msgf 0 "rdr -S:$SESSION $RDR_OPTS $time_opts -AqP $dir"
 rdr -S:$SESSION $RDR_OPTS $time_opts -AqP $dir || rv=1
 while kill -0 $memo_pid 2>/dev/null; do
   sleep 1
@@ -317,4 +263,8 @@ else
 fi
 
 msgf 0 "Extraction Complete"
+if [ -n "$debug" -a -n "$STY" ]; then
+  msgf 0 "Hit any key to exit screen"
+  read j
+fi
 exit $rv
