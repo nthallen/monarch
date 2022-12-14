@@ -51,6 +51,5 @@ extern void dccc_init_options( int argc, char **argv );
 extern void parse_cmd(char *tbuf, int nb, cmd_t *pcmd );
 extern void operate(void);
 extern int DCCC_Done;
-#define DCCC_RESMGR 1
 
 #endif

@@ -1,11 +1,13 @@
-#ifdef SUBBUS_MIG_H_INCLUDED
+#ifndef SUBBUS_MIG_H_INCLUDED
 #define SUBBUS_MIG_H_INCLUDED
 #include "subbuspp.h"
 
 class subbus_mig : public subbuspp {
   public:
-    subbuspp_mig();
+    subbus_mig();
+    ~subbus_mig();
     static int load_subbus();
+    static subbus_mig *sb;
 
     /**
      * Issues the low-level subbus SBC_SETCMDENBL command.
@@ -45,9 +47,6 @@ class subbus_mig : public subbuspp {
     uint16_t sbrb(uint16_t addr);
     uint16_t sbrba(uint16_t addr);
     uint16_t sbrwa(uint16_t addr);
-  protected:
-    static subbus_mig *sb;
-    uint16_t read_special(uint16_t command);
 };
 
 inline int load_subbus(void) {
@@ -67,7 +66,7 @@ inline int write_ack(uint16_t addr, uint16_t data) {
 }
 
 inline int read_ack(uint16_t addr, uint16_t *data) {
-  return subbus_mig(addr, data);
+  return subbus_mig::sb->read_ack(addr, data);
 }
 
 inline int write_subbus(uint16_t x, uint16_t y) {
@@ -75,7 +74,7 @@ inline int write_subbus(uint16_t x, uint16_t y) {
 }
 
 inline subbus_mread_req *pack_mread_request(int n_reads, const char *req) {
-  return subbus_mig::sb->pack_mread_request(n_reads, const char *req);
+  return subbus_mig::sb->pack_mread_request(n_reads, req);
 }
 
 /* There is no simple way to do this without messing with stdarg

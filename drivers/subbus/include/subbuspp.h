@@ -8,7 +8,7 @@
 #define SUBBUSPP_H_INCLUDED
 #include <sys/uio.h>
 // #include <sys/siginfo.h>
-#include <stdint.h>
+#include <cstdint>
 #include "dasio/client.h"
 #include "dasio/loop.h"
 #include "subbus.h"
@@ -156,6 +156,11 @@ class subbuspp : Client {
      @return non-zero on success. Zero if unsupported.
      */
     int send_CSF( uint16_t command, uint16_t val );
+    /** Internal function to handle read_switches() and read_failure(),
+     * which take no arguments, return unsigned short or zero if
+     * the function is not supported.
+     */
+    uint16_t read_special(uint16_t command);
   private:
     /**
      Packages a request string into a newly allocated structure that

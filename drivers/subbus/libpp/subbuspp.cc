@@ -200,6 +200,12 @@ int subbuspp::send_CSF( uint16_t command, uint16_t val ) {
   return( (rv == SBS_OK) ? 1 : 0 );
 }
 
+uint16_t subbuspp::read_special(uint16_t command) {
+  int rv;
+  rv = send_to_subbusd(command, NULL, 0, SBRT_US);
+  return (rv == SBS_OK) ? sb_reply->data.value : 0;
+}
+
 #ifdef SUBBUS_INTERRUPTS
   int subbuspp::subbus_int_attach( char *cardID, uint16_t address,
         uint16_t region, struct sigevent *event ) {
