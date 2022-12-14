@@ -119,7 +119,7 @@ class subbuspp : Client {
      */
     int mread_subbus_nw(subbus_mread_req *req, uint16_t *data,
                           uint16_t *nwords);
-                          
+
     /**
      * Historically, tick_sic() has been associated with two timers.
      * The first is a 2-second timeout that can reboot the system.
@@ -131,6 +131,11 @@ class subbuspp : Client {
      */
     int tick_sic();
     
+    /**
+     * Disarm the watchdog timer armed by tick_sic()
+     */
+    int disarm_sic();
+
     #ifdef SUBBUS_INTERRUPTS
       int subbus_int_attach( char *cardID, uint16_t address,
           uint16_t region, struct sigevent *event );
@@ -139,7 +144,6 @@ class subbuspp : Client {
     int subbus_quit(void);
   protected:
     bool connect_failed();
-  private:
     /**
      @return Status reply from subbusd. Terminates if
      communication with subbusd fails.
@@ -152,6 +156,7 @@ class subbuspp : Client {
      @return non-zero on success. Zero if unsupported.
      */
     int send_CSF( uint16_t command, uint16_t val );
+  private:
     /**
      Packages a request string into a newly allocated structure that
      can be passed to mread_subbus(). Called by pack_mread_request()
@@ -171,11 +176,11 @@ class subbuspp : Client {
 
         <count>, <addr>, <incr> are all 1-4 hex digits
       \endcode
-      
+
       The four current addr_list_elt syntaxes have the following
       meaning:
 
-      \code{.unparsed}  
+      \code{.unparsed}
       <addr>:
         Read one word from the specified address
       <addr1> ':' <incr> ':' <addr2>:
@@ -193,7 +198,7 @@ class subbuspp : Client {
      @return the newly allocated request structure.
      */
     subbus_mread_req *pack_mread( int req_len, int n_reads, const char *req_str );
-    
+
     static const uint16_t subbus_version = SUBBUS_VERSION;
     uint16_t subbus_subfunction; // undefined until initialization
     uint16_t subbus_features; // ditto

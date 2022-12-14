@@ -224,6 +224,14 @@ int subbuspp::tick_sic() {
   if ( fd < 0 ) return 0;
   return send_to_subbusd( SBC_TICK, NULL, 0, SBRT_NONE );
 }
+/**
+ If system controller is associated with a watchdog timer
+ that can reboot the system, this command disables that
+ timer.
+ */
+int subbuspp::disarm_sic() {
+  return send_to_subbusd(SBC_DISARM, NULL, 0, SBRT_NONE);
+}
 
 /**
  * Requests subbusd to terminate. subbusd will wait until
