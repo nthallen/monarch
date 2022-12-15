@@ -53,6 +53,10 @@ inline int load_subbus(void) {
   return subbus_mig::load_subbus();
 }
 
+extern uint16_t subbus_subfunction;
+extern uint16_t subbus_features;
+extern uint16_t subbus_version;
+
 // subbus_version subbus_mig::sb->subbus_version
 // subbus_features subbus_mig::sb->subbus_features
 // subbus_subfunction subbus_mig::sb->subbus_subfunction

@@ -142,6 +142,9 @@ class subbuspp : Client {
       int subbus_int_detach( char *cardID );
     #endif
     int subbus_quit(void);
+    inline uint16_t get_subfunction() { return subbus_subfunction; }
+    inline uint16_t get_features() { return subbus_features; }
+    inline uint16_t get_version() { return subbus_version; }
   protected:
     bool connect_failed();
     /**

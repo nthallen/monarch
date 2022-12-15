@@ -1,6 +1,10 @@
 /** @file subbus_mig.cc Migration library for DACS-era experiments */
 #include "subbus_mig.h"
 
+uint16_t subbus_subfunction;
+uint16_t subbus_features;
+uint16_t subbus_version;
+
 subbus_mig::subbus_mig() : subbuspp("subbus", 0) {}
 
 subbus_mig::~subbus_mig() {
@@ -13,7 +17,10 @@ int subbus_mig::load_subbus() {
   if (!sb) {
     sb = new subbus_mig();
   }
-  return sb->load();
+  ::subbus_subfunction = sb->load();
+  ::subbus_features = sb->get_features();
+  ::subbus_version = sb->get_version();
+  return ::subbus_subfunction;
 }
 
 uint16_t subbus_mig::sbrb(uint16_t addr) {

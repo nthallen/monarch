@@ -12,3 +12,6 @@ install(TARGETS subbuspp
   ARCHIVE
   DESTINATION lib
 )
+install(FILES subbus_mig.oui
+  DESTINATION share/monarch/oui
+)
