@@ -77,12 +77,14 @@ class subbuspp : Client {
     /**
      * Takes a zero-terminated list of addresses, generates the appropriate
      * text request string and invokes pack_mread().
-     * @return the newly allocated request structure.
+     * @return pointer to the newly allocated request structure.
      */
     subbus_mread_req *pack_mread_requests( unsigned int addr, ... );
     /**
-     * Takes a multi-read <addr-list> string and invokes pack_mread().
-     * @return the newly allocated request structure.
+     * @param n_reads The number of read values specified in req
+     * @param req a multi-read <addr-list> string
+     * Invokes pack_mread() to create a new subbus_mread_req structure
+     * @return pointer to the newly allocated request structure.
      */
     subbus_mread_req *pack_mread_request( int n_reads, const char *req );
     /**
