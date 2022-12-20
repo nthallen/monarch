@@ -108,7 +108,7 @@ int subbuspp::load() {
   if (connect()) {
     return 0;
   }
-  PELoop.add_child(this);
+  PELoop.add_child(this); // sets ELoop to point to PELoop
   ELoop->event_loop(); // should run until connected
   if (fd < 0) {
     msg( -2, "Error opening subbusd: %s", strerror(errno));
