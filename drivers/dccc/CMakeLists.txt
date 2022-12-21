@@ -9,7 +9,12 @@ include( ../../oui_setup.cmake )
 
 OUI_FILE(dccc.oui)
 add_executable(dccc dccc.cc dccc_if.cc dc_read.cc dcccoui.cc)
-target_link_libraries(dccc dasio nl pthread)
+target_link_libraries(dccc dasio nl pthread subbuspp)
+target_include_directories(dccc PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/../subbus/include
+  ${monarch_SOURCE_DIR}/libs/dasio/src
+  ${monarch_SOURCE_DIR}/libs/nl
+)
 
 install(TARGETS dccc RUNTIME DESTINATION bin)
 

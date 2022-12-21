@@ -1,6 +1,6 @@
 <package> dccc
-<include> msg
-<include> subbus
+<include> msg oui
+<include> subbus_mig
 <include> "disc_cmd.h"
 <opts> "if:"
 <sort>
@@ -8,7 +8,10 @@
 	-i fail if Card initialisation or command configuration error occurs
 <init>
   dccc_init_options( argc, argv );
-  
-<package> msghdr_default
-<vars>
-  char *msg_hdr_default = "DCCC";
+
+<package> appid_default
+<include> "dasio/appid.h"
+<include> msg
+<preceed> msg
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("dccc", "DCCC Driver", "V4.0");

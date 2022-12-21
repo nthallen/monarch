@@ -54,12 +54,19 @@ inline int load_subbus(void) {
 }
 
 extern uint16_t subbus_subfunction;
-extern uint16_t subbus_features;
 extern uint16_t subbus_version;
+extern uint16_t subbus_features;
 
-// subbus_version subbus_mig::sb->subbus_version
-// subbus_features subbus_mig::sb->subbus_features
-// subbus_subfunction subbus_mig::sb->subbus_subfunction
+/* subbus_feature bits: */
+#define SBF_SIC 1		/* SIC Functions */
+#define SBF_LG_RAM 2	/* Large NVRAM */
+#define SBF_HW_CNTS 4	/* Hardware rst & pwr Counters */
+#define SBF_WD 8		/* Watchdog functions */
+#define SBF_SET_FAIL 0x10 /* Set failure lamp */
+#define SBF_READ_FAIL 0x20 /* Read failure lamps */
+#define SBF_READ_SW 0x40 /* Read Switches */
+#define SBF_NVRAM 0x80   /* Any NVRAM at all! */
+#define SBF_CMDSTROBE 0x100 /* CmdStrobe Function */
 
 inline uint16_t read_subbus(uint16_t addr) {
   return subbus_mig::sb->read_subbus(addr);

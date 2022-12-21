@@ -41,8 +41,8 @@ typedef struct {
   char cmd_type; // D, M, Q
   int n_cmds;
   struct {
-    int cmd;
-    unsigned short value;
+    uint16_t cmd;
+    uint16_t value;
   } cmds[MAX_CMDS];
 } cmd_t;
 
@@ -50,6 +50,7 @@ typedef struct {
 extern void dccc_init_options( int argc, char **argv );
 extern void parse_cmd(char *tbuf, int nb, cmd_t *pcmd );
 extern void operate(void);
-extern int DCCC_Done;
+extern void process_pcmd( cmd_t *pcmd );
+extern void execute_pcmd( cmd_t *pcmd, int clr_strobe );
 
 #endif

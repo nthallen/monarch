@@ -4,7 +4,7 @@
 #include "dasio/server.h"
 #include "disc_cmd.h"
 
-using namespace "dasio";
+using namespace DAS_IO;
 
 /*	dccc receives msgs of maximum size MAX_DCCC_MSG_SZ.
         they can be of the following form, each 1 byte:
@@ -28,7 +28,7 @@ class dccc_ssclient : public Serverside_client {
 
 inline dccc_ssclient *new_dccc_ssclient(
     DAS_IO::Authenticator *Auth, DAS_IO::SubService *SS) {
-  return new dccc_ssclient(Auth, SS);
+  return new dccc_ssclient(Auth, Auth->get_client_app());
 }
 
 #endif

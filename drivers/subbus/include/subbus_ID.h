@@ -1,0 +1,9 @@
+#ifndef SUBBUS_IDS_H_INCLUDED
+#define SUBBUS_IDS_H_INCLUDED
+
+enum class subbus_sf {
+  PC_ICC = 1, PC_ICC_SIC, SYSCON, SYSCON104,
+  DACS, SIM, FCC, CMOD_A7, uDACS_RevA, BMM, CAN, IRMon_RevB,
+  WI_ICOS_MAINS, uDACS_RevB, uDACS16, FCC_V1_5, B3MB };
+
+#endif

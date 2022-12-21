@@ -35,6 +35,7 @@ if (DEFINED monarch_SOURCE_DIR)
     -I${monarch_SOURCE_DIR}/libs/dasio/src
     -I${monarch_SOURCE_DIR}/libs/nl
     -I${monarch_SOURCE_DIR}/tools/oui/src
+    -I${monarch_SOURCE_DIR}/drivers/subbus/libpp
   )
 endif (DEFINED monarch_SOURCE_DIR)
 
