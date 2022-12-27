@@ -42,7 +42,7 @@ umask g+w
 #----------------------------------------------------------------
 # This is where we will decide what experiment we are
 #----------------------------------------------------------------
-cfile=Experiment.config
+cfile=./Experiment.config
 unset Experiment HomeDir FlightNode CFG_ERROR
 unset FltNode_Access TM_OPT CMD_OPT
 if [ -f "$cfile" -a -r "$cfile" ]; then
