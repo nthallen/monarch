@@ -537,7 +537,7 @@ else
 fi
 
 TMRUNDIR=/var/run/monarch/run/$Experiment
-[ -d $TMRUNDIR ] || mkdir $TMRUNDIR
+[ -d $TMRUNDIR ] || mkdir -p $TMRUNDIR
 # gcopt definition might need to be moved earlier if it
 # needs to be defined conditionally
 gcopt="-S:$SESSION"
