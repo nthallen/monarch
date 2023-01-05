@@ -56,7 +56,7 @@ while (my $line = <$ifh>) {
     die "$srcfile:$linenum: Name $name_src conflicts with commandline name=$name_cl\n"
       if $name_cl ne '' && $name_src ne $name_cl;
   } elsif ( $line =~ m,^\s* Digital \s+ ([A-Za-z]\w+) \s+ (\d+) \s+
-                        (MFC|MFM) \s+
+                        (MFC|MFM|VFC) \s+
                         ([0-9]+) \s+ (\w+(?:/\w+)?) \s+
                         ([0-9]+) \s+ (\w+(?:/\w+)?) \s+
                         ([0-9]+) \s+ (\w+)
@@ -73,10 +73,20 @@ while (my $line = <$ifh>) {
       if $channel > $MKS_MAX_ADDRESS || $channel < 1;
     die "$srcfile:$linenum: Number of drives exceeds arbitrary limit of $MKS_MAX_DRIVES\n"
       if $n_channels >= $MKS_MAX_DRIVES;
-    if ($chtype eq 'mfc') {
+    if ($chtype eq 'mfc' || $chtype eq 'vfc') {
       $text ||= $channel; # command defaults to channel mnemonic
     }
     my $VFprec = 4 - floor(log10($vf_fullscale));
+    my $MFprec = 4 - floor(log10($mf_fullscale)),
+    my $SPunits;
+    my $SPprec;
+    if ($chtype eq 'mfc') {
+      $SPunits = $MFunits;
+      $SPprec = $MFprec;
+    } elsif ($chtype eq 'vfc') {
+      $SPunits = $VFunits;
+      $SPprec = $VFprec;
+    }
     $Data{$datum} = {
       type => 'digital',
       index => $n_channels,
@@ -84,9 +94,11 @@ while (my $line = <$ifh>) {
       chtype => $chtype,
       VFunits => $VFunits,
       MFunits => $MFunits,
+      SPunits => $SPunits,
       Punits => $Punits,
       VFprec => 4 - floor(log10($vf_fullscale)),
       MFprec => 4 - floor(log10($mf_fullscale)),
+      SPprec => $SPprec,
       Pprec => 4 - floor(log10($p_fullscale)),
       text => $text};
     $Channel{$channel} = $datum;
@@ -169,10 +181,12 @@ for (my $i = 0; $i < $n_channels; ++$i) {
   my $VFunits = $D->{VFunits};
   my $MFunits = $D->{MFunits};
   my $Punits = $D->{Punits};
+  my $SPprec = $D->{SPprec};
+  my $SPunits = $D->{SPunits};
   
   if ($D->{type} eq 'digital') {
-    if ($D->{chtype} eq 'mfc') {
-      $datadef .= "TM $Rate Hz ${Name}_Flow${VFprec}_t ${datum}_Set;\n";
+    if ($D->{chtype} eq 'mfc' || $D->{chtype} eq 'vfc') {
+      $datadef .= "TM $Rate Hz ${Name}_Flow${SPprec}_t ${datum}_Set;\n";
       $coldef .= "  ${datum}_Set = ${Name}_drive($i,flow_setpoint);\n";
       push(@grpmem, "${datum}_Set");
     }
@@ -196,8 +210,8 @@ for (my $i = 0; $i < $n_channels; ++$i) {
       "  $Rate ${datum}_Stale  ${Name}_HK Stale\n",
       "  $Rate ${datum}_T      ${Name}_HK T\n",
       "  $Rate ${datum}_P      ${Name}_HK ${Punits}\n",
-      (($D->{chtype} eq 'mfc') ?
-        "  $Rate ${datum}_Set    $Name ${MFunits}\n"
+      (($D->{chtype} eq 'mfc' || $D->{chtype} eq 'vfc') ?
+        "  $Rate ${datum}_Set    $Name ${SPunits}\n"
         : ''),
       "  $Rate ${datum}_MassFlow   $Name ${MFunits}\n",
       "  $Rate ${datum}_VolFlow   $Name ${VFunits}\n";
@@ -205,9 +219,11 @@ for (my $i = 0; $i < $n_channels; ++$i) {
     die "Unsupported type";
   }
   
-  my $setdisp = ($D->{chtype} eq 'mfc') ? "(${datum}_Set,7)" : '"          "';
+  my $setdisp = ($D->{chtype} eq 'mfc' || $D->{chtype} eq 'vfc') ? "(${datum}_Set,7)" : '"          "';
+  my $settype = ($D->{chtype} eq 'vfc') ? 'Vol' : 'Mass';
+  my $flowunits = ($D->{chtype} eq 'vfc') ? $VFunits : $MFunits;
   my $datumtbl =
-    "  ${datum}: $setdisp (${datum}_VolFlow,7) $VFunits;\n";
+    "  ${datum}: $setdisp (${datum}_${settype}Flow,7) $flowunits;\n";
   $tbldef .= $datumtbl;
 
   $datumtbl =
@@ -223,10 +239,10 @@ for (my $i = 0; $i < $n_channels; ++$i) {
 
   print $tbl
     "${datum}_vfull {\n",
-    (($D->{chtype} eq 'mfc') ?
-      "  Set:    (${datum}_Set,7)       $MFunits;\n" : ''),
-    "  MFlow:  (${datum}_MassFlow,7)  $MFunits;\n",
-    "  VFlow:  (${datum}_VolFlow,7)   $VFunits;\n";
+    (($D->{chtype} eq 'mfc' || $D->{chtype} eq 'vfc') ?
+      "  Set:    (${datum}_Set,7)       $SPunits;\n" : ''),
+      "  MFlow:  (${datum}_MassFlow,7)  $MFunits;\n",
+      "  VFlow:  (${datum}_VolFlow,7)   $VFunits;\n";
   if ($D->{type} eq 'digital') {
     print $tbl
     "  T:      (${datum}_T,7)         C;\n",
@@ -245,10 +261,10 @@ for (my $i = 0; $i < $n_channels; ++$i) {
 
   print $tbl
     "${datum}_vdata {\n",
-    (($D->{chtype} eq 'mfc') ?
-      "  Set:    (${datum}_Set,7)       $MFunits;\n" : ''),
-    "  MFlow:  (${datum}_MassFlow,7)  $MFunits;\n",
-    "  VFlow:  (${datum}_VolFlow,7)   $VFunits;\n";
+    (($D->{chtype} eq 'mfc' || $D->{chtype} eq 'vfc') ?
+      "  Set:    (${datum}_Set,7)       $SPunits;\n" : ''),
+      "  MFlow:  (${datum}_MassFlow,7)  $MFunits;\n",
+      "  VFlow:  (${datum}_VolFlow,7)   $VFunits;\n";
   if ($D->{type} eq 'digital') {
     print $tbl
     "  T:      (${datum}_T,7)         C;\n",
@@ -263,7 +279,7 @@ for (my $i = 0; $i < $n_channels; ++$i) {
     "  [${datum}_vdata];\n",
     "}\n\n";
 
-  if ($D->{chtype} eq 'mfc') {
+  if ($D->{chtype} eq 'mfc' || $D->{chtype} eq 'vfc') {
     my $text = $D->{text};
     my $channel = $D->{channel};
     if (!defined($text) || length($text) == 0) {
@@ -273,7 +289,7 @@ for (my $i = 0; $i < $n_channels; ++$i) {
     my $fword = scalar(@text)+1;
     if ($D->{type} eq 'digital') {
       $cmddef .=
-        "  : " . join(' ', @text, '%f', "($MFunits)", $MFunits, '*') .
+        "  : " . join(' ', @text, '%f', "($SPunits)", $SPunits, '*') .
         " { ${Name}_set($channel, \$$fword); }\n";
     } else {
       die "Unsupported type";
