@@ -14,6 +14,7 @@ int parent_timeout = 0;
 pid_t monitor_pid = 0;
 bool have_children = true;
 const char *script_file = 0;
+const char *stop_file = 0;
 const char *status_string = 0;
 
 /**
@@ -181,6 +182,10 @@ bool parent_sigif::serialized_signal_handler(uint32_t signals_seen) {
     msg(0, "Saw my own SIGHUP");
   }
   if (quit_when_childless && !have_children) {
+    if (stopfile) {
+      FILE *sfp = fopen(stopfile, "w");
+      fclose(sfp);
+    }
     if (srvr)
       srvr->Shutdown(true);
   }
