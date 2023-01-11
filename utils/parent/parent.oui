@@ -2,7 +2,7 @@
 <include> <stdlib.h>
 <include> "parent.h"
 <include> msg oui server
-<opts> "qt:M:f:T:"
+<opts> "qt:M:f:T:F:"
 <sort>
 	-q Quit when childless
 	-t <seconds> Send HUP to children after specified delay
