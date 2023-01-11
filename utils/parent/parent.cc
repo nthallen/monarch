@@ -182,8 +182,8 @@ bool parent_sigif::serialized_signal_handler(uint32_t signals_seen) {
     msg(0, "Saw my own SIGHUP");
   }
   if (quit_when_childless && !have_children) {
-    if (stopfile) {
-      FILE *sfp = fopen(stopfile, "w");
+    if (stop_file) {
+      FILE *sfp = fopen(stop_file, "w");
       fclose(sfp);
     }
     if (srvr)
