@@ -407,9 +407,7 @@ screen -X focus
 clear
 
 if [ $cmd = start ]; then
-  if [ $srcmode = playback ]; then
-    # Delay this until after memo is launched
-    # Launch tm_bfr bfr -S:$SESSION
+  if [ $srcmode = playback -o $srcmode = SerIn ]; then
     true;
   elif [ $srcmode = realtime ]; then
     if [ $SERVICE = Installed ]; then
@@ -434,16 +432,6 @@ if [ $cmd = start ]; then
       msgf -V 0 "found tm_bfr, waiting for cmd server"
       waitfor -q /var/run/monarch/$Experiment/cmd forever
     fi
-EOF
-
-if ($serin) {
-  print $fh
-    '  elif [ $srcmode = SerIn ]; then', "\n",
-    "    Launch tm_bfr bfr -S:\$SESSION\n",
-    "    Launch tm_gen $serin -S:\$SESSION", $progopts{$serin}, "\n";
-}
-
-print $fh <<'EOF';
   else
     msgf 3 "srcmode='$srcmode' not implemented in start"
   fi
@@ -468,8 +456,16 @@ fi
 [ -n "$lcllogfile" ] || msgf 4 "lcllogfile undefined"
 Launch memo memo -o $lcllogfile -l4 -S:$SESSION
 # Then startup bfr if we skipped that earlier
-[ $cmd = start -a $srcmode = playback ] &&
-  Launch tm_bfr bfr -S:$SESSION
+if [ $cmd = start ]; then
+  case $srcmode in
+    playback)
+      Launch tm_bfr bfr -S:$SESSION;;
+    SerIn)
+      Launch tm_bfr bfr -S:$SESSION
+      Launch tm_gen serin -S:$SESSION;;
+    *) :;;
+  esac
+fi
 
 # At this point, we can assume that memo and tm_bfr are
 # running and server as well except under PB and SI,
