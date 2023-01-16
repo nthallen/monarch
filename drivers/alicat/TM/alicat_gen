@@ -346,7 +346,7 @@ print $cmd <<EOF
 %INTERFACE <$Name>
 
 %{
-  #ifdef SERVER
+  #if defined(SERVER) && !defined(TRANSMITTING)
   void ${Name}_set(int ID, float setpoint) {
     uint32_t rawset = *(uint32_t*)&setpoint;
     // WII:FF:AAAA:NN:DD:DD...\n
