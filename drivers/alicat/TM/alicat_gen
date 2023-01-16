@@ -26,15 +26,21 @@ my @Index;
 my $Punits = "Mps";
 my $n_channels = 0;
 my $have_digital = 0;
+my $TX = '';
 # my $have_analog = 0;
 # my $have_non_unity_ai = 0;
 # my %analog_units;
 my $linenum = 0;
-if (@ARGV > 1) {
-  if ($ARGV[1] =~ m/^name=([a-z][a-z0-9_]*)$/i ) {
+for (my $i = 1; $i < @ARGV; ++$i) {
+# if (@ARGV > 1) {
+  if ($ARGV[$i] =~ m/^name=([a-z][a-z0-9_]*)$/i ) {
     $name_cl = $1;
+  } elsif ($ARGV[$i] =~ m/^TX=(\^?)$/i ) {
+    if ($1) {
+      $TX = '^';
+    }
   } else {
-    die "Invalid name specification: '$ARGV[1]'\n";
+    die "Invalid name specification: '$ARGV[$i]'\n";
   }
 }
 
@@ -362,7 +368,7 @@ EOF
 
 if ( $cmddef ) {
 print $cmd <<EOF
-&command
+&${TX}command
 $cmddef  ;
 EOF
 ;

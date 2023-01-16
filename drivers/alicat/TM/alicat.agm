@@ -1,4 +1,4 @@
-Moduledef alicat [ src= name=Alicat ] {
+Moduledef alicat [ src= name=Alicat TX= ] {
   alicat Module requires a src variable
   Source file syntax:
     source_file : source_line+ .
@@ -92,5 +92,5 @@ mode (default,driver) {
   SRC = @src@
   %%
 @name@.tmc @name@_col.tmc @name@.cmd @name@.genui @name@.tbl : @src@ @MODDIR@/alicat_gen
-	@MODDIR@/alicat_gen @src@ name=@name@
+	@MODDIR@/alicat_gen @src@ name=@name@ TX=@TX@
 }
