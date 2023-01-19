@@ -153,11 +153,12 @@ fi
 
 if [ -n "$launch_error" -o -n "$pids" ]; then
   msgf -V 0 "SERVICE='$SERVICE'"
-  [ $SERVICE = Installed ] && echo $script >$LOOP_SCRIPT_FILE
-  lsf_exists=no
-  [ -e "$LOOP_STOP_FILE" ] && lsf_exists=yes
-  msgf -V 0 "LOOP_STOP_FILE=$LOOP_STOP_FILE exists:$lsf_exists"
-  [ -z "$parent_loop" ] && parent_loop="-q -F $LOOP_STOP_FILE"
+  if [ $SERVICE = Installed ]; then
+    echo $script >$LOOP_SCRIPT_FILE
+    parent_loop="-q -F $LOOP_STOP_FILE"
+  else
+    parent_loop="-q"
+  fi
   msgf -V 0 "exec parent $parent_srvr $parent_loop -V -T '$status_string'"
 else
   parent_loop="-f $LOOP_START_FILE"
