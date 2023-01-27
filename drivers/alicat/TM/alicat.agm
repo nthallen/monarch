@@ -1,4 +1,4 @@
-Moduledef alicat [ src= name=Alicat ] {
+Moduledef alicat [ src= name=Alicat TX= ] {
   alicat Module requires a src variable
   Source file syntax:
     source_file : source_line+ .
@@ -12,7 +12,7 @@ Moduledef alicat [ src= name=Alicat ] {
     word : \w+ .
     address : \d+ .
     hex_address : 0x[a-fA-F0-9]+ .
-    type : 'MFC' / 'MFM' .
+    type : 'MFC' / 'MFM' / 'VFC' .
     VF_FS : \d+ .
     MF_FS : \d+ .
     P_FS : \d+ .
@@ -31,7 +31,8 @@ Moduledef alicat [ src= name=Alicat ] {
     command is the text 
   
   If the device is an MFC, a command is defined to specify the set point for the
-  channel.
+  channel using the specified mass flow units. If the device is a VFC, then the
+  set point uses the volume flow units.
   
   'Digital' channels will generate the following TM channels:
     <channel>_VolFlow
@@ -46,7 +47,7 @@ Moduledef alicat [ src= name=Alicat ] {
   Vertical table for each channel:
     <channel>_vert {
       HBox { Title: >"<channel>"< };
-      Set:    (<channel>_Set,6)      <VFunits>;
+      Set:    (<channel>_Set,6)      <SPunits>;
       VolF:   (<channel>_VolFlow,6)  <VFunits>;
       MassF:  (<channel>_MassFlow,6) <MFunits>;
       T:      (<channel>_T,6)        C;
@@ -55,12 +56,23 @@ Moduledef alicat [ src= name=Alicat ] {
       Stale:  (<channel>_Stale,3) sec;
     }
 
-  Combined flows table for all channels:
+  Combined flows table for all channels displays only the flow associated
+  with the setpoint (_VolFlow or _MassFlow, if VFC or MFC) or _MassFlow
+  for MFM:
 
     <Name>_flows {
       HBox { Title: >"<Name> Flows"< };
       ""         Set               Flow;
-      <channel> (<channel>_Set,6) (<channel>_Flow,6) <channel_units>;
+      <channel> (<channel>_Set,6) (<channel>_{Vol|Mass}Flow,6) <SPunits>;
+    }
+
+  Combined flows2 table for all channels displays both _VolFlow and
+  _MassFlow and does not label the units for the set point:
+
+    <Name>_flows2 {
+      HBox { Title: >"<Name> Flows"< };
+      ""          >Set<               >ccm<                >nccm<;
+      <channel>: (<channel>_Set,7) (<channel>_VolFlow,7) (<channel>_MassFlow,7);
     }
 
   Combined housekeeping table for all channels:
@@ -80,5 +92,5 @@ mode (default,driver) {
   SRC = @src@
   %%
 @name@.tmc @name@_col.tmc @name@.cmd @name@.genui @name@.tbl : @src@ @MODDIR@/alicat_gen
-	@MODDIR@/alicat_gen @src@ name=@name@
+	@MODDIR@/alicat_gen @src@ name=@name@ TX=@TX@
 }

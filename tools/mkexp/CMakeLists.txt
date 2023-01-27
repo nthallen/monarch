@@ -16,7 +16,7 @@ endif (SUDO_EXE)
 
 if (NOT ${CMAKE_CROSSCOMPILING})
 
-find_program(SHELL_EXE NAMES ksh bash)
+find_program(SHELL_EXE NAMES bash ksh)
 if (NOT SHELL_EXE)
   message( FATAL_ERROR "No shell located")
 endif (NOT SHELL_EXE)

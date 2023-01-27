@@ -410,7 +410,7 @@ bool DAS_IO::Interface::not_uint64(uint64_t &output_val, bool allow_sign) {
 bool DAS_IO::Interface::not_ISO8601(double &Time, bool w_hyphens) {
   struct tm buft;
   float secs;
-  le_time_t ltime;
+  time_t ltime;
 
   if (not_ndigits(4, buft.tm_year) ||
       (w_hyphens && not_str("-",1)) ||
@@ -428,9 +428,15 @@ bool DAS_IO::Interface::not_ISO8601(double &Time, bool w_hyphens) {
   buft.tm_mon -= 1;
   buft.tm_sec = 0;
   ltime = mktime(&buft);
-  if (ltime == (le_time_t)(-1))
+  if (ltime == (time_t)(-1)) {
     report_err("%s: mktime returned error", iname);
-  else Time = ltime + secs;
+    msg(MSG_DEBUG, "year=%d mon=%d mday=%d hour=%d min=%d sec=%d isdst=%d",
+      buft.tm_year, buft.tm_mon, buft.tm_mday, buft.tm_hour, buft.tm_min,
+      buft.tm_sec, buft.tm_isdst);
+  } else {
+    Time = ltime;
+    Time += secs;
+  }
   return false;
 }
 

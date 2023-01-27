@@ -51,8 +51,8 @@ for socket in `find /var/run/monarch -type s`; do
     pid=`cat ${socket}.pid`
     if ! kill -0 $pid 2>/dev/null; then
       echo socket $socket is abandoned
-      rm $socket
-      rm ${socket}.pid
+      rm -f $socket
+      rm -f ${socket}.pid
     else
       echo socket $socket is still active at PID $pid
     fi
@@ -67,7 +67,7 @@ if [ -d /var/run/monarch/run ]; then
       echo "TM client $pidfile is still active"
     else
       echo "TM client $pidfile is gone"
-      rm $pidfile
+      rm -f $pidfile
     fi
   done
 
@@ -89,7 +89,7 @@ for lockfile in `find /var/run/monarch -name "*.lock"`; do
   if [ -d $dir ]; then
     echo Experiment directory $dir is non-empty
   else
-    rm $lockfile
+    rm -f $lockfile
     echo "Experiment directory $dir removed"
   fi
 done
@@ -111,7 +111,7 @@ if [ -d "/var/run/monarch/$Experiment" ]; then
         if kill -0 $pid 2>/dev/null; then
           echo "${pidfile%.pid} PID $pid still active"
         else
-          rm $pidfile ${pidfile%.pid}
+          rm -f $pidfile ${pidfile%.pid}
           echo "${pidfile%.pid} PID $pid successfully terminated"
           break
         fi
@@ -133,7 +133,7 @@ if [ -d "/var/run/monarch/run/$Experiment" ]; then
         if kill -0 $pid 2>/dev/null; then
           echo "TM Client PID $pid still active"
         else
-          rm $pidfile
+          rm -f $pidfile
           echo "TM Client PID $pid successfully terminated with SIG$signal"
           break
         fi

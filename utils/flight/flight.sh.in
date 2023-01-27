@@ -58,6 +58,7 @@ status_string=''
 
 [ -n "$LOOP_STOP_FILE" ] || LOOP_STOP_FILE=loopstop.txt
 [ -n "$LOOP_START_FILE" ] || LOOP_START_FILE=loopstart.txt
+[ -n "$LOOP_SCRIPT_FILE" ] || LOOP_SCRIPT_FILE=loopscript.txt
 if [ -n "$LOOP_ON_FILE" -a -e "$LOOP_ON_FILE" ]; then
   msgf 0 "Invoking reduce for LOOP_ON_FILE"
   [ -z "$REDUCE_LOG_FILE" ] && REDUCE_LOG_FILE=reducelog.txt
@@ -69,16 +70,16 @@ if [ -n "$LOOP_ON_FILE" -a -e "$LOOP_ON_FILE" ]; then
     rm -f $LOOP_STOP_FILE $LOOP_START_FILE
     exec parent $parent_srvr -V -T "reduce error"
   fi
-  [ -f $LOOP_STOP_FILE ] && mv $LOOP_STOP_FILE $LOOP_START_FILE
+  [ -f $LOOP_SCRIPT_FILE ] && mv $LOOP_SCRIPT_FILE $LOOP_START_FILE
   exit 0 # exit to reestablish tee log
 elif [ -e "$LOOP_STOP_FILE" ]; then
-  if [ -n "$RESTART_FILE" -a -e "$RESTART_FILE" ]; then
+  if [ -n "$RESTART_FILE" -a -e "$RESTART_FILE" -a -f "$LOOP_SCRIPT_FILE" ]; then
     msgf 0 "Restarting"
     rm -f "$RESTART_FILE"
-    script=`cat $LOOP_STOP_FILE`
+    script=`cat $LOOP_SCRIPT_FILE`
   else
     msgf 0 "Looping terminated"
-    rm -f $LOOP_STOP_FILE $LOOP_START_FILE
+    rm -f $LOOP_STOP_FILE $LOOP_START_FILE $LOOP_SCRIPT_FILE
     script=/dev/null
   fi
 elif [ -e "$LOOP_START_FILE" ]; then
@@ -152,11 +153,12 @@ fi
 
 if [ -n "$launch_error" -o -n "$pids" ]; then
   msgf -V 0 "SERVICE='$SERVICE'"
-  [ $SERVICE = Installed ] && echo $script >$LOOP_STOP_FILE
-  lsf_exists=no
-  [ -e "$LOOP_STOP_FILE" ] && lsf_exists=yes
-  msgf -V 0 "LOOP_STOP_FILE=$LOOP_STOP_FILE exists:$lsf_exists"
-  [ -z "$parent_loop" ] && parent_loop="-q"
+  if [ $SERVICE = Installed ]; then
+    echo $script >$LOOP_SCRIPT_FILE
+    parent_loop="-q -F $LOOP_STOP_FILE"
+  else
+    parent_loop="-q"
+  fi
   msgf -V 0 "exec parent $parent_srvr $parent_loop -V -T '$status_string'"
 else
   parent_loop="-f $LOOP_START_FILE"

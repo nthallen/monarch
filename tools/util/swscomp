@@ -56,16 +56,17 @@ State ${var}_Wait NoLog {
   { int reSet_it;
     reSet_it = 1;
     switch ($var) {
-      default:
-      case 0: reSet_it = 0; break;
 EOF
 }
 
 sub tma_epilog {
   my ( $var ) = @_;
-  my $cmd = $vars{$var}->[2];
-  $tma_output = 0;
+  my $cmd = $vars{$var}->{cmd};
+  if (!$vars{$var}->{haszero}) {
+    print $tma "      case 0:\n";
+  }
   print $tma <<EOF;
+      default: reSet_it = 0; break;
     }
     if (reSet_it) Validate ${var}_ReSet;
   }
@@ -84,10 +85,12 @@ sub newvar {
   if ($opts{A} && $curvar && $tma_output) {
     tma_epilog($curvar);
   }
+  $tma_output = 0;
   $curvar = $var;
   die "SW_Variable $var already used\n" if $cmds{$var};
   $cmds{$var} = [];
-  $vars{$var} = [ $ctype, $tmtype, $cmd ];
+  $vars{$var} = { ctype => $ctype, tmtype => $tmtype, cmd => $cmd,
+      haszero => 0 };
   push @vars, [ $curvar, $ctype, $tmtype, $cmd ];
   #if ($opts{A}) {
   #  tma_prolog($curvar);
@@ -116,6 +119,9 @@ for my $file ( @ARGV ) {
             s/^\s*(SWS_[A-Z0-9_]+)\s*(\d+)\s*([^:]+):/      case $1:/ ) {
         push(@vals, "$1 $2");
         push(@{$cmds{$curvar}}, "  : $3 { \$0 = $1; }");
+        if ($2 == 0) {
+          $vars{$curvar}->{haszero} = 1;
+        }
         newvar("SWStat") unless $curvar;
       }
       if ( $curvar && ! $tma_output &&

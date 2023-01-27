@@ -2,6 +2,28 @@
 <include> msg oui
 <include> "tmdiag.h"
 
+<synopsis>
+%C [options] <files>
+
+<unsort>
+<blank>
+tmdiag analyzes raw monarch telemetry data files in order to
+help diagnose file corruption or time issues. By default, it
+only reports warnings or errors, but more information can be
+obtained with one or more -v options.
+<blank>
+tmdiag does not include code to traverse the hierarchical
+LOG directory structure, but the following invocations should
+work in most cases:
+<blank>
+    find LOG -type f | xargs tmdiag -V
+      Evaluates all files, reporting only warnings and errors.
+    find LOG -type f | xargs tmdiag -vV
+      As above, but also reports new timestamps
+    find LOG -type f | xargs tmdiag -vvV
+      As above, but also reports details of each record
+<blank>
+
 <package> appid_default
 <include> "dasio/appid.h"
 <defs>
