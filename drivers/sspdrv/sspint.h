@@ -33,9 +33,9 @@ extern void udp_read(mlf_def_t *mlf, int do_amp);
 #define RECV_BUF_SIZE SSP_MAX_CTRL_MSG
 
 typedef struct {
-	unsigned short NS, NA, NC;
-	unsigned short NE;
-  unsigned short NF; /* Frequency Divisor */
+	uint16_t NS, NA, NC;
+	uint16_t NE;
+  uint16_t NF; /* Frequency Divisor */
 	int NP; /* udp port number */
   int LE; /* logging enabled */
 } ssp_config_t;
@@ -44,7 +44,7 @@ extern ssp_data_t ssp_data;
 extern ssp_amp_data_t ssp_amp_data;
 
 typedef struct {
-  unsigned short NZ, NN, NM, NSamp;
+  uint16_t NZ, NN, NM, NSamp;
   float meanX, sumX2;
   int modified;
 } noise_config_t;

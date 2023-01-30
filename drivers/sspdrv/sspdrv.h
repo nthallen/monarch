@@ -3,21 +3,22 @@
   */
 #ifndef SSPDRV_H_INCLUDED
 #define SSPDRV_H_INCLUDED
+#include <cstdint>
 
 typedef struct {
-  unsigned long index;
-  unsigned long ScanNum;
-  unsigned long Total_Skip;
-  unsigned short Flags;
-  unsigned char Status;
-  signed short T_FPGA;
-  signed short T_HtSink;
-  // unsigned short NChannels;
-  // unsigned short NSamples;
-  // unsigned short NCoadd;
-  // unsigned short NAvg;
-  // unsigned short NSkL;
-  // unsigned short NSkP;
+  uint32_t index;
+  uint32_t ScanNum;
+  uint32_t Total_Skip;
+  uint16_t Flags;
+  int16_t T_FPGA;
+  int16_t T_HtSink;
+  uint8_t Status;
+  // uint16_t NChannels;
+  // uint16_t NSamples;
+  // uint16_t NCoadd;
+  // uint16_t NAvg;
+  // uint16_t NSkL;
+  // uint16_t NSkP;
 } __attribute__((packed)) ssp_data_t;
 
 #define SSP_OVF_MASK 0x01FF
@@ -32,7 +33,7 @@ typedef struct {
 #define SSP_STATUS_TRIG 4
 
 typedef struct {
-  unsigned long index;
+  uint32_t index;
   float amplitude[3];
   float noise[3];
   float noise_percent[3];
