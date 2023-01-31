@@ -4,7 +4,7 @@ function print_usage {
 cat <<EOF
 locate_rundir -h
   Print this message
-locate_rundir <run>
+locate_rundir [-a] [-H HomeDir ] <run>
   Outputs the full path to the specified run.
   The path separator between the HomeDir and
   the relative path will be changed to a colon.
@@ -12,6 +12,10 @@ locate_rundir <run>
     /home/Experiment:raw/data/<run>
   In the case that <run> is an absolute path, the
   output if any will be preceded by a colon.
+  If -a is specified, a third field is appended
+  which is :yes or :no, depending on whether the
+  corresponding directory $HomeDir/anal/<run>
+  exists.
 
 locate_rundir only looks for the run on the local
 system. It is up to the caller to determine whether
@@ -24,18 +28,30 @@ msgProgram='locate_rundir'
 sep=:
 
 #----------------------------------------------------------------
-# Process command line options (-h)
+# Process command line options (-h, -a, -H HomeDir)
 #----------------------------------------------------------------
-while getopts "h" option; do
+optA=no
+hasA=''
+while getopts "haH:" option; do
   case $option in
-  h) print_usage;;
-  \?) echo; exit 1;;
-  *) msg -V -n $msgProgram "[ERROR] Unsupported option: -$option"; exit 1;;
+    h) print_usage;;
+    H) HomeDir=$OPTARG;;
+    a) optA=yes; hasA=${sep}no;;
+    \?) echo; exit 1;;
+    *) msg -V -n $msgProgram "[ERROR] Unsupported option: -$option"; exit 1;;
   esac
 done
+
+if [ -n "$HomeDir" ]; then
+  if [ -d "$HomeDir" ]; then
+    cd "$HomeDir"
+  else
+    exit 0
+  fi
+fi
+
 let sval=$OPTIND-1
 shift $sval
-
 RUN=$1
 
 . /usr/local/libexec/load_exconfig.sh
@@ -46,7 +62,7 @@ RUN=$1
 case $RUN in
   /*)
     if [ -d "$RUN" ]; then
-      echo :${RUN#/}
+      echo :${RUN#/}$hasA
     fi
     exit 0;;
 esac
@@ -54,17 +70,22 @@ esac
 function test_and_accept {
   mybase=$1
   mypath=$2
-  if [ -d $mybase/$mypath ]; then
-    echo $mybase$sep$mypath
+  myrun=$3
+  
+  if [ -d $mybase/$mypath/$myrun ]; then
+    [ $optA = yes -a -d $mybase/anal/$myrun ] && hasA=${sep}yes
+    echo $mybase$sep$mypath/$myrun$hasA
     exit 0
   fi
 }
 
 # Now we have a relative path
 for base in $HomeDir $AltDir; do
-  test_and_accept $base $RUN
-  test_and_accept $base raw/$RUN
-  for type in flight preflt cal data junk; do
-    test_and_accept $base raw/$type/$RUN
-  done
+  if [ -z "$RunType" ]; then
+    test_and_accept $base . $RUN
+  else
+    for type in flight preflt cal data junk; do
+      test_and_accept $base raw/$type $RUN
+    done
+  fi
 done
