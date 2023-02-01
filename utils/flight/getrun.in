@@ -1,22 +1,27 @@
-#! /bin/bash
 #! @SHELL_EXE@
 
 function print_usage {
 cat <<EOF
 getrun -h
   Print this message
-getrun [axis] <run>+
+getrun <run>+
   Retrieves the .csv output and log files for the
   specified runs.
-getrun [runtype]
-  Retrieve the latest run of the specified type or all types
 
-axis: Specified in the config file
-runtype: flight, preflt, cal, data, junk
-  echo "   runtype selection stays in effect until another runtype is selected"
-  echo
+Reads configuration information from Experiment.config
+and ~/.monarch/getrun.$Experiment.config
 EOF
 exit 0
+
+# getrun [axis] <run>+
+  # Retrieves the .csv output and log files for the
+  # specified runs.
+# getrun [runtype]
+  # Retrieve the latest run of the specified type or all types
+
+# axis: Specified in the config file
+# runtype: flight, preflt, cal, data, junk
+
 }
 
 msgProgram='getrun'
@@ -36,11 +41,11 @@ function nl_error {
 #  ANAL_Dir=Analysis
 #  RAW_Dir=RAW
 #  RunType=''
-#  Copy_CSV=yes
+Copy_CSV=yes
 #  Copy_SSP=no
 #  Decimate=no
-#  Matlab=yes
-#  SCPOPTS=-Cp
+Matlab=yes
+SCPOPTS=-Cp
 #  StartupScript=MOUDI_startup
 
 # function usage {
@@ -72,14 +77,14 @@ function do_scp {
 function do_tar {
   # do_tar $run $dir
   # Accesses globals:
-  #   use_relay gse relay flt HomeDir RunType Decimate
+  #   use_relay gse relay flt HomeDir RunPath RunsDir Decimate
   run=$1
   src=$2
   PC="ProxyCommand /usr/bin/ssh $relay /usr/bin/nc $gse 22"
   DC=''
   [ $Decimate = yes ] && DC='--exclude="*[1-9].dat"'
-  echo Retrieving $HomeDir/raw/$RunType/$run/$src
-  eval time ssh $gse tar -czf- -C $HomeDir/raw/$RunType/$run $DC $src | tar -C $RAW_Dir/$run$flt -xzf-
+  echo Retrieving $HomeDir/$RunPath/$run/$src
+  eval time ssh $gse tar -czf- -C $HomeDir/$RunPath/$run $DC $src | tar -C $RunsDir/$run$flt -xzf-
 }
 
 function locate_run {
@@ -112,12 +117,46 @@ function locate_run {
   fi
 }
 
+# load_exconfig.sh restricts PATH, but we at least need the
+# path to MATLAB
+SAVEPATH=$PATH
 . /usr/local/libexec/load_exconfig.sh
-[ -n "$CFG_ERROR" ] && msgf 3 $CFG_ERROR
+PATH=$SAVEPATH
+# Don't fail if HomeDir does not exist
+[ -n "$CFG_ERROR" ] && [ -z "$Experiment" -o -z "$HomeDir" ] &&
+  msgf 3 $CFG_ERROR
 
 if [ -r ~/.monarch/getrun.$Experiment.config ]; then
   . ~/.monarch/getrun.$Experiment.config
 fi
+
+[ -n "$getrun_data_funcfile" -a -n "$getrun_startup" ] ||
+  nl_error "getrun_data_funcfile or getrun_startup undefined"
+
+# READ getrun_data_funcfile
+[ -r "$getrun_data_funcfile" ] ||
+  nl_error "Unable to read from $getrun_data_funcfile"
+
+OS=`uname -s`
+case "$OS" in
+  CYGWIN_NT*) machine=Cygwin;;
+  Linux) machine=Linux;;
+  Darwin) machine=Mac;;
+  *) nl_error "Unable to identify operating system: uname -s said '$OS'";;
+esac
+
+while read -r line; do
+  sline=${line#path = \'}
+  if [ "$line" != "$sline" ]; then
+    sline=${sline%\';}
+    [ $machine == Cygwin ] && sline=`cygpath "$sline"`
+    # echo "RunsDir=\"$sline\""
+    RunsDir="$sline"
+  fi
+done <$getrun_data_funcfile
+
+[ -n "$RunsDir" ] || nl_error "RunsDir not defined"
+[ -d "$RunsDir" ] || nl_error "RunsDir '$RunsDir' does not exist"
 
 for run in $*; do
   case $run in
@@ -129,41 +168,34 @@ for run in $*; do
 #   gse=*) gse=${run#gse=};;
     decimate) Decimate=yes;;
     nomatlab) Matlab=no;;
-#   -f) flt=F; RunType=flight;;
-#   flight) flt=F; RunType=flight;;
-#   cal) flt=''; RunType=cal;;
-#   data) flt=''; RunType=data;;
-#   junk) flt=''; RunType=junk;;
-#   preflt) flt=''; RunType=preflt;;
     [1-9][0-9][0-9][0-9][0-9][0-9].[0-9]*)
       echo $run
-      # set $gse $RunPath $GSEs_tried
+      # sets $gse $RunPath $GSEs_tried
       locate_run $run
-      [ -n "$RunPath" ] || nl_error "Unable to locate run $run on $GSEs_tried"
-      echo "Found run $run on $gse $RunPath"
+      if [ -n "$RunPath" ]; then
+        echo "Found run $run on $gse $RunPath"
 
-      if false; then
-      [ "$RunPath" = "raw/flight" ] && flt=F
-      [ -d $RAW_Dir/$run$flt ] || mkdir -p $RAW_Dir/$run$flt
-      gsecolon=''
-      [ -n "$gse" ] && gsecolon="$gse:"
-      if [ $Copy_CSV = yes ]; then
-        do_scp $gsecolon$HomeDir/anal/$run/*.csv $RAW_Dir/$run$flt
-        echo "$RAW_Dir/$run$flt" >>runs.dat
-      fi
-      if [ -n "$RunType" ]; then
-        [ -f $RAW_Dir/$run$flt/$Exp.log ] ||
-          do_scp $gsecolon$HomeDir/raw/$RunType/$run/$Exp.log $RAW_Dir/$run$flt/$Exp.log
-        [ -f $RAW_Dir/$run$flt/saverun.log ] ||
-          do_scp $gsecolon$HomeDir/raw/$RunType/$run/saverun.log $RAW_Dir/$run$flt/saverun.log
-      fi
+        [ "$RunPath" = "raw/flight" ] && flt=F
+        [ -d $RunsDir/$run$flt ] || mkdir -p $RunsDir/$run$flt
+        [ "$gse" = "localhost" ] && gse=""
+        if [ $Copy_CSV = yes ]; then
+          do_scp $gse:$HomeDir/anal/$run/*.csv $RunsDir/$run$flt
+          rmdir --ignore $RunsDir/$run$flt
+          if [ -d $RunsDir/$run$flt ]; then
+            echo "$RunsDir/$run$flt" >>$RunsDir/runs.dat
+            do_scp $gse:$HomeDir/$RunPath/$run/*.log $RunsDir/$run$flt/
+          else
+            echo "No CSV files found for $run: skipping"
+          fi
+        fi
+      else
+        echo "Unable to locate run $run on $GSEs_tried: skipping"
       fi;;
     *) nl_error "Unrecognized option: '$run'";;
   esac
 done
-exit 0
 
-if [ -f runs.dat ] && [ "$Matlab" = "yes" ]; then
+if [ -f $RunsDir/runs.dat ] && [ "$Matlab" = "yes" ]; then
   case `uname -s` in
     CYGWIN_NT*) pwd_wrap="`cygpath -w $PWD`";;
     *) pwd_wrap=$PWD;;
@@ -181,37 +213,31 @@ if [ -f runs.dat ] && [ "$Matlab" = "yes" ]; then
   fi
 
   if [ -n "$matlab" ]; then
-    eval $matlab -sd '$pwd_wrap' -r $StartupScript
+    eval $matlab -sd '$pwd_wrap' -r $getrun_startup
   else
     nl_error "Unable to locate Matlab executable"
   fi
 fi
 
+exit 0
+# Need to figure out what sort of configuration is required
+# for SSP data, but that can happen later
+# Need to know what files need to be retrieved (waves.m or equivalent)
+# Maybe one or more config line of the form
+#   Axis=SSP:waves.m
+#   Axis=SSP_M:QCLI_M.m
 for run in $*; do
   case $run in
-    -f) :;;
     [Ss][Ss][Pp]) :;;
-    gse=*) :;;
     nocsv) :;;
     decimate) :;;
     nomatlab) :;;
-    cal) flt=''; RunType=cal;;
-    flight) flt=F; RunType=flight;;
-    data) flt=''; RunType=data;;
-    junk) flt=''; RunType=junk;;
-    preflt) flt=''; RunType=preflt;;
     [1-9][0-9][0-9][0-9][0-9][0-9].[0-9]*)
       echo $run
-      if [ -n "$RunType" ]; then
-        #[ -f $RAW_Dir/$run$flt/waves.m ] ||
-        #  do_scp $gse:$HomeDir/raw/$RunType/$run/Base/waves.m $RAW_Dir/$run$flt/waves.m
-        if [ $Copy_SSP = yes ]; then
-          [ -d $ANAL_Dir ] || mkdir $ANAL_Dir
-          [ -d $ANAL_Dir/$run$flt ] || mkdir $ANAL_Dir/$run$flt
-        fi
-        if [ $Copy_SSP = yes ]; then
-          do_tar $run SSP
-        fi
+      [ "$RunPath" = "raw/flight" ] && flt=F
+      if [ $Copy_SSP = yes ]; then
+        [ -d $ANAL_Dir/$run$flt ] || mkdir -p $ANAL_Dir/$run$flt
+        do_tar $run SSP
       fi;;
     *) nl_error "Unrecognized option in second pass: '$run'";;
   esac

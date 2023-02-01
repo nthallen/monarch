@@ -21,6 +21,7 @@ configure_file(mlf_find.in mlf_find @ONLY)
 configure_file(saverun.in saverun @ONLY)
 configure_file(clean_runfiles.in clean_runfiles @ONLY)
 configure_file(locate_rundir.in locate_rundir @ONLY)
+configure_file(getrun.in getrun @ONLY)
 
 install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/clean_runfiles
@@ -29,6 +30,7 @@ install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/reduce
   ${CMAKE_CURRENT_BINARY_DIR}/mlf_find
   ${CMAKE_CURRENT_BINARY_DIR}/saverun
+  ${CMAKE_CURRENT_BINARY_DIR}/getrun
   ${CMAKE_CURRENT_SOURCE_DIR}/dircksum
   ${CMAKE_CURRENT_SOURCE_DIR}/dircompare
   DESTINATION bin)
