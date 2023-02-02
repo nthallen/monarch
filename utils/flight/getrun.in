@@ -182,7 +182,7 @@ for run in $*; do
           do_scp $gse:$HomeDir/anal/$run/*.csv $RunsDir/$run$flt
           rmdir --ignore $RunsDir/$run$flt
           if [ -d $RunsDir/$run$flt ]; then
-            echo "$RunsDir/$run$flt" >>$RunsDir/runs.dat
+            echo "$run$flt" >>$RunsDir/runs.dat
             do_scp $gse:$HomeDir/$RunPath/$run/*.log $RunsDir/$run$flt/
           else
             echo "No CSV files found for $run: skipping"
