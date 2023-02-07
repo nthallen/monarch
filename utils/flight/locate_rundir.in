@@ -52,7 +52,8 @@ fi
 
 let sval=$OPTIND-1
 shift $sval
-RUN=$1
+RELRUN=$1
+RUN=${RELRUN##*/}
 
 . /usr/local/libexec/load_exconfig.sh
 [ -n "$CFG_ERROR" ] && msgf 3 $CFG_ERROR
@@ -73,6 +74,8 @@ function test_and_accept {
   myrun=$3
   
   if [ -d $mybase/$mypath/$myrun ]; then
+    [ $RELRUN != $RUN -a $RELRUN != $mypath/$myrun ] &&
+      msgf 1 "Found run at $mypath/$myrun, not $RELRUN"
     [ $optA = yes -a -d $mybase/anal/$myrun ] && hasA=${sep}yes
     echo $mybase$sep$mypath/$myrun$hasA
     exit 0
