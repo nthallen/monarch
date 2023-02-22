@@ -1,0 +1,175 @@
+# Setup script for the Monarch architecture when run under Cygwin
+# on Windows.
+#
+# --------------------
+# Invocation:
+# --------------------
+# 
+# This script can be run from a Windows Cmd shell as:
+# > PowerShell -ExecutionPolicy Bypass ./cygwin-monarch-setup.ps1
+#
+# ---------
+# Uninstall:
+# ---------
+#
+# If you would like to reverse the actions of this script
+# (i.e. delete the flight group), you can issue the command:
+# > PowerShell -ExecutionPolicy Bypass ./cygwin-monarch-setup.ps1 -uninstall
+
+param (
+  [switch]$uninstall = $false,
+  [switch]$setup_cygwin = $false
+)
+
+# If we are uninstalling, we probably need to run a Cygwin bash
+# script first before deleting the group. That would presumably
+# delete the monarch source hierarchy, /var/run/monarch, etc.
+#
+# Check here to figure out whether we have to do anything
+#   Does the $fltgrp exist
+#   Is the current user a member?
+$fltgrp = '@FLTGRP@'
+$fulluser = "$Env:USERDOMAIN\$Env:USERNAME"
+$need_to_be_admin = $true
+$is_admin = $false
+$reason = ''
+$check = 'Checking'
+$ok_when = 'already'
+$exp_option = ''
+# $exp_option = '-E moudi:nthallen/keutsch-moudi.git'
+
+while ($need_to_be_admin -AND -NOT $is_admin) {
+  Write-Output "`n$check for group existence and membership"
+  if ($uninstall) {
+    if (-NOT ((Get-LocalGroup).Name -contains $fltgrp)) {
+      Write-Output "Group $fltgrp does not exist, so no changes required for uninstall."
+      $need_to_be_admin = $false
+    } elseif ($fltgrp -ine 'Administrators') {
+      $reason = "delete group $fltgrp"
+    } else {
+      $need_to_be_admin = $false
+    }
+  } else {
+    if ((Get-LocalGroup).Name -contains $fltgrp) {
+      if ((Get-LocalGroupMember $fltgrp).Name -contains $fulluser ) {
+        Write-Output "Group $fltgrp $ok_when exists and $fulluser is a member"
+        $need_to_be_admin = $false
+      } else {
+        $reason = "add user $fulluser to group $fltgrp"
+      }
+    } else {
+      $reason = "create group $fltgrp"
+    }
+  }
+
+  # This is the elevation check and elevation
+  $is_admin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
+      [Security.Principal.WindowsBuiltInRole] "Administrator")
+
+  if ($need_to_be_admin) {
+    $ok_when = 'now'
+    $check = 'Rechecking'
+    if ($is_admin) {
+      # Do admin stuff now
+      Write-Output "We are elevated now to $reason"
+      if ($uninstall) {
+        if ((Get-LocalGroupMember $fltgrp).Name -contains $fulluser ) {
+          Write-Output "Removing $fulluser from local group $fltgrp"
+          Remove-LocalGroupMember -Name $fltgrp -Member $fulluser
+        }
+        if ((Get-LocalGroupMember $fltgrp).Name.count -eq 0) {
+          Write-Output "Removing local group $fltgrp"
+          Remove-LocalGroup -Name $fltgrp
+        } else {
+          Write-Output "Holding off on removing non-empty local group $fltgrp"
+        }
+      } else {
+        Write-Output "Installing ..."
+        if (-NOT ((Get-LocalGroup).Name -contains $fltgrp) ) {
+          Write-Output "Creating Local Group $fltgrp"
+          $grp = New-LocalGroup -Name "$fltgrp" -Description 'Monarch flight group'
+        }
+        Write-Output "Adding $fulluser to local group $fltgrp"
+        Add-LocalGroupMember -Name $fltgrp -Member $fulluser
+      }
+      $cont = Read-Host -Prompt "Continue?"
+      Return
+    } else {
+      # Try to elevate to become admin:
+      # $MyInvocation | Format-List | Write-Output
+      # $MyInvocation.MyCommand | Format-List | Write-Output
+      $cmdline = $MyInvocation.Line.Replace($MyInvocation.InvocationName, $MyInvocation.MyCommand.Definition)
+      Write-Verbose "Invocation: $cmdline"
+      Write-Output "We need to RunAs an Administrator to $reason"
+      Write-Warning "Will now attempt to RunAs Administrator:"
+      $cont = Read-Host -Prompt "Continue? [N/y]"
+      if ( $cont -match 'y(es)?' ) {
+        Write-Output "Restarting script as Administrator"
+        $cmdline = "-ExecutionPolicy Bypass $cmdline"
+        Start-Process -FilePath PowerShell.exe -ArgumentList "$cmdline" -Verb RunAs -Wait
+        # Write-Output "Back from RunAs"
+        # $cont = Read-Host -Prompt "Continue?"
+      } else {
+        Write-Output "Please contact the author if you need help with this installation"
+        Return
+      }
+    }
+  }
+}
+
+if ($uninstall) {
+  Return
+}
+
+if (-not $setup_cygwin -AND
+    -not (Test-Path -Path c:\cygwin64 -PathType Container)) {
+  $setup_cygwin = $true
+}
+
+if ($setup_cygwin) {
+  # Run Cygwin Setup
+  $curloc = Get-Location
+  Set-Location $env:USERPROFILE\Downloads
+  if (-not (Test-Path -Path setup-x86_64.exe -PathType Leaf))
+  { # need to download the program
+    $url = "https://cygwin.com/setup-x86_64.exe"
+    [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
+    write-host "Need to download cygwin setup from $url"
+    $dest = "setup-x86_64.exe"
+    $start_time = Get-Date
+    Invoke-WebRequest -Uri $url -OutFile $dest
+    Write-Output "Time taken: $((Get-Date).Subtract($start_time).Seconds) second(s)"
+  }
+
+  if (Test-Path -Path setup-x86_64.exe -PathType Leaf)
+  {
+    Write-Output "`nInvoking Cygwin Setup`n"
+    start-process setup-x86_64.exe  -Wait -argumentlist "--packages bzip2,cygwin-doc,file,less,openssh,git,chere,cmake,doxygen,graphviz,gcc-core,gcc-g++,gdb,make,bison,flex,perl,libncurses-devel,screen"
+  }
+  else
+  {
+    Write-Output "Download must have failed: Please contact the author for help"
+    Return
+  }
+}
+
+if (Test-Path -Path "c:\cygwin64\usr\local" -PathType container) {
+  if (-NOT (Test-Path -Path "c:\cygwin64\usr\local\src" -PathType container)) {
+    mkdir "c:\cygwin64\usr\local\src"
+  }
+  Set-Location c:\cygwin64\usr\local\src
+} else {
+  Write-Error "Unable to locate the Cygwin installation"
+  Return
+}
+
+# Create the bash install script
+$setup_script = @'
+@MONARCH_EXP_SETUP@
+'@
+$setup_script | Out-File -FilePath "./monarch-install.sh" -NoNewLine -Encoding ASCII
+
+Write-Output "`nStarting standard install script: /usr/local/src/monarch-install.sh`n"
+
+# -Wait won't work here, because mintty.exe doesn't really exit until ssh-agent does
+start-process C:\cygwin64\bin\mintty.exe -argumentlist "-h always /bin/bash --login /usr/local/src/monarch-install.sh -S $exp_option"

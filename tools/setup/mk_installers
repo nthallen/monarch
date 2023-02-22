@@ -1,0 +1,66 @@
+#! /bin/bash
+# mk_installers
+#   Locates root of current git repository
+#   Uses the basename of that directory as the
+#   experiment basename. Uses the GitHub remote as
+#   the remote.
+#   Writes outputs to:
+#    setup/cygwin-monarch-$basename-install.ps1
+#    setup/monarch-$basename-install.sh
+
+function nl_error {
+  echo "mk_installers: $*" >&2
+  exit 1
+}
+
+# Check for the existence of the default installers
+srcdir=/usr/local/share/monarch/setup
+ps1in=cygwin-monarch-install.ps1
+shin=monarch-install.sh
+tgtdir=setup
+
+[ -d $srcdir ] || nl_error "Source directory $srcdir not found"
+[ -f $srcdir/$ps1in ] ||
+  nl_error "Source installer $srcdir/$ps1in not found"
+[ -f $srcdir/$shin ] ||
+  nl_error "Source installer $srcdir/$shin not found"
+
+# Check that we are in a git repository and that the target
+# directory exists
+startdir=$PWD
+lastpwd=''
+while [ ! -d .git -a "$lastpwd" != "$PWD" ]; do
+  lastpwd=$PWD
+  cd ..
+done
+
+[ -d .git ] || nl_error "Execution dir $startdir not inside git repo"
+exp_basename=`basename $PWD`
+[ $exp_basename = src ] &&
+  exp_basename=$(basename $(dirname $PWD))
+exp_url=`git remote -v | grep "github.com:.* (fetch)" |
+  sed -e 's/^.*[[:space:]]*git@github.com://; s/[[:space:]].*$//'`
+[ -n "$exp_url" ] ||
+  nl_error "Unable to parse git remote"
+qurl=`echo $exp_url | sed -e 's/\//\\\\\//g'`
+[ -n "$qurl" ] || nl_error "quoting failed"
+
+# Check that target directory exists
+[ -d $tgtdir ] || nl_error "Target directory '$tgtdir' not found"
+
+# Read /usr/local/share/monarch/setup/cygwin-monarch-install.ps1
+#   and replace the blank $exp_option definition with this
+#   instruments.
+
+ps1out=cygwin-monarch-$exp_basename-install.ps1
+# echo sed -e "\"s/exp_option = ''/exp_option = '$exp_basename:$qurl'/\""
+sed -e "s/exp_option = ''/exp_option = '$exp_basename:$qurl'/" \
+  $srcdir/$ps1in >$tgtdir/$ps1out
+
+# Read /usr/local/share/monarch/setup/monarch-install.sh
+#   and insert code at the top to add the command line option
+#   -E basename:URL for this instrument
+shout=monarch-$exp_basename-install.sh
+sed -e "s/exp_option=''/exp_option='$exp_basename:$qurl'/" \
+    -e "s/monarch-install/monarch-$exp_basename-install/" \
+  $srcdir/$shin >$tgtdir/$shout
