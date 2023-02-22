@@ -64,3 +64,4 @@ shout=monarch-$exp_basename-install.sh
 sed -e "s/exp_option=''/exp_option='$exp_basename:$qurl'/" \
     -e "s/monarch-install/monarch-$exp_basename-install/" \
   $srcdir/$shin >$tgtdir/$shout
+chmod +x $tgtdir/$shout
