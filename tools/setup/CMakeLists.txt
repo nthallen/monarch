@@ -2,6 +2,15 @@ cmake_minimum_required(VERSION 2.8.8...3.20.0)
 cmake_policy(SET CMP0048 NEW)
 project(monarch_utils_setup VERSION 1.0.0)
 
+set_property(
+  DIRECTORY
+  APPEND
+  PROPERTY CMAKE_CONFIGURE_DEPENDS
+  ssh_agent.sh
+  monarch-install.sh.in
+  cygwin-monarch-install.ps1.in
+)
+
 set(EXP_HOMEBASE "")
 set(EXP_GIT_URL "")
 set(FLTUSER "flight")
