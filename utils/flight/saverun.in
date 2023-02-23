@@ -33,9 +33,14 @@ saverun [ofile]
   to the previous directory.
  
   If saverun completes successfully, (and is dot-executed)
-  the variables Experiment, HomeDir and FlightDir and RunDir
+  the variables Experiment, HomeDir and RunDir
   will be defined. The newly created directory is
-  $FlightDir/$RunDir
+  $HomeDir/$RunDir
+  
+  If the ofile argument is specified, a string consisting of
+  the $HomeDir:$RunDir is written to $HomeDir/ofile. This is
+  used internally when invoking saverun on a remote machine
+  so the calling saverun can recover the RunDir value.
 EOF
 exit 0
 }
@@ -81,44 +86,12 @@ else
   cd $HomeDir
 fi
 
-#----------------------------------------------------------------
-# Look for the flight directory
-#----------------------------------------------------------------
-# typeset FN=$FlightNode date run
-# unset FlightDir
-# [ ! -d /net/$FN/ ] && FN=""
-# if [ -z "$FN" ]; then
-#   if [ -d "$AltDir" ]; then
-#     FlightDir=$AltDir
-#   else
-#     #----------------------------------------------------------------
-#     # Wait for the flight node
-#     #----------------------------------------------------------------
-#     echo "saverun: Waiting for flight computer '$FlightNode' to boot"
-#     while [ ! -d /net/$FlightNode/ ]; do
-#       waitfor /net/$FlightNode/ 2>/dev/null
-#     done
-#   fi
-# fi
-# unset FN
-# [ -z "$FlightDir" ] && FlightDir=/net/$FlightNode$HomeDir
-# 
-# [ -d $FlightDir ] ||
-#   sv_error Unable to locate flight directory $FlightDir
-# 
-# if [ ! -w $FlightDir -o ! -x $FlightDir ]; then
-#   echo "saverun: Insufficient permissions for flight directory $FlightDir" >&2
-#   ls -ld $FlightDir >&2
-#   exit 1
-# fi
-# cd $FlightDir
-# OLDDIR=~-
 OLDDIR=.
 
 #----------------------------------------------------------------
-# Fix the disk if required
+# Fix the disk if required. : Would only be supported on QNX
 #----------------------------------------------------------------
-[ "$FixDisk" = "yes" ] && fixdisk $FlightDir
+# [ "$FixDisk" = "yes" ] && fixdisk $FlightDir
 
 #----------------------------------------------------------------
 # Check to see if there are any log directories

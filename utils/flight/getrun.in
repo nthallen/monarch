@@ -1,0 +1,244 @@
+#! @SHELL_EXE@
+
+function print_usage {
+cat <<EOF
+getrun -h
+  Print this message
+getrun <run>+
+  Retrieves the .csv output and log files for the
+  specified runs.
+
+Reads configuration information from Experiment.config
+and ~/.monarch/getrun.$Experiment.config
+EOF
+exit 0
+
+# getrun [axis] <run>+
+  # Retrieves the .csv output and log files for the
+  # specified runs.
+# getrun [runtype]
+  # Retrieve the latest run of the specified type or all types
+
+# axis: Specified in the config file
+# runtype: flight, preflt, cal, data, junk
+
+}
+
+msgProgram='getrun'
+
+function nl_error {
+  echo "getrun: $*" >&2
+  exit 1
+}
+
+#  flt=''
+#  # gse=dpi
+#  gse=
+#  # Exp is used to retrieve the log file $Exp.log
+#  Exp=Moudi
+#  # ANAL_Dir is the directory where run-specific analysis directories
+#  # are located. Can be '.'.
+#  ANAL_Dir=Analysis
+#  RAW_Dir=RAW
+#  RunType=''
+Copy_CSV=yes
+#  Copy_SSP=no
+#  Decimate=no
+Matlab=yes
+SCPOPTS=-Cp
+#  StartupScript=MOUDI_startup
+
+# function usage {
+#   echo "./getrun [options] [axis] [ [runtype] <run> ]+"
+#   echo " options:"
+#   echo "   nocsv: Don't copy csv files or start matlab"
+#   echo "   nomatlab: Don't start matlab"
+#   echo "   decimate: Retrieve only every 10th scan"
+#   echo "   gse=<addr>: Override gse (default: $gse)"
+#   echo " runtype: flight, preflt, cal, data, junk"
+#   echo "   runtype selection stays in effect until another runtype is selected"
+#   echo " axis: SSP"
+#   echo "   copy SSP data for the specified axis"
+#   echo "   axis selections are 'sticky' and apply to all runs"
+#   exit 0
+# }
+
+function do_scp {
+  src=$1
+  dest=$2
+  src2=${src#:}
+  if [ "$src" = "$src2" ]; then
+    eval time scp $SCPOPTS $*
+  else
+    cp $src2 $dest
+  fi
+}
+
+function do_tar {
+  # do_tar $run $dir
+  # Accesses globals:
+  #   use_relay gse relay flt HomeDir RunPath RunsDir Decimate
+  run=$1
+  src=$2
+  PC="ProxyCommand /usr/bin/ssh $relay /usr/bin/nc $gse 22"
+  DC=''
+  [ $Decimate = yes ] && DC='--exclude="*[1-9].dat"'
+  echo Retrieving $HomeDir/$RunPath/$run/$src
+  eval time ssh $gse tar -czf- -C $HomeDir/$RunPath/$run $DC $src | tar -C $RunsDir/$run$flt -xzf-
+}
+
+function locate_run {
+  # search localhost, and hosts in GSE, and FlightNode for
+  # Set $gse $RunPath on success. $GSEs_tried on failure
+  gse=localhost
+  lcl=`locate_rundir -a $run | sed -ne 's/^[^:]*://; s/:yes$//p'`
+  RunPath=''
+  GSEs_tried=$gse
+  for gse in $GSE; do
+    if [ -z "$lcl" ]; then
+      lcl=`ssh $gse locate_rundir -H $HomeDir -a $run | sed -ne 's/^[^:]*://; s/:yes$//p'`
+      [ -z "$lcl" ] && GSEs_tried="$GSEs_tried, $gse"
+    fi
+  done
+  if [ -z "$lcl" -a -n "$FlightNode" ]; then
+    gse=$FlightNode
+    lcl=`ssh $gse locate_rundir -H $HomeDir -a $run | sed -ne 's/^[^:]*://; s/:yes$//p'`
+    [ -z "$lcl" ] && GSEs_tried="$GSEs_tried and $gse"
+  fi
+  if [ -n "$lcl" ]; then
+    RunPath=${lcl%:yes}
+    RunPath=${RunPath#*:}
+    justrun=${RunPath#*/}
+    if [ "$justrun" = "$RunPath" ]; then
+      RunPath = '.';
+    else
+      RunPath=${RunPath%/*}
+    fi
+  fi
+}
+
+# load_exconfig.sh restricts PATH, but we at least need the
+# path to MATLAB
+SAVEPATH=$PATH
+. /usr/local/libexec/load_exconfig.sh
+PATH=$SAVEPATH
+# Don't fail if HomeDir does not exist
+[ -n "$CFG_ERROR" ] && [ -z "$Experiment" -o -z "$HomeDir" ] &&
+  msgf 3 $CFG_ERROR
+
+if [ -r ~/.monarch/getrun.$Experiment.config ]; then
+  . ~/.monarch/getrun.$Experiment.config
+fi
+
+[ -n "$getrun_data_funcfile" -a -n "$getrun_startup" ] ||
+  nl_error "getrun_data_funcfile or getrun_startup undefined"
+
+# READ getrun_data_funcfile
+[ -r "$getrun_data_funcfile" ] ||
+  nl_error "Unable to read from $getrun_data_funcfile"
+
+OS=`uname -s`
+case "$OS" in
+  CYGWIN_NT*) machine=Cygwin;;
+  Linux) machine=Linux;;
+  Darwin) machine=Mac;;
+  *) nl_error "Unable to identify operating system: uname -s said '$OS'";;
+esac
+
+while read -r line; do
+  sline=${line#path = \'}
+  if [ "$line" != "$sline" ]; then
+    sline=${sline%\';}
+    [ $machine == Cygwin ] && sline=`cygpath "$sline"`
+    # echo "RunsDir=\"$sline\""
+    RunsDir="$sline"
+  fi
+done <$getrun_data_funcfile
+
+[ -n "$RunsDir" ] || nl_error "RunsDir not defined"
+[ -d "$RunsDir" ] || nl_error "RunsDir '$RunsDir' does not exist"
+
+for run in $*; do
+  case $run in
+    -h) print_usage;;
+    help) print_usage;;
+    --help) print_usage;;
+    nocsv) Copy_CSV=no;;
+#   [Ss][Ss][Pp]) Copy_SSP=yes;;
+#   gse=*) gse=${run#gse=};;
+    decimate) Decimate=yes;;
+    nomatlab) Matlab=no;;
+    [1-9][0-9][0-9][0-9][0-9][0-9].[0-9]*)
+      echo $run
+      # sets $gse $RunPath $GSEs_tried
+      locate_run $run
+      if [ -n "$RunPath" ]; then
+        echo "Found run $run on $gse $RunPath"
+
+        [ "$RunPath" = "raw/flight" ] && flt=F
+        [ -d $RunsDir/$run$flt ] || mkdir -p $RunsDir/$run$flt
+        [ "$gse" = "localhost" ] && gse=""
+        if [ $Copy_CSV = yes ]; then
+          do_scp $gse:$HomeDir/anal/$run/*.csv $RunsDir/$run$flt
+          rmdir --ignore $RunsDir/$run$flt
+          if [ -d $RunsDir/$run$flt ]; then
+            echo "$run$flt" >>$RunsDir/runs.dat
+            do_scp $gse:$HomeDir/$RunPath/$run/*.log $RunsDir/$run$flt/
+          else
+            echo "No CSV files found for $run: skipping"
+          fi
+        fi
+      else
+        echo "Unable to locate run $run on $GSEs_tried: skipping"
+      fi;;
+    *) nl_error "Unrecognized option: '$run'";;
+  esac
+done
+
+if [ -f $RunsDir/runs.dat ] && [ "$Matlab" = "yes" ]; then
+  case `uname -s` in
+    CYGWIN_NT*) pwd_wrap="`cygpath -w $PWD`";;
+    *) pwd_wrap=$PWD;;
+  esac
+
+  # Now locate matlab and run it, specifying this directory and the
+  # name of the newly created set script
+  S=`which matlab 2>/dev/null`
+  if [ -n "$S" ]; then
+    matlab=matlab
+  else
+    for path in /Applications/MATLAB*; do
+      [ -e $path/bin/matlab ] && matlab=$path/bin/matlab
+    done
+  fi
+
+  if [ -n "$matlab" ]; then
+    eval $matlab -sd '$pwd_wrap' -r $getrun_startup
+  else
+    nl_error "Unable to locate Matlab executable"
+  fi
+fi
+
+exit 0
+# Need to figure out what sort of configuration is required
+# for SSP data, but that can happen later
+# Need to know what files need to be retrieved (waves.m or equivalent)
+# Maybe one or more config line of the form
+#   Axis=SSP:waves.m
+#   Axis=SSP_M:QCLI_M.m
+for run in $*; do
+  case $run in
+    [Ss][Ss][Pp]) :;;
+    nocsv) :;;
+    decimate) :;;
+    nomatlab) :;;
+    [1-9][0-9][0-9][0-9][0-9][0-9].[0-9]*)
+      echo $run
+      [ "$RunPath" = "raw/flight" ] && flt=F
+      if [ $Copy_SSP = yes ]; then
+        [ -d $ANAL_Dir/$run$flt ] || mkdir -p $ANAL_Dir/$run$flt
+        do_tar $run SSP
+      fi;;
+    *) nl_error "Unrecognized option in second pass: '$run'";;
+  esac
+done

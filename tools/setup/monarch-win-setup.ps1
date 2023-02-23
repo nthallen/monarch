@@ -49,7 +49,7 @@ param (
 $fltgrp = 'flight'
 $fulluser = "$Env:USERDOMAIN\$Env:USERNAME"
 if ( $uninstall) {
-  if (-NOT (Get-LocalGroup).Name -contains $fltgrp ) {
+  if (-NOT ((Get-LocalGroup).Name -contains $fltgrp)) {
     Write-Output "Group $fltgrp does not exist, so no changes required for uninstall."
     $cont = Read-Host -Prompt "Finish?"
     Break

@@ -121,7 +121,7 @@ bool DAS_IO::Interface::not_fptext() {
       cp, nc, bufsize, buf ? "not NULL" : "is NULL" );
 
   if (cp >= nc) return true;
-  if (buf[cp] == '-') {
+  if (buf[cp] == '-' || buf[cp] == '+') {
     if (++cp >= nc) return true;
   }
   if (buf[cp] == '.') {
