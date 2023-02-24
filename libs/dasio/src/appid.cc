@@ -1,6 +1,7 @@
 /** @file appid.cc */
 #include <stdlib.h>
 #include "dasio/appid.h"
+#include "nl.h"
 
 namespace DAS_IO {
   
@@ -13,5 +14,12 @@ namespace DAS_IO {
   }
 
   AppID_t::~AppID_t() {}
-  
+
+  void AppID_t::report_startup() {
+    msg(0, "%s %s Starting", DAS_IO::AppID.fullname, DAS_IO::AppID.rev);
+  }
+
+  void AppID_t::report_shutdown() {
+    msg(0, "Terminating");
+  }
 }
