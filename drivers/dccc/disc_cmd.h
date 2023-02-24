@@ -1,5 +1,6 @@
 #ifndef DISC_CMD_H
 #define DISC_CMD_H
+#include <cstdint>
 
 /* 
         disc_cmd.h	- defines type of commands that dccc handles.
