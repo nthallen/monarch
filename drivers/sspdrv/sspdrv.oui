@@ -1,7 +1,6 @@
 <package> sspdrv
 <include> "sspint.h"
-<include> msg msghdr
-<follow> msghdr
+<include> msg oui
 
 <init> sspdrv_init(msg_hdr, argc, argv);
 
@@ -32,6 +31,5 @@ Latency is how many TM reports are expected per scan.
 It is used to decide when to switch the status from
 Triggering to Armed. The default is 1.
 
-<package> msghdr_default
-<var>
-  char *msg_hdr_default = "SSP";
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("sspdrv", "SSP Driver", "V2.0.1");
