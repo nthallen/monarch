@@ -25,7 +25,7 @@ static int opt_regulate;
 static int opt_kluge_a;
 static int opt_autoquit;
 static unsigned long opt_start_file = 1;
-static unsigned long opt_end_file = ULONG_MAX;
+static unsigned long opt_end_file = 0;
 
 //  opt_basepath = "/home/tilde/raw/flight/080908.4";
 
@@ -71,10 +71,16 @@ bool rdr_mlf::process_eof() {
     ::close(fd);
     fd = -1;
   }
-  if (mlf->index < opt_end_file ) {
+  while (fd == -1) {
+    if (opt_end_file > 0 && mlf->index >= opt_end_file)
+      break;
     int nlrl = set_response(0);
     fd = mlf_next_fd( mlf );
     set_response(nlrl);
+    if (fd == -1) {
+      if (opt_end_file == 0) break;
+      else msg(MSG_ERROR, "Unable to open %s, skipping", mlf->fpath);
+    }
   }
   if ( fd == -1 ) {
     if ( opt_autoquit ) {
@@ -86,6 +92,16 @@ bool rdr_mlf::process_eof() {
     flags = rdr_ptr->get_buffering() ? 0 : Interface::Fl_Read;
   }
   return false;
+}
+
+/**
+ * This function is complicated because the buffer is
+ * used by the tm_rcvr from which the Reader class is
+ * derived. rdr_mlf's own cp never gets updated.
+ * @return true if the input buffer is empty.
+ */
+bool rdr_mlf::ibuf_empty() {
+  return rdr_ptr->rcvr_cp() >= nc;
 }
 
 Reader::Reader(int nQrows, rdr_mlf *mlf)

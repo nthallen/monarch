@@ -20,7 +20,7 @@ class rdr_mlf : public Interface {
     rdr_mlf(const char *path);
     inline void set_reader(Reader *rdr) { rdr_ptr = rdr; }
     bool process_eof();
-    inline bool ibuf_empty() { return cp < nc; }
+    bool ibuf_empty();
   protected:
     bool protocol_input();
     Reader* rdr_ptr;
@@ -36,6 +36,7 @@ class Reader : public tm_generator, public tm_rcvr {
     void event(enum tm_gen_event evt);
     void service_row_timer();
     inline bool get_buffering() { return is_buffering; }
+    inline unsigned int rcvr_cp() { return tm_rcvr::cp; }
   protected:
     void process_tstamp();
     unsigned int process_data();
