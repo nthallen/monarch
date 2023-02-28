@@ -1,5 +1,6 @@
 #ifndef SSP_AD_H_INCLUDED
 #define SSP_AD_H_INCLUDED
+#include <stdint.h>
 /* This file is copied from ssp_fpga_sw project and should be kept in synch. */
 
 #define SSP_MAX_SAMPLES 4096
@@ -24,18 +25,18 @@
 #define SSP_MAX_CTRL_MSG 80
 
 typedef struct {
-  unsigned short NWordsHdr;
-  unsigned short FormatVersion;
-  unsigned char  NChannels;
-  unsigned char  NF;
-  unsigned short NSamples;
-  unsigned short NCoadd;
-  unsigned short NAvg;
-  unsigned short NSkL;
-  unsigned short NSkP;
-  unsigned long  ScanNum;
-  signed short T_HtSink;
-  signed short T_FPGA;
+  uint16_t NWordsHdr;
+  uint16_t FormatVersion;
+  uint8_t  NChannels;
+  uint8_t  NF;
+  uint16_t NSamples;
+  uint16_t NCoadd;
+  uint16_t NAvg;
+  uint16_t NSkL;
+  uint16_t NSkP;
+  uint32_t  ScanNum;
+  int16_t T_HtSink;
+  int16_t T_FPGA;
 } __attribute__((packed)) ssp_scan_header_t;
 
 #define MAX_UDP_PAYLOAD 1472
