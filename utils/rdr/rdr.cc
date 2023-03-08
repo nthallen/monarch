@@ -252,9 +252,12 @@ void Reader::unlock() {
 }
 
 void Reader::buffering(bool bfring) {
-  is_buffering = bfring;
-  if (!bfring)
-    mlf->flags = Interface::Fl_Read;
+  if (bfring != is_buffering) {
+    msg(MSG_DBG(1), "buffering(%s)", bfring ? "true" : "false");
+    is_buffering = bfring;
+    if (!bfring)
+      mlf->flags = Interface::Fl_Read;
+  }
 }
 
 void tminitfunc() {}

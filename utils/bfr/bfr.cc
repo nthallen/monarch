@@ -57,7 +57,7 @@ bool bfr_input_client::protocol_input() {
       "protocol_input() while blocked: flags=0x%X", flags);
   }
   process_message();
-  flags = blocking && blocked_input ? 0 : Fl_Read;
+  flags = (blocking && blocked_input) ? 0 : Fl_Read;
   if (blocked_input_save != blocked_input)
     msg(MSG_DBG(0), "Input %sblocked", blocked_input ? "" : "un");
   return false;
