@@ -19,8 +19,10 @@ class rdr_mlf : public Interface {
   public:
     rdr_mlf(const char *path);
     inline void set_reader(Reader *rdr) { rdr_ptr = rdr; }
+    void start_event();
     bool process_eof();
     bool ibuf_empty();
+    void update_flags();
   protected:
     bool protocol_input();
     Reader* rdr_ptr;
@@ -33,18 +35,21 @@ class Reader : public tm_generator, public tm_rcvr {
     Reader(int nQrows, rdr_mlf *mlf);
     /** Handles autostart and then calls Start(Srv_Unix) */
     void start();
-    void event(enum tm_gen_event evt);
-    void service_row_timer();
+    void event(enum tm_gen_event evt) override;
+    void service_row_timer() override;
+    void manage_queues();
     inline bool get_buffering() { return is_buffering; }
     inline unsigned int rcvr_cp() { return tm_rcvr::cp; }
   protected:
     void process_tstamp();
     unsigned int process_data();
     inline void process_message() { tm_rcvr::process_message(); }
-    bool ready_to_quit();
+    bool ready_to_quit() override;
+    void tm_queue_is_empty() override;
+    void bfr_write_completed() override;
     void lock(const char *by = 0, int line = -1);
     void unlock();
-    void buffering(bool bfring);
+    // void buffering(bool bfring) override;
     pthread_mutex_t tmq_mutex;
     bool have_tstamp;
   private:
@@ -52,7 +57,8 @@ class Reader : public tm_generator, public tm_rcvr {
     const char *locked_by_file;
     int locked_by_line;
     rdr_mlf* mlf;
-    bool is_buffering;
+    bool managing_queues;
+    bool tm_queue_blocked;
 };
 
 extern "C" {

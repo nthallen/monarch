@@ -24,4 +24,4 @@ Host_Session function bfr: Where to find tm_bfr
 <package> appid_default
 <include> "dasio/appid.h"
 <defs>
-  DAS_IO::AppID_t DAS_IO::AppID("rdr", "rdr server", "V1.0");
+  DAS_IO::AppID_t DAS_IO::AppID("rdr", "rdr server", "V2.1");

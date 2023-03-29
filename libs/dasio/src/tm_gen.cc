@@ -12,7 +12,8 @@ namespace DAS_IO {
 tm_gen_bfr::tm_gen_bfr(bool collection)
   : Client("bfr", "bfr", "tm_bfr",
            collection ? "input-nb" : "input", 80),
-    buffering(true) {}
+    buffering(true)
+    {}
 
 bool tm_gen_bfr::iwritev(struct iovec *iov, int nparts, const char *where) {
   nl_assert(is_negotiated());
@@ -36,7 +37,6 @@ bool tm_gen_bfr::connect_failed() {
 
 bool tm_gen_bfr::app_connected() {
   tm_hdr_t hdr = { TMHDR_WORD, TMTYPE_INIT };
-  // struct iovec iov[2];
   SETIOV(&bfr_iov[0], &hdr, sizeof(hdr));
   SETIOV(&bfr_iov[1], &tm_info, sizeof(tm_info));
   return iwritev( bfr_iov, 2, "Sending tm_info");
@@ -47,21 +47,27 @@ bool tm_gen_bfr::iwritten(int nb) {
     buffering = false;
     tm_generator::TM_server->buffering(false);
   }
+  if (is_negotiated() && obuf_empty())
+    tm_generator::TM_server->bfr_write_completed();
   return false;
 }
 
 tm_generator *tm_generator::TM_server;
 
 tm_generator::tm_generator()
-    : tm_queue(), Server("tm_gen") {
-  bfr = 0;
-  tmr = 0;
-  cur_tsp = 0;
-  quit = false;
-  started = false;
-  regulated = false;
-  regulation_optional = true;
-  autostart = false;
+    : tm_queue(),
+      Server("tm_gen"),
+      bfr(0),
+      tmr(0),
+      cur_tsp(0),
+      quit(false),
+      started(false),
+      regulated(false),
+      regulation_optional(true),
+      autostart(false),
+      is_buffering(true),
+      transmit_blocked(false)
+{
   nl_assert(TM_server == 0);
   TM_server = this;
 }
@@ -73,6 +79,7 @@ tm_generator::~tm_generator() {}
  */
 void tm_generator::init(int nQrows, bool collection, int obufsize) {
   tm_queue::init(nQrows);
+  collecting = collection;
   tm_gen_cmd::attach(this); // defines the subservice
   bfr = new tm_gen_bfr(collection);
   bfr->set_obufsize(obufsize);
@@ -86,14 +93,17 @@ void tm_generator::init(int nQrows, bool collection, int obufsize) {
 }
 
 void tm_generator::transmit_data( bool single_row ) {
+  if (is_buffering) {
+    transmit_blocked = true;
+    return;
+  }
+  transmit_blocked = false;
   // We can read from the queue without locking
   // But we need to lock when we reference tmg_bfr_fd
   tmq_ref *tmqdr;
-  // msg( 0, "transmit_data(%s)", single_row ? "single" : "all" );
   int rc;
   tm_hdrs_t hdrs;
   hdrs.s.hdr.tm_id = TMHDR_WORD;
-  // struct iovec iov[3];
   while ( first_tmqr ) {
     if (first_tmqr->tsp != cur_tsp) {
       cur_tsp = first_tmqr->tsp;
@@ -109,7 +119,7 @@ void tm_generator::transmit_data( bool single_row ) {
     tmqdr = first_tmqr;
     if (tmqdr->n_Qrows == 0) {
       if (tmqdr->next_tmqr) retire_rows(tmqdr, 0);
-      else return;
+      else break;
     } else {
       hdrs.s.hdr.tm_type = output_tm_type;
       int n_rows = single_row ? 1 : tmqdr->n_Qrows;
@@ -134,9 +144,16 @@ void tm_generator::transmit_data( bool single_row ) {
         unlock();
       } else unlock();
       retire_rows(tmqdr, n_rows);
-      if ( single_row ) return;
+      if ( single_row ) break;
     }
   }
+  if (queue_empty())
+    tm_queue_is_empty();
+}
+
+void tm_generator::tm_queue_is_empty() {}
+
+void tm_generator::bfr_write_completed() {
 }
 
 /**
@@ -200,8 +217,9 @@ void tm_generator::transmit_data( bool single_row ) {
         TM Advance to Time
  */
 bool tm_generator::execute(const char *cmd) {
-  if (cmd[0] == '\0') {
-    msg( MSG_DEBUG, "Received Quit" );
+  if (cmd[0] == '\0' || (cmd[0] == 'Q')) {
+    msg( MSG_DEBUG, "Received %s Quit",
+      cmd[0] ? "Explicit" : "Implicit");
     event(tmg_event_quit);
     return true;
   }
@@ -266,6 +284,7 @@ bool tm_generator::execute(const char *cmd) {
             unlock();
             event(tmg_event_fast);
           } else tm_start(0);
+          transmit_data(false);
         }
         break;
       case 'U': // Unlock optional regulation
@@ -280,25 +299,51 @@ bool tm_generator::execute(const char *cmd) {
 }
 
 void tm_generator::event(enum tm_gen_event evt) {
-  if (evt == tmg_event_quit) {
-    tmr->settime(0);
-    lock(__FILE__,__LINE__);
-    started = false;
-    quit = true;
-    unlock();
-    if (bfr) {
-      Interface::dereference(bfr);
-      bfr = 0;
-    }
-    if (tmr) {
-      Interface::dereference(tmr);
-      tmr = 0;
-    }
-    Shutdown();
+  switch (evt) {
+    case tmg_event_stop:
+      lock(__FILE__,__LINE__);
+      started = false;
+      unlock();
+      if (tmr)
+        tmr->settime(0);
+      break;
+    case tmg_event_quit:
+      event(tmg_event_stop);
+      lock(__FILE__,__LINE__);
+      started = false; // redundant
+      quit = true;
+      unlock();
+      if (tmr) {
+        Interface::dereference(tmr);
+        tmr = 0;
+      }
+      Shutdown();
+      break;
   } 
 }
 
-void tm_generator::buffering(bool bfring) {}
+void tm_generator::buffering(bool bfring) {
+  is_buffering = bfring;
+}
+
+bool tm_generator::ready_to_quit() {
+  // Shut down listeners
+  Server::ready_to_quit();
+  // Empty the queue except when regulated and !collecting
+  while ((!regulated || collecting) && !queue_empty()) {
+    if (is_buffering) return false;
+    transmit_data(false);
+  }
+  if (is_buffering) return false;
+  if (!tm_gen_quit)
+    commit_quit();
+  if (is_buffering) return false;
+  if (bfr) {
+    Interface::dereference(bfr);
+    bfr = 0;
+  }
+  return true;
+}
 
 void tm_generator::tm_start(int lock_needed) {
   if (lock_needed) lock(__FILE__,__LINE__);
@@ -320,10 +365,6 @@ void tm_generator::tm_play(int lock_needed) {
 }
 
 void tm_generator::tm_stop() {
-  lock(__FILE__,__LINE__);
-  started = false;
-  unlock();
-  tmr->settime(0);
   event(tmg_event_stop);
 }
 

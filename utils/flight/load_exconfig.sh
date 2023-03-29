@@ -202,9 +202,9 @@ function Launch {
     if [ "X$name" = "X-TMC-" ]; then
       rm -f monarch_gdb_pid.txt
       screen -t $sname gdb -x /usr/local/share/monarch/gdb/TMC_debug.gdb $gdbinit --args "$@"
-      screen -X setenv PATH /bin:/usr/bin:/usr/local/bin
-      screen -X unsetenv Experiment
-      screen -X unsetenv TMBINDIR
+      #screen -X setenv PATH /bin:/usr/bin:/usr/local/bin
+      #screen -X unsetenv Experiment
+      #screen -X unsetenv TMBINDIR
       waitfor monarch_gdb_pid.txt forever
       read gdb_pid <monarch_gdb_pid.txt
       gdb_pid=${gdb_pid##* }
@@ -223,13 +223,13 @@ function Launch {
       rm -f monarch_gdb_ready
       screen -t $sname gdb --args "$@"
       msgf $LaunchVdefault 0 "Launch: gdb $*"
-      screen -X setenv PATH /bin:/usr/bin:/usr/local/bin
-      screen -X unsetenv Experiment
-      screen -X unsetenv TMBINDIR
+      #screen -X setenv PATH /bin:/usr/bin:/usr/local/bin
+      #screen -X unsetenv Experiment
+      #screen -X unsetenv TMBINDIR
       [ "$name" = "-" ] && wname=monarch_gdb_ready
       if [ -n "$wname" ]; then
         waitfor $wname forever
-        if [ ! -f "$wname" ]; then
+        if [ ! -e "$wname" ]; then
           msgf -V 2 "Aborting at Debug due to launch failure"
           launch_error=yes
           rm -f monarch_gdb_ready

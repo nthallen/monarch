@@ -70,8 +70,8 @@ namespace DAS_IO {
       /**
        * Called if our login was unsuccessful. The connection will have been
        * closed and the buffer emptied. The default method delivers an error
-       * and returns true to exit the loop.
-       * @return true to exist the event loop
+       * and returns reset() to follow the retry logic
+       * @return true to exit the event loop
        */
       virtual bool app_negotiation_failed();
       

@@ -118,7 +118,7 @@ const char *Socket::company = "monarch";
 void Socket::common_init() {
   session = 0;
   unix_name = 0;
-  set_retries(-1, 5, 60);
+  set_retries(-1, 5, 60, true);
   conn_fail_reported = false;
   is_server_client = false;
   if (socket_type == Socket_Function) {
@@ -258,22 +258,6 @@ bool Socket::connect() {
             iname, hostname, portname, err, gai_strerror(err));
           reset();
           return false;
-        } else {
-          
-          /** Added in by Miles from getaddrinfo.c, 2019-11-01 */
-          /* struct addrinfo *resi = res;
-          while (resi) {
-            struct sockaddr_in *addr = (struct sockaddr_in*)resi->ai_addr;
-            printf("result port = %d\n", ntohs(addr->sin_port));
-            printf("result addr = %d.%d.%d.%d\n",
-              (addr->sin_addr.s_addr>>0)&0xFF,
-              (addr->sin_addr.s_addr>>8)&0xFF,
-              (addr->sin_addr.s_addr>>16)&0xFF,
-              (addr->sin_addr.s_addr>>24)&0xFF);
-            resi = resi->ai_next;
-          } */
-          /** End added code from getaddrinfo.c */
-          
         }
         if (res == 0) {
           msg(MSG_FATAL, "%s: getaddrinfo(%s, %s) provided no result",
@@ -310,10 +294,10 @@ bool Socket::connect() {
                   std::strerror(errno));
                 conn_fail_reported = true;
               }
-              if (reset()) {
-                msg(MSG_FATAL, "%s: Connect failure fatal after all retries", iname);
-              }
-              return connect_failed();
+//            if (reset()) {
+//              msg(MSG_FATAL, "%s: Connect failure fatal after all retries", iname);
+//            }
+              return reset() || connect_failed();
             }
           }
           socket_state = Socket_connecting;
@@ -412,15 +396,19 @@ bool Socket::ProcessData(int flag) {
     case Socket_connected:
       return Interface::ProcessData(flag);
     default:
-      msg(MSG_EXIT_ABNORM, "DAS_IO::Socket::ProcessData: Invalid socket_state: %d", socket_state);
+      msg(MSG_EXIT_ABNORM,
+        "DAS_IO::Socket::ProcessData: Invalid socket_state: %d",
+        socket_state);
   }
   return false;
 }
 
-void Socket::set_retries(int max_retries, int min_dly, int max_foldback_dly) {
+void Socket::set_retries(int max_retries, int min_dly,
+      int max_foldback_dly, bool final) {
   reconn_max = max_retries;
   reconn_seconds = reconn_seconds_min = min_dly;
   reconn_seconds_max = max_foldback_dly;
+  final_response = final;
 }
 
 void Socket::close() {
@@ -456,17 +444,14 @@ bool Socket::reset() {
 
 bool Socket::not_reconnecting(const char *reason) {
   msg(MSG_ERROR, "%s: %s", iname, reason);
-  return true;
+  return final_response;
 }
 
 bool Socket::read_error(int my_errno) {
   msg(MSG_ERROR, "%s: read error %d: %s", iname,
     my_errno, strerror(my_errno));
   
-  if (is_server) {
-    close();
-    return true;
-  } else if (is_server_client) {
+  if (is_server_client) {
     close();
     if (ELoop)
       ELoop->delete_child(this);
@@ -480,10 +465,7 @@ bool Socket::iwrite_error(int my_errno) {
   msg(MSG_ERROR, "%s: write error %d: %s", iname,
     my_errno, strerror(my_errno));
   
-  if (is_server) {
-    close();
-    return true;
-  } else if (is_server_client) {
+  if (is_server_client) {
     close();
     if (ELoop)
       ELoop->delete_child(this);
@@ -535,7 +517,8 @@ bool Socket::readSockError(int *sock_err) {
 
   if (getsockopt(fd, SOL_SOCKET, SO_ERROR,
         sock_err, &optlen) == -1) {
-    msg(MSG_ERROR, "%s: Error from getsockopt() %d: %s", iname, errno, strerror(errno));
+    msg(MSG_ERROR, "%s: Error from getsockopt() %d: %s",
+      iname, errno, strerror(errno));
     return false;
   }
   return true;

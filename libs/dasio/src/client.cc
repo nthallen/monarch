@@ -24,7 +24,7 @@ namespace DAS_IO {
   {
     clt_state = Clt_connecting;
   }
-  
+
   bool Client::protocol_input() {
     if (is_negotiated()) return app_input();
     if (not_str("OK\n")) {
@@ -40,7 +40,7 @@ namespace DAS_IO {
     report_ok(nc);
     return app_connected();
   }
-  
+
   bool Client::process_eof() {
     if (clt_state == Clt_negotiation_failed) {
       clt_state = Clt_connecting;
@@ -50,19 +50,19 @@ namespace DAS_IO {
 
   bool Client::app_negotiation_failed() {
     msg(MSG_ERROR, "%s: Negotiation failed", iname);
-    return true;
+    return reset();
   }
-  
+
   bool Client::app_process_eof() {
     return true;
   }
-  
+
   void Client::close() {
     DAS_IO::Socket::close();
     clt_state = is_negotiated() ? Clt_connecting :
       Clt_negotiation_failed;
   }
-  
+
   bool Client::connected() {
     // Issue the negotiation string
     int req_len;
@@ -74,7 +74,7 @@ namespace DAS_IO {
       req_len = snprintf(obuf, obufsize, "AuthLE %s %s %s\n", Exp,
         AppID.name, service);
     }
-    if (iwrite(obuf, req_len)) return true; // don't write the terminating NUL, duh
+    if (iwrite(obuf, req_len)) return true;
     clt_state = Clt_negotiating;
     return false;
   }
@@ -87,5 +87,5 @@ namespace DAS_IO {
     }
     return false;
   }
-  
+
 }

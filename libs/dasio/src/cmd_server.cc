@@ -458,8 +458,7 @@ command_out_t *cmdif_rd::free_commands;
 
 cmdif_wr_clt::cmdif_wr_clt(const char *iname, const char *service,
         const char *subservice)
-      : DAS_IO::Client(iname, service, service, subservice, 80) {
-}
+      : DAS_IO::Client(iname, service, service, subservice, 80) {}
 
 std::list<cmdif_rd *> cmdif_rd::rdrs;
 
