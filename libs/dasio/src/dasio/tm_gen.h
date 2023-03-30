@@ -54,6 +54,9 @@ class tm_generator : public tm_queue, public Server {
     bool regulated; //< True whenever data flow is time-based
     bool autostart; //< autostart is implemented in rdr
     bool regulation_optional; //< True when not regulating is OK
+    bool collecting; //< True if this is collection
+    bool is_buffering; //< Set by buffering()
+    bool transmit_blocked; //< True if a write to bfr has not finished
     /**
      * Called when the tm_gen_bfr Interface switches between
      * buffered and unbuffered modes. The buffered mode indicates
@@ -64,7 +67,30 @@ class tm_generator : public tm_queue, public Server {
      */
     virtual void buffering(bool bfring);
 
+    /**
+     * Should not be called until the derived subclass
+     * is satisfied that its data source is exhausted.
+     * This should be true whenever an explicit Quit
+     * command is received and the input buffers are
+     * empty. Or it should be the subclass' responsibility
+     * not to issue a quit until the input is exhausted.
+     */
+    bool ready_to_quit() override;
     void transmit_data(bool single_row);
+    
+    /**
+     * Called by transmit_data() whenever the tm_queue
+     * becomes empty. The default does nothing, but this
+     * gives rdr (at least) an opportunity to flush data
+     * remaining in its input buffer.
+     */
+    virtual void tm_queue_is_empty();
+    
+    /**
+     * This is a hook to allow rdr to unblock other
+     * queues.
+     */
+    virtual void bfr_write_completed();
     tmq_tstamp_ref *cur_tsp;
     tm_gen_bfr *bfr;
     tm_gen_tmr *tmr;

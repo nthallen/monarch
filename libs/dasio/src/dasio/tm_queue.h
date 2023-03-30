@@ -104,7 +104,15 @@ class tm_queue {
     void retire_rows( tmq_ref *tmqd, int n_rows );
     // void retire_tstamp( tmq_tstamp_ref *tmqts );
     bool next_tmqr(tmq_ref **tmqrp);
+    /**
+     * lock() and unlock() are non-functional remnants of
+     * a multi-threaded implementation.
+     */
     virtual void lock(const char * by = 0, int line = -1);
+    /**
+     * lock() and unlock() are non-functional remnants of
+     * a multi-threaded implementation.
+     */
     virtual void unlock();
 
     unsigned char *raw;

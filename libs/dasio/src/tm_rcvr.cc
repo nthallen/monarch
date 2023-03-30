@@ -198,6 +198,7 @@ namespace DAS_IO {
     msg(MSG_WARN, "%sDiscarding %d bytes (to EOB) in seek_tmid()",
       context(), interface->nc - cp);
     interface->consume(interface->nc);
+    cp = 0;
     tm_expect_hdr();
     tm_msg = (tm_msg_t*)interface->buf;
     ncc = interface->nc - cp;

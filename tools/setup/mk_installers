@@ -54,7 +54,7 @@ qurl=`echo $exp_url | sed -e 's/\//\\\\\//g'`
 
 ps1out=cygwin-monarch-$exp_basename-install.ps1
 # echo sed -e "\"s/exp_option = ''/exp_option = '$exp_basename:$qurl'/\""
-sed -e "s/exp_option = ''/exp_option = '$exp_basename:$qurl'/" \
+sed -e "s/exp_option = ''/exp_option = '-E $exp_basename:$qurl'/" \
   $srcdir/$ps1in >$tgtdir/$ps1out
 
 # Read /usr/local/share/monarch/setup/monarch-install.sh

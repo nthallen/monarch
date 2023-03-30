@@ -106,7 +106,7 @@ void tm_queue::init(int n_Qrows) {
 }
 
 bool tm_queue::queue_empty() {
-  return tm_gen_quit && !full && (first == last);
+  return !full && (first == last);
 }
 
 void tm_queue::lock(const char * by, int line) {

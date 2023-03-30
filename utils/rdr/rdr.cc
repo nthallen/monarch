@@ -17,17 +17,13 @@
 
 using namespace DAS_IO;
 
-//DAS_IO::AppID_t DAS_IO::AppID("rdr", "Telemetry Reader", "V2.0");
-
 static const char *opt_basepath = ".";
 static int opt_autostart;
 static int opt_regulate;
 static int opt_kluge_a;
 static int opt_autoquit;
 static unsigned long opt_start_file = 1;
-static unsigned long opt_end_file = ULONG_MAX;
-
-//  opt_basepath = "/home/tilde/raw/flight/080908.4";
+static unsigned long opt_end_file = 0;
 
 /** Options we need to support:
 
@@ -53,46 +49,65 @@ rdr_mlf::rdr_mlf(const char *path)
   flags = 0;
 }
 
+void rdr_mlf::start_event() {
+  if (fd == -1) process_eof();
+  update_flags();
+}
+
 bool rdr_mlf::protocol_input() {
   rdr_ptr->process_message();
-  // bfr is protected
-  flags = rdr_ptr->get_buffering() ? 0 : Interface::Fl_Read;
+  rdr_ptr->manage_queues();
   return false;
 }
 
-// Return non-zero where there is nothing else to read
-// This is absolutely a first cut. It will stop at the
-// first sign of trouble (i.e. a missing file)
-// What I will want is a record of first file and last
-// file and/or first time/last time
 bool rdr_mlf::process_eof() {
   // Is this ever true? I don't think so!
   if ( fd != -1 ) {
     ::close(fd);
     fd = -1;
   }
-  if (mlf->index < opt_end_file ) {
+  while (fd == -1) {
+    if (opt_end_file > 0 && mlf->index >= opt_end_file)
+      break;
     int nlrl = set_response(0);
     fd = mlf_next_fd( mlf );
     set_response(nlrl);
+    if (fd == -1) {
+      if (opt_end_file == 0) break;
+      else msg(MSG_ERROR, "Unable to open %s, skipping", mlf->fpath);
+    }
   }
   if ( fd == -1 ) {
-    if ( opt_autoquit ) {
+    if (opt_autoquit) {
       rdr_ptr->event(tmg_event_quit);
-      return true;
     }
     flags = 0;
   } else {
-    flags = rdr_ptr->get_buffering() ? 0 : Interface::Fl_Read;
+    update_flags();
   }
   return false;
+}
+
+/**
+ * This function is complicated because the buffer is
+ * used by the tm_rcvr from which the Reader class is
+ * derived. rdr_mlf's own cp never gets updated.
+ * @return true if the input buffer is empty.
+ */
+bool rdr_mlf::ibuf_empty() {
+  return rdr_ptr->rcvr_cp() >= nc;
+}
+
+void rdr_mlf::update_flags() {
+  flags = (fd < 0 || nc >= bufsize) ? 0 : Interface::Fl_Read;
 }
 
 Reader::Reader(int nQrows, rdr_mlf *mlf)
     : tm_generator(),
       tm_rcvr(mlf),
       mlf(mlf),
-      is_buffering(true) {
+      managing_queues(false),
+      tm_queue_blocked(false) {
   int rv = pthread_mutex_init( &tmq_mutex, NULL );
   if ( rv )
     msg( MSG_FATAL, "Mutex initialization failed: %s",
@@ -122,8 +137,7 @@ void Reader::event(enum tm_gen_event evt) {
   lock(__FILE__,__LINE__);
   switch (evt) {
     case tmg_event_start:
-      if (mlf->fd == -1) mlf->process_eof();
-      mlf->flags = is_buffering ? 0 : Interface::Fl_Read;
+      mlf->start_event();
       break;
     case tmg_event_stop:
       mlf->flags = 0;
@@ -144,7 +158,31 @@ void Reader::event(enum tm_gen_event evt) {
 }
 
 void Reader::service_row_timer() {
-  if (regulated) transmit_data(true);
+  if (regulated) {
+    transmit_data(true);
+    manage_queues();
+  }
+}
+
+void Reader::manage_queues() {
+  if (managing_queues)
+    return;
+  managing_queues = true;
+  bool progressing = false;
+  do {
+    progressing = false;
+    if (!tm_queue_blocked && !mlf->ibuf_empty()) {
+      process_message();
+    }
+    if (!queue_empty() && !regulated)
+      transmit_data(false);
+    if (tm_queue_blocked && allocate_rows(0)) {
+      tm_queue_blocked = false;
+      progressing = true;
+    }
+  } while (progressing);
+  mlf->update_flags();
+  managing_queues = false;
 }
 
 void Reader::process_tstamp() {
@@ -182,8 +220,8 @@ unsigned int Reader::process_data() {
     unsigned char *dest;
     lock(__FILE__,__LINE__);
     int n_room = allocate_rows(&dest);
+    unlock();
     if ( n_room ) {
-      unlock();
       if ( n_room > n_rows ) n_room = n_rows;
       int rawsize = n_room * tm_rcvr::nbQrow;
       memcpy( dest, raw, rawsize );
@@ -193,30 +231,45 @@ unsigned int Reader::process_data() {
       MFCtr += n_room;
       rows_processed += n_room;
     } else {
-      unlock();
+      break;
     }
-    if (!regulated) transmit_data(false);
-    if (n_room == 0) break;
   }
+  if (n_rows)
+    tm_queue_blocked = true;
   return rows_processed;
 }
 
 bool Reader::ready_to_quit() {
-  Server::ready_to_quit(); // will do shutdown
-  while (!queue_empty()) {
-    if (mlf->ibuf_empty()) {
-      if (!tm_gen_quit)
-        commit_quit();
-    } else {
-      process_message();
-    }
-    if (is_buffering) return false;
-    transmit_data(false);
+  manage_queues();
+  if (is_buffering || !queue_empty() || ncc >= toread)
+    return false;
+  if (tm_generator::ready_to_quit()) {
+    Interface::dereference(mlf);
+    mlf = 0;
+    return true;
   }
-  if (is_buffering) return false;
-  Interface::dereference(mlf);
-  mlf = 0;
-  return true;
+  msg(MSG, "Reader::ready_to_quit() but tm_gen is not");
+  return false;
+}
+
+void Reader::tm_queue_is_empty() {
+  msg(MSG_DEBUG,
+    "TMQIE: neg:%s ibuf:%s fd:%d buffering:%s",
+    bfr->is_negotiated() ? "yes" : "no",
+    mlf->ibuf_empty() ? "empty" : "!empty",
+    mlf->fd, is_buffering ? "true" : "false");
+  if (!mlf->ibuf_empty()) {
+    manage_queues();
+  } else if (regulated && mlf->ibuf_empty() && mlf->fd < 0) {
+    tmr->settime(0);
+  }
+}
+
+void Reader::bfr_write_completed() {
+  if (transmit_blocked && !regulated && !queue_empty()) {
+    transmit_data(false);
+    manage_queues();
+  }
 }
 
 void Reader::lock(const char *by, int line) {
@@ -233,12 +286,6 @@ void Reader::unlock() {
   if (rv)
     msg( MSG_FATAL, "Mutex unlock failed: %s",
             strerror(rv));
-}
-
-void Reader::buffering(bool bfring) {
-  is_buffering = bfring;
-  if (!bfring)
-    mlf->flags = Interface::Fl_Read;
 }
 
 void tminitfunc() {}

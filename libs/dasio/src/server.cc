@@ -216,6 +216,7 @@ namespace DAS_IO {
     do {
       ELoop.event_loop();
     } while (!ready_to_quit());
+    ELoop.clear_delete_queue();
   }
 
   bool Server::ready_to_quit() {

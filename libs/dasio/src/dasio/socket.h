@@ -9,7 +9,7 @@ namespace DAS_IO {
 class Authenticator;
 
 /**
- * @brief Base class for TCP and Unix Domain sockets
+ * @brief Pure Virtual Base class for TCP and Unix Domain sockets
  *
  * It is worth noting that currently the Socket class includes basic
  * mechanisms for a server socket--calling listen() and accept()
@@ -122,13 +122,20 @@ class Socket : public Interface {
     void connect_later(le_time_t secs = 1, long msecs = 0);
 
     /**
-     * The default configuration is set_retries(-1,5,60);
+     * The default configuration is set_retries(-1,5,60,true) for all
+     * sockets. Derived subclasses can and do have other defaults.
      * @param max_retries Set to 0 for no retries, -1 for unlimited.
      * @param min_dly Seconds to wait before first retry
-     * @param max_foldback_dly Maximum delay between retries, with delay doubling
-     *   on each attempt.
+     * @param max_foldback_dly Maximum delay between retries, with delay
+     * doubling on each attempt.
+     * @param final specifies the final value returned by not_reconnecting()
+     * The final parameter is optional, defaulting to true. Setting this to
+     * false allows a client connection to fail without shutting down the client
+     * loop completely. This is useful where multiple connections are configured,
+     * some of which may be optional.
      */
-    void set_retries(int max_retries, int min_dly, int max_foldback_dly);
+    void set_retries(int max_retries, int min_dly, int max_foldback_dly,
+                     bool final = true);
 
     /**
      * If the socket is a listener, then return true.
@@ -339,6 +346,8 @@ class Socket : public Interface {
     /** True if this interface was established after accept() */
     bool is_server_client;
     bool conn_fail_reported;
+    /** Value returned by not_reconnecting(). Set by set_retries() */
+    bool final_response;
     int reconn_seconds; /**< Current retry delay */
     int reconn_retries; /**< The current number of reconnects attempted */
     int reconn_max; /**< The maximum number of retries */

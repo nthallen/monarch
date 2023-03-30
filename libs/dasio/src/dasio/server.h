@@ -94,6 +94,14 @@ namespace DAS_IO {
       Server *srvr;
   };
   
+  /**
+   * Serverside_client is a thin wrapper on Socket to provide
+   * the server-side of the client/server connection. The actual
+   * negotiation is handled by the Authenticator class, so the
+   * application can override protocol_input() directly. On the
+   * client side, the application input must be implemented in
+   * app_input() to separate out the initial authentication step.
+   */
   class Serverside_client : public Socket {
     public:
       Serverside_client(Authenticator *orig, const char *iname, int ibufsize);

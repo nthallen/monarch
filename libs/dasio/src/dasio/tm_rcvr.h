@@ -60,6 +60,8 @@ class tm_rcvr {
     unsigned int ncc;
     /** number of chars in interface->buf that have been processed */
     unsigned int cp;
+    /** number of bytes beyond cp needed before next action */
+    unsigned int toread;
     /** number of bytes in a row of storage in the tm_queue.
      *  This may differ from nbrow if stripping MFCtr & Synch.
      */
@@ -94,8 +96,6 @@ class tm_rcvr {
     unsigned int bytes_read;
     /** for tracking progress through large data records */
     unsigned int rows_left_in_msg;
-    /** number of bytes beyond cp needed before next action */
-    unsigned int toread;
     /** true if we have received the tm_info data */
     bool tm_info_ready;
     
