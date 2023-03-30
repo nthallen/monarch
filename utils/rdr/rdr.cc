@@ -165,7 +165,8 @@ void Reader::service_row_timer() {
 }
 
 void Reader::manage_queues() {
-  nl_assert(!managing_queues);
+  if (managing_queues)
+    return;
   managing_queues = true;
   bool progressing = false;
   do {
