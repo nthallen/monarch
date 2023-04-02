@@ -6,6 +6,6 @@
   number of zero points and the starting and ending sample
   for the range over which to calculate amplitude and standard
   deviation.
-    NZ is number of sample (0 to NZ-1)
-    NN and NM are sample numbers, inclusive, zero-based, specifying
+    nZ Number of samples with laser off at the start of scan (0 to NZ-1)
+    nN and nM are sample numbers, inclusive, zero-based, specifying
     the range.
