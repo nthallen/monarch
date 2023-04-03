@@ -1,4 +1,5 @@
-#include <dasio/host_session.h>
+#include <math.h>
+#include "dasio/host_session.h"
 #include "sspint.h"
 #include "nl.h"
 #include "mlf.h"
@@ -134,7 +135,7 @@ bool SSP_UDP::protocol_input() {
         msg( -3, "Lost data: SN skip" );
       }
     }
-    cur_word = frag_offset + (nc/sizeof(long)) - 1;
+    cur_word = frag_offset + (nc/sizeof(uint32_t)) - 1;
     if ( frag_hdr & SSP_LAST_FRAG_FLAG ) {
       if ( scan_OK ) {
         if ( cur_word == raw_length )
@@ -156,7 +157,156 @@ bool SSP_UDP::protocol_input() {
   return false;
 }
 
+/**
+ * Noise calculation:
+ *   May 2, 2022 (DCOTSS Integration Year 2)
+ *   The existing calculation assumed it was possible to find a level scan region,
+ *   which was true on the relevant system at the time. Now we clearly need to
+ *   detrend the signal before calculating the noise.
+ *
+ *   Basic problem: {Xi,Yi}. To detrend, we want m, b such that  Y = mX + b
+ *   minimizes the sum of the  squares  of  the residuals. Practically, this
+ *   calculation can be more accurately performed when mean(X) and mean(Y) are
+ *   zero, and for  our purposes, there is no problem with subtracting this mean.
+ *
+ *   i ranges from NN to MM, so there  are N = MM-NN+1 samples. With no loss of
+ *   generality, we will assume i ranges  from 1 to  N, and Xi = i.
+ *   Then mean(Xi) = (N+1)/2.
+ *   Define X'i = Xi - mean(Xi) = i-(N+1)/2. mean(X'i) = 0, and
+ *   sum(X'i^2) = (N^3)/12 - N/12
+ *
+ *   Define Y'i = Yi - mean(Yi). Then m = sum(X'i * Y'i)/sum(X'i^2) and b = 0.
+ *   Note that sum(X'i^2) is a constant, so the only thing we need to calculate
+ *   is  sum(X'i* Y'i).
+ *
+ *   The detreneded residual values are Y'i - m X'i, and the mean of the residual
+ *   is zero. (TBD: prove that last assertion, and it is not exactly
+ *   true in MATLAB simulation due to roundoff) So all we need to do is calculate
+ *   noise = sqrt(sum((Y'i-mX'i)^2))/N and presumably  noise_percent = noise/mean(Yi)
+ */
 void SSP_UDP::output_scan(uint32_t *scan) {
+  FILE *ofp;
+  ssp_scan_header_t *hdr = (ssp_scan_header_t *)scan;
+  uint32_t *idata = (uint32_t*)(scan+hdr->NWordsHdr);
+  float fdata[SSP_MAX_CHANNELS][SSP_MAX_SAMPLES];
+  // time_t now;
+  // static time_t last_rpt = 0;
+  float divisor = 1/(hdr->NCoadd * (float)(hdr->NAvg+1));
+  int my_scan_length = hdr->NSamples * hdr->NChannels;
+
+  // scan is guaranteed to be raw_length words long. Want to
+  // verify that NSamples*NChannels + NWordsHdr + 1 == raw_length
+  if ( hdr->NWordsHdr != scan0 ) {
+    msg( 2, "NWordsHdr(%u) != %u", hdr->NWordsHdr, scan0 );
+    return;
+  }
+  if ( hdr->FormatVersion > 1 ) {
+    msg( 2, "Unsupported FormatVersion: %u", hdr->FormatVersion );
+    return;
+  }
+  if ( my_scan_length + 7 != raw_length ) {
+    msg( 2, "Header reports NS:%u NC:%u -- raw_length is %d",
+      hdr->NSamples, hdr->NChannels, raw_length );
+    return;
+  }
+  if (ssp_config.LE || do_amp) {
+    int i, j, nc = hdr->NChannels;
+    for ( j = 0; j < hdr->NChannels; ++j ) {
+      uint32_t *id = &idata[j];
+      float minv = 0, maxv = 0;
+      for ( i = 0; i < hdr->NSamples; ++i ) {
+        float sampleval = (*id) * divisor;
+        fdata[j][i] = sampleval;
+        id += nc;
+        if (do_amp) {
+          if (i == 0) {
+            minv = maxv = sampleval;
+          } else if (sampleval < minv) {
+            minv = sampleval;
+          } else if (sampleval > maxv) {
+            maxv = sampleval;
+          }
+        }
+      }
+      ssp_amp_data.amplitude[j] = maxv - minv;
+    }
+    for (j = hdr->NChannels; j < SSP_MAX_CHANNELS; ++j) {
+      ssp_amp_data.amplitude[j] = 0;
+      ssp_amp_data.noise[j] = 0;
+      ssp_amp_data.noise_percent[j] = 0;
+    }
+  }
+  if (noise_config.NZ) {
+    int i, j;
+    for (j = 0; j < hdr->NChannels; ++j) {
+      float zero, amplitude, noise, meanY, sumXY, m;
+      
+      // Determine zero
+      zero = 0;
+      for (i = 0; i < noise_config.NZ; ++i) {
+        zero += fdata[j][i];
+      }
+      zero /= noise_config.NZ;
+      
+      // Determine amplitude, meanY
+      amplitude = 0;
+      for (i = noise_config.NN; i <= noise_config.NM; ++i) {
+        amplitude += fdata[j][i];
+      }
+      meanY = amplitude/noise_config.NSamp;
+      amplitude = meanY - zero;
+
+      // Calculate slope m
+      sumXY = 0;
+      for (i = 1; i <= noise_config.NSamp; ++i) {
+        int ii = i+noise_config.NN-1;
+        float Xi = i - noise_config.meanX;
+        float Yi = fdata[j][ii] - meanY;
+        sumXY += Xi*Yi;
+      }
+      m = sumXY / noise_config.sumX2;
+
+      // Calculate std of residual
+      noise = 0;
+      for (i = 1; i < noise_config.NSamp; ++i) {
+        int ii = i+noise_config.NN-1;
+        float Xi = i - noise_config.meanX;
+        float dev = fdata[j][ii] - meanY - m*Xi;
+        noise += dev*dev;
+      }
+      noise = sqrtf(noise/noise_config.NSamp);
+      
+      ssp_amp_data.amplitude[j] = amplitude;
+      ssp_amp_data.noise[j] = noise;
+      ssp_amp_data.noise_percent[j] = 100 * noise / amplitude;
+    }
+  }
+  if (ssp_config.LE) {
+    ofp = mlf_next_file(mlf);
+    fwrite(hdr, sizeof(ssp_scan_header_t), 1, ofp);
+    fwrite(&scan[raw_length-1], sizeof(uint32_t), 1, ofp);
+    { int NCh = hdr->NChannels, j;
+      for ( j = 0; j < NCh; j++ ) {
+        fwrite( fdata[j], sizeof(float), hdr->NSamples, ofp);
+      }
+    }
+    fclose(ofp);
+  }
+
+  ssp_data.index = ssp_amp_data.index = mlf->index;
+  ssp_data.Flags |= (unsigned short)(scan[raw_length-1]);
+  ssp_data.Total_Skip += hdr->NSkL + hdr->NSkP;
+  ssp_data.ScanNum = hdr->ScanNum;
+  if ( hdr->FormatVersion > 0 ) {
+    ssp_data.T_FPGA = hdr->T_FPGA;
+    ssp_data.T_HtSink = hdr->T_HtSink;
+  }
+  
+  // Perform some sanity checks on the inbound scan
+  if ( (scan[1] & 0xFFFF00FF) != scan1 )
+    msg( 1, "%lu: scan[1] = %08lX (not %08lX)\n", mlf->index, scan[1], scan1 );
+  if ( hdr->FormatVersion == 0 && scan[5] != scan5 )
+    msg( 1, "%lu: scan[5] = %08lX (not %08lX)\n", mlf->index, scan[5], scan5 );
 }
 
 
