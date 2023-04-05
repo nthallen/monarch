@@ -1,0 +1,173 @@
+/* qclicomp.ptg */
+File:
+  "\nCompiled Output:\n"
+  $1 /* Header */
+  ": Index: \n"
+  $2 /* Waveform Index */
+  $3 " Fill at end of index\n"
+  $4 /* Waveforms */
+  ": Total Length: " $5 long "\n"
+
+Header:
+  $1 " Program Length\n"
+  [ ptg_output_time ]
+  $2 " Padding\n"
+
+Hex:
+  [ PTG_OUTPUT_HEX $1 short $2 int ]
+
+FileSum: /* Summary of waveforms */
+  "Waveform Summaries:\n\n"
+  $1 /* Waveform Summaries */
+
+ICOSHdr:
+  $3 " ICOS Waveform " $1 int " " $2 "\n"
+  $9 /* DAC initialization */
+  $4 " Ton-1\n"
+  $5 " Toff-1\n"
+  $6 " Tpre (1)\n"
+  $7 " Loop Address\n"
+  $8 " Loop Length\n"
+
+DACs:
+  [ PTG_OUTPUT_1HEX $3 short ] " DAC0 - " $4 double " Amps\n"
+  [ PTG_OUTPUT_1HEX $1 short ] " DAC1 - " $2 double " Amps/Sec\n"
+  [ PTG_OUTPUT_1HEX $5 short ] " DAC2 - " $6 double " Amps\n"
+  [ PTG_OUTPUT_1HEX $7 short ] " DAC3 - " $8 double " Amps\n"
+
+ICOSWave: "ICOS Waveform " $1 " @ " $17 long " {" "\n"
+  "  Sampling:    " $18 " @ " $3 $2 "\n"
+  "  Net Samples: " $19 " Z:" $20 " ramp:" $5 $4 "\n"
+  $6 /* Iz */
+  $7 /* dI/dt */
+  $8 /* Tcycle */
+  $12 /* Fcycle */
+  $9 /* Stepsize */
+  "  Scycle:      " $15 int " " $16 int "\n"
+  "  Tz:          " $13 $11 "\n" /* Tz Actual and specified */
+  $14 /* Ton, Toff, Trcy+Trcypre */
+  $10 /* Ramps */
+  "}\n"
+
+ICOSProg:
+  $1 /* Tz */
+  $2 /* Ramps */
+  $3 /* Tz' */
+  $4 /* Trcy */
+  
+Ramp:
+  "  Ramp {\n"
+  "    Istart:    " $2 $1 "\n"
+  "    Istop:     " $4 $3 "\n"
+  "    Tramp:     " $6 $5 "\n"
+  "    Sramp:     " $7 int "\n"
+  "  }\n"
+
+WaveIndex: $2 " " $1 "\n"
+
+Iz:         "  Iz:          " $1 "\n"
+dIdt:       "  dI/dt:       " $1 double " A/sec\n"
+SampleRate: $1 double "/Sec/" $2 int
+Specd:      " (" $1 ")"
+Long:       $1 long
+Tcycle:     "  Tcycle:      " $1 double " msec\n"
+Fcycle:     "  Fcycle:      " $1 int " Hz\n"
+Stepsize:   "  Stepsize:    " $1 long " usec\n"
+Current:    $1 double " mA"
+Time:       $1 double " msec"
+TzSample:   $1 int " " $2 string "Samples"
+Percent:    $1 double "%"
+Tz:         $1 ", " $2 long " Samples, " $3 double "%"
+Waves:   $1 { "\n" } $2
+Tonoff:
+  "  Ton/Toff:    " $1 long "/" $2 long " usec\n"
+  "  Ttrigger:    " $4 "\n"
+  "  Trecycle:    " $3 long " usec\n"
+
+Fill: [ PTG_OUTPUT_HEX $1 short $2 int ]
+ICOSFill: [ PTG_OUTPUT_ICOSHEX $1 short $2 int ] "\n"
+
+RingHdr:
+  $3 " Ringdown Waveform " $1 int " " $2 "\n"
+  $9 /* DAC initialization */
+  $4 " Ton-1\n"
+  $5 " Toff-1\n"
+  $6 " Tpre\n"
+  $7 " Loop Address\n"
+  $8 " Loop Length\n"
+
+RingData:
+  [ PTG_OUTPUT_1HEX $1 short ] " " $2 double " Amps\n"
+
+Commas: $1 { ",\n" } $2
+Double: $1 double
+
+/* CmdCode
+  $1 list of numerical definitions
+  $2 list of text definitions
+  $3 prefix (string)
+  $4 Total number of waveforms
+*/
+CmdCode:
+  "%{\n"
+  "  #ifdef SERVER\n"
+  "    hsatod_setup_t " $3 string "_Waves[] = {\n"
+  $1 /* CPCIDef */
+  "\n"
+  "    };\n"
+  "  #endif\n"
+  "%}\n"
+  "&" $3 string "_Wave <int>\n"
+  $2 /* WaveCmds */
+  "\t: Number %d {\n"
+  "\t    if ( $2 < 0 || $2 >= " $4 int " ) {\n"
+  "\t      msg(2, \"Specified waveform number %d out of range\", $2 );\n"
+  "\t      CANCEL_LINE;\n"
+  "\t    } else $0 = $2;\n"
+  "\t  }\n"
+  "\t;\n"
+
+CPCIdef:
+  "      {" $1 int ", " $2 int ", " $3 int ", "
+  $4 int ", " $5 int ", " $6 int ", " $9 string "_" $7 string
+  ", " $8 long "}"
+
+MFile:
+  "WaveSpecs = struct( ...\n"
+  "  'Name', { " $1 " }, ...\n"
+  "  'RawRate', { " $2 " }, ...\n"
+  "  'RawSamples', { " $3 " }, ...\n"
+  "  'NetSamples', { " $4 " }, ...\n"
+  "  'NAverage', { " $5 " }, ...\n"
+  "  'NCoadd', { " $6 " }, ...\n"
+  "  'FTrigger', { " $7 " }, ...\n"
+  "  'ISICOS', { " $8 " }, ...\n"
+  "  'TzSamples', { " $9 " }, ...\n"
+  "  'dIdt', { " $10 " }, ...\n"
+  "  'I0', { " $11 " } ...\n"
+  ");\n"
+
+MCommas: $1 { "," [CondMatNL] } $2
+MString: "'" $1 "'"
+
+WaveCmd: "\t: " $1 " { $0 = " $2 int "; }\n"
+
+WaveName: "  " [ ptg_output_name $1 string ]
+/* WaveNames
+   $1 comma-separated list of wave names
+   $2 Total number of waveforms
+   $3 Prefix
+*/
+WaveNames:
+  "%{\n"
+  "  static const char *" $3 string "_Wt[] = {\n"
+  $1 "\n"
+  "  };\n"
+  "  #define N_" $3 string "_WAVES " $2 int "\n"
+  "\n"
+  "  const char *" $3 string "_Wave_text( int n ) {\n"
+  "    if ( n < 0 || n >= N_" $3 string "_WAVES )\n"
+  "      return \"----------\";\n"
+  "    else return " $3 string "_Wt[n];\n"
+  "  }\n"
+  "%}\n"

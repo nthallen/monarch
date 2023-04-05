@@ -1,0 +1,95 @@
+# icoswave.txt
+# Sample source for ICOS waveform definitions
+
+ICOS Waveform Standard1 {
+  Nsample = 1500;
+  Tz = 25%;
+  Ramp from 500 mA to 900 mA in 12 msec;
+}
+
+ICOS Waveform dIdt1 {
+  dI/dt = 30 A/sec;
+  Nsample = 1500;
+  Tz = 100 Raw Samples;
+  Ramp from 500 mA to 900 mA;
+}
+
+ICOS Waveform dIdt2 {
+  dI/dt = 50 A/sec;
+  Nsample = 1500;
+  Tz = 100 Raw Samples;
+  Ramp from 500 mA to 900 mA;
+}
+
+ICOS Waveform dIdt3 {
+  dI/dt = 100 A/sec;
+  Nsample = 1500;
+  Tz = 100 Raw Samples;
+  Ramp from 500 mA to 900 mA;
+}
+
+ICOS Waveform FirstRamp {
+  Iz = .4 A;
+  Tz = 5 msec;
+  Nsample = 2000;
+  dI/dt = 25 A/sec;
+  Ramp from 600mA for 15 msec;
+}
+
+ICOS Waveform SecondRamp {
+  Iz = .4 A;
+  Tz = 100 msec;
+  SampleRate = 625/msec/5;
+  Ramp from 600mA to 900mA in 10 sec;
+}
+
+ICOS Waveform ThirdRamp {
+  Iz = .4A;
+  dI/dt = 25 A/sec;
+  Ramp from 600mA to 800mA;
+}
+
+ICOS Waveform FourthRamp {
+  Iz = .4A;
+  dI/dt = 25 A/sec;
+  Ramp to 1A in 16 msec;
+}
+
+ICOS Waveform TwoRamps {
+  Iz = .4 A;
+  Tz = 10%;
+  Nsample = 1500;
+  dI/dt = 6 A/sec;
+  Ramp from 500mA to 600mA;
+  Ramp from 800mA to 900mA;
+}
+
+ICOS Waveform TwoRampsNoZ {
+  Iz = .4 A;
+  Nsample = 1500;
+  dI/dt = 6 A/sec;
+  Ramp from 500mA to 600mA;
+  Ramp from 800mA to 900mA;
+}
+
+ICOS Waveform Flat {
+  dI/dt = 0 mA/sec;
+  Iz = 960 mA;
+  Nsample = 0;
+  Tz = 1 sec;
+}
+
+ICOS Waveform Flat2 {
+  dI/dt = 0 mA/sec;
+  Iz = 960 mA;
+  SampleRate = 10 MHz;
+  Tz = 1 sec;
+}
+
+ICOS Waveform LongerTimeOff {
+  Nsample = 1500;
+  Tz = 95%;
+  dI/dt = 30 A/sec;
+  Ramp from 650 mA to 900 mA;
+  Ncoadd = 50;
+}

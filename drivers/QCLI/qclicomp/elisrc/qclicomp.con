@@ -1,0 +1,69 @@
+SourceFile : ConfigCmds Wave+ .
+ConfigCmds : ConfigCmd* .
+ConfigCmd : QCLIConfig / Digitizer / Prefix .
+QCLIConfig : 'QCLIConfig' QCLIConfigType ';' .
+QCLIConfigType : 'Standard' / 'StandardxP33' /
+                 'FastRamp' / 'FastRampx10' /
+                 'FastRampx25' / 'Standardx2P41' .
+Digitizer : 'Digitizer' DigitizerType ';' .
+DigitizerType : 'CPCI14' / 'CS210' / 'SSP' .
+Prefix : 'Prefix' Ident ';' .
+
+Wave : ICOSWave / RingWave .
+ICOSWave : 'ICOS' 'Waveform' Ident '{' ICOSCmds '}' .
+ICOSCmds : ( ICOSCmd ';' )+ .
+ICOSCmd : TzDef / IzDef / NcoaddDef / ICOSNsampleDef /
+          ICOSRateDef / dIdt / ICOSRamp / DAC3def .
+TzDef : 'Tz' '=' TzSpec .
+TzSpec : Time / SampleSpec / Percent .
+SampleSpec : Integer 'Raw' 'Samples' / Integer 'Samples' .
+Percent : FloatVal '%' .
+IzDef : 'Iz' '=' Current .
+NcoaddDef : Ncoadd '=' Integer .
+Ncoadd : 'Ncoadd' / 'NCoadd' .
+ICOSNsampleDef : NsampleDef .
+ICOSRateDef : RateDef .
+NsampleDef : Nsample '=' Integer .
+Nsample : 'Nsample' / 'NSample' / 'Nsamples' / 'NSamples' .
+RateDef : 'SampleRate' '=' Integer RateUnit Naverage .
+Naverage : / '/' Integer .
+dIdt : 'dI' '/' 'dt' '=' Current '/' TimeUnit .
+
+ICOSRamp :
+  'Ramp' Istart Istop PrepTime /
+  'Ramp' Istart Istop /
+  'Ramp' Istart PrepTime /
+  'Ramp' Istop PrepTime .
+
+Istart : 'from' Current .
+Istop : 'to' Current .
+PrepTime : ( 'in' / 'for' ) Time .
+
+DAC3def : 'DAC3' '=' DAC3Value .
+DAC3Value : Integer / FloatVal 'V' .
+
+Current : FloatVal CurrentUnit .
+Time : FloatVal TimeUnit .
+
+FloatVal : Integer / Float .
+CurrentUnit : 'A' / 'mA' / 'uA' .
+TimeUnit : 'sec' / 'msec' / 'usec' .
+RateUnit : 'Hz' / 'kHz' / 'MHz' / '/' TimeUnit .
+
+RingWave : 'Ringdown' 'Waveform' Ident '{' RingCmds '}' .
+RingCmds : ( RingCmd ';' )+ .
+RingCmd : TonDef / ToffDef / TpreDef / IzDef / RingNsampleDef / NcoaddDef /
+          RingRateDef / RingData / DAC3def .
+RingNsampleDef : NsampleDef .
+RingRateDef : RateDef .
+TonDef : 'Ton' '=' TonVal .
+TonVal : Time / FloatVal '%' .
+ToffDef : 'Toff' '=' Time .
+TpreDef : 'Tpre' '=' TpreVal .
+TpreVal : Time / Integer 'Samples' .
+RingData : 'I' '=' ( RingCurrent / CurrentSteps ) .
+RingCurrent : Current .
+CurrentSteps : Current 'to' Current 'in' RingStep 'Steps' .
+RingStep : RingCount / RingStepsize .
+RingCount : Integer .
+RingStepsize : Current .
