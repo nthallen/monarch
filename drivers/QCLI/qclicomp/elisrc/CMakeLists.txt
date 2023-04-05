@@ -27,5 +27,5 @@ ADD_CUSTOM_COMMAND(
 )
 add_custom_target(gen_qclicomp ALL DEPENDS qclicomp)
 
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/nctable
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/qclicomp
         DESTINATION bin)

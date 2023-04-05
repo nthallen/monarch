@@ -7,9 +7,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # message("Top of qclicomp's CMakeList.txt")
 
-if (NOT ${CMAKE_CROSSCOMPILING})
-
-message("We are not cross compiling")
 find_program(ELI_EXE eli DOC "Eli Compiler Construction Tool")
 if ((ELI_EXE STREQUAL "ELI_EXE-NOTFOUND"))
 
@@ -21,4 +18,3 @@ message("We have found eli: ${ELI_EXE}")
 add_subdirectory(elisrc)
 
 endif ((ELI_EXE STREQUAL "ELI_EXE-NOTFOUND"))
-endif (NOT ${CMAKE_CROSSCOMPILING})
