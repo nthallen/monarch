@@ -9,6 +9,7 @@ set(CMAKE_C_EXTENSIONS ON)
 #       COMPILE_FLAGS "-include unistd.h")
 
 add_executable(qclicomp driver.c clpintf.c clp.c csm.c obstack.c obsave.c deftbl.c err.c source.c coord.c pdl_gen.c VoidPtrList.c clplib.c envmod.c BitSet.c treecon.c nodecode.c treebuild.c parser.c glahead.c auxNUL.c auxEOF.c dflteot.c tabsize.c idn.c Cint.c auxScanEOL.c str.c Ccomment.c pgs_gen.c treestack.c dfltrepar.c attrmain.c visitprocs.c pickres.c ptg_gen.c linepos.c PtgCommon.c Strings.c visitmap.c CScope.c)
+target_link_libraries(qclicomp m)
 
 message("Pre-conditional")
 if (NOT DEFINED monarch_BINARY_DIR)

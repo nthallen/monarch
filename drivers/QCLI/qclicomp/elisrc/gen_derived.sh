@@ -28,6 +28,7 @@ set(CMAKE_C_EXTENSIONS ON)
 #       COMPILE_FLAGS "-include unistd.h")
 
 add_executable(qclicomp $srcs)
+target_link_libraries(qclicomp m)
 
 message("Pre-conditional")
 if (NOT DEFINED monarch_BINARY_DIR)
