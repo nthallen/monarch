@@ -1,5 +1,7 @@
 #ifndef QCLI_H_INCLUDED
 #define QCLI_H_INCLUDED 1
+#include <stdint.h>
+#include "subbuspp.h"
 
 #define ANAIO_BASE 0xC00
 #define ANAIO_INC 0x80
@@ -51,15 +53,31 @@
 #define QCLI_WRITE_TPRE 0x0F00
 #define QCLI_BAD_CMD 0x1000
 
-void report_status( unsigned short status );
-int check_status( unsigned short status, unsigned short mask,
-		unsigned short value, char *text, int dump );
-unsigned short read_qcli( int fresh );
-void write_qcli( unsigned short value );
-unsigned short wr_rd_qcli( unsigned short value );
-void wr_stop_qcli( unsigned short value );
-int qcli_diags( int verbose );
-void qclisrvr_init( int argc, char **argv );
-void delay3msec(void);
+class qcli_dacs {
+  public:
+    qcli_dacs(/* const char *service, const char *sub_service */);
+    void report_status(uint16_t status);
+    uint16_t read_qcli(bool fresh);
+    void write_qcli(uint16_t value);
+    uint16_t wr_rd_qcli(uint16_t value);
+    void wr_stop_qcli(uint16_t value);
+    int diags(int verbose);
+    int verify_block(uint16_t addr, uint16_t *prog, int blocklen);
+    static int board_number;
+  protected:
+    void sbwr_chk(uint16_t addr, uint16_t val);
+    uint16_t sbw_chk(uint16_t addr);
+    void delay(int msec);
+    bool check_status(uint16_t status, uint16_t mask,
+            uint16_t value, const char *text, bool dump);
+    subbuspp *sb;
+    uint16_t subfunction;
+    uint16_t qcli_waddr, qcli_raddr;
+    uint16_t qcli_wsaddr, qcli_vaddr;
+    uint16_t vbuf[32];
+    subbus_mread_req *vreq;
+    bool qcli_error_reported;
+};
+void qclisrvr_init(int argc, char **argv);
 
 #endif

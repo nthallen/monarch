@@ -6,6 +6,6 @@ typedef struct __attribute__((__packed__)) {
   unsigned short status;
 } qcli_data_t;
 
-extern void qclid_init_options( const char *msg_hdr, int argc, char **argv );
+extern qcli_data_t qcli_data;
 
 #endif

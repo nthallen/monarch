@@ -13,6 +13,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # TARGET=qclisd qclisprog qclistest qclidacsd qclidprog qclidtest
 # I will skip the serial versions
-add_executable(qclidacsd qclisrvr.cc qclidacsdoui.cc qcliutil.cc qclidacs.cc)
-add_executable(qclidprog qcliprog.cc qcliutil.cc qclidacs.cc qclidprogoui.cc)
-add_executable(qclidtest qclitest.cc qcliutil.cc qclidacs.cc qclidtestoui.cc)
+
+include( ../../../oui_setup.cmake )
+OUI_FILE(qclidacsd.oui)
+add_executable(qclidacsd qclid.cc qcliutil.cc qclidacs.cc qclidacsdoui.cc)
+
+#add_executable(qclidprog qcliprog.cc qcliutil.cc qclidacs.cc qclidprogoui.cc)
+#add_executable(qclidtest qclitest.cc qcliutil.cc qclidacs.cc qclidtestoui.cc)
