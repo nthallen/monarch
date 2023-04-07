@@ -72,6 +72,7 @@ class qcli_dacs {
             uint16_t value, const char *text, bool dump);
     subbuspp *sb;
     uint16_t subfunction;
+    uint16_t board_base;
     uint16_t qcli_waddr, qcli_raddr;
     uint16_t qcli_wsaddr, qcli_vaddr;
     uint16_t vbuf[32];

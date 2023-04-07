@@ -338,39 +338,45 @@ int main(int argc, char **argv) {
   ssp_name = AppID.name;
   mlf_def_t *mlf = mlf_init( 3, 60, 1, ssp_name, "dat", mlf_config );
 
-  Loop ELoop;
+  { Loop ELoop;
 
-  ssp_data.index = mlf->index;
-  ssp_data.ScanNum = 0;
-  ssp_data.Flags = 0;
-  ssp_data.Total_Skip = 0;
-  TM_data_sndr *tm_data = new TM_data_sndr("TM", 0,
-    ssp_name, &ssp_data, sizeof(ssp_data));
-  tm_data->connect();
-  ELoop.add_child(tm_data);
+    ssp_data.index = mlf->index;
+    ssp_data.ScanNum = 0;
+    ssp_data.Flags = 0;
+    ssp_data.Total_Skip = 0;
+    TM_data_sndr *tm_data = new TM_data_sndr("TM", 0,
+      ssp_name, &ssp_data, sizeof(ssp_data));
+    tm_data->connect();
+    ELoop.add_child(tm_data);
 
-  TM_data_sndr *tm_amp_data;
-  { int nc = snprintf(0, 0, "%s_amp", ssp_name);
-    ssp_amp_name = (const char *)new_memory(nc+1);
-    tm_amp_data = new TM_data_sndr("TMn", 0,
-      ssp_amp_name, &ssp_amp_data, sizeof(ssp_amp_data));
-    tm_amp_data->set_retries(0, 0, 0, false);
-    tm_amp_data->connect();
-    ELoop.add_child(tm_amp_data);
+    TM_data_sndr *tm_amp_data;
+    { int nc = snprintf(0, 0, "%s_amp", ssp_name);
+      ssp_amp_name = (const char *)new_memory(nc+1);
+      tm_amp_data = new TM_data_sndr("TMn", 0,
+        ssp_amp_name, &ssp_amp_data, sizeof(ssp_amp_data));
+      tm_amp_data->set_retries(0, 0, 0, false);
+      tm_amp_data->connect();
+      ELoop.add_child(tm_amp_data);
+    }
+
+    SSP_UDP *UDP = new SSP_UDP(mlf, tm_amp_data);
+    ELoop.add_child(UDP);
+
+    SSP_TCP *TCP = new SSP_TCP();
+    ELoop.add_child(TCP);
+    TCP->connect();
+
+    SSP_Cmd *Cmd = new SSP_Cmd(TCP, UDP);
+    ELoop.add_child(Cmd);
+    Cmd->connect();
+
+    // signal setup, if needed
+    
+    ELoop.event_loop();
+    ELoop.delete_children();
+    ELoop.clear_delete_queue();
   }
 
-  SSP_UDP *UDP = new SSP_UDP(mlf, tm_amp_data);
-  ELoop.add_child(UDP);
-
-  SSP_TCP *TCP = new SSP_TCP();
-  ELoop.add_child(TCP);
-  TCP->connect();
-
-  SSP_Cmd *Cmd = new SSP_Cmd(TCP, UDP);
-  ELoop.add_child(Cmd);
-  Cmd->connect();
-
-  // signal setup
-
   AppID.report_shutdown();
+  return 0;
 }

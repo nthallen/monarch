@@ -15,7 +15,7 @@ qcli_dacs::qcli_dacs(/* const char *service, const char *sub_service */)
   subfunction = sb->load();
   if (!subfunction)
     msg(3, "Unable to access subbus library %s/%s",
-          service, sub_service);
+          "subbus", "serusb");
   board_base = QCLI_BASE + board_number * QCLI_INC;
   qcli_waddr = board_base + 6;
   qcli_wsaddr = board_base + 8;
@@ -71,7 +71,7 @@ void qcli_dacs::delay(int msec) {
   tp.tv_sec = 0;
   tp.tv_nsec = msec * 1000000L;
   if (nanosleep( &tp, NULL ) != 0)
-    nl_error(3, "nano_sleep saw signal");
+    msg(3, "nano_sleep saw signal");
 }
 
 /**
