@@ -19,5 +19,8 @@ OUI_FILE(qclidacsd.oui)
 add_executable(qclidacsd qclid.cc qcliutil.cc qclidacs.cc qclidacsdoui.cc)
 target_link_libraries(qclidacsd dasio nl pthread subbuspp)
 
-#add_executable(qclidprog qcliprog.cc qcliutil.cc qclidacs.cc qclidprogoui.cc)
+OUI_FILE(qclidprog.oui)
+add_executable(qclidprog qcliprog.cc qcliutil.cc qclidacs.cc qclidprogoui.cc)
+target_link_libraries(qclidprog dasio nl pthread subbuspp)
+
 #add_executable(qclidtest qclitest.cc qcliutil.cc qclidacs.cc qclidtestoui.cc)

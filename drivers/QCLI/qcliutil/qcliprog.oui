@@ -1,5 +1,5 @@
 <package> qcliprog
-<include> msg
+<include> msg oui
 <include> "qcliprog.h"
 <follow> msg
 
@@ -15,7 +15,3 @@
 
 <init>
 	qcliprog_init( argc, argv );
-
-<package> msghdr_default
-<init>
-  char *msg_hdr_default = "QCLI";
