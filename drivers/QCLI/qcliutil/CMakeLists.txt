@@ -24,3 +24,23 @@ add_executable(qclidprog qcliprog.cc qcliutil.cc qclidacs.cc qclidprogoui.cc)
 target_link_libraries(qclidprog dasio nl pthread subbuspp)
 
 #add_executable(qclidtest qclitest.cc qcliutil.cc qclidacs.cc qclidtestoui.cc)
+
+install(FILES
+  TM/qclisspcmd.h
+  DESTINATION include)
+install(FILES
+  TM/QCLI.agm
+  TM/qcli.tmc.in
+  TM/qcli_col.tmc.in
+  TM/qcli_conv.tmc.in
+  TM/qcli_types.tmc
+  TM/qclia.cmd
+  TM/qclis.cmd.in
+  TM/qcli.tbl.in
+  TM/qcli.genui.in
+  TM/ssp_amp.AB3R.tmc.in
+  TM/ssp_noise.AB3R.tmc.in
+  TM/ssp_amp.genui.in
+  TM/ssp_noise.genui.in
+  TM/ssp_amp_col.tmc.in
+  DESTINATION share/monarch/modules/QCLI)
