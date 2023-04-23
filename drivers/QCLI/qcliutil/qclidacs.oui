@@ -1,0 +1,8 @@
+<package> qcli
+<include> "qcliutil.h"
+<follow> msg
+<opts> "d:"
+<sort>
+	-d <qcli_number> QCLI board number
+<init>
+  qclisrvr_init(argc, argv);

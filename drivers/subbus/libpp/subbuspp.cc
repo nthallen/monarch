@@ -108,7 +108,7 @@ int subbuspp::load() {
   if (connect()) {
     return 0;
   }
-  PELoop.add_child(this);
+  PELoop.add_child(this); // sets ELoop to point to PELoop
   ELoop->event_loop(); // should run until connected
   if (fd < 0) {
     msg( -2, "Error opening subbusd: %s", strerror(errno));
@@ -200,6 +200,12 @@ int subbuspp::send_CSF( uint16_t command, uint16_t val ) {
   return( (rv == SBS_OK) ? 1 : 0 );
 }
 
+uint16_t subbuspp::read_special(uint16_t command) {
+  int rv;
+  rv = send_to_subbusd(command, NULL, 0, SBRT_US);
+  return (rv == SBS_OK) ? sb_reply->data.value : 0;
+}
+
 #ifdef SUBBUS_INTERRUPTS
   int subbuspp::subbus_int_attach( char *cardID, uint16_t address,
         uint16_t region, struct sigevent *event ) {
@@ -223,6 +229,14 @@ int subbuspp::send_CSF( uint16_t command, uint16_t val ) {
 int subbuspp::tick_sic() {
   if ( fd < 0 ) return 0;
   return send_to_subbusd( SBC_TICK, NULL, 0, SBRT_NONE );
+}
+/**
+ If system controller is associated with a watchdog timer
+ that can reboot the system, this command disables that
+ timer.
+ */
+int subbuspp::disarm_sic() {
+  return send_to_subbusd(SBC_DISARM, NULL, 0, SBRT_NONE);
 }
 
 /**

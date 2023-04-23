@@ -1,0 +1,17 @@
+<package> qcliprog
+<include> msg oui
+<include> "qcliprog.h"
+<follow> msg
+
+<opts> "wc"
+<sort>
+	-w Write the data to the QCLI
+	-c Confirm (verify) the contents of the QCLI
+<synopsis>
+%C	[options] <filename>
+<unsort>
+    -w and -c options can be stacked. The program
+    will exit on the first verify to succeed.
+
+<init>
+	qcliprog_init( argc, argv );

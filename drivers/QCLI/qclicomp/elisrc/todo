@@ -1,0 +1,310 @@
+Where am I? {
+  ICOS Waveforms are fully specified
+  -Output .cmd codes
+  -Ringdown Waveforms are fully specified
+  -Generating Ringdown output
+  -Generate Display codes
+}
+todo {
+  -Generate .cmd output {
+    %{
+      analogic_setup_t QCLi_Waves[] = {
+        FSam, NSam, NRep, NAvg, NCoadd, FTrigger, Options,
+      };
+    %}
+    &QCLI_Wave <int>
+    	: <name> { $0 = 0; }
+	: <name> { $0 = 1; }
+	...
+	;
+  }
+  -Prior to 7/03, I made the assumption that Ton preceeded
+   Toff in ICOS mode, but that is incorrect, so I need to
+   swap their roles.
+  
+  Implement conversions for DAC outputs
+  -Reorder DAC outputs (swap 0 & 1)
+  -Identify correct switches
+  Decide on header format {
+    Program Version (set how?)
+    Compilation Time/Date - Unix-format seconds since epoch
+      requires 2 words
+  }
+  Create non-verbose output and write it to a separate file
+}
+Non-obvious semantic changes {
+  Tz specifies the laser-off time before AND after
+  the ramps. Total off time is 2*Tz.
+  
+  Trecycle is carved out of the trailing Tz time,
+  so in terms of the sample, the trailing Tz will be
+  slightly shorter than the leading. This is based
+  on the plan of using an asymetrical Ton/Toff pair
+  to establish the primary stepsize. Stepsize=Ton+Toff
+  and Toff = Trecycle.
+  
+  If we decided to go for an approach that repeated a
+  ramp multiple times, we would want Toff to be even
+  shorter (1usec say) to serve as the ramp reset duration.
+  In that case, we might have to abandon it's use for
+  Trecycle, and use the full Stepsize for that.
+  
+  
+}
+Trecycle {
+  If Trecycle << Tz
+  Trec_fullsteps = floor(Trecycle/Stepsize);
+  Trec_rem = Trecycle % Stepsize;
+  If this remainder is small compared to Tz (< Tz/5), we
+  can carve it out of Tz by setting Toff = Trec_rem and
+  Ton = Stepsize - Toff. This doubles the number of steps,
+  but means we don't have to set a tiny Stepsize to achieve
+  high on/off ratios. Obviously this makes the most sense
+  when Trecycle << Stepsize. Actually, it really isn't
+  worth it otherwise. So let's make the rules:
+  Trcymin = IF( GE( Nsample_est, 16348 ), 200, 10 );
+  SplitCycle = LT( MUL(4,Trcymin), Stepsize );
+  Trcy = IF( SplitCycle,
+			 0,
+			 MUL( Stepsize, DIV_UP(Trcymin,Stepsize)) );
+  Toff = IF( SplitCycle, Trcymin, Stepsize );
+  Ton  = IF( SplitCycle, SUB(Stepsize, Toff), Toff );
+}
+RingdownWave Compilation {
+  Ringdown Waveform <name> {
+    SampleRate = 10 MHz; # Required
+    Toff = 100 usecs; # Toff or Nsample required
+    Nsample = 400; # samples during ringdown
+    Ton = 400 usecs;
+    Ton = 80%;
+    Tpre = 8 usecs;
+    Tpre = 5 samples;
+    Iz = 400 mA;
+    I = 500 mA to 800 mA in 80 steps;
+    I = 500 mA to 800 mA by 2 mA steps;
+  }
+  Steps {
+    validate sample rate selection (exact match required?)
+    Determine Toff and NRingSamples
+  }
+}
+ICOSWave Compilation {
+  Summary output {
+	Add Nsteps to summary
+	Liz wants information about nyquist frequency {
+	  Nyquist frequency is just half the sample frequency,
+	  but we're interested in wavenumber space in addition
+	  to time space. Where the transform of time is
+	  frequency, the transform of wavenumber is going to
+	  be cm. In time, the Nyquist frequency is the
+	  highest frequency (shortest time duration) that
+	  can be resolved. In wavenumber, the Nyquist frequency
+	  is the longest length (shortest wavenumber span)
+	  that can be resolved.
+	  
+	  If Nf is the Nyquist frequency in time and TR is
+	  the (average) tuning rate in cm-1/A, then the
+	  Nyquist frequency in cm is:
+	    Nf (samples/sec) / [TR (cm-1/A) * dI/dt (A/sec)]
+	  This represents the highest frequency that can be
+	  resolved, corresponding to the longest re-entry
+	  length.
+	  What you can actually resolve may be lower, since the
+	  preamp/amplifier circuit may limit the temporal resolution
+	  to less than the sample rate.
+	}
+    ICOS Waveform <name> {
+	                  specified  actual
+	  SampleRate
+	  NetSamples
+	  Iz
+	  dI/dt
+	  Cycle Length
+	  Stepsize
+	  Ramp {
+	    Istart
+		Istop
+		Tramp
+	  }
+	  Tz:Time RawSamples/NetSamples
+	}
+  }
+  Figure out sampling first {
+    Nsample = number of (net) samples specified in the ramp
+	NetRate = samples/sec
+	RawRate = samples/sec
+	
+    Could have either specified Nsample or SampleRate
+	In either case, Nsample is assumed to be adjustable.
+	if ( Nsample is specified ) {
+	  SampleRate = Nsample/Tramp /sec/1;
+    }
+	if (SampleRate is not legal) {
+	  if (it was specified) complain;
+	  pick the next higher sample rate
+	}
+	Nsamplep = SampleRate * Tramp;
+	
+  }
+  Determine Tz, Trecycle
+  Decide on a resolution {
+    GCD of Tz and Tramp(s) is a good place to start,
+	but when these aren't set explicitly, chances are
+	there won't be an exact answer that fits.
+	
+	Suppose we establish a criteria of accuracy in time
+	of 1% of the total specified cycle length meaning
+	we will tolerate the actual Tz or Tramp being longer
+	by up to 1% of the total specified cycle length.
+	The largest step size possible would then be
+	min(Tz,Tramp(s)) + .01*Tcycle
+	
+	Let Ti be all of the time lengths we're trying to hit
+	ordered from smallest to largest. Let dT be our
+	tolerance.
+	n divisor of T0 to determine the stepsize
+	i index into Ti
+	m multiplier of stepsize to hit Ti
+	
+	for ( n = 1; n < 100; n++ ) {
+	  maxstep = floor((T0 + dT)/n);
+	  minstep = ceil((T0 - dT)/n);
+	  minmult = 1;
+	  maxmult = 100;
+	  for ( i = 1; minstep < maxstep && i < NT; i++ ) {
+	    min_m = ceil(Ti/(T0+dT));
+		max_m = floor((Ti+dT)/T0);
+		minminstep = maxstep;
+		maxmaxstep = minstep;
+		for ( m = min_m; m <= max_m; m++ ) {
+		  myminstep = ceil(Ti/m);
+		  if ( myminstep < minminstep ) minminstep = myminstep;
+		  mymaxstep = floor((Ti+dT)/m);
+		  if ( mymaxstep > maxmaxstep ) maxmaxstep = mymaxstep;
+		}
+		if ( minminstep > minstep ) minstep = minminstep;
+		if ( maxmaxstep < maxstep ) maxstep = maxmaxstep;
+	  }
+	  if ( minstep <= maxstep ) {
+	    anything in this range will apparently work
+	  }
+	}
+	
+    but what is really going to be driving resolution
+    is how short we want Trecycle to be. If we define
+    resolution to be the number of steps in a compiled
+    waveform, then resolution will be greater than or
+    equal to Tcycle/min(Tz,Tramp,Trecycle). Presumably
+    we will want Trecycle to be the shortest here, and
+    if we want it to be less than 1%, say, then resolution
+    will need to be greater than 100.
+
+    If Trecycle were specified, then we could just use
+    gcd(Tz,Tramp,Trecycle), but as a free parameter it
+    gets trickier. We can start with gcd(Tz,Tramp). If
+    that gives a resolution below 100, we need to look
+    for a divisor that gets us into the right range.
+    If that doesn't work, we need to arbitrarily choose
+    a resolution in the right range.
+    What's the right range? 100-300? Whatever.
+	
+	Current approach: Trecycle is carved out of the
+	trailing Tz time and need not be considered for
+	the purposes of determining resolution. Its
+	magnitude only affects Nsample.
+
+	stepsize = 0;
+	Tcycle = Tz + sum(Tramp);
+	step = gcd(Tz,Tramp);
+	nsteps = Tcycle/step;
+	if ( nsteps < nstepsmin ) {
+	  /* The perfect answer has too few steps (Trecycle is too long)
+		look for a divisor of step between
+		ceil( nstepsmin/nsteps ) and floor( nstepsmax/nsteps )
+		which yields a number of steps closest to nstepsopt
+		in a logarithmic sense. */
+      divmin = ceil( nstepsmin/nsteps );
+	  divmax = floor( nstepsmax/nsteps );
+	  logdivopt = log(((double)nstepsopt)/nsteps);
+	  logdiverr = -1;
+	  for ( divisor = divmin; divisor <= divmax; divisor++ ) {
+	    if ( step % divisor == 0 ) {
+		  mylogdiverr = fabs( log(divisor) - logdivopt );
+		  if ( logdiverr < 0 || mylogdiverr < logdiverr  ) {
+		    logdiverr = mylogdiverr;
+			bestdiv = divisor;
+		  } else if ( logdiverr >= 0 && mylogdiverr > logdiverr ) {
+		    break;
+		  }
+		}
+	  }
+	  if (logdiverr >= 0) {
+	    stepsize = step / divisor;
+	  } else {
+	    /* A nice, simple divisor exists, but it requires
+		   Trecycle to be unacceptably large. Will have to
+		   approximate. */
+	  }
+	} else if ( nsteps <= nstepsmax ) {
+	  /* All set! */
+	  stepsize = step;
+	} else {
+	  /* The perfect answer has way too many steps */
+	}
+	if ( stepsize == 0 ) {
+	  /* Could not find a perfect answer. Go for a nstepsopt
+		resolution.
+		If the resolution isn't exact, we need to increase
+		Tz & Tramp to a resolution boundary. Changing Tramp
+		requires adjust Istop as well. */
+	  step = ceil(Tcycle/nstepsopt);
+	  Tzsteps = ceil(Tz/step);
+	  Tzp = step * Tzsteps;
+	  Trampsteps = ceil(Tramp/step);
+	  Trampp = step * Trampsteps;
+	  Istopp = Istart + dIdt*Trampp;
+	}
+
+  }
+  Determine Trecycle {
+    if raw samples are less than 16384, we
+    can recycle quicker, say 5 usecs. Otherwise, we need to allow
+	time for interrupt latency, which might be more like 100
+	usecs, but TBD.
+  }
+  Allocate D/A channels {
+    Allocate a D/A "state" for Iz and each Ramp
+	After allocation, optimize to determine how each state
+	will be implemented.
+	Iz holds ramp in reset and out of the loop
+	Ramp states may or may not be preceeded by a reset {
+	  If reset, current during the preceeding reset should
+	  be Istart for the ramp.
+	  First ramp doesn't really have a reset option {
+	    it is always preceeded by a reset, but the current
+		during that reset should be Iz, not Istart
+	  }
+	  Difference could be codified by creating a state for
+	  each transition: {
+		Iz trigger reset
+		Iz trigger reset
+		Istart0 trigger !reset ramp
+		Istart0 trigger !reset ramp
+	  }
+	}
+  }
+  Determine Waveform lengths for assigning memory locations {
+    MEMHDR   8 words defining version, date, time
+	WAVDIR 120 words defining waveform start addresses
+	WAVDEF {
+	  ICOS {
+		ICOSHDR 10 words
+		ICOSLOOP n words
+	  }
+	  RingDown {
+		RINGHDR 10 words
+		RINGLOOP n words
+	  }
+	}
+  }
+}

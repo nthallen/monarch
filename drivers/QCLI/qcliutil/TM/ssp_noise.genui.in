@@ -1,0 +1,9 @@
+  @SSPRATE@ SSP@SUFFIX@_amp0   @Panel@SSP@SUFFIX@ Amp %7.1f
+  @SSPRATE@ SSP@SUFFIX@_amp1   @Panel@SSP@SUFFIX@ Amp %7.1f
+@AMP3@  @SSPRATE@ SSP@SUFFIX@_amp2   @Panel@SSP@SUFFIX@ Amp %7.1f
+  @SSPRATE@ SSP@SUFFIX@_noise0   @Panel@SSP@SUFFIX@ Amp %7.1f
+  @SSPRATE@ SSP@SUFFIX@_noise1   @Panel@SSP@SUFFIX@ Amp %7.1f
+@AMP3@  @SSPRATE@ SSP@SUFFIX@_noise2   @Panel@SSP@SUFFIX@ Amp %7.1f
+  @SSPRATE@ SSP@SUFFIX@_noise_pct0   @Panel@SSP@SUFFIX@ NSR %8.5f
+  @SSPRATE@ SSP@SUFFIX@_noise_pct1   @Panel@SSP@SUFFIX@ NSR %8.5f
+@AMP3@  @SSPRATE@ SSP@SUFFIX@_noise_pct2   @Panel@SSP@SUFFIX@ NSR %8.5f

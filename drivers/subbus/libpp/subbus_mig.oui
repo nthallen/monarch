@@ -1,0 +1,9 @@
+<package> subbus_mig
+
+<comment>
+  subbus_mig.oui defines the legacy implementation of subbus.
+
+<include> "subbus_mig.h"
+
+<init>
+  load_subbus();

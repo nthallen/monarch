@@ -2,6 +2,7 @@
 #define SUBBUSD_CAN_H_INCLUDED
 #include "dasio/server.h"
 #include "subbusd_int.h"
+#include "subbusd_CAN_ID.h"
 #include "subbusd_CAN_interface.h"
 
 extern void subbusd_CAN_init_options(int argc, char **argv);
@@ -56,20 +57,6 @@ class subbusd_CAN : public subbusd_flavor {
     // CAN sockets, states, etc.
     CAN_interface *CAN;
 };
-
-/* The following definitions originated in BMM can_control.h
- */
-#define CAN_ID_BOARD_MASK 0x780
-#define CAN_ID_BOARD(x) (((x)<<7)&CAN_ID_BOARD_MASK)
-#define CAN_ID_REPLY_BIT 0x040
-#define CAN_ID_REQID_MASK 0x3F
-#define CAN_ID_BDREQ_MASK (CAN_ID_BOARD_MASK|CAN_ID_REQID_MASK)
-#define CAN_ID_REQID(x) ((x)&CAN_ID_REQID_MASK)
-#define CAN_REPLY_ID(bd,req) \
-    (CAN_ID_BOARD(bd)|(req&CAN_ID_REQID)|CAN_ID_REPLY_BIT)
-#define CAN_REQUEST_ID(bd,req) (CAN_ID_BOARD(bd)|(CAN_ID_REQID(req)))
-#define CAN_REQUEST_MATCH(id,bd) \
-    ((id & (CAN_ID_BOARD_MASK|CAN_ID_REPLY_BIT)) == CAN_ID_BOARD(bd))
 
 #define CAN_CMD_CODE_MASK 0x7
 #define CAN_CMD_CODE(x) ((x) & CAN_CMD_CODE_MASK)

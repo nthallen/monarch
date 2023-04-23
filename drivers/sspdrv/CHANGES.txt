@@ -1,0 +1,11 @@
+1/27/23
+  Beginning port to Monarch. Will be 2.1, maybe start at 2.0.1
+7/3/18 V1.5
+  Version arbitrarily set to 1.5 and added to startup report
+  Added noise calculations using command NZ, NN and NM to set
+  number of zero points and the starting and ending sample
+  for the range over which to calculate amplitude and standard
+  deviation.
+    nZ Number of samples with laser off at the start of scan (0 to NZ-1)
+    nN and nM are sample numbers, inclusive, zero-based, specifying
+    the range.

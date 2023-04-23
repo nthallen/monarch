@@ -1,0 +1,22 @@
+<package> qclid
+<include> msg
+<include> "qclid.h"
+
+<comment>
+  We will use the AppID name as defined in the oui package
+  appid_default or as modified by the -msghdr and selected
+  with the -n command-line argument from the msg package.
+  That name will be used as the command server interface
+  (`Cmd_reader() cmdchannel` argument) and the object name
+  for collection (`TM_data_sndr() datum` argument).
+  
+  We also need either qclisb.oui or qcliser.oui and their associated
+  options, but that will be specified at the build level
+
+<unsort>
+<blank>
+The application name specified via AppID in the oui package
+appid_default or as modified by the -n option serves three
+purposes. It provides the usual message prefix for the memo
+log, it specifies the command interface, and it specifies
+the telemetry collection interface.

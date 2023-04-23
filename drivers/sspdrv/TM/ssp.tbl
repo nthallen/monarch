@@ -1,0 +1,28 @@
+SSP1 {
+  HBox { +-; Title: "SSP 1"; -+ };
+  HBox {
+    { File: (SSP1_Num,5);
+      Scan: (SSP1_SN,8);
+      Skip: (SSP1_TS,8);
+      Status: (SSP1_Status,7);
+      Stale: (SSP1_Stale,5);
+    }; |; {
+      ""  >"1|2|3 ";
+      AD: (SSP1_AD,5);
+      PA: (SSP1_PA,5);
+      CA: (SSP1_CA,5);
+    }
+  };
+  { HBox { +-; Title: "SSP1 Temps"; -+ };
+    FPGA: (SSP1_T_FPGA,6) C;
+    HtSink: (SSP1_T_HtSink,6) C;
+  }
+}
+
+
+{ HBox{ -; "SSP Testbed"; - };
+  HBox{ +|+; [SSP1]; |+; };
+  -;
+  HBox{ +|+; HGlue 0+1; { MFCtr: (MFCtr,5) }; +|+ };
+  -;
+}
