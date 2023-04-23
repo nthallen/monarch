@@ -3,4 +3,6 @@ Moduledef DACS [] {
   subbuspp *sb_DACS for communication with the DACS.
 }
 colbase = DACS_col.tmc -lsubbuspp
+IGNORE = DACS_col.tmc
+OBJ = DACS_col.tmc
 
