@@ -226,7 +226,7 @@ while (1) {
           } elsif (-f "$moddir/$src") {
             $src = "$moddir/$src";
           }
-          if ( $src ne '' && ! -f $src ) {
+          if ( $src ne '' && ! -f $src  && $src !~ /^-l/ ) {
             die "Source file not found: '$src'\n";
           }
           if ($tgt && $src) {

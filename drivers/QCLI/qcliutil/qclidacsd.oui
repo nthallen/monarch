@@ -1,4 +1,5 @@
 <package> qclidacsd
+<include> msg oui
 <include> qclid qclidacs
 
 <package> appid_default

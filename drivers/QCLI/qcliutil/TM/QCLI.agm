@@ -1,7 +1,13 @@
 Moduledef QCLI [ SUFFIX= ADDR=0x1000 ACQCFG=AB3R RESET=# SSPRATE=1 AMP3=# Panel= ] {
   QCLI definitions, takes mode, SUFFIX, ADDR, ACQCFG, SSPRATE and RESET
     arguments. Generates multiple files.
-  mode is one of default, amp or noise.
+  mode is one of:
+      default, ignore,
+      amp, ampignore,
+      noise, noiseignore.
+    All the ignore modes try to avoid having generated sources committed
+    to git. The amp modes include amplitude calculations and the noise
+    modes include amplitude and noise calculations.
   SUFFIX is applied to most variable names, allowing more than
     one QCLI/SSP pair in the same instrument.
   ADDR is the address for the QCLI communication status word
@@ -12,12 +18,15 @@ Moduledef QCLI [ SUFFIX= ADDR=0x1000 ACQCFG=AB3R RESET=# SSPRATE=1 AMP3=# Panel=
       set AMP3= in order to extract amplitude and noise numbers for
       the third channel.
   SSPRATE is the TM reporting rate for SSP data
-  RESET= will add QCLI@SUFFIX@_Reset to the .tbl file
+  RESET= will add QCLI@SUFFIX@_Reset to the .tbl file. This needs to
+    be defined elsewhere as an on/off value, 3 spaces wide.
   Panel= optional panel prefix for genui output
 }
 
-mode (default,amp,noise) {
+mode (default,ignore,amp,ampignore,noise,noiseignore) {
+  Module DACS
   tmcbase = qcli_types.tmc
+  tmcbase = waves@SUFFIX@.tmc:
   tmcbase = QCLI@SUFFIX@.tmc:qcli.tmc.in
   colbase = QCLI@SUFFIX@_col.tmc:qcli_col.tmc.in
   cmdbase = qclia.cmd
@@ -28,15 +37,44 @@ mode (default,amp,noise) {
   - : QCLI@SUFFIX@.tbl:qcli.tbl.in
 }
 
-mode (amp) [ AMP3=# ] {
+mode (ignore,ampignore,noiseignore) {
+  IGNORE = qcli_types.tmc
+  IGNORE = waves@SUFFIX@.tmc
+  IGNORE = QCLI@SUFFIX@.tmc
+  IGNORE = QCLI@SUFFIX@_col.tmc
+  IGNORE = qclia.cmd
+  IGNORE = QCLI@SUFFIX@.cmd
+  IGNORE = QCLI@SUFFIX@_conv.tmc
+  IGNORE = QCLI@SUFFIX@.genui
+  IGNORE = QCLI@SUFFIX@.tbl
+  OBJ = qcli_types.tmc
+  OBJ = waves@SUFFIX@.tmc
+  OBJ = QCLI@SUFFIX@.tmc
+  OBJ = QCLI@SUFFIX@_col.tmc
+  OBJ = qclia.cmd
+  OBJ = QCLI@SUFFIX@.cmd
+  OBJ = QCLI@SUFFIX@_conv.tmc
+  OBJ = QCLI@SUFFIX@.genui
+  OBJ = QCLI@SUFFIX@.tbl
+}
+
+mode (amp,ampignore) [ AMP3=# ] {
   tmcbase = SSP@SUFFIX@_amp.tmc:ssp_amp.@ACQCFG@.tmc.in
   colbase = SSP@SUFFIX@_amp_col.tmc:ssp_amp_col.tmc.in
   genuibase = SSP@SUFFIX@_amp.genui:ssp_amp.genui.in
 }
 
-mode (noise) [ AMP3=# ] {
+mode (noise,noiseignore) [ AMP3=# ] {
   tmcbase = SSP@SUFFIX@_amp.tmc:ssp_noise.@ACQCFG@.tmc.in
   colbase = SSP@SUFFIX@_amp_col.tmc:ssp_amp_col.tmc.in
   genuibase = SSP@SUFFIX@_amp.genui:ssp_noise.genui.in
 }
 
+mode (ampignore,noiseignore) {
+  IGNORE = SSP@SUFFIX@_amp.tmc
+  IGNORE = SSP@SUFFIX@_amp_col.tmc
+  IGNORE = SSP@SUFFIX@_amp.genui
+  OBJ = SSP@SUFFIX@_amp.tmc
+  OBJ = SSP@SUFFIX@_amp_col.tmc
+  OBJ = SSP@SUFFIX@_amp.genui
+}

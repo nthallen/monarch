@@ -25,7 +25,13 @@ target_link_libraries(qclidprog dasio nl pthread subbuspp)
 
 #add_executable(qclidtest qclitest.cc qcliutil.cc qclidacs.cc qclidtestoui.cc)
 
+install(TARGETS
+  qclidacsd
+  qclidprog
+  RUNTIME DESTINATION bin)
 install(FILES
+  hsatod.h
+  qclid.h
   TM/qclisspcmd.h
   DESTINATION include)
 install(FILES

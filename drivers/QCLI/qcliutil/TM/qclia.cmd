@@ -15,11 +15,11 @@
 #     double dbits = $5 * 3252.5 - 749.8;
 #     if ( dbits < 0 ) dbits = 0;
 #     if ( dbits > 65535 ) {
-#       nl_error( 2,
+#       msg( 2,
 #         "DAC3 requested value out of range: %lf V = %lf bits",
 #         $5, dbits );
 #     } else {
-#       unsigned short ibits = (unsigned short)dbits;
+#       uint16_t ibits = (uint16_t)dbits;
 #       $1->Turf( "D3:%u\n", ibits );
 #     }
 #   }
@@ -36,16 +36,16 @@
   : Toff { $0 = "TF"; }
   : Tpre { $0 = "TP"; }
   ;
-&DAC_Val <short>
+&DAC_Val <int16_t>
   : %d (Enter digital value) { $0 = $1; }
   ;
-&DAC_Num <short>
+&DAC_Num <int16_t>
   : DAC0 { $0 = 0; }
   : Ramp DAC { $0 = 1; }
   : DAC2 { $0 = 2; }
   : DAC3 { $0 = 3; }
   ;
-&QCLI_T_val <unsigned short>
+&QCLI_T_val <uint16_t>
   : %d (Enter time in usecs) { $0 = $1; }
   ;
 
@@ -64,7 +64,7 @@
            (setup->Options & HSAD_TRIG_RISING) ? 'U' : 'D',
            (setup->Options & HSAD_TRIG_3)/HSAD_TRIG_1,
            (setup->Options & HSAD_TRIG_AUTO) ? 'E' : 'D' );
-        } else nl_error(2, "SSP %d NAvg out of range", $1+1);
+        } else msg(2, "SSP %d NAvg out of range", $1+1);
       }
   : &SSP Stop * { $1->if_ssp->Turf( "DA" ); }
   : &SSP Reset * { $1->if_ssp->Turf( "XR" ); }
@@ -82,7 +82,7 @@
         $1->setup->NCoadd = $4;
       }
   : &SSP Set Trigger &Trigger * {
-          nl_error( 0, "Set trigger command: '%s'", $4 );
+          msg( 0, "Set trigger command: '%s'", $4 );
           $1->if_ssp->Turf( $4 );
       }
   : &SSP Set Trigger Level %d (Enter Trigger Level) &TrigPolarity * {

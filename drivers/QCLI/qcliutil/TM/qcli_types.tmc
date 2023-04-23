@@ -1,7 +1,7 @@
 %{
   #include "qclid.h"
   #include "sspdrv.h"
-  const char * SSP_Status_Text(const unsigned char stat) {
+  const char * SSP_Status_Text(const uint8_t stat) {
     switch (stat) {
       case SSP_STATUS_GONE:    return "   Gone";
       case SSP_STATUS_CONNECT: return "Connect";
@@ -13,12 +13,13 @@
   }
 %}
 
-TM typedef unsigned char SSP_Status_t { text "%7d" SSP_Status_Text(); }
-TM typedef unsigned short XLONG { text "%5d"; }
-TM typedef long QCLI_WORD { text "%8d"; }
-TM typedef unsigned short QCLI_CS_t {
+TM typedef uint16_t QCLI_UINT { text "%5d"; }
+TM typedef uint8_t SSP_Status_t { text "%7d" SSP_Status_Text(); }
+TM typedef uint16_t XLONG { text "%5d"; }
+TM typedef int32_t QCLI_WORD { text "%8d"; }
+TM typedef uint16_t QCLI_CS_t {
   text "%5d";
-  collect x = sbrwa(x.address);
+  collect x = sb_DACS->sbrd(x.address);
 }
 
 TM typedef float SSP_Amp_t { text "7.1lf"; }
@@ -28,15 +29,14 @@ TM typedef float SSP_NoisePct_t { text "8.5lf"; }
 /* T_FPGA_t: MAX6628 output, resolution 1/16 degree
  *   reported as 128 bits per degree celcius */
 TM typedef double QCLI_CELCIUS;
-TM typedef signed short T_FPGA_t { convert QCLI_CELCIUS; text "%6.2lf"; }
+TM typedef int16_t T_FPGA_t { convert QCLI_CELCIUS; text "%6.2lf"; }
 Calibration ( T_FPGA_t, QCLI_CELCIUS ) { 0, 0, 128, 1 }
 
 /* T_HtSink_t: MAX6661 output. resolution 1/8 degree
   *  reported as 256 bits per degree */
-TM typedef signed short T_HtSink_t { convert QCLI_CELCIUS; text "%6.2lf"; }
+TM typedef int16_t T_HtSink_t { convert QCLI_CELCIUS; text "%6.2lf"; }
 Calibration ( T_HtSink_t, QCLI_CELCIUS ) { 0, 0, 256, 1 }
 
-TM typedef unsigned short QCLI_Wave_t { text "%10d" QCLI_Wave_text(); }
 %{
   const char *ok_fail_text[] = { "  ok", "FAIL" };
   const char *no_yes_text[]  = { " no", "yes" };
@@ -70,5 +70,5 @@ TM typedef int twobits_t { text "%02b"; }
 TM typedef int qclimode_t { text "%7d" qclimode_text[]; }
 TM typedef int SSP_OVF { text "%5d" ovf_text[]; }
 TM typedef int rw_t { text "%2d" rw_text[]; }
-TM typedef unsigned char fifodep_t { text "%3u"; }
-TM typedef unsigned char qclierr_t { text "%02x"; }
+TM typedef uint8_t fifodep_t { text "%3u"; }
+TM typedef uint8_t qclierr_t { text "%02x"; }

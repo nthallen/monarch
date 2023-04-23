@@ -1,0 +1,6 @@
+Moduledef DACS [] {
+  Currently provides for definition and intialization of
+  subbuspp *sb_DACS for communication with the DACS.
+}
+colbase = DACS_col.tmc -lsubbuspp
+

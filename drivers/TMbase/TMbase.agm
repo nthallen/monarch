@@ -4,6 +4,8 @@ ModuleDef TMbase [ FREEMEM_RATE=1 SWSnot=# SWStat=SWStat Fnot=# Fail=Fail Panel=
   Currently no configuration options, but cpu_usage and tmdf
   are both ripe for adaptation.
   
+  mode ignore will suppress committing the generated input files to git
+  
   FREEMEM_RATE is the data rate for the freemem TM channel
   SWStat is the variable name for a software status variable defined
          elsewhere.
@@ -37,3 +39,12 @@ cmdbase = /usr/local/share/monarch/modules/getcon.cmd
 genuibase = TMbase.genui:TMbase.genui.in
 
 - : TMbase.tbl:TMbase.tbl.in
+
+mode (ignore) {
+  IGNORE = freemem.tmc
+  IGNORE = TMbase.genui
+  IGNORE = TMbase.tbl
+  OBJ = freemem.tmc
+  OBJ = TMbase.genui
+  OBJ = TMbase.tbl
+}

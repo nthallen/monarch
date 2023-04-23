@@ -1,0 +1,14 @@
+%{
+  #include "subbuspp.h"
+
+  subbuspp *sb_DACS;
+
+  void DACS_init() {
+    sb_DACS = new subbuspp("subbus", 0);
+  }
+
+  void tick_sic() { sb_DACS->tick_sic(); }
+  void disarm_sic() { sb_DACS->disarm_sic(); }
+%}
+TM INITFUNC DACS_init();
+
