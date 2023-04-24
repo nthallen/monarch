@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include "meerstetter_int.h"
 #include "meerstetter.h"
-#include "msg.h"
-#include "nortlib.h"
+#include "dasio/msg.h"
+#include "nl.h"
 
 /*
  * Cmd client: Me_Cmd -> Cmd_Selectee
@@ -21,31 +21,6 @@ static const char *cmd_name(const char *name) {
 Me_Cmd::Me_Cmd(Me_Ser *ser)
     : Cmd_Selectee(cmd_name(Me_Name), 80),
       ser(ser) {
-}
-
-int Me_Cmd::ProcessData(int flag) {
-  // Fill in with code from DAS_IO::Interface::ProcessData()
-  // I have commented out code we are not using, since we
-  // do not have the default functions referenced
-  // if ((flags & flag & gflag(0)) && tm_sync())
-    // return true;
-  if ((flags&Selector::Sel_Read) && (flags&flag&(Selector::Sel_Read|Selector::Sel_Timeout))) {
-    if (fillbuf()) return true;
-    if (fd < 0) return false;
-    if (app_input()) return true;
-  }
-  // if ((flags & flag & Sel_Write) && iwrite_check())
-    // return true;
-  // if ((flags & flag & Sel_Except) && protocol_except())
-    // return true;
-  // if ((flags & flag & Sel_Timeout) && TO.Expired() && protocol_timeout())
-    // return true;
-  // if (TO.Set()) {
-    // flags |= Sel_Timeout;
-  // } else {
-    // flags &= ~Sel_Timeout;
-  // }
-  return false;
 }
 
 /**
@@ -143,67 +118,10 @@ int Me_Cmd::not_hex(uint32_t &hexval) {
     return 1;
   }
   while ( cp < nc && isxdigit(buf[cp]) ) {
-    unsigned short digval = isdigit(buf[cp]) ? ( buf[cp] - '0' ) :
+    uint16_t digval = isdigit(buf[cp]) ? ( buf[cp] - '0' ) :
            ( tolower(buf[cp]) - 'a' + 10 );
     hexval = hexval * 16 + digval;
     ++cp;
   }
   return 0;
-}
-
-bool Me_Cmd::not_any(const char *alternatives) {
-  if (cp < nc) {
-    for (const char *alt = alternatives; *alt; ++alt) {
-      if (buf[cp] == *alt) {
-        ++cp;
-        return false;
-      }
-    }
-    report_err("No match for alternatives '%s' at column %d", alternatives, cp);
-  }
-  return true;
-}
-
-bool Me_Cmd::not_uint16(uint16_t &output_val) {
-  uint32_t val = 0;
-  if (buf[cp] == '-') {
-    if (isdigit(buf[++cp])) {
-      while (isdigit(buf[cp])) {
-        ++cp;
-      }
-      if (cp < nc)
-        report_err("not_uint16: Negative int truncated at col %d",
-          cp);
-    } else {
-      if (cp < nc)
-        report_err("Found '-' and no digits at col %d", cp);
-      return true;
-    }
-  } else if (isdigit(buf[cp])) {
-    while (isdigit(buf[cp])) {
-      val = val*10 + buf[cp++] - '0';
-    }
-  } else {
-    if (cp < nc)
-      report_err("not_uint16: no digits at col %d", cp);
-    return true;
-  }
-  if (val > 65535) {
-    report_err("value exceeds uint16_t range at col %d", cp--);
-    return true;
-  }
-  output_val = val;
-  return false;
-}
-
-bool Me_Cmd::not_uint8(uint8_t &val) {
-  uint16_t sval;
-  if (not_uint16(sval)) return true;
-  if (sval > 255) {
-    report_err("uint8_t value out of range: %u at col %d",
-      sval, cp--);
-    return true;
-  }
-  val = sval;
-  return false;
 }

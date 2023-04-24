@@ -43,4 +43,6 @@ typedef struct __attribute__((packed)) {
   me_drive_t drive[ME_MAX_DRIVES];
 } meerstetter_t;
 
+extern meerstetter_t meerstetter;
+
 #endif

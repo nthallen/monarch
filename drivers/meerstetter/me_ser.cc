@@ -5,15 +5,15 @@
 #include <string.h>
 #include "meerstetter_int.h"
 #include "crc16xmodem.h"
-#include "nortlib.h"
+#include "nl.h"
 #include "msg.h"
 
 bool rs485_echos = false;
 
-Me_Ser::Me_Ser(const char *path) : Ser_Sel(path, O_RDWR|O_NONBLOCK, 400) {
+Me_Ser::Me_Ser(const char *path) : Serial("RS485", 400, path, O_RDWR|O_NONBLOCK) {
   pending = 0;
   cur_poll = TM_queue.end();
-  flags = Selector::Sel_Read | Selector::gflag(0);
+  flags = Fl_Read | gflag(0);
 }
 
 void Me_Ser::enqueue_request(Me_Query *req) {
@@ -36,34 +36,6 @@ Me_Query *Me_Ser::new_query() {
   return Q;
 }
 
-int Me_Ser::ProcessData(int flag) {
-  msg(MSG_DBG(1),
-    "ProcessData: flags 0x%2X flag: 0x%2X TO: %s",
-    flags, flag,
-    TO.Set() ? (TO.Expired() ? "Expired" : "Set") : "Clear");
-  if ((flags & flag & Selector::gflag(0)) && tm_sync())
-    return true;
-  if ((flags&Selector::Sel_Read) &&
-      (flags&flag&(Selector::Sel_Read|Selector::Sel_Timeout))) {
-    if (fillbuf()) return true;
-    if (fd < 0) return false;
-    if (protocol_input()) return true;
-  }
-  // if ((flags & flag & Fl_Write) && iwrite_check())
-    // return true;
-  // if ((flags & flag & Fl_Except) && protocol_except())
-    // return true;
-  if ((flags & flag & Selector::Sel_Timeout) &&
-        TO.Expired() && protocol_timeout())
-    return true;
-  if (TO.Set()) {
-    flags |= Selector::Sel_Timeout;
-  } else {
-    flags &= ~Selector::Sel_Timeout;
-  }
-  return false;
-}
-
 /**
  * Parsing utility function to read in a hex integer starting
  * at the current position. Integer may be proceeded by optional
@@ -72,7 +44,7 @@ int Me_Ser::ProcessData(int flag) {
  * @param width The number of characters to parse
  * @return zero if an integer was converted, non-zero if the current char is not a digit.
  */
-int Me_Ser::not_hex(uint32_t &hexval, int width) {
+bool Me_Ser::not_hex(uint32_t &hexval, int width) {
   hexval = 0;
   for (int i = 0; i < width; ++i) {
     if (cp >= nc) return 1;
@@ -80,7 +52,7 @@ int Me_Ser::not_hex(uint32_t &hexval, int width) {
       report_err("Expected hex digit at col %d", cp);
       return 1;
     }
-    unsigned short digval =
+    uint16_t digval =
       isdigit(buf[cp]) ? ( buf[cp] - '0' ) :
            ( tolower(buf[cp]) - 'a' + 10 );
     hexval = hexval * 16 + digval;
@@ -92,7 +64,6 @@ int Me_Ser::not_hex(uint32_t &hexval, int width) {
 bool Me_Ser::protocol_input() {
   uint32_t address, seq_num, value, crc, err_code;
   uint16_t re_crc;
-  cp = 0;
   if (!pending) {
     report_err("Unexpected input");
     consume(nc);
@@ -258,7 +229,7 @@ void Me_Ser::process_requests() {
   // set_RTS(true);
   int rc = write(fd, pending_cmd, pending_cmdlen);
   if (rc != pending_cmdlen) {
-    nl_error(3, "Incomplete write to Meerstetter: %d/%d", rc, pending_cmdlen);
+    msg(3, "Incomplete write to Meerstetter: %d/%d", rc, pending_cmdlen);
   }
   // if (tcdrain(fd) < 0)
   //   report_err("tcdrain() returned error %d", errno);
@@ -266,7 +237,7 @@ void Me_Ser::process_requests() {
   pending_replen = pending->replen + (rs485_echos ? pending_cmdlen : 0);
   update_tc_vmin(pending_replen - nc);
   TO.Set(0, 100);
-  flags |= Selector::Sel_Timeout;
+  flags |= Fl_Timeout;
 }
 
 void Me_Ser::set_RTS(bool RTS) {

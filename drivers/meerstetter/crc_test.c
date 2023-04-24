@@ -5,7 +5,7 @@
 #include "crc_test.h"
 
 // The used standard is: CRC-CCITT (CRC-16)
-void CRC16Algorithm(unsigned short *CRC, unsigned char Ch) {
+void CRC16Algorithm(uint16_t *CRC, unsigned char Ch) {
   unsigned int genPoly = 0x1021; //CCITT CRC-16 Polynominal
   unsigned int uiCharShifted = ((unsigned int)Ch & 0x00FF) << 8;
   *CRC = *CRC ^ uiCharShifted;
@@ -15,8 +15,8 @@ void CRC16Algorithm(unsigned short *CRC, unsigned char Ch) {
   *CRC &= 0xFFFF;
 }
 
-unsigned short CRC16wrapper(unsigned short init, const uint8_t *mem, size_t len) {
-  unsigned short CRC = init;
+uint16_t CRC16wrapper(uint16_t init, const uint8_t *mem, size_t len) {
+  uint16_t CRC = init;
   if (mem == 0) len =0;
   
   for (int i = 0; i < len; ++i) {

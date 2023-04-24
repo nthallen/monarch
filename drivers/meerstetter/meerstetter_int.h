@@ -2,10 +2,9 @@
 #define MEERSTETTER_INT_H_INCLUDED
 #include <list>
 #include <stdint.h>
-#include "SerSelector.h"
+#include "dasio/serial.h"
 #include "meerstetter.h"
 
-extern meerstetter_t meerstetter;
 int get_addr_index(uint8_t address);
 
 extern const char *Me_Ser_path;
@@ -14,6 +13,8 @@ extern const char *address_opts;
 extern const char *Me_Name;
 #define ME_MIN_ADDRESS 1
 #define ME_MAX_ADDRESS 254
+
+using namespace DAS_IO;
 
 class Me_Ser;
 
@@ -87,20 +88,20 @@ class Me_Query {
     bool crc_applied;
 };
 
-class Me_Ser : public Ser_Sel {
+class Me_Ser : public Serial {
   public:
     Me_Ser(const char *path);
     void enqueue_request(Me_Query *req);
     Me_Query *new_query();
     inline Timeout *GetTimeout() { return &TO; }
   protected:
-    int ProcessData(int flags);
+    // int ProcessData(int flags);
     bool protocol_input();
     bool protocol_timeout();
     bool tm_sync();
     void free_pending();
     void process_requests();
-    int not_hex(uint32_t &hex32, int width);
+    bool not_hex(uint32_t &hex32, int width);
     void set_RTS(bool RTS);
     Timeout TO;
     Me_Query *pending;
@@ -113,24 +114,21 @@ class Me_Ser : public Ser_Sel {
     std::list<Me_Query*>::const_iterator cur_poll;
 };
 
-class Me_Cmd : public Cmd_Selectee {
+class Me_Cmd : public Client {
   public:
     Me_Cmd(Me_Ser *ser);
   protected:
-    int ProcessData(int flag);
     bool app_input();
     int not_hex(uint32_t &hex32);
-    bool not_uint16(uint16_t &output_val);
-    bool not_uint8(uint8_t &val);
-    bool not_any(const char *alternatives);
     Me_Ser *ser;
 };
 
-class Me_TM_Selectee : public TM_Selectee {
+class Me_TM : public TM_data_sndr {
   public:
-    inline Me_TM_Selectee(const char *name) :
-        TM_Selectee(name, &meerstetter, sizeof(meerstetter)) {}
-    int ProcessData(int flag);
+    inline Me_TM(const char *name) :
+        TM_data_sndr(name, &meerstetter, sizeof(meerstetter)) {}
+  protected:
+    bool app_input();
 };
 
 #endif

@@ -32,7 +32,7 @@ int get_addr_index(uint8_t address) {
   return -1;
 }
 
-int Me_TM_Selectee::ProcessData(int flag) {
+bool Me_TM::app_input() {
   int i;
   for (i = 0; i < n_drives; ++i) {
     meerstetter.drive[i].Stale =
@@ -41,12 +41,15 @@ int Me_TM_Selectee::ProcessData(int flag) {
         (meerstetter.drive[i].Stale+1) : 255)
        : 0;
   }
-  Col_send(TMid);
+  report_ok(nc);
+  bool rc = Send();
   for (i = 0; i < n_drives; ++i) {
     meerstetter.drive[i].Mask = 0x1;
   }
-  Stor->set_gflag(0);
-  return 0;
+  if (ELoop) {
+    ELoop->set_gflag(0);
+  }
+  return rc;
 }
 
 void report_board_id(Me_Query *Q) {
@@ -184,19 +187,25 @@ void enqueue_requests(Me_Ser *ser) {
 
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
-  Selector S;
-  Me_Ser Ser(Me_Ser_path);
-  Ser.setup(57600, 8, 'n', 1, 1, 1);
-  Ser.set_ohflow(false);
-  Me_Cmd Cmd(&Ser);
-  Me_TM_Selectee TM(Me_Name);
-  S.add_child(&Ser);
-  S.add_child(&Cmd);
-  S.add_child(&TM);
-  msg(0, "Starting: V1.1 standalone");
-  enqueue_requests(&Ser);
-  S.event_loop();
-  msg(0, "Terminating");
+  AppID::report_startup();
+  { LooP ELoop;
+    { Me_Ser *Ser = new Me_Ser(Me_Ser_path);
+      Ser->setup(57600, 8, 'n', 1, 1, 1);
+      Ser->set_ohflow(false);
+      ELoop.add_child(Ser);
+      enqueue_requests(Ser);
+    }
+    { Me_Cmd *Cmd = new Me_Cmd(Ser);
+      Cmd->connect();
+      ELoop.add_child(Cmd);
+    }
+    { Me_TM *TM = new Me_TM(Me_Name);
+      TM->connect();
+      ELoop.add_child(TM);
+    }
+    ELoop.event_loop();
+  }
+  AppID::report_shutdown();
   return 0;
 }
 
