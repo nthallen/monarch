@@ -1,12 +1,16 @@
 #include "meerstetter_int.h"
 #include "meerstetter.h"
-#include "msg.h"
+#include "dasio/loop.h"
+#include "dasio/appid.h"
+#include "nl.h"
 #include "oui.h"
 #include "nl_assert.h"
 
+using namespace DAS_IO;
+
 const char *Me_Ser_path = "/dev/ser1";
 const char *address_opts = "1";
-const char *Me_Name = "ME";
+const char *Me_Name;
 static int n_drives;
 meerstetter_t meerstetter;
 
@@ -187,15 +191,15 @@ void enqueue_requests(Me_Ser *ser) {
 
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
-  AppID::report_startup();
-  { LooP ELoop;
+  Me_Name = AppID.name;
+  AppID.report_startup();
+  { Loop ELoop;
     { Me_Ser *Ser = new Me_Ser(Me_Ser_path);
       Ser->setup(57600, 8, 'n', 1, 1, 1);
-      Ser->set_ohflow(false);
+      // Ser->set_ohflow(false);
       ELoop.add_child(Ser);
       enqueue_requests(Ser);
-    }
-    { Me_Cmd *Cmd = new Me_Cmd(Ser);
+      Me_Cmd *Cmd = new Me_Cmd(Ser);
       Cmd->connect();
       ELoop.add_child(Cmd);
     }
@@ -205,7 +209,7 @@ int main(int argc, char **argv) {
     }
     ELoop.event_loop();
   }
-  AppID::report_shutdown();
+  AppID.report_shutdown();
   return 0;
 }
 

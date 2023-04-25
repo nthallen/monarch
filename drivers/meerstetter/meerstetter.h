@@ -1,12 +1,19 @@
 #ifndef MEERSTETTER_H_INCLUDED
 #define MEERSTETTER_H_INCLUDED
 #include <stdint.h>
+#include "dasio/serial.h"
+#include "dasio/cmd_reader.h"
+#include "dasio/tm_data_sndr.h"
+
+using namespace DAS_IO;
 
 #ifndef ME_MAX_DRIVES
 #define ME_MAX_DRIVES 8
 #endif
 
-typedef struct __attribute__((packed)) {
+// These are not packed, but constructed to be
+// properly aligned without padding.
+typedef struct {
   int32_t  DeviceStatus;
   int32_t  ErrorNumber;
   int32_t  ErrorInstance;
@@ -38,7 +45,7 @@ typedef struct __attribute__((packed)) {
   uint16_t Stale;
 } me_drive_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct {
   // uint32_t me_status;
   me_drive_t drive[ME_MAX_DRIVES];
 } meerstetter_t;

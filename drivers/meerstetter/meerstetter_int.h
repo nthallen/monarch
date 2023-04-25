@@ -114,7 +114,7 @@ class Me_Ser : public Serial {
     std::list<Me_Query*>::const_iterator cur_poll;
 };
 
-class Me_Cmd : public Client {
+class Me_Cmd : public Cmd_reader {
   public:
     Me_Cmd(Me_Ser *ser);
   protected:
@@ -126,7 +126,7 @@ class Me_Cmd : public Client {
 class Me_TM : public TM_data_sndr {
   public:
     inline Me_TM(const char *name) :
-        TM_data_sndr(name, &meerstetter, sizeof(meerstetter)) {}
+        TM_data_sndr(name, 0, Me_Name, &meerstetter, sizeof(meerstetter)) {}
   protected:
     bool app_input();
 };

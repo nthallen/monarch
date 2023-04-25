@@ -1,16 +1,21 @@
 #include <devctl.h>
-#include <sys/dcmd_chr.h>
+//#include <sys/dcmd_chr.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+#include "dasio/serial.h"
+#include "dasio/ascii_escape.h"
 #include "meerstetter_int.h"
 #include "crc16xmodem.h"
 #include "nl.h"
-#include "msg.h"
+//#include "msg.h"
+
+using namespace DAS_IO;
 
 bool rs485_echos = false;
 
-Me_Ser::Me_Ser(const char *path) : Serial("RS485", 400, path, O_RDWR|O_NONBLOCK) {
+Me_Ser::Me_Ser(const char *path) :
+    Serial("RS485", 400, path, O_RDWR|O_NONBLOCK) {
   pending = 0;
   cur_poll = TM_queue.end();
   flags = Fl_Read | gflag(0);
@@ -213,7 +218,7 @@ void Me_Ser::free_pending() {
 }
 
 void Me_Ser::process_requests() {
-  if (pending) return;
+  if (pending || ~obuf_empty()) return;
   if (!Transient_queue.empty()) {
     pending = Transient_queue.front();
     Transient_queue.pop_front();
@@ -224,13 +229,10 @@ void Me_Ser::process_requests() {
     return;
   }
   pending_cmd = pending->get_cmd(&pending_cmdlen);
-  msg(MSG_DBG(0), "Write Req: '%s'", ascii_escape(pending_cmd));
+  msg(MSG_DBG(0), "Write Req: '%s'", ascii_esc(pending_cmd));
   pending->set_bit();
   // set_RTS(true);
-  int rc = write(fd, pending_cmd, pending_cmdlen);
-  if (rc != pending_cmdlen) {
-    msg(3, "Incomplete write to Meerstetter: %d/%d", rc, pending_cmdlen);
-  }
+  bool rc = iwrite(pending_cmd, pending_cmdlen);
   // if (tcdrain(fd) < 0)
   //   report_err("tcdrain() returned error %d", errno);
   // set_RTS(false);
@@ -240,7 +242,7 @@ void Me_Ser::process_requests() {
   flags |= Fl_Timeout;
 }
 
-void Me_Ser::set_RTS(bool RTS) {
+/* void Me_Ser::set_RTS(bool RTS) {
     int error;
     int data = _CTL_RTS_CHG | (RTS ? _CTL_RTS : 0);
 
@@ -248,4 +250,4 @@ void Me_Ser::set_RTS(bool RTS) {
                    sizeof(data), NULL))) {
       report_err("Error setting RTS: %s", strerror(error));
     }
-}
+} */

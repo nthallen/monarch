@@ -19,7 +19,7 @@ static const char *cmd_name(const char *name) {
 }
 
 Me_Cmd::Me_Cmd(Me_Ser *ser)
-    : Cmd_Selectee(cmd_name(Me_Name), 80),
+    : Cmd_reader("cmd", 80, Me_Name),
       ser(ser) {
 }
 
@@ -118,7 +118,7 @@ int Me_Cmd::not_hex(uint32_t &hexval) {
     return 1;
   }
   while ( cp < nc && isxdigit(buf[cp]) ) {
-    uint16_t digval = isdigit(buf[cp]) ? ( buf[cp] - '0' ) :
+    unsigned short digval = isdigit(buf[cp]) ? ( buf[cp] - '0' ) :
            ( tolower(buf[cp]) - 'a' + 10 );
     hexval = hexval * 16 + digval;
     ++cp;
