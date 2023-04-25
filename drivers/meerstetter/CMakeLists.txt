@@ -28,19 +28,9 @@ install(TARGETS
 install(FILES
   meerstetter.h
   DESTINATION include)
-# install(FILES
-  # TM/QCLI.agm
-  # TM/qcli.tmc.in
-  # TM/qcli_col.tmc.in
-  # TM/qcli_conv.tmc.in
-  # TM/qcli_types.tmc
-  # TM/qclia.cmd
-  # TM/qclis.cmd.in
-  # TM/qcli.tbl.in
-  # TM/qcli.genui.in
-  # TM/ssp_amp.AB3R.tmc.in
-  # TM/ssp_noise.AB3R.tmc.in
-  # TM/ssp_amp.genui.in
-  # TM/ssp_noise.genui.in
-  # TM/ssp_amp_col.tmc.in
-  # DESTINATION share/monarch/modules/QCLI)
+install(FILES
+  TM/Meerstetter.agm
+  DESTINATION share/monarch/modules/Meerstetter)
+install(PROGRAMS
+  TM/Meerstetter_gen
+  DESTINATION share/monarch/modules/Meerstetter)

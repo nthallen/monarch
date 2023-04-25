@@ -25,3 +25,5 @@ add_subdirectory(sspdrv)
 add_subdirectory(QCLI/qclicomp)
 add_subdirectory(QCLI/qcliutil)
 add_subdirectory(DACS)
+add_subdirectory(meerstetter)
+

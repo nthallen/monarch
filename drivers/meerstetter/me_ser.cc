@@ -1,5 +1,4 @@
 #include <devctl.h>
-//#include <sys/dcmd_chr.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
@@ -8,7 +7,6 @@
 #include "meerstetter_int.h"
 #include "crc16xmodem.h"
 #include "nl.h"
-//#include "msg.h"
 
 using namespace DAS_IO;
 

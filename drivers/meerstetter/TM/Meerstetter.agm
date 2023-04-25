@@ -22,7 +22,8 @@ Moduledef Meerstetter [ src= name=ME Panel= ] {
   a set point for the channel.
 }
 
-mode (default,driver) {
+# driver is part of the standard Monarch install
+mode (default,driver,ignore) {
   tmcbase = @name@.tmc:
   colbase = @name@_col.tmc:
   cmdbase = @name@.cmd:
@@ -30,5 +31,18 @@ mode (default,driver) {
   SRC = @src@
   %%
 @name@.tmc @name@_col.tmc @name@.cmd @name@.genui @name@.tbl : @src@ @MODDIR@/Meerstetter_gen
-	@MODDIR@/Meerstetter_gen @src@ name=@name@ panel=@Panel@
+	@MODDIR@/Meerstetter_gen @src@ name=@name@ Panel=@Panel@
+}
+
+mode (ignore) {
+  IGNORE = @name@.tmc
+  IGNORE = @name@_col.tmc
+  IGNORE = @name@.cmd
+  IGNORE = @name@.genui
+  IGNORE = @name@.tbl
+  OBJ = @name@.tmc
+  OBJ = @name@_col.tmc
+  OBJ = @name@.cmd
+  OBJ = @name@.genui
+  OBJ = @name@.tbl
 }

@@ -7,10 +7,7 @@
 
 using namespace DAS_IO;
 
-#ifndef ME_MAX_DRIVES
-#define ME_MAX_DRIVES 8
-#endif
-
+#define ME_MAX_DRIVES 10
 // These are not packed, but constructed to be
 // properly aligned without padding.
 typedef struct {
@@ -46,10 +43,8 @@ typedef struct {
 } me_drive_t;
 
 typedef struct {
-  // uint32_t me_status;
   me_drive_t drive[ME_MAX_DRIVES];
 } meerstetter_t;
-
 extern meerstetter_t meerstetter;
-
+ 
 #endif

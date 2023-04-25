@@ -30,6 +30,8 @@ for (my $i = 1; $i < @ARGV; ++$i) {
     $name_cl = $1;
   } elsif ($ARGV[$i] =~ m/^Panel=([a-z][a-z0-9_]*):?$/i ) {
     $panel = "$1:";
+  } elsif ($ARGV[$i] =~ m/^Panel=$/i ) {
+    $panel = '';
   } else {
     die "Invalid argument: '$ARGV[$i]'\n";
   }
@@ -95,7 +97,7 @@ my ($datadef, $coldef, @grpmem, $tbldef, $cmddef,
     @status_genui);
 
 $datadef = "TM $Rate Hz ${Name}_Stale_t ${Name}_Stale;\n";
-$coldef .= "  ${Name}_Stale = ${Name}_obj->stale(255);\n";
+$coldef .= "  ${Name}_Stale = ${Name}_obj->Stale(255);\n";
 push(@grpmem, "${Name}_Stale");
 
 print $genui
@@ -174,9 +176,14 @@ for (my $i = 0; $i < $n_channels; ++$i) {
 print $tmc <<EOF
 %{
   /* Meerstetter driver interface */
-  #define ME_MAX_DRIVES $n_channels
   #include <stdint.h>
   #include "meerstetter.h"
+
+  typedef struct {
+    me_drive_t drive[$n_channels];
+  } ${Name}_t;
+  #define ${Name}_drive(x,y) ${Name}.drive[x].y
+
   const char *${Name}_DevStatus_text(unsigned char stat) {
     switch (stat) {
       case 0:  return "Init   ";
@@ -188,7 +195,6 @@ print $tmc <<EOF
       default: return "*******";
     }
   }
-  #define ${Name}_drive(x,y) ${Name}.drive[x].y
 %}
 TM typedef uint8_t ${Name}_DevStatus_t { text "%7u" ${Name}_DevStatus_text(); }
 TM typedef uint8_t ${Name}_Stale_t { text "%3u"; }
@@ -209,7 +215,7 @@ print $tmc
 
 print $col
   "%{\n" .
-  "  meerstetter_t $Name;\n" .
+  "  ${Name}_t $Name;\n" .
   "%}\n";
 
 print $tbl
