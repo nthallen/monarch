@@ -19,8 +19,8 @@ struct NODEPTR_struct {
 #endif
 };
 
-typedef struct _TSTDunterminated* _TSPTDunterminated;
 typedef struct _TSTableDefs* _TSPTableDefs;
+typedef struct _TSTDunterminated* _TSPTDunterminated;
 typedef struct _TSHBunterminated* _TSPHBunterminated;
 typedef struct _TSHBFields* _TSPHBFields;
 typedef struct _TSG3* _TSPG3;
@@ -131,17 +131,6 @@ typedef struct _TPrule_03* _TPPrule_03;
 typedef struct _TPrule_02* _TPPrule_02;
 typedef struct _TPrule_01* _TPPrule_01;
 
-struct _TSTDunterminated
-#ifdef __cplusplus
-	: public NODEPTR_struct {
-#else
-{
-_NODECOMMON
-#endif
-int _ATCRow_post;
-glue_t _ATGlue_post;
-};
-
 struct _TSTableDefs
 #ifdef __cplusplus
 	: public NODEPTR_struct {
@@ -152,6 +141,17 @@ _NODECOMMON
 dim_t _AT_const8;
 int _ATCRow_pre;
 glue_t _ATGlue_pre;
+};
+
+struct _TSTDunterminated
+#ifdef __cplusplus
+	: public NODEPTR_struct {
+#else
+{
+_NODECOMMON
+#endif
+int _ATCRow_post;
+glue_t _ATGlue_post;
 };
 
 struct _TSHBunterminated
@@ -1026,9 +1026,10 @@ struct _TPrule_034
 {
 _NODECOMMON
 #endif
-int _ATCRow_post;
-glue_t _ATGlue_post;
-_TSPVField _desc1;
+dim_t _AT_const8;
+int _ATCRow_pre;
+glue_t _ATGlue_pre;
+_TSPTDunterminated _desc1;
 };
 
 struct _TPrule_033
@@ -1038,10 +1039,10 @@ struct _TPrule_033
 {
 _NODECOMMON
 #endif
-int _ATCRow_post;
-glue_t _ATGlue_post;
+dim_t _AT_const8;
+int _ATCRow_pre;
+glue_t _ATGlue_pre;
 _TSPTDunterminated _desc1;
-_TSPVField _desc2;
 };
 
 struct _TPrule_032
@@ -1054,7 +1055,6 @@ _NODECOMMON
 dim_t _AT_const8;
 int _ATCRow_pre;
 glue_t _ATGlue_pre;
-_TSPTDunterminated _desc1;
 };
 
 struct _TPrule_031
@@ -1064,10 +1064,17 @@ struct _TPrule_031
 {
 _NODECOMMON
 #endif
-dim_t _AT_const8;
-int _ATCRow_pre;
-glue_t _ATGlue_pre;
-_TSPTDunterminated _desc1;
+int _ATAttr_post;
+int _ATAttr_pre;
+Environment _ATColEnv;
+int _ATCol;
+dim_t _ATInhHeight;
+dim_t _ATWidth;
+dim_t _ATColumnsMinWidth;
+dim_t _ATMinWidth;
+dim_t _ATMinHeight;
+int _ATTableAttr;
+_TSPTableDefs _desc1;
 };
 
 struct _TPrule_030
@@ -1077,9 +1084,17 @@ struct _TPrule_030
 {
 _NODECOMMON
 #endif
-dim_t _AT_const8;
-int _ATCRow_pre;
-glue_t _ATGlue_pre;
+int _ATAttr_post;
+int _ATAttr_pre;
+Environment _ATColEnv;
+int _ATCol;
+dim_t _ATInhHeight;
+dim_t _ATWidth;
+dim_t _ATColumnsMinWidth;
+dim_t _ATMinWidth;
+dim_t _ATMinHeight;
+int _ATTableAttr;
+_TSPTableDefs _desc1;
 };
 
 struct _TPrule_029
@@ -1089,17 +1104,9 @@ struct _TPrule_029
 {
 _NODECOMMON
 #endif
-int _ATAttr_post;
-int _ATAttr_pre;
-Environment _ATColEnv;
-int _ATCol;
-dim_t _ATInhHeight;
-dim_t _ATWidth;
-dim_t _ATColumnsMinWidth;
-dim_t _ATMinWidth;
-dim_t _ATMinHeight;
-int _ATTableAttr;
-_TSPTableDefs _desc1;
+int _ATCRow_post;
+glue_t _ATGlue_post;
+_TSPVField _desc1;
 };
 
 struct _TPrule_028
@@ -1109,17 +1116,10 @@ struct _TPrule_028
 {
 _NODECOMMON
 #endif
-int _ATAttr_post;
-int _ATAttr_pre;
-Environment _ATColEnv;
-int _ATCol;
-dim_t _ATInhHeight;
-dim_t _ATWidth;
-dim_t _ATColumnsMinWidth;
-dim_t _ATMinWidth;
-dim_t _ATMinHeight;
-int _ATTableAttr;
-_TSPTableDefs _desc1;
+int _ATCRow_post;
+glue_t _ATGlue_post;
+_TSPTDunterminated _desc1;
+_TSPVField _desc2;
 };
 
 struct _TPrule_027

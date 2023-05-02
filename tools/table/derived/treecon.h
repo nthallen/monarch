@@ -16,8 +16,8 @@ extern void InitTree ELI_ARG((void));
 
 extern void FreeTree ELI_ARG((void));
 
-extern NODEPTR MkTDunterminated ELI_ARG((POSITION *_coordref, NODEPTR _currn));
 extern NODEPTR MkTableDefs ELI_ARG((POSITION *_coordref, NODEPTR _currn));
+extern NODEPTR MkTDunterminated ELI_ARG((POSITION *_coordref, NODEPTR _currn));
 extern NODEPTR MkHBunterminated ELI_ARG((POSITION *_coordref, NODEPTR _currn));
 extern NODEPTR MkHBFields ELI_ARG((POSITION *_coordref, NODEPTR _currn));
 extern NODEPTR MkG3 ELI_ARG((POSITION *_coordref, NODEPTR _currn));
@@ -94,12 +94,12 @@ extern NODEPTR Mkrule_34 ELI_ARG((POSITION *_coordref, int _TERM1));
 extern NODEPTR Mkrule_036 ELI_ARG((POSITION *_coordref, NODEPTR _desc1));
 extern NODEPTR Mkrule_035 ELI_ARG((POSITION *_coordref, NODEPTR _desc1));
 extern NODEPTR Mkrule_034 ELI_ARG((POSITION *_coordref, NODEPTR _desc1));
-extern NODEPTR Mkrule_033 ELI_ARG((POSITION *_coordref, NODEPTR _desc1, NODEPTR _desc2));
-extern NODEPTR Mkrule_032 ELI_ARG((POSITION *_coordref, NODEPTR _desc1));
+extern NODEPTR Mkrule_033 ELI_ARG((POSITION *_coordref, NODEPTR _desc1));
+extern NODEPTR Mkrule_032 ELI_ARG((POSITION *_coordref));
 extern NODEPTR Mkrule_031 ELI_ARG((POSITION *_coordref, NODEPTR _desc1));
-extern NODEPTR Mkrule_030 ELI_ARG((POSITION *_coordref));
+extern NODEPTR Mkrule_030 ELI_ARG((POSITION *_coordref, NODEPTR _desc1));
 extern NODEPTR Mkrule_029 ELI_ARG((POSITION *_coordref, NODEPTR _desc1));
-extern NODEPTR Mkrule_028 ELI_ARG((POSITION *_coordref, NODEPTR _desc1));
+extern NODEPTR Mkrule_028 ELI_ARG((POSITION *_coordref, NODEPTR _desc1, NODEPTR _desc2));
 extern NODEPTR Mkrule_027 ELI_ARG((POSITION *_coordref));
 extern NODEPTR Mkrule_026 ELI_ARG((POSITION *_coordref, NODEPTR _desc1));
 extern NODEPTR Mkrule_025 ELI_ARG((POSITION *_coordref));
