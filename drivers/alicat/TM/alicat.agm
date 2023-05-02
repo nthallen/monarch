@@ -1,5 +1,9 @@
 Moduledef alicat [ src= name=Alicat TX= ] {
-  alicat Module requires a src variable
+  alicat Module requires a src variable defining the input file.
+  name defines the base of all the variables and the header for
+  the driver.
+  TX=^ is used in instruments where uplink commands are supported.
+  
   Source file syntax:
     source_file : source_line+ .
     source_line :
@@ -7,12 +11,14 @@ Moduledef alicat [ src= name=Alicat TX= ] {
       'Name' word /
       'Rate' \d+ 'Hz' /
       'Port' path /
-      'Digital' mnemonic address type VF_FS VFunits MF_FS MFunits P_FS Punits [ command ] .
+      'Digital' mnemonic address Ftype VF_FS VFunits MF_FS MFunits P_FS Punits [ command ] .
+      'Digital' mnemonic address Ptype P_FS Punits [ command ] .
     mnemonic : word .
     word : \w+ .
     address : \d+ .
     hex_address : 0x[a-fA-F0-9]+ .
-    type : 'MFC' / 'MFM' / 'VFC' .
+    Ftype : 'MFC' / 'MFM' / 'VFC' .
+    Ptype : 'PC' / 'PC3' .
     VF_FS : \d+ .
     MF_FS : \d+ .
     P_FS : \d+ .
@@ -84,7 +90,7 @@ Moduledef alicat [ src= name=Alicat TX= ] {
     }
 }
 
-mode (default,driver) {
+mode (default,driver,ignore) {
   tmcbase = @name@.tmc:
   colbase = @name@_col.tmc:
   cmdbase = @name@.cmd:
@@ -93,4 +99,9 @@ mode (default,driver) {
   %%
 @name@.tmc @name@_col.tmc @name@.cmd @name@.genui @name@.tbl : @src@ @MODDIR@/alicat_gen
 	@MODDIR@/alicat_gen @src@ name=@name@ TX=@TX@
+}
+
+mode (ignore) {
+  IGNORE = @name@.tmc @name@_col.tmc @name@.cmd @name@.genui @name@.tbl
+  OBJ = @name@.tmc @name@_col.tmc @name@.cmd @name@.genui @name@.tbl
 }
