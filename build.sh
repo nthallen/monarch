@@ -63,7 +63,7 @@ else
   msg Using existing $builddir
   cd $builddir
 fi
-make $install
+make $install || nl_error "'make $install' failed"
 if [ "$install" = "install" -a  -d ../git ]; then
   cd ../git
   ./build_playback && ./build_playback install

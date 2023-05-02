@@ -43,7 +43,8 @@ if [ -n "$1" ]; then
   if [ "$1" = "install" ]; then
     [ -d $builddir ] || nl_error "Must build before installing"
     cd $builddir
-    make install SRCDIR=$relsrcroot
+    make install SRCDIR=$relsrcroot ||
+      nl_error "'make install SRCDIR=$relsrcroot' failed"
   else
     nl_error "Unknown option '$1'"
   fi
@@ -52,5 +53,5 @@ else
   [ -d $builddir ] || nl_error "Unable to create builddir $builddir"
   cd $builddir
   appgen $relsrcroot/playback.spec
-  make SRCDIR=$relsrcroot
+  make SRCDIR=$relsrcroot || nl_error "'make SRCDIR=$relsrcroot' failed"
 fi
