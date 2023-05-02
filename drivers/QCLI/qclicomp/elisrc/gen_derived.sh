@@ -17,7 +17,7 @@ done <$drvd/Makefile
 
 {
 cat <<EOF
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 2.8.8...3.20.0)
 cmake_policy(SET CMP0048 NEW)
 project(qclicomp_derived  VERSION 2.0.0)
 set(CMAKE_C_STANDARD 11)
@@ -33,14 +33,13 @@ target_link_libraries(qclicomp m)
 message("Pre-conditional")
 if (NOT DEFINED monarch_BINARY_DIR)
   message("no monarch_BINARY_DIR")
-  link_directories( /usr/local/lib )
+  # target_link_directories(qclicomp PRIVATE /usr/local/lib)
 else (NOT DEFINED monarch_BINARY_DIR)
   message("monarch_BINARY_DIR is \${monarch_BINARY_DIR}")
-  target_include_directories(nctable PRIVATE
-    \${monarch_SOURCE_DIR}/tools/oui/src)
+  # target_include_directories(qclicomp PRIVATE
+  #   \${monarch_SOURCE_DIR}/tools/oui/src)
 endif()
 
-# target_link_libraries(qclicomp)
 install(TARGETS qclicomp RUNTIME DESTINATION bin)
 EOF
 } >$drvd/CMakeLists.txt
