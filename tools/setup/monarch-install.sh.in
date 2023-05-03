@@ -329,7 +329,7 @@ if [ -n "$exp_base" -a -n "$exp_url" ]; then
   arp_das_matlab_dfs_wrap_path=`wrap_path $arp_das_matlab_path/dfs`
 
   cat >$matscriptfile <<EOF
-fprintf(1,'Running $scriptname to setup Matlab PATH for MOUDI\n');
+fprintf(1,'Running $scriptname to setup Matlab PATH for $exp_base\n');
 addpath('$arp_das_matlab_wrap_path');
 addpath('$arp_das_matlab_ne_wrap_path');
 addpath('$arp_das_matlab_dfs_wrap_path');
