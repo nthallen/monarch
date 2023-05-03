@@ -77,11 +77,20 @@ fi
 myuser=`id -un`
 if [ $machine = Cygwin ]; then
    # Verify that the flight group @FLTGRP@ exists and user is a member
-  id -Gn | grep -q '\b@FLTGRP@\b' || {
-    echo "monarch_install: user '$myuser' does not appear to be a member"
-    echo "of group '@FLTGRP@'. If you have not run cygwin-monarch-install.ps1,"
-    echo "do so now. Otherwise try restarting the system and then rerun"
-    echo "cygwin-monarch-install.ps1."
+  id | grep -q '(@FLTGRP@)' || {
+    if id | grep -q "(`hostname`+@FLTGRP@)"; then
+      echo "monarch-install.sh: The flight group '@FLTGRP@' has been created,"
+      echo "but it is manifested under Cygwin here as '`hostname`+@FLTGRP@'."
+      echo "This requires a somewhat complex workaround involving mkgroup"
+      echo "and a change to /etc/nsswitch.conf. Once those changes have"
+      echo "been made, you can rerun this script (monarch-install.sh)"
+      echo "from within a new Cygwin terminal session."
+    else
+      echo "monarch-install.sh: user '$myuser' does not appear to be a member"
+      echo "of group '@FLTGRP@'. If you have not run cygwin-monarch-install.ps1,"
+      echo "do so now. Otherwise try restarting the system and then rerun"
+      echo "cygwin-monarch-install.ps1."
+    fi
     echo
     echo -n "Hit Enter to terminate:"
     read j
@@ -122,17 +131,36 @@ if [ $machine = Cygwin ]; then
   fi
 else
   # other operating systems (where we have sudo, among other things)
-  nl_error "setup for non-Cygwin is not yet complete"
   # Check if @FLTUSER@ user exists and add if necessary
   if grep -q "^@FLTUSER@:" /etc/passwd; then
     echo "monarch_install.sh: @FLTUSER@ user already exists"
   else
+    echo "monarch-install.sh: Need to create user @FLTUSER@ and group @FLTGRP@"
     $sudo addgroup @FLTGRP@
+    echo "monarch-install.sh: @FLTGRP@ group created"
     $sudo adduser --disabled-password --gecos "@FLTUSER@ user" --no-create-home --ingroup @FLTGRP@ @FLTUSER@
-    echo "monarch_setup.sh: @FLTUSER@ user created"
+    echo "monarch-install.sh: @FLTUSER@ user created"
   fi
   $sudo adduser $myuser @FLTGRP@
 fi
+id -Gn | grep -q '\b@FLTGRP@\b' || {
+  echo "monarch-install.sh: user '$myuser' does not appear to be a member"
+  echo "of group '@FLTGRP@'. If this script just created group @FLTGRP@,"
+  echo "you will need to close your terminal session, open another, and"
+  echo "rerun this script in order to complete the installation"
+  echo
+  echo -n "Hit Enter to terminate:"
+  read j
+  exit 1
+}
+
+umask 02
+echo "monarch-install.sh: checking permissions on /usr/local/src"
+[ -d /usr/local/src ] || $sudo mkdir -p -m 02775 /usr/local/src
+uls_g=`stat --format '%G' /usr/local/src`
+[ "$uls_g" = "@FLTGRP@" ] || $sudo chgrp @FLTGRP@ /usr/local/src
+uls_a=`stat --format '%a' /usr/local/src`
+[ "$uls_a" = "2775" ] || $sudo chmod 02775 /usr/local/src
 
 if [ $installagent = yes ]; then
   if [ $machine = Cygwin ]; then
