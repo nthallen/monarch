@@ -3,7 +3,7 @@
 function print_usage {
 cat 1>&2 <<'EOF'
 # Usage:
-#   ./monarch-install [ -E moudi:nthallen/keutsch-moudi.git ] [-n] [-h] [-S]
+#   ./monarch-install.sh [ -E moudi:nthallen/keutsch-moudi.git ] [-n] [-h] [-S]
 #
 # -E <basename>:<URL>
 #    Also install the instrument source code. <basename> is the
@@ -266,6 +266,7 @@ else
   cd /usr/local/src/monarch/git
   build_ok=no
   ./build.sh && $sudo ./build.sh install && build_ok=yes
+  [ $build_ok = yes ] || nl_error "Monarch build or install failed"
   [ $build_ok = yes -a $machine != Cygwin ] &&
     /usr/local/share/monarch/setup/monarch_setup.sh
 
