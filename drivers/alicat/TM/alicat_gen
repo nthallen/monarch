@@ -239,8 +239,10 @@ for (my $i = 0; $i < $n_channels; ++$i) {
     $have_p_ctrl ||= $has_p_ctrl;
     if ($has_flow_ctrl || $has_p_ctrl) {
       $datadef .= "TM $Rate Hz ${Name}_Flow${SPprec}_t ${datum}_Set;\n";
-      $coldef .= "  ${datum}_Set = ${Name}_drive($i,flow_setpoint);\n";
       push(@grpmem, "${datum}_Set");
+      $coldef .= "  ${datum}_Set = ${Name}_drive($i," .
+        ($has_flow_ctrl ? "flow_setpoint" : "flow_temp") .
+        ");\n";
     }
     if ($has_flows) {
       $have_flows = 1;
