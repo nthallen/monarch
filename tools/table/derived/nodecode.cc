@@ -5,7 +5,7 @@
 
 int LHSMAP[] = {
 SYMBCField, SYMBColumns, SYMBG1, SYMBG1, 
-SYMBTableDefs, SYMBTableDefs, SYMBTableDefs, SYMBTDunterminated, SYMBTDunterminated, 
+SYMBTDunterminated, SYMBTDunterminated, SYMBTableDefs, SYMBTableDefs, SYMBTableDefs, 
 SYMBVField, SYMBVField, SYMBHBOX, SYMBGAField, SYMBGAField, 
 SYMBHFIELD, SYMBHBFields, SYMBHBFields, SYMBHBFields, SYMBHBOX, 
 SYMBHBunterminated, SYMBHBunterminated, SYMBHFIELD, SYMBTable, SYMBTable, 

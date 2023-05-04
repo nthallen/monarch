@@ -55,17 +55,17 @@ int* _IG_incl3;
 int* _IG_incl2;
 Environment* _IG_incl1;
 Environment* _IG_incl0;
-dim_t _AVTDunterminated__const8;
-dim_t _AVTDunterminated__const9;
-dim_t _AVTDunterminated__const10;
+int _AVTableDefs__const6;
+dim_t _AVTableDefs__const9;
+dim_t _AVTableDefs__const10;
 PTGNode _AVNamedTableStringPrint_post;
 PTGNode _AVNamedTableFieldPrint_post;
 int _AVTDunterminatedCRow_pre;
 glue_t _AVTDunterminatedGlue_pre;
-int _AVTableDefs__const6;
-dim_t _AVTableDefs__const9;
-dim_t _AVTableDefs__const10;
 int _AVG1Attr_pre;
+dim_t _AVTDunterminated__const8;
+dim_t _AVTDunterminated__const9;
+dim_t _AVTDunterminated__const10;
 int _AVHBunterminatedCCol_pre;
 dim_t _AVHBFields__const13;
 dim_t _AVHBFields__const14;
@@ -2243,8 +2243,7 @@ _TPPrule_034 _currn;
 
 #endif
 {
-int _AS1CRow_pre;
-glue_t _AS1Glue_pre;
+int _AS1_const6;
 
 _VisitVarDecl()
 _VisitEntry();
@@ -2261,17 +2260,16 @@ _TPPrule_034 _currn;
 
 #endif
 {
-int _AS1CRow_pre;
-glue_t _AS1Glue_pre;
+int _AS1_const6;
 
 _VisitVarDecl()
 _VisitEntry();
 (*(_CALL_VS_((NODEPTR )) (VS3MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
-_AVTDunterminated__const8=_AVVField__const8;
+_currn->_AT_const8=_AVTDunterminated__const8;
 /*SPC(1083)*/
-_AVTDunterminated__const9=IDENTICAL(_currn->_desc1->_ATMinWidth);
+_AVTableDefs__const9=_AVTDunterminated__const9;
 /*SPC(1083)*/
-_AVTDunterminated__const10=IDENTICAL(_currn->_desc1->_ATMinHeight);
+_AVTableDefs__const10=_AVTDunterminated__const10;
 /*SPC(1083)*/
 
 _VisitExit();
@@ -2282,6 +2280,485 @@ void _VS4rule_034(_TPPrule_034 _currn)
 #else
 void _VS4rule_034(_currn )
 _TPPrule_034 _currn;
+
+#endif
+{
+int _AS1_const6;
+
+_VisitVarDecl()
+_VisitEntry();
+_AVTDunterminatedCRow_pre=_currn->_ATCRow_pre;
+/*SPC(0)*/
+_AVTDunterminatedGlue_pre=_currn->_ATGlue_pre;
+/*SPC(0)*/
+(*(_CALL_VS_((NODEPTR )) (VS4MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
+
+_VisitExit();
+}
+
+#if defined(__STDC__) || defined(__cplusplus)
+void _VS5rule_034(_TPPrule_034 _currn,int* _AS0Attr_pre)
+#else
+void _VS5rule_034(_currn ,_AS0Attr_pre)
+_TPPrule_034 _currn;
+int* _AS0Attr_pre;
+
+#endif
+{
+int _AS1_const6;
+
+_VisitVarDecl()
+_VisitEntry();
+(*(_CALL_VS_((NODEPTR ,int*)) (VS5MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1,(&( _AS1_const6)));
+_AVTableDefs__const6=_AS1_const6;
+/*SPC(1083)*/
+_AVTDunterminatedCRow_pre=_currn->_desc1->_ATCRow_post;
+/*SPC(0)*/
+_AVTDunterminatedGlue_pre=_currn->_desc1->_ATGlue_post;
+/*SPC(0)*/
+_AVG1Attr_pre=(* _AS0Attr_pre);
+/*SPC(0)*/
+
+_VisitExit();
+}
+
+#if defined(__STDC__) || defined(__cplusplus)
+void _VS2rule_033(_TPPrule_033 _currn)
+#else
+void _VS2rule_033(_currn )
+_TPPrule_033 _currn;
+
+#endif
+{
+int _AS1_const6;
+
+_VisitVarDecl()
+_VisitEntry();
+(*(_CALL_VS_((NODEPTR )) (VS2MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
+
+_VisitExit();
+}
+
+#if defined(__STDC__) || defined(__cplusplus)
+void _VS3rule_033(_TPPrule_033 _currn)
+#else
+void _VS3rule_033(_currn )
+_TPPrule_033 _currn;
+
+#endif
+{
+int _AS1_const6;
+
+_VisitVarDecl()
+_VisitEntry();
+(*(_CALL_VS_((NODEPTR )) (VS3MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
+_currn->_AT_const8=_AVTDunterminated__const8;
+/*SPC(1079)*/
+_AVTableDefs__const9=_AVTDunterminated__const9;
+/*SPC(1079)*/
+_AVTableDefs__const10=_AVTDunterminated__const10;
+/*SPC(1079)*/
+
+_VisitExit();
+}
+
+#if defined(__STDC__) || defined(__cplusplus)
+void _VS4rule_033(_TPPrule_033 _currn)
+#else
+void _VS4rule_033(_currn )
+_TPPrule_033 _currn;
+
+#endif
+{
+int _AS1_const6;
+
+_VisitVarDecl()
+_VisitEntry();
+_AVTDunterminatedCRow_pre=_currn->_ATCRow_pre;
+/*SPC(0)*/
+_AVTDunterminatedGlue_pre=_currn->_ATGlue_pre;
+/*SPC(0)*/
+(*(_CALL_VS_((NODEPTR )) (VS4MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
+
+_VisitExit();
+}
+
+#if defined(__STDC__) || defined(__cplusplus)
+void _VS5rule_033(_TPPrule_033 _currn,int* _AS0Attr_pre)
+#else
+void _VS5rule_033(_currn ,_AS0Attr_pre)
+_TPPrule_033 _currn;
+int* _AS0Attr_pre;
+
+#endif
+{
+int _AS1_const6;
+
+_VisitVarDecl()
+_VisitEntry();
+(*(_CALL_VS_((NODEPTR ,int*)) (VS5MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1,(&( _AS1_const6)));
+_AVTableDefs__const6=_AS1_const6;
+/*SPC(1079)*/
+_AVTDunterminatedCRow_pre=_currn->_desc1->_ATCRow_post;
+/*SPC(0)*/
+_AVTDunterminatedGlue_pre=_currn->_desc1->_ATGlue_post;
+/*SPC(0)*/
+_AVG1Attr_pre=(* _AS0Attr_pre);
+/*SPC(0)*/
+
+_VisitExit();
+}
+
+#if defined(__STDC__) || defined(__cplusplus)
+void _VS3rule_032(_TPPrule_032 _currn)
+#else
+void _VS3rule_032(_currn )
+_TPPrule_032 _currn;
+
+#endif
+{
+
+_VisitVarDecl()
+_VisitEntry();
+_currn->_AT_const8=MKDIM0();
+/*SPC(1075)*/
+_AVTableDefs__const9=MKDIM0();
+/*SPC(1075)*/
+_AVTableDefs__const10=MKDIM0();
+/*SPC(1075)*/
+
+_VisitExit();
+}
+
+#if defined(__STDC__) || defined(__cplusplus)
+void _VS5rule_032(_TPPrule_032 _currn,int* _AS0Attr_pre)
+#else
+void _VS5rule_032(_currn ,_AS0Attr_pre)
+_TPPrule_032 _currn;
+int* _AS0Attr_pre;
+
+#endif
+{
+
+_VisitVarDecl()
+_VisitEntry();
+_AVTableDefs__const6=ZERO();
+/*SPC(1075)*/
+_AVTDunterminatedCRow_pre=_currn->_ATCRow_pre;
+/*SPC(0)*/
+_AVTDunterminatedGlue_pre=_currn->_ATGlue_pre;
+/*SPC(0)*/
+_AVG1Attr_pre=(* _AS0Attr_pre);
+/*SPC(0)*/
+
+_VisitExit();
+}
+
+#if defined(__STDC__) || defined(__cplusplus)
+void _VS2rule_031(_TPPrule_031 _currn)
+#else
+void _VS2rule_031(_currn )
+_TPPrule_031 _currn;
+
+#endif
+{
+int* _IL_incl16;
+Environment* _IL_incl0;
+int _AS1Attr_pre;
+
+_VisitVarDecl()
+_VisitEntry();
+_IL_incl16=_IG_incl16;_IG_incl16= &(_currn->_ATTableAttr);
+_IL_incl0=_IG_incl0;_IG_incl0= &(_currn->_ATColEnv);
+_currn->_ATTableAttr=_currn->_ATAttr_pre;
+/*SPC(107)*/
+(*(_CALL_VS_((NODEPTR )) (VS2MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
+(*(_CALL_VS_((NODEPTR )) (VS3MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
+_currn->_ATAttr_post=_currn->_ATAttr_pre;
+/*SPC(106)*/
+_currn->_ATMinWidth=_AVTableDefs__const9;
+/*SPC(253)*/
+_currn->_ATMinHeight=_AVTableDefs__const10;
+/*SPC(246)*/
+_IG_incl16=_IL_incl16;
+_IG_incl0=_IL_incl0;
+
+_VisitExit();
+}
+
+#if defined(__STDC__) || defined(__cplusplus)
+void _VS3rule_031(_TPPrule_031 _currn,int* _AS0Row)
+#else
+void _VS3rule_031(_currn ,_AS0Row)
+_TPPrule_031 _currn;
+int* _AS0Row;
+
+#endif
+{
+dim_t* _IL_incl22;
+dim_t* _IL_incl15;
+int* _IL_incl14;
+int* _IL_incl16;
+dim_t* _IL_incl11;
+Environment* _IL_incl0;
+int _AS1Attr_pre;
+
+_VisitVarDecl()
+_VisitEntry();
+_IL_incl22=_IG_incl22;_IG_incl22= &(_currn->_ATColumnsMinWidth);
+_IL_incl15=_IG_incl15;_IG_incl15= &(_currn->_ATWidth);
+_IL_incl14=_IG_incl14;_IG_incl14= &(_currn->_ATCol);
+_IL_incl16=_IG_incl16;_IG_incl16= &(_currn->_ATTableAttr);
+_IL_incl11=_IG_incl11;_IG_incl11= &(_currn->_ATWidth);
+_IL_incl0=_IG_incl0;_IG_incl0= &(_currn->_ATColEnv);
+_currn->_ATCol=(* _IG_incl17);
+/*SPC(340)*/
+(* _AS0Row)=(* _IG_incl18);
+/*SPC(339)*/
+_currn->_ATInhHeight=(* _IG_incl19);
+/*SPC(274)*/
+_currn->_ATWidth=GlueDim(_currn->_ATMinWidth, (* _IG_incl20));
+/*SPC(272)*/
+_currn->_ATColumnsMinWidth=_currn->_desc1->_AT_const8;
+/*SPC(250)*/
+_currn->_desc1->_ATCRow_pre=(* _AS0Row);
+/*SPC(341)*/
+_currn->_desc1->_ATGlue_pre=GlueSet(_currn->_ATMinHeight, _currn->_ATInhHeight);
+/*SPC(277)*/
+(*(_CALL_VS_((NODEPTR )) (VS4MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
+_IG_incl22=_IL_incl22;
+_IG_incl15=_IL_incl15;
+_IG_incl14=_IL_incl14;
+_IG_incl16=_IL_incl16;
+_IG_incl11=_IL_incl11;
+_IG_incl0=_IL_incl0;
+
+_VisitExit();
+}
+
+#if defined(__STDC__) || defined(__cplusplus)
+void _VS4rule_031(_TPPrule_031 _currn,int* _AS0Row,PTGNode* _AS0FieldPrint_pre)
+#else
+void _VS4rule_031(_currn ,_AS0Row,_AS0FieldPrint_pre)
+_TPPrule_031 _currn;
+PTGNode* _AS0FieldPrint_pre;
+int* _AS0Row;
+
+#endif
+{
+dim_t* _IL_incl22;
+dim_t* _IL_incl15;
+int* _IL_incl14;
+int* _IL_incl16;
+dim_t* _IL_incl11;
+Environment* _IL_incl0;
+int _AS1Attr_pre;
+
+_VisitVarDecl()
+_VisitEntry();
+_IL_incl22=_IG_incl22;_IG_incl22= &(_currn->_ATColumnsMinWidth);
+_IL_incl15=_IG_incl15;_IG_incl15= &(_currn->_ATWidth);
+_IL_incl14=_IG_incl14;_IG_incl14= &(_currn->_ATCol);
+_IL_incl16=_IG_incl16;_IG_incl16= &(_currn->_ATTableAttr);
+_IL_incl11=_IG_incl11;_IG_incl11= &(_currn->_ATWidth);
+_IL_incl0=_IG_incl0;_IG_incl0= &(_currn->_ATColEnv);
+_AVNamedTableFieldPrint_post=PTGNULL;
+/*SPC(420)*/
+_AS1Attr_pre=_currn->_ATAttr_pre;
+/*SPC(108)*/
+(*(_CALL_VS_((NODEPTR ,int*)) (VS5MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1,(&( _AS1Attr_pre)));
+_AVNamedTableFieldPrint_post=PTGSeq((* _AS0FieldPrint_pre), _AVNamedTableFieldPrint_post);
+/*SPC(419)*/
+_AVTable_N_Cols=_AVTableDefs__const6;
+/*SPC(610)*/
+_AVTable_Height=GlueDim(_currn->_ATMinHeight, _currn->_ATInhHeight);
+/*SPC(276)*/
+_IG_incl22=_IL_incl22;
+_IG_incl15=_IL_incl15;
+_IG_incl14=_IL_incl14;
+_IG_incl16=_IL_incl16;
+_IG_incl11=_IL_incl11;
+_IG_incl0=_IL_incl0;
+
+_VisitExit();
+}
+
+#if defined(__STDC__) || defined(__cplusplus)
+void _VS2rule_030(_TPPrule_030 _currn)
+#else
+void _VS2rule_030(_currn )
+_TPPrule_030 _currn;
+
+#endif
+{
+int* _IL_incl16;
+Environment* _IL_incl0;
+int _AS1Attr_pre;
+
+_VisitVarDecl()
+_VisitEntry();
+_IL_incl16=_IG_incl16;_IG_incl16= &(_currn->_ATTableAttr);
+_IL_incl0=_IG_incl0;_IG_incl0= &(_currn->_ATColEnv);
+_currn->_ATTableAttr=_currn->_ATAttr_pre;
+/*SPC(107)*/
+(*(_CALL_VS_((NODEPTR )) (VS2MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
+(*(_CALL_VS_((NODEPTR )) (VS3MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
+_currn->_ATAttr_post=_currn->_ATAttr_pre;
+/*SPC(106)*/
+_currn->_ATMinWidth=_AVTableDefs__const9;
+/*SPC(253)*/
+_currn->_ATMinHeight=_AVTableDefs__const10;
+/*SPC(246)*/
+_IG_incl16=_IL_incl16;
+_IG_incl0=_IL_incl0;
+
+_VisitExit();
+}
+
+#if defined(__STDC__) || defined(__cplusplus)
+void _VS3rule_030(_TPPrule_030 _currn,int* _AS0Row)
+#else
+void _VS3rule_030(_currn ,_AS0Row)
+_TPPrule_030 _currn;
+int* _AS0Row;
+
+#endif
+{
+dim_t* _IL_incl22;
+dim_t* _IL_incl15;
+int* _IL_incl14;
+int* _IL_incl16;
+dim_t* _IL_incl11;
+Environment* _IL_incl0;
+int _AS1Attr_pre;
+
+_VisitVarDecl()
+_VisitEntry();
+_IL_incl22=_IG_incl22;_IG_incl22= &(_currn->_ATColumnsMinWidth);
+_IL_incl15=_IG_incl15;_IG_incl15= &(_currn->_ATWidth);
+_IL_incl14=_IG_incl14;_IG_incl14= &(_currn->_ATCol);
+_IL_incl16=_IG_incl16;_IG_incl16= &(_currn->_ATTableAttr);
+_IL_incl11=_IG_incl11;_IG_incl11= &(_currn->_ATWidth);
+_IL_incl0=_IG_incl0;_IG_incl0= &(_currn->_ATColEnv);
+_currn->_ATCol=(* _IG_incl17);
+/*SPC(340)*/
+(* _AS0Row)=(* _IG_incl18);
+/*SPC(339)*/
+_currn->_ATInhHeight=(* _IG_incl19);
+/*SPC(274)*/
+_currn->_ATWidth=GlueDim(_currn->_ATMinWidth, (* _IG_incl20));
+/*SPC(272)*/
+_currn->_ATColumnsMinWidth=_currn->_desc1->_AT_const8;
+/*SPC(250)*/
+_currn->_desc1->_ATCRow_pre=(* _AS0Row);
+/*SPC(341)*/
+_currn->_desc1->_ATGlue_pre=GlueSet(_currn->_ATMinHeight, _currn->_ATInhHeight);
+/*SPC(277)*/
+(*(_CALL_VS_((NODEPTR )) (VS4MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
+_IG_incl22=_IL_incl22;
+_IG_incl15=_IL_incl15;
+_IG_incl14=_IL_incl14;
+_IG_incl16=_IL_incl16;
+_IG_incl11=_IL_incl11;
+_IG_incl0=_IL_incl0;
+
+_VisitExit();
+}
+
+#if defined(__STDC__) || defined(__cplusplus)
+void _VS4rule_030(_TPPrule_030 _currn,int* _AS0Row,PTGNode* _AS0FieldPrint_pre)
+#else
+void _VS4rule_030(_currn ,_AS0Row,_AS0FieldPrint_pre)
+_TPPrule_030 _currn;
+PTGNode* _AS0FieldPrint_pre;
+int* _AS0Row;
+
+#endif
+{
+dim_t* _IL_incl22;
+dim_t* _IL_incl15;
+int* _IL_incl14;
+int* _IL_incl16;
+dim_t* _IL_incl11;
+Environment* _IL_incl0;
+int _AS1Attr_pre;
+
+_VisitVarDecl()
+_VisitEntry();
+_IL_incl22=_IG_incl22;_IG_incl22= &(_currn->_ATColumnsMinWidth);
+_IL_incl15=_IG_incl15;_IG_incl15= &(_currn->_ATWidth);
+_IL_incl14=_IG_incl14;_IG_incl14= &(_currn->_ATCol);
+_IL_incl16=_IG_incl16;_IG_incl16= &(_currn->_ATTableAttr);
+_IL_incl11=_IG_incl11;_IG_incl11= &(_currn->_ATWidth);
+_IL_incl0=_IG_incl0;_IG_incl0= &(_currn->_ATColEnv);
+_AVNamedTableFieldPrint_post=PTGNULL;
+/*SPC(420)*/
+_AS1Attr_pre=_currn->_ATAttr_pre;
+/*SPC(108)*/
+(*(_CALL_VS_((NODEPTR ,int*)) (VS5MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1,(&( _AS1Attr_pre)));
+_AVNamedTableFieldPrint_post=PTGSeq((* _AS0FieldPrint_pre), _AVNamedTableFieldPrint_post);
+/*SPC(419)*/
+_AVTable_N_Cols=_AVTableDefs__const6;
+/*SPC(610)*/
+_AVTable_Height=GlueDim(_currn->_ATMinHeight, _currn->_ATInhHeight);
+/*SPC(276)*/
+_IG_incl22=_IL_incl22;
+_IG_incl15=_IL_incl15;
+_IG_incl14=_IL_incl14;
+_IG_incl16=_IL_incl16;
+_IG_incl11=_IL_incl11;
+_IG_incl0=_IL_incl0;
+
+_VisitExit();
+}
+
+#if defined(__STDC__) || defined(__cplusplus)
+void _VS2rule_029(_TPPrule_029 _currn)
+#else
+void _VS2rule_029(_currn )
+_TPPrule_029 _currn;
+
+#endif
+{
+int _AS1CRow_pre;
+glue_t _AS1Glue_pre;
+
+_VisitVarDecl()
+_VisitEntry();
+(*(_CALL_VS_((NODEPTR )) (VS2MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
+
+_VisitExit();
+}
+
+#if defined(__STDC__) || defined(__cplusplus)
+void _VS3rule_029(_TPPrule_029 _currn)
+#else
+void _VS3rule_029(_currn )
+_TPPrule_029 _currn;
+
+#endif
+{
+int _AS1CRow_pre;
+glue_t _AS1Glue_pre;
+
+_VisitVarDecl()
+_VisitEntry();
+(*(_CALL_VS_((NODEPTR )) (VS3MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
+_AVTDunterminated__const8=_AVVField__const8;
+/*SPC(1063)*/
+_AVTDunterminated__const9=IDENTICAL(_currn->_desc1->_ATMinWidth);
+/*SPC(1063)*/
+_AVTDunterminated__const10=IDENTICAL(_currn->_desc1->_ATMinHeight);
+/*SPC(1063)*/
+
+_VisitExit();
+}
+
+#if defined(__STDC__) || defined(__cplusplus)
+void _VS4rule_029(_TPPrule_029 _currn)
+#else
+void _VS4rule_029(_currn )
+_TPPrule_029 _currn;
 
 #endif
 {
@@ -2304,10 +2781,10 @@ _VisitExit();
 }
 
 #if defined(__STDC__) || defined(__cplusplus)
-void _VS5rule_034(_TPPrule_034 _currn,int* _AS0_const6)
+void _VS5rule_029(_TPPrule_029 _currn,int* _AS0_const6)
 #else
-void _VS5rule_034(_currn ,_AS0_const6)
-_TPPrule_034 _currn;
+void _VS5rule_029(_currn ,_AS0_const6)
+_TPPrule_029 _currn;
 int* _AS0_const6;
 
 #endif
@@ -2319,16 +2796,16 @@ _VisitVarDecl()
 _VisitEntry();
 (*(_CALL_VS_((NODEPTR ,glue_t*,int*)) (VS5MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1,(&( _AS1Glue_pre)),(&( _AS1CRow_pre)));
 (* _AS0_const6)=_AVVField__const6;
-/*SPC(1083)*/
+/*SPC(1063)*/
 
 _VisitExit();
 }
 
 #if defined(__STDC__) || defined(__cplusplus)
-void _VS2rule_033(_TPPrule_033 _currn)
+void _VS2rule_028(_TPPrule_028 _currn)
 #else
-void _VS2rule_033(_currn )
-_TPPrule_033 _currn;
+void _VS2rule_028(_currn )
+_TPPrule_028 _currn;
 
 #endif
 {
@@ -2345,10 +2822,10 @@ _VisitExit();
 }
 
 #if defined(__STDC__) || defined(__cplusplus)
-void _VS3rule_033(_TPPrule_033 _currn)
+void _VS3rule_028(_TPPrule_028 _currn)
 #else
-void _VS3rule_033(_currn )
-_TPPrule_033 _currn;
+void _VS3rule_028(_currn )
+_TPPrule_028 _currn;
 
 #endif
 {
@@ -2361,20 +2838,20 @@ _VisitEntry();
 (*(_CALL_VS_((NODEPTR )) (VS3MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
 (*(_CALL_VS_((NODEPTR )) (VS3MAP[_currn->_desc2->_prod])))((NODEPTR) _currn->_desc2);
 _AVTDunterminated__const8=MAXDIM(_AVTDunterminated__const8, _AVVField__const8);
-/*SPC(1079)*/
+/*SPC(1059)*/
 _AVTDunterminated__const9=MAXDIM(_AVTDunterminated__const9, IDENTICAL(_currn->_desc2->_ATMinWidth));
-/*SPC(1079)*/
+/*SPC(1059)*/
 _AVTDunterminated__const10=ADDDIM(_AVTDunterminated__const10, IDENTICAL(_currn->_desc2->_ATMinHeight));
-/*SPC(1079)*/
+/*SPC(1059)*/
 
 _VisitExit();
 }
 
 #if defined(__STDC__) || defined(__cplusplus)
-void _VS4rule_033(_TPPrule_033 _currn)
+void _VS4rule_028(_TPPrule_028 _currn)
 #else
-void _VS4rule_033(_currn )
-_TPPrule_033 _currn;
+void _VS4rule_028(_currn )
+_TPPrule_028 _currn;
 
 #endif
 {
@@ -2399,10 +2876,10 @@ _VisitExit();
 }
 
 #if defined(__STDC__) || defined(__cplusplus)
-void _VS5rule_033(_TPPrule_033 _currn,int* _AS0_const6)
+void _VS5rule_028(_TPPrule_028 _currn,int* _AS0_const6)
 #else
-void _VS5rule_033(_currn ,_AS0_const6)
-_TPPrule_033 _currn;
+void _VS5rule_028(_currn ,_AS0_const6)
+_TPPrule_028 _currn;
 int* _AS0_const6;
 
 #endif
@@ -2416,484 +2893,7 @@ _VisitEntry();
 (*(_CALL_VS_((NODEPTR ,int*)) (VS5MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1,(&( _AS1_const6)));
 (*(_CALL_VS_((NODEPTR ,glue_t*,int*)) (VS5MAP[_currn->_desc2->_prod])))((NODEPTR) _currn->_desc2,(&( _AS2Glue_pre)),(&( _AS2CRow_pre)));
 (* _AS0_const6)=max(_AS1_const6, _AVVField__const6);
-/*SPC(1079)*/
-
-_VisitExit();
-}
-
-#if defined(__STDC__) || defined(__cplusplus)
-void _VS2rule_032(_TPPrule_032 _currn)
-#else
-void _VS2rule_032(_currn )
-_TPPrule_032 _currn;
-
-#endif
-{
-int _AS1_const6;
-
-_VisitVarDecl()
-_VisitEntry();
-(*(_CALL_VS_((NODEPTR )) (VS2MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
-
-_VisitExit();
-}
-
-#if defined(__STDC__) || defined(__cplusplus)
-void _VS3rule_032(_TPPrule_032 _currn)
-#else
-void _VS3rule_032(_currn )
-_TPPrule_032 _currn;
-
-#endif
-{
-int _AS1_const6;
-
-_VisitVarDecl()
-_VisitEntry();
-(*(_CALL_VS_((NODEPTR )) (VS3MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
-_currn->_AT_const8=_AVTDunterminated__const8;
-/*SPC(1075)*/
-_AVTableDefs__const9=_AVTDunterminated__const9;
-/*SPC(1075)*/
-_AVTableDefs__const10=_AVTDunterminated__const10;
-/*SPC(1075)*/
-
-_VisitExit();
-}
-
-#if defined(__STDC__) || defined(__cplusplus)
-void _VS4rule_032(_TPPrule_032 _currn)
-#else
-void _VS4rule_032(_currn )
-_TPPrule_032 _currn;
-
-#endif
-{
-int _AS1_const6;
-
-_VisitVarDecl()
-_VisitEntry();
-_AVTDunterminatedCRow_pre=_currn->_ATCRow_pre;
-/*SPC(0)*/
-_AVTDunterminatedGlue_pre=_currn->_ATGlue_pre;
-/*SPC(0)*/
-(*(_CALL_VS_((NODEPTR )) (VS4MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
-
-_VisitExit();
-}
-
-#if defined(__STDC__) || defined(__cplusplus)
-void _VS5rule_032(_TPPrule_032 _currn,int* _AS0Attr_pre)
-#else
-void _VS5rule_032(_currn ,_AS0Attr_pre)
-_TPPrule_032 _currn;
-int* _AS0Attr_pre;
-
-#endif
-{
-int _AS1_const6;
-
-_VisitVarDecl()
-_VisitEntry();
-(*(_CALL_VS_((NODEPTR ,int*)) (VS5MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1,(&( _AS1_const6)));
-_AVTableDefs__const6=_AS1_const6;
-/*SPC(1075)*/
-_AVTDunterminatedCRow_pre=_currn->_desc1->_ATCRow_post;
-/*SPC(0)*/
-_AVTDunterminatedGlue_pre=_currn->_desc1->_ATGlue_post;
-/*SPC(0)*/
-_AVG1Attr_pre=(* _AS0Attr_pre);
-/*SPC(0)*/
-
-_VisitExit();
-}
-
-#if defined(__STDC__) || defined(__cplusplus)
-void _VS2rule_031(_TPPrule_031 _currn)
-#else
-void _VS2rule_031(_currn )
-_TPPrule_031 _currn;
-
-#endif
-{
-int _AS1_const6;
-
-_VisitVarDecl()
-_VisitEntry();
-(*(_CALL_VS_((NODEPTR )) (VS2MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
-
-_VisitExit();
-}
-
-#if defined(__STDC__) || defined(__cplusplus)
-void _VS3rule_031(_TPPrule_031 _currn)
-#else
-void _VS3rule_031(_currn )
-_TPPrule_031 _currn;
-
-#endif
-{
-int _AS1_const6;
-
-_VisitVarDecl()
-_VisitEntry();
-(*(_CALL_VS_((NODEPTR )) (VS3MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
-_currn->_AT_const8=_AVTDunterminated__const8;
-/*SPC(1071)*/
-_AVTableDefs__const9=_AVTDunterminated__const9;
-/*SPC(1071)*/
-_AVTableDefs__const10=_AVTDunterminated__const10;
-/*SPC(1071)*/
-
-_VisitExit();
-}
-
-#if defined(__STDC__) || defined(__cplusplus)
-void _VS4rule_031(_TPPrule_031 _currn)
-#else
-void _VS4rule_031(_currn )
-_TPPrule_031 _currn;
-
-#endif
-{
-int _AS1_const6;
-
-_VisitVarDecl()
-_VisitEntry();
-_AVTDunterminatedCRow_pre=_currn->_ATCRow_pre;
-/*SPC(0)*/
-_AVTDunterminatedGlue_pre=_currn->_ATGlue_pre;
-/*SPC(0)*/
-(*(_CALL_VS_((NODEPTR )) (VS4MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
-
-_VisitExit();
-}
-
-#if defined(__STDC__) || defined(__cplusplus)
-void _VS5rule_031(_TPPrule_031 _currn,int* _AS0Attr_pre)
-#else
-void _VS5rule_031(_currn ,_AS0Attr_pre)
-_TPPrule_031 _currn;
-int* _AS0Attr_pre;
-
-#endif
-{
-int _AS1_const6;
-
-_VisitVarDecl()
-_VisitEntry();
-(*(_CALL_VS_((NODEPTR ,int*)) (VS5MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1,(&( _AS1_const6)));
-_AVTableDefs__const6=_AS1_const6;
-/*SPC(1071)*/
-_AVTDunterminatedCRow_pre=_currn->_desc1->_ATCRow_post;
-/*SPC(0)*/
-_AVTDunterminatedGlue_pre=_currn->_desc1->_ATGlue_post;
-/*SPC(0)*/
-_AVG1Attr_pre=(* _AS0Attr_pre);
-/*SPC(0)*/
-
-_VisitExit();
-}
-
-#if defined(__STDC__) || defined(__cplusplus)
-void _VS3rule_030(_TPPrule_030 _currn)
-#else
-void _VS3rule_030(_currn )
-_TPPrule_030 _currn;
-
-#endif
-{
-
-_VisitVarDecl()
-_VisitEntry();
-_currn->_AT_const8=MKDIM0();
-/*SPC(1067)*/
-_AVTableDefs__const9=MKDIM0();
-/*SPC(1067)*/
-_AVTableDefs__const10=MKDIM0();
-/*SPC(1067)*/
-
-_VisitExit();
-}
-
-#if defined(__STDC__) || defined(__cplusplus)
-void _VS5rule_030(_TPPrule_030 _currn,int* _AS0Attr_pre)
-#else
-void _VS5rule_030(_currn ,_AS0Attr_pre)
-_TPPrule_030 _currn;
-int* _AS0Attr_pre;
-
-#endif
-{
-
-_VisitVarDecl()
-_VisitEntry();
-_AVTableDefs__const6=ZERO();
-/*SPC(1067)*/
-_AVTDunterminatedCRow_pre=_currn->_ATCRow_pre;
-/*SPC(0)*/
-_AVTDunterminatedGlue_pre=_currn->_ATGlue_pre;
-/*SPC(0)*/
-_AVG1Attr_pre=(* _AS0Attr_pre);
-/*SPC(0)*/
-
-_VisitExit();
-}
-
-#if defined(__STDC__) || defined(__cplusplus)
-void _VS2rule_029(_TPPrule_029 _currn)
-#else
-void _VS2rule_029(_currn )
-_TPPrule_029 _currn;
-
-#endif
-{
-int* _IL_incl16;
-Environment* _IL_incl0;
-int _AS1Attr_pre;
-
-_VisitVarDecl()
-_VisitEntry();
-_IL_incl16=_IG_incl16;_IG_incl16= &(_currn->_ATTableAttr);
-_IL_incl0=_IG_incl0;_IG_incl0= &(_currn->_ATColEnv);
-_currn->_ATTableAttr=_currn->_ATAttr_pre;
-/*SPC(107)*/
-(*(_CALL_VS_((NODEPTR )) (VS2MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
-(*(_CALL_VS_((NODEPTR )) (VS3MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
-_currn->_ATAttr_post=_currn->_ATAttr_pre;
-/*SPC(106)*/
-_currn->_ATMinWidth=_AVTableDefs__const9;
-/*SPC(253)*/
-_currn->_ATMinHeight=_AVTableDefs__const10;
-/*SPC(246)*/
-_IG_incl16=_IL_incl16;
-_IG_incl0=_IL_incl0;
-
-_VisitExit();
-}
-
-#if defined(__STDC__) || defined(__cplusplus)
-void _VS3rule_029(_TPPrule_029 _currn,int* _AS0Row)
-#else
-void _VS3rule_029(_currn ,_AS0Row)
-_TPPrule_029 _currn;
-int* _AS0Row;
-
-#endif
-{
-dim_t* _IL_incl22;
-dim_t* _IL_incl15;
-int* _IL_incl14;
-int* _IL_incl16;
-dim_t* _IL_incl11;
-Environment* _IL_incl0;
-int _AS1Attr_pre;
-
-_VisitVarDecl()
-_VisitEntry();
-_IL_incl22=_IG_incl22;_IG_incl22= &(_currn->_ATColumnsMinWidth);
-_IL_incl15=_IG_incl15;_IG_incl15= &(_currn->_ATWidth);
-_IL_incl14=_IG_incl14;_IG_incl14= &(_currn->_ATCol);
-_IL_incl16=_IG_incl16;_IG_incl16= &(_currn->_ATTableAttr);
-_IL_incl11=_IG_incl11;_IG_incl11= &(_currn->_ATWidth);
-_IL_incl0=_IG_incl0;_IG_incl0= &(_currn->_ATColEnv);
-_currn->_ATCol=(* _IG_incl17);
-/*SPC(340)*/
-(* _AS0Row)=(* _IG_incl18);
-/*SPC(339)*/
-_currn->_ATInhHeight=(* _IG_incl19);
-/*SPC(274)*/
-_currn->_ATWidth=GlueDim(_currn->_ATMinWidth, (* _IG_incl20));
-/*SPC(272)*/
-_currn->_ATColumnsMinWidth=_currn->_desc1->_AT_const8;
-/*SPC(250)*/
-_currn->_desc1->_ATCRow_pre=(* _AS0Row);
-/*SPC(341)*/
-_currn->_desc1->_ATGlue_pre=GlueSet(_currn->_ATMinHeight, _currn->_ATInhHeight);
-/*SPC(277)*/
-(*(_CALL_VS_((NODEPTR )) (VS4MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
-_IG_incl22=_IL_incl22;
-_IG_incl15=_IL_incl15;
-_IG_incl14=_IL_incl14;
-_IG_incl16=_IL_incl16;
-_IG_incl11=_IL_incl11;
-_IG_incl0=_IL_incl0;
-
-_VisitExit();
-}
-
-#if defined(__STDC__) || defined(__cplusplus)
-void _VS4rule_029(_TPPrule_029 _currn,int* _AS0Row,PTGNode* _AS0FieldPrint_pre)
-#else
-void _VS4rule_029(_currn ,_AS0Row,_AS0FieldPrint_pre)
-_TPPrule_029 _currn;
-PTGNode* _AS0FieldPrint_pre;
-int* _AS0Row;
-
-#endif
-{
-dim_t* _IL_incl22;
-dim_t* _IL_incl15;
-int* _IL_incl14;
-int* _IL_incl16;
-dim_t* _IL_incl11;
-Environment* _IL_incl0;
-int _AS1Attr_pre;
-
-_VisitVarDecl()
-_VisitEntry();
-_IL_incl22=_IG_incl22;_IG_incl22= &(_currn->_ATColumnsMinWidth);
-_IL_incl15=_IG_incl15;_IG_incl15= &(_currn->_ATWidth);
-_IL_incl14=_IG_incl14;_IG_incl14= &(_currn->_ATCol);
-_IL_incl16=_IG_incl16;_IG_incl16= &(_currn->_ATTableAttr);
-_IL_incl11=_IG_incl11;_IG_incl11= &(_currn->_ATWidth);
-_IL_incl0=_IG_incl0;_IG_incl0= &(_currn->_ATColEnv);
-_AVNamedTableFieldPrint_post=PTGNULL;
-/*SPC(420)*/
-_AS1Attr_pre=_currn->_ATAttr_pre;
-/*SPC(108)*/
-(*(_CALL_VS_((NODEPTR ,int*)) (VS5MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1,(&( _AS1Attr_pre)));
-_AVNamedTableFieldPrint_post=PTGSeq((* _AS0FieldPrint_pre), _AVNamedTableFieldPrint_post);
-/*SPC(419)*/
-_AVTable_N_Cols=_AVTableDefs__const6;
-/*SPC(610)*/
-_AVTable_Height=GlueDim(_currn->_ATMinHeight, _currn->_ATInhHeight);
-/*SPC(276)*/
-_IG_incl22=_IL_incl22;
-_IG_incl15=_IL_incl15;
-_IG_incl14=_IL_incl14;
-_IG_incl16=_IL_incl16;
-_IG_incl11=_IL_incl11;
-_IG_incl0=_IL_incl0;
-
-_VisitExit();
-}
-
-#if defined(__STDC__) || defined(__cplusplus)
-void _VS2rule_028(_TPPrule_028 _currn)
-#else
-void _VS2rule_028(_currn )
-_TPPrule_028 _currn;
-
-#endif
-{
-int* _IL_incl16;
-Environment* _IL_incl0;
-int _AS1Attr_pre;
-
-_VisitVarDecl()
-_VisitEntry();
-_IL_incl16=_IG_incl16;_IG_incl16= &(_currn->_ATTableAttr);
-_IL_incl0=_IG_incl0;_IG_incl0= &(_currn->_ATColEnv);
-_currn->_ATTableAttr=_currn->_ATAttr_pre;
-/*SPC(107)*/
-(*(_CALL_VS_((NODEPTR )) (VS2MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
-(*(_CALL_VS_((NODEPTR )) (VS3MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
-_currn->_ATAttr_post=_currn->_ATAttr_pre;
-/*SPC(106)*/
-_currn->_ATMinWidth=_AVTableDefs__const9;
-/*SPC(253)*/
-_currn->_ATMinHeight=_AVTableDefs__const10;
-/*SPC(246)*/
-_IG_incl16=_IL_incl16;
-_IG_incl0=_IL_incl0;
-
-_VisitExit();
-}
-
-#if defined(__STDC__) || defined(__cplusplus)
-void _VS3rule_028(_TPPrule_028 _currn,int* _AS0Row)
-#else
-void _VS3rule_028(_currn ,_AS0Row)
-_TPPrule_028 _currn;
-int* _AS0Row;
-
-#endif
-{
-dim_t* _IL_incl22;
-dim_t* _IL_incl15;
-int* _IL_incl14;
-int* _IL_incl16;
-dim_t* _IL_incl11;
-Environment* _IL_incl0;
-int _AS1Attr_pre;
-
-_VisitVarDecl()
-_VisitEntry();
-_IL_incl22=_IG_incl22;_IG_incl22= &(_currn->_ATColumnsMinWidth);
-_IL_incl15=_IG_incl15;_IG_incl15= &(_currn->_ATWidth);
-_IL_incl14=_IG_incl14;_IG_incl14= &(_currn->_ATCol);
-_IL_incl16=_IG_incl16;_IG_incl16= &(_currn->_ATTableAttr);
-_IL_incl11=_IG_incl11;_IG_incl11= &(_currn->_ATWidth);
-_IL_incl0=_IG_incl0;_IG_incl0= &(_currn->_ATColEnv);
-_currn->_ATCol=(* _IG_incl17);
-/*SPC(340)*/
-(* _AS0Row)=(* _IG_incl18);
-/*SPC(339)*/
-_currn->_ATInhHeight=(* _IG_incl19);
-/*SPC(274)*/
-_currn->_ATWidth=GlueDim(_currn->_ATMinWidth, (* _IG_incl20));
-/*SPC(272)*/
-_currn->_ATColumnsMinWidth=_currn->_desc1->_AT_const8;
-/*SPC(250)*/
-_currn->_desc1->_ATCRow_pre=(* _AS0Row);
-/*SPC(341)*/
-_currn->_desc1->_ATGlue_pre=GlueSet(_currn->_ATMinHeight, _currn->_ATInhHeight);
-/*SPC(277)*/
-(*(_CALL_VS_((NODEPTR )) (VS4MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
-_IG_incl22=_IL_incl22;
-_IG_incl15=_IL_incl15;
-_IG_incl14=_IL_incl14;
-_IG_incl16=_IL_incl16;
-_IG_incl11=_IL_incl11;
-_IG_incl0=_IL_incl0;
-
-_VisitExit();
-}
-
-#if defined(__STDC__) || defined(__cplusplus)
-void _VS4rule_028(_TPPrule_028 _currn,int* _AS0Row,PTGNode* _AS0FieldPrint_pre)
-#else
-void _VS4rule_028(_currn ,_AS0Row,_AS0FieldPrint_pre)
-_TPPrule_028 _currn;
-PTGNode* _AS0FieldPrint_pre;
-int* _AS0Row;
-
-#endif
-{
-dim_t* _IL_incl22;
-dim_t* _IL_incl15;
-int* _IL_incl14;
-int* _IL_incl16;
-dim_t* _IL_incl11;
-Environment* _IL_incl0;
-int _AS1Attr_pre;
-
-_VisitVarDecl()
-_VisitEntry();
-_IL_incl22=_IG_incl22;_IG_incl22= &(_currn->_ATColumnsMinWidth);
-_IL_incl15=_IG_incl15;_IG_incl15= &(_currn->_ATWidth);
-_IL_incl14=_IG_incl14;_IG_incl14= &(_currn->_ATCol);
-_IL_incl16=_IG_incl16;_IG_incl16= &(_currn->_ATTableAttr);
-_IL_incl11=_IG_incl11;_IG_incl11= &(_currn->_ATWidth);
-_IL_incl0=_IG_incl0;_IG_incl0= &(_currn->_ATColEnv);
-_AVNamedTableFieldPrint_post=PTGNULL;
-/*SPC(420)*/
-_AS1Attr_pre=_currn->_ATAttr_pre;
-/*SPC(108)*/
-(*(_CALL_VS_((NODEPTR ,int*)) (VS5MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1,(&( _AS1Attr_pre)));
-_AVNamedTableFieldPrint_post=PTGSeq((* _AS0FieldPrint_pre), _AVNamedTableFieldPrint_post);
-/*SPC(419)*/
-_AVTable_N_Cols=_AVTableDefs__const6;
-/*SPC(610)*/
-_AVTable_Height=GlueDim(_currn->_ATMinHeight, _currn->_ATInhHeight);
-/*SPC(276)*/
-_IG_incl22=_IL_incl22;
-_IG_incl15=_IL_incl15;
-_IG_incl14=_IL_incl14;
-_IG_incl16=_IL_incl16;
-_IG_incl11=_IL_incl11;
-_IG_incl0=_IL_incl0;
+/*SPC(1059)*/
 
 _VisitExit();
 }

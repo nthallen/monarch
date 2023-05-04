@@ -98,16 +98,17 @@ void FreeTree() { }
 #define _COPYCOORD(node)
 #endif
 #if defined(__STDC__) || defined(__cplusplus)
-NODEPTR MkTDunterminated (POSITION *_coordref, NODEPTR _currn)
+NODEPTR MkTableDefs (POSITION *_coordref, NODEPTR _currn)
 #else
-NODEPTR MkTDunterminated (_coordref, _currn)
+NODEPTR MkTableDefs (_coordref, _currn)
 	POSITION *_coordref; NODEPTR _currn;
 #endif
 {
 if (_currn == NULLNODEPTR) return NULLNODEPTR;
-if (IsSymb (_currn, SYMBTDunterminated)) return (_currn);
+if (IsSymb (_currn, SYMBTableDefs)) return (_currn);
 if (IsSymb (_currn, SYMBHGlue)) return (Mkrule_034(_coordref, _currn));
 if (IsSymb (_currn, SYMBVGlue)) return (Mkrule_034(_coordref, _currn));
+if (IsSymb (_currn, SYMBTDunterminated)) return (Mkrule_034(_coordref, _currn));
 if (IsSymb (_currn, SYMBColumns)) return (Mkrule_034(_coordref, _currn));
 if (IsSymb (_currn, SYMBGAField)) return (Mkrule_034(_coordref, _currn));
 if (IsSymb (_currn, SYMBVField)) return (Mkrule_034(_coordref, _currn));
@@ -121,34 +122,33 @@ if (IsSymb (_currn, SYMBGlue)) return (Mkrule_034(_coordref, _currn));
 if (IsSymb (_currn, SYMBGFIELD)) return (Mkrule_034(_coordref, _currn));
 if (IsSymb (_currn, SYMBTable)) return (Mkrule_034(_coordref, _currn));
 return(NULLNODEPTR);
-}/* MkTDunterminated */
+}/* MkTableDefs */
 
 #if defined(__STDC__) || defined(__cplusplus)
-NODEPTR MkTableDefs (POSITION *_coordref, NODEPTR _currn)
+NODEPTR MkTDunterminated (POSITION *_coordref, NODEPTR _currn)
 #else
-NODEPTR MkTableDefs (_coordref, _currn)
+NODEPTR MkTDunterminated (_coordref, _currn)
 	POSITION *_coordref; NODEPTR _currn;
 #endif
 {
 if (_currn == NULLNODEPTR) return NULLNODEPTR;
-if (IsSymb (_currn, SYMBTableDefs)) return (_currn);
-if (IsSymb (_currn, SYMBHGlue)) return (Mkrule_032(_coordref, _currn));
-if (IsSymb (_currn, SYMBVGlue)) return (Mkrule_032(_coordref, _currn));
-if (IsSymb (_currn, SYMBTDunterminated)) return (Mkrule_032(_coordref, _currn));
-if (IsSymb (_currn, SYMBColumns)) return (Mkrule_032(_coordref, _currn));
-if (IsSymb (_currn, SYMBGAField)) return (Mkrule_032(_coordref, _currn));
-if (IsSymb (_currn, SYMBVField)) return (Mkrule_032(_coordref, _currn));
-if (IsSymb (_currn, SYMBWord)) return (Mkrule_032(_coordref, _currn));
-if (IsSymb (_currn, SYMBHBOX)) return (Mkrule_032(_coordref, _currn));
-if (IsSymb (_currn, SYMBTableRef)) return (Mkrule_032(_coordref, _currn));
-if (IsSymb (_currn, SYMBHWord)) return (Mkrule_032(_coordref, _currn));
-if (IsSymb (_currn, SYMBDatum)) return (Mkrule_032(_coordref, _currn));
-if (IsSymb (_currn, SYMBRule)) return (Mkrule_032(_coordref, _currn));
-if (IsSymb (_currn, SYMBGlue)) return (Mkrule_032(_coordref, _currn));
-if (IsSymb (_currn, SYMBGFIELD)) return (Mkrule_032(_coordref, _currn));
-if (IsSymb (_currn, SYMBTable)) return (Mkrule_032(_coordref, _currn));
+if (IsSymb (_currn, SYMBTDunterminated)) return (_currn);
+if (IsSymb (_currn, SYMBHGlue)) return (Mkrule_029(_coordref, _currn));
+if (IsSymb (_currn, SYMBVGlue)) return (Mkrule_029(_coordref, _currn));
+if (IsSymb (_currn, SYMBColumns)) return (Mkrule_029(_coordref, _currn));
+if (IsSymb (_currn, SYMBGAField)) return (Mkrule_029(_coordref, _currn));
+if (IsSymb (_currn, SYMBVField)) return (Mkrule_029(_coordref, _currn));
+if (IsSymb (_currn, SYMBWord)) return (Mkrule_029(_coordref, _currn));
+if (IsSymb (_currn, SYMBHBOX)) return (Mkrule_029(_coordref, _currn));
+if (IsSymb (_currn, SYMBTableRef)) return (Mkrule_029(_coordref, _currn));
+if (IsSymb (_currn, SYMBHWord)) return (Mkrule_029(_coordref, _currn));
+if (IsSymb (_currn, SYMBDatum)) return (Mkrule_029(_coordref, _currn));
+if (IsSymb (_currn, SYMBRule)) return (Mkrule_029(_coordref, _currn));
+if (IsSymb (_currn, SYMBGlue)) return (Mkrule_029(_coordref, _currn));
+if (IsSymb (_currn, SYMBGFIELD)) return (Mkrule_029(_coordref, _currn));
+if (IsSymb (_currn, SYMBTable)) return (Mkrule_029(_coordref, _currn));
 return(NULLNODEPTR);
-}/* MkTableDefs */
+}/* MkTDunterminated */
 
 #if defined(__STDC__) || defined(__cplusplus)
 NODEPTR MkHBunterminated (POSITION *_coordref, NODEPTR _currn)
@@ -1708,9 +1708,9 @@ _currn = (_TPPrule_034) TreeNodeAlloc (sizeof (struct _TPrule_034));
 _currn->_uid=MONTblStackSize; MONTblStackPush(((NODEPTR)_currn));
 #endif
 _currn->_prod = RULErule_034;
-_currn->_desc1 = (_TSPVField) MkVField (_coordref, _desc1);	
+_currn->_desc1 = (_TSPTDunterminated) MkTDunterminated (_coordref, _desc1);	
 if (((NODEPTR)_currn->_desc1) == NULLNODEPTR)	
-	message (DEADLY, "RULE rule_034: root of subtree no. 1 can not be made a VField node ", 0, _coordref);
+	message (DEADLY, "RULE rule_034: root of subtree no. 1 can not be made a TDunterminated node ", 0, _coordref);
 _COPYCOORD(_currn)
 _TERMACT_rule_034;
 (*(VS1MAP[_currn->_prod]))((NODEPTR)_currn);/* bottom up visit */
@@ -1718,12 +1718,11 @@ return ( (NODEPTR) _currn);
 }/* Mkrule_034 */
 
 #if defined(__STDC__) || defined(__cplusplus)
-NODEPTR Mkrule_033 (POSITION *_coordref, NODEPTR _desc1, NODEPTR _desc2)
+NODEPTR Mkrule_033 (POSITION *_coordref, NODEPTR _desc1)
 #else
-NODEPTR Mkrule_033 (_coordref,_desc1,_desc2)
+NODEPTR Mkrule_033 (_coordref,_desc1)
 	POSITION *_coordref;
 	NODEPTR _desc1;
-	NODEPTR _desc2;
 #endif
 {	_TPPrule_033 _currn;
 #ifdef __cplusplus
@@ -1738,9 +1737,6 @@ _currn->_prod = RULErule_033;
 _currn->_desc1 = (_TSPTDunterminated) MkTDunterminated (_coordref, _desc1);	
 if (((NODEPTR)_currn->_desc1) == NULLNODEPTR)	
 	message (DEADLY, "RULE rule_033: root of subtree no. 1 can not be made a TDunterminated node ", 0, _coordref);
-_currn->_desc2 = (_TSPVField) MkVField (_coordref, _desc2);	
-if (((NODEPTR)_currn->_desc2) == NULLNODEPTR)	
-	message (DEADLY, "RULE rule_033: root of subtree no. 2 can not be made a VField node ", 0, _coordref);
 _SETCOORD(_currn)
 _TERMACT_rule_033;
 (*(VS1MAP[_currn->_prod]))((NODEPTR)_currn);/* bottom up visit */
@@ -1748,11 +1744,10 @@ return ( (NODEPTR) _currn);
 }/* Mkrule_033 */
 
 #if defined(__STDC__) || defined(__cplusplus)
-NODEPTR Mkrule_032 (POSITION *_coordref, NODEPTR _desc1)
+NODEPTR Mkrule_032 (POSITION *_coordref)
 #else
-NODEPTR Mkrule_032 (_coordref,_desc1)
+NODEPTR Mkrule_032 (_coordref)
 	POSITION *_coordref;
-	NODEPTR _desc1;
 #endif
 {	_TPPrule_032 _currn;
 #ifdef __cplusplus
@@ -1764,10 +1759,7 @@ _currn = (_TPPrule_032) TreeNodeAlloc (sizeof (struct _TPrule_032));
 _currn->_uid=MONTblStackSize; MONTblStackPush(((NODEPTR)_currn));
 #endif
 _currn->_prod = RULErule_032;
-_currn->_desc1 = (_TSPTDunterminated) MkTDunterminated (_coordref, _desc1);	
-if (((NODEPTR)_currn->_desc1) == NULLNODEPTR)	
-	message (DEADLY, "RULE rule_032: root of subtree no. 1 can not be made a TDunterminated node ", 0, _coordref);
-_COPYCOORD(_currn)
+_SETCOORD(_currn)
 _TERMACT_rule_032;
 (*(VS1MAP[_currn->_prod]))((NODEPTR)_currn);/* bottom up visit */
 return ( (NODEPTR) _currn);
@@ -1790,9 +1782,9 @@ _currn = (_TPPrule_031) TreeNodeAlloc (sizeof (struct _TPrule_031));
 _currn->_uid=MONTblStackSize; MONTblStackPush(((NODEPTR)_currn));
 #endif
 _currn->_prod = RULErule_031;
-_currn->_desc1 = (_TSPTDunterminated) MkTDunterminated (_coordref, _desc1);	
+_currn->_desc1 = (_TSPTableDefs) MkTableDefs (_coordref, _desc1);	
 if (((NODEPTR)_currn->_desc1) == NULLNODEPTR)	
-	message (DEADLY, "RULE rule_031: root of subtree no. 1 can not be made a TDunterminated node ", 0, _coordref);
+	message (DEADLY, "RULE rule_031: root of subtree no. 1 can not be made a TableDefs node ", 0, _coordref);
 _SETCOORD(_currn)
 _TERMACT_rule_031;
 (*(VS1MAP[_currn->_prod]))((NODEPTR)_currn);/* bottom up visit */
@@ -1800,10 +1792,11 @@ return ( (NODEPTR) _currn);
 }/* Mkrule_031 */
 
 #if defined(__STDC__) || defined(__cplusplus)
-NODEPTR Mkrule_030 (POSITION *_coordref)
+NODEPTR Mkrule_030 (POSITION *_coordref, NODEPTR _desc1)
 #else
-NODEPTR Mkrule_030 (_coordref)
+NODEPTR Mkrule_030 (_coordref,_desc1)
 	POSITION *_coordref;
+	NODEPTR _desc1;
 #endif
 {	_TPPrule_030 _currn;
 #ifdef __cplusplus
@@ -1815,6 +1808,9 @@ _currn = (_TPPrule_030) TreeNodeAlloc (sizeof (struct _TPrule_030));
 _currn->_uid=MONTblStackSize; MONTblStackPush(((NODEPTR)_currn));
 #endif
 _currn->_prod = RULErule_030;
+_currn->_desc1 = (_TSPTableDefs) MkTableDefs (_coordref, _desc1);	
+if (((NODEPTR)_currn->_desc1) == NULLNODEPTR)	
+	message (DEADLY, "RULE rule_030: root of subtree no. 1 can not be made a TableDefs node ", 0, _coordref);
 _SETCOORD(_currn)
 _TERMACT_rule_030;
 (*(VS1MAP[_currn->_prod]))((NODEPTR)_currn);/* bottom up visit */
@@ -1838,21 +1834,22 @@ _currn = (_TPPrule_029) TreeNodeAlloc (sizeof (struct _TPrule_029));
 _currn->_uid=MONTblStackSize; MONTblStackPush(((NODEPTR)_currn));
 #endif
 _currn->_prod = RULErule_029;
-_currn->_desc1 = (_TSPTableDefs) MkTableDefs (_coordref, _desc1);	
+_currn->_desc1 = (_TSPVField) MkVField (_coordref, _desc1);	
 if (((NODEPTR)_currn->_desc1) == NULLNODEPTR)	
-	message (DEADLY, "RULE rule_029: root of subtree no. 1 can not be made a TableDefs node ", 0, _coordref);
-_SETCOORD(_currn)
+	message (DEADLY, "RULE rule_029: root of subtree no. 1 can not be made a VField node ", 0, _coordref);
+_COPYCOORD(_currn)
 _TERMACT_rule_029;
 (*(VS1MAP[_currn->_prod]))((NODEPTR)_currn);/* bottom up visit */
 return ( (NODEPTR) _currn);
 }/* Mkrule_029 */
 
 #if defined(__STDC__) || defined(__cplusplus)
-NODEPTR Mkrule_028 (POSITION *_coordref, NODEPTR _desc1)
+NODEPTR Mkrule_028 (POSITION *_coordref, NODEPTR _desc1, NODEPTR _desc2)
 #else
-NODEPTR Mkrule_028 (_coordref,_desc1)
+NODEPTR Mkrule_028 (_coordref,_desc1,_desc2)
 	POSITION *_coordref;
 	NODEPTR _desc1;
+	NODEPTR _desc2;
 #endif
 {	_TPPrule_028 _currn;
 #ifdef __cplusplus
@@ -1864,9 +1861,12 @@ _currn = (_TPPrule_028) TreeNodeAlloc (sizeof (struct _TPrule_028));
 _currn->_uid=MONTblStackSize; MONTblStackPush(((NODEPTR)_currn));
 #endif
 _currn->_prod = RULErule_028;
-_currn->_desc1 = (_TSPTableDefs) MkTableDefs (_coordref, _desc1);	
+_currn->_desc1 = (_TSPTDunterminated) MkTDunterminated (_coordref, _desc1);	
 if (((NODEPTR)_currn->_desc1) == NULLNODEPTR)	
-	message (DEADLY, "RULE rule_028: root of subtree no. 1 can not be made a TableDefs node ", 0, _coordref);
+	message (DEADLY, "RULE rule_028: root of subtree no. 1 can not be made a TDunterminated node ", 0, _coordref);
+_currn->_desc2 = (_TSPVField) MkVField (_coordref, _desc2);	
+if (((NODEPTR)_currn->_desc2) == NULLNODEPTR)	
+	message (DEADLY, "RULE rule_028: root of subtree no. 2 can not be made a VField node ", 0, _coordref);
 _SETCOORD(_currn)
 _TERMACT_rule_028;
 (*(VS1MAP[_currn->_prod]))((NODEPTR)_currn);/* bottom up visit */

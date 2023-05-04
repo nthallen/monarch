@@ -6,7 +6,7 @@
 # --------------------
 # 
 # This script can be run from a Windows Cmd shell as:
-# > PowerShell -ExecutionPolicy Bypass ./cygwin-monarch-setup.ps1
+# > PowerShell -ExecutionPolicy Bypass ./cygwin-monarch-install.ps1
 #
 # ---------
 # Uninstall:
@@ -14,7 +14,7 @@
 #
 # If you would like to reverse the actions of this script
 # (i.e. delete the flight group), you can issue the command:
-# > PowerShell -ExecutionPolicy Bypass ./cygwin-monarch-setup.ps1 -uninstall
+# > PowerShell -ExecutionPolicy Bypass ./cygwin-monarch-install.ps1 -uninstall
 
 param (
   [switch]$uninstall = $false,

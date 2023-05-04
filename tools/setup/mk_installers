@@ -48,15 +48,6 @@ qurl=`echo $exp_url | sed -e 's/\//\\\\\//g'`
 # Check that target directory exists
 [ -d $tgtdir ] || nl_error "Target directory '$tgtdir' not found"
 
-# Read /usr/local/share/monarch/setup/cygwin-monarch-install.ps1
-#   and replace the blank $exp_option definition with this
-#   instruments.
-
-ps1out=cygwin-monarch-$exp_basename-install.ps1
-# echo sed -e "\"s/exp_option = ''/exp_option = '$exp_basename:$qurl'/\""
-sed -e "s/exp_option = ''/exp_option = '-E $exp_basename:$qurl'/" \
-  $srcdir/$ps1in >$tgtdir/$ps1out
-
 # Read /usr/local/share/monarch/setup/monarch-install.sh
 #   and insert code at the top to add the command line option
 #   -E basename:URL for this instrument
@@ -65,3 +56,16 @@ sed -e "s/exp_option=''/exp_option='$exp_basename:$qurl'/" \
     -e "s/monarch-install/monarch-$exp_basename-install/" \
   $srcdir/$shin >$tgtdir/$shout
 chmod +x $tgtdir/$shout
+
+# Read /usr/local/share/monarch/setup/cygwin-monarch-install.ps1
+#   and replace the blank $exp_option definition with this
+#   instruments.
+ps1out=cygwin-monarch-$exp_basename-install.ps1
+# echo sed -e "\"s/exp_option = ''/exp_option = '$exp_basename:$qurl'/\""
+#sed -e "s/exp_option = ''/exp_option = '-E $exp_basename:$qurl'/" \
+#  $srcdir/$ps1in >$tgtdir/$ps1out
+sedrep="{ s/monarch-install/monarch-$exp_basename-install/g; p }"
+{ sed -ne "1,/@'/ $sedrep" $srcdir/$ps1in
+  cat $tgtdir/$shout
+  sed -ne "/'@/,$ $sedrep" $srcdir/$ps1in
+} >$tgtdir/$ps1out

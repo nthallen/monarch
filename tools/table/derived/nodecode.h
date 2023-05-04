@@ -8,8 +8,8 @@ extern int LHSMAP[];
 
 #define IsSymb(_n,_c) (LHSMAP[(_n)->_prod] == (_c))
 
-#define SYMBTDunterminated 0
-#define SYMBTableDefs 1
+#define SYMBTableDefs 0
+#define SYMBTDunterminated 1
 #define SYMBHBunterminated 2
 #define SYMBHBFields 3
 #define SYMBG3 4
@@ -53,8 +53,8 @@ extern int LHSMAP[];
 #define RULErule_03 1
 #define RULErule_06 2
 #define RULErule_07 3
-#define RULErule_030 4
-#define RULErule_031 5
+#define RULErule_028 4
+#define RULErule_029 5
 #define RULErule_032 6
 #define RULErule_033 7
 #define RULErule_034 8
@@ -71,8 +71,8 @@ extern int LHSMAP[];
 #define RULErule_021 19
 #define RULErule_022 20
 #define RULErule_023 21
-#define RULErule_028 22
-#define RULErule_029 23
+#define RULErule_030 22
+#define RULErule_031 23
 #define RULErule_16 24
 #define RULErule_15 25
 #define RULErule_14 26

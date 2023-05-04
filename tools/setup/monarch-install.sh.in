@@ -3,7 +3,7 @@
 function print_usage {
 cat 1>&2 <<'EOF'
 # Usage:
-#   ./monarch-install [ -E moudi:nthallen/keutsch-moudi.git ] [-n] [-h] [-S]
+#   ./monarch-install.sh [ -E moudi:nthallen/keutsch-moudi.git ] [-n] [-h] [-S]
 #
 # -E <basename>:<URL>
 #    Also install the instrument source code. <basename> is the
@@ -76,12 +76,44 @@ fi
 
 myuser=`id -un`
 if [ $machine = Cygwin ]; then
-   # Verify that the flight group @FLTGRP@ exists and user is a member
-  id -Gn | grep -q '\b@FLTGRP@\b' || {
-    echo "monarch_install: user '$myuser' does not appear to be a member"
-    echo "of group '@FLTGRP@'. If you have not run cygwin-monarch-install.ps1,"
-    echo "do so now. Otherwise try restarting the system and then rerun"
-    echo "cygwin-monarch-install.ps1."
+  # Check and fix permissions on start menu
+  cygdir='/cygdrive/c/ProgramData/Microsoft/Windows/Start Menu/Programs/Cygwin'
+  cyglnk="$cygdir/Cygwin64 Terminal.lnk"
+  if [ -e "$cyglnk" ]; then
+    cygperm=`stat --format='%a' "$cyglnk"`
+    [ "$cygperm" = "775" ] || {
+      chmod 0775 "$cyglnk"
+      echo "monarch-install.sh: Permission fix applied for Cygwin Start Menu Link"
+    }
+  fi
+  # Apply vi annoyance fix if it isn't already present
+  [ -f ~/.exrc ] || {
+    touch ~/.exrc
+    echo "monarch-install.sh: Installed vi startup error mitigation"
+  }
+  # Verify that the monarch group @FLTGRP@ exists and user is a member
+  id | grep -q '(@FLTGRP@)' || {
+    if id | grep -q "(`hostname`+@FLTGRP@)"; then
+      echo "monarch-install.sh: The flight group '@FLTGRP@' has been created,"
+      echo "but it is manifested under Cygwin here as '`hostname`+@FLTGRP@'."
+      if [ -f /etc/group ]; then
+        echo "It looks like you may already have a mitigation in place in"
+        echo "/etc/group. Try closing this terminal session, opening another,"
+        echo "and rerunning this script. If that doesn't work, seek help from"
+        echo "the developer."
+      else
+        mkgroup -l -g @FLTGRP@ | sed -e "s/^`hostname`+//" > /etc/group
+        echo "A workaround has been applied, but you need to exit this terminal"
+        echo "session, open a new one and re-execute this script"
+      fi
+      echo "This script was executed as '$0'"
+      echo "from the directory '$PWD'"
+    else
+      echo "monarch-install.sh: user '$myuser' does not appear to be a member"
+      echo "of group '@FLTGRP@'. If you have not run cygwin-monarch-install.ps1,"
+      echo "do so now. Otherwise try restarting the system and then rerun"
+      echo "cygwin-monarch-install.ps1."
+    fi
     echo
     echo -n "Hit Enter to terminate:"
     read j
@@ -122,17 +154,36 @@ if [ $machine = Cygwin ]; then
   fi
 else
   # other operating systems (where we have sudo, among other things)
-  nl_error "setup for non-Cygwin is not yet complete"
   # Check if @FLTUSER@ user exists and add if necessary
   if grep -q "^@FLTUSER@:" /etc/passwd; then
     echo "monarch_install.sh: @FLTUSER@ user already exists"
   else
+    echo "monarch-install.sh: Need to create user @FLTUSER@ and group @FLTGRP@"
     $sudo addgroup @FLTGRP@
+    echo "monarch-install.sh: @FLTGRP@ group created"
     $sudo adduser --disabled-password --gecos "@FLTUSER@ user" --no-create-home --ingroup @FLTGRP@ @FLTUSER@
-    echo "monarch_setup.sh: @FLTUSER@ user created"
+    echo "monarch-install.sh: @FLTUSER@ user created"
   fi
   $sudo adduser $myuser @FLTGRP@
 fi
+id -Gn | grep -q '\b@FLTGRP@\b' || {
+  echo "monarch-install.sh: user '$myuser' does not appear to be a member"
+  echo "of group '@FLTGRP@'. If this script just created group @FLTGRP@,"
+  echo "you will need to close your terminal session, open another, and"
+  echo "rerun this script in order to complete the installation"
+  echo
+  echo -n "Hit Enter to terminate:"
+  read j
+  exit 1
+}
+
+umask 02
+echo "monarch-install.sh: checking permissions on /usr/local/src"
+[ -d /usr/local/src ] || $sudo mkdir -p -m 02775 /usr/local/src
+uls_g=`stat --format '%G' /usr/local/src`
+[ "$uls_g" = "@FLTGRP@" ] || $sudo chgrp @FLTGRP@ /usr/local/src
+uls_a=`stat --format '%a' /usr/local/src`
+[ "$uls_a" = "2775" ] || $sudo chmod 02775 /usr/local/src
 
 if [ $installagent = yes ]; then
   if [ $machine = Cygwin ]; then
@@ -266,6 +317,7 @@ else
   cd /usr/local/src/monarch/git
   build_ok=no
   ./build.sh && $sudo ./build.sh install && build_ok=yes
+  [ $build_ok = yes ] || nl_error "Monarch build or install failed"
   [ $build_ok = yes -a $machine != Cygwin ] &&
     /usr/local/share/monarch/setup/monarch_setup.sh
 
@@ -328,7 +380,7 @@ if [ -n "$exp_base" -a -n "$exp_url" ]; then
   arp_das_matlab_dfs_wrap_path=`wrap_path $arp_das_matlab_path/dfs`
 
   cat >$matscriptfile <<EOF
-fprintf(1,'Running $scriptname to setup Matlab PATH for MOUDI\n');
+fprintf(1,'Running $scriptname to setup Matlab PATH for $exp_base\n');
 addpath('$arp_das_matlab_wrap_path');
 addpath('$arp_das_matlab_ne_wrap_path');
 addpath('$arp_das_matlab_dfs_wrap_path');

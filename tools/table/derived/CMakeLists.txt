@@ -10,12 +10,14 @@ add_executable(nctable driver.cc clpintf.cc clp.cc csm.cc obstack.cc obsave.cc d
 message("Pre-conditional")
 if (NOT DEFINED monarch_BINARY_DIR)
   message("no monarch_BINARY_DIR")
-  link_directories( /usr/local/lib )
+  target_link_directories(nctable PRIVATE /usr/local/lib )
 else (NOT DEFINED monarch_BINARY_DIR)
   message("monarch_BINARY_DIR is ${monarch_BINARY_DIR}")
   target_include_directories(nctable PRIVATE
-    ${monarch_SOURCE_DIR}/tools/oui/src)
+    ${monarch_SOURCE_DIR}/tools/oui/src
+    ${monarch_SOURCE_DIR}/libs/nl)
 endif()
 
+add_compile_definitions(register=)
 target_link_libraries(nctable dasio nl ncurses pthread)
 install(TARGETS nctable RUNTIME DESTINATION bin)
