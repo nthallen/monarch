@@ -76,15 +76,38 @@ fi
 
 myuser=`id -un`
 if [ $machine = Cygwin ]; then
-   # Verify that the flight group @FLTGRP@ exists and user is a member
+  # Check and fix permissions on start menu
+  cygdir='/cygdrive/c/ProgramData/Microsoft/Windows/Start Menu/Programs/Cygwin'
+  cyglnk="$cygdir/Cygwin64 Terminal.lnk"
+  if [ -e "$cyglnk" ]; then
+    cygperm=`stat --format='%a' "$cyglnk"`
+    [ "$cygperm" = "775" ] || {
+      chmod 0775 "$cyglnk"
+      echo "monarch-install.sh: Permission fix applied for Cygwin Start Menu Link"
+    }
+  fi
+  # Apply vi annoyance fix if it isn't already present
+  [ -f ~/.exrc ] || {
+    touch ~/.exrc
+    echo "monarch-install.sh: Installed vi startup error mitigation"
+  }
+  # Verify that the monarch group @FLTGRP@ exists and user is a member
   id | grep -q '(@FLTGRP@)' || {
     if id | grep -q "(`hostname`+@FLTGRP@)"; then
       echo "monarch-install.sh: The flight group '@FLTGRP@' has been created,"
       echo "but it is manifested under Cygwin here as '`hostname`+@FLTGRP@'."
-      echo "This requires a somewhat complex workaround involving mkgroup"
-      echo "and a change to /etc/nsswitch.conf. Once those changes have"
-      echo "been made, you can rerun this script (monarch-install.sh)"
-      echo "from within a new Cygwin terminal session."
+      if [ -f /etc/group ]; then
+        echo "It looks like you may already have a mitigation in place in"
+        echo "/etc/group. Try closing this terminal session, opening another,"
+        echo "and rerunning this script. If that doesn't work, seek help from"
+        echo "the developer."
+      else
+        mkgroup -l -g @FLTGRP@ | sed -e "s/^`hostname`+//" > /etc/group
+        echo "A workaround has been applied, but you need to exit this terminal"
+        echo "session, open a new one and re-execute this script"
+      fi
+      echo "This script was executed as '$0'"
+      echo "from the directory '$PWD'"
     else
       echo "monarch-install.sh: user '$myuser' does not appear to be a member"
       echo "of group '@FLTGRP@'. If you have not run cygwin-monarch-install.ps1,"
