@@ -1,6 +1,6 @@
 <package> meerstetter
 <include> "meerstetter_int.h"
-<include> msg
+<include> msg oui
 <follow> msg
 <opts> "a:ep:"
 <sort>
@@ -13,10 +13,11 @@
 The -a option takes a comma-separated list of address:mnemonic pairs,
 where address is the RS485 device address and mnemonic of the device.
 <blank>
-The driver will use the message header -h option value to also specify
-the name of the TM 'Receive' name and the command channel name. The
-default name is 'ME', which is also the default used by
-Meerstetter_gen when generating code for Module Meerstetter.
+The driver will use the AppID name to also specify the name of the
+TM 'Receive' name and the command channel name. The default name is
+'ME', which is also the default used by Meerstetter_gen when
+generating code for Module Meerstetter. The name can be changed
+using the -n option.
 
 <comment>
   e.g. -a 1:LTEC,2:CellTC
@@ -25,7 +26,6 @@ Meerstetter_gen when generating code for Module Meerstetter.
   case 'a': address_opts = optarg; break;
   case 'e': rs485_echos = true; break;
   case 'p': Me_Ser_path = optarg; break;
-  case 'h': Me_Name = optarg; break;
 
 <package> appid_default
 <include> "dasio/appid.h"
