@@ -1,4 +1,3 @@
-#include <devctl.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
