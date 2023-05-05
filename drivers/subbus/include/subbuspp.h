@@ -26,7 +26,7 @@ using namespace DAS_IO;
  * that is not this interface.]
  *
  */
-class subbuspp : Client {
+class subbuspp : public Client {
   public:
     /**
      * @param service The name of the service
