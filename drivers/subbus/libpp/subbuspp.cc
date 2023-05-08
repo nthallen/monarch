@@ -13,6 +13,7 @@
 subbuspp::subbuspp(const char *service, const char *sub_service)
     : Client(service, sizeof(subbusd_rep_t)+1, 0, service, sub_service) {
   conn_fail_reported = true;
+  sb_reply = (subbusd_rep_t *)buf;
 }
 
 subbuspp::~subbuspp() {}
@@ -114,7 +115,6 @@ int subbuspp::load() {
     msg( -2, "Error opening subbusd: %s", strerror(errno));
     return 0;
   }
-  sb_reply = (subbusd_rep_t *)buf;
   rv = send_to_subbusd( SBC_GETCAPS, NULL, 0, SBRT_CAP );
   if ( rv != SBS_OK )
     msg( 4, "Expected SBS_OK while getting capabilities" );
