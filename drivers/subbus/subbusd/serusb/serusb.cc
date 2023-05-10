@@ -150,7 +150,8 @@ serusb_if::serusb_if(const char *port)
 void serusb_if::enqueue_request(uint16_t type, subbusd_serusb_client *clt,
       const char *request, subbusd_rep_t *repp, uint16_t n_reads) {
   nl_assert(type == SBDR_TYPE_INTERNAL || (clt != 0 && repp != 0));
-  msg(MSG_DBG(1), "%s: Enqueing request: '%s'", iname, ascii_esc(request));
+  msg(MSG_DBG(1), "%s: [Req%s pending: Enqueing request: '%s'", iname,
+    request_pending ? "" : " not", ascii_esc(request));
   reqs.push_back(serusb_request(type, clt, request, repp, n_reads));
   process_requests();
 }
