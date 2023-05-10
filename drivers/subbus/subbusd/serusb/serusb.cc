@@ -503,6 +503,7 @@ void serusb_if::process_requests() {
     } else {
       request_pending = true;
       TO.Set(1,0); // set_timeout(1);
+      flags |= Fl_Timeout;
     }
   }
   request_processing = false;
