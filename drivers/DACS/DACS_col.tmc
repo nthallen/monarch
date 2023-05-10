@@ -4,7 +4,7 @@
   subbuspp *sb_DACS;
 
   void DACS_init() {
-    sb_DACS = new subbuspp("subbus", 0);
+    sb_DACS = new subbuspp("subbus", "serusb");
     sb_DACS->load();
   }
 
