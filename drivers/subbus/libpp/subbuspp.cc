@@ -116,8 +116,11 @@ int subbuspp::load() {
     return 0;
   }
   rv = send_to_subbusd( SBC_GETCAPS, NULL, 0, SBRT_CAP );
-  if ( rv != SBS_OK )
-    msg( 4, "Expected SBS_OK while getting capabilities" );
+  if ( rv != SBS_OK ) {
+    msg(2, "%s: Error %d getting capabilities. Detaching from device", iname);
+    close();
+    return 0;
+  }
   subbus_subfunction = sb_reply->data.capabilities.subfunc;
   subbus_features = sb_reply->data.capabilities.features;
   strncpy(local_subbus_name, sb_reply->data.capabilities.name, SUBBUS_NAME_MAX);
