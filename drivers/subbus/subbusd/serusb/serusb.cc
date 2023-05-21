@@ -661,7 +661,7 @@ subbusd_serusb::subbusd_serusb(const char *port, int baud_rate)
     : subbusd_flavor("serusb", new_subbusd_serusb_client) {
   serusb = new serusb_if(port);
   serusb->reference();
-  serusb->setup(baud_rate, 8, 'n', 1, 1, 0);
+  serusb->setup(baud_rate, 8, 'n', 1, -1, 0); // Trying canonical mode
   serusb->flush_input();
   nl_assert(subbusd_core::subbusd);
   subbusd_core::subbusd->srvr.ELoop.add_child(serusb);
@@ -678,6 +678,7 @@ void subbusd_serusb::init_subbus() {
   /* Enqueue initialization requests */
   enqueue_request( SBDR_TYPE_INTERNAL, 0, "\n", 0, 0 );
   enqueue_request( SBDR_TYPE_INTERNAL, 0, "V\n", 0, 0 );
+  enqueue_request( SBDR_TYPE_INTERNAL, 0, "T\n", 0, 0 );
 }
 
 void subbusd_serusb::shutdown_subbus(void) {
