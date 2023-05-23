@@ -15,19 +15,28 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # I will skip the serial versions
 
 include( ../../../oui_setup.cmake )
-OUI_FILE(qclidacsd.oui)
-add_executable(qclidacsd qclid.cc qcliutil.cc qclidacs.cc qclidacsdoui.cc)
-target_link_libraries(qclidacsd dasio nl pthread subbuspp)
+# OUI_FILE(qclidacsd.oui)
+# add_executable(qclidacsd qclid.cc qcliutil.cc qclidacs.cc qclidacsdoui.cc)
+# target_link_libraries(qclidacsd dasio nl pthread subbuspp)
 
-OUI_FILE(qclidprog.oui)
-add_executable(qclidprog qcliprog.cc qcliutil.cc qclidacs.cc qclidprogoui.cc)
-target_link_libraries(qclidprog dasio nl pthread subbuspp)
+# OUI_FILE(qclidprog.oui)
+# add_executable(qclidprog qcliprog.cc qcliutil.cc qclidacs.cc qclidprogoui.cc)
+# target_link_libraries(qclidprog dasio nl pthread subbuspp)
 
+OUI_FILE(qclisd.oui)
+add_executable(qclisd qclid.cc qclisdoui.cc qcliutil.cc qcliser.cc qcliver.cc)
+target_link_libraries(qclisd dasio nl pthread)
+
+OUI_FILE(qclisprog.oui)
+add_executable(qclisprog qcliprog.cc qcliutil.cc qcliser.cc qclisprogoui.cc qcliver.cc)
+target_link_libraries(qclisprog dasio nl pthread)
 #add_executable(qclidtest qclitest.cc qcliutil.cc qclidacs.cc qclidtestoui.cc)
 
 install(TARGETS
-  qclidacsd
-  qclidprog
+# qclidacsd
+# qclidprog
+  qclisd
+  qclisprog
   RUNTIME DESTINATION bin)
 install(FILES
   hsatod.h

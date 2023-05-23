@@ -7,9 +7,9 @@
 #include "qcliutil.h"
 #include "oui.h"
 
-int qcli_dacs::board_number = 0;
+int qcli_util::board_number = 0;
 
-qcli_dacs::qcli_dacs(/* const char *service, const char *sub_service */)
+qcli_util::qcli_util(/* const char *service, const char *sub_service */)
       : vreq(0) {
   sb = new subbuspp(/* service, subservice */ "subbus", "serusb");
   subfunction = sb->load();
@@ -25,13 +25,13 @@ qcli_dacs::qcli_dacs(/* const char *service, const char *sub_service */)
   sbwr_chk(board_base+0xC, 0); // Reset the controller
 }
 
-void qcli_dacs::sbwr_chk( uint16_t addr, uint16_t val ) {
+void qcli_util::sbwr_chk( uint16_t addr, uint16_t val ) {
   if (sb->write_ack(addr, val) == 0)
     msg( 3, "No acknowledge writing to QCLI at 0x%03X",
       addr );
 }
 
-uint16_t qcli_dacs::sbw_chk(uint16_t addr) {
+uint16_t qcli_util::sbw_chk(uint16_t addr) {
   uint16_t data;
   if (sb->read_ack(addr, &data) == 0) {
     msg(3, "No acknowledge reading from QCLI at 0x%03X",
@@ -48,36 +48,28 @@ uint16_t qcli_dacs::sbw_chk(uint16_t addr) {
    NOTE: For qclidacs, we have always used the delay regardless of
    the status of fresh.
 */
-uint16_t qcli_dacs::read_qcli(bool fresh) {
+uint16_t qcli_util::read_qcli(bool fresh) {
   delay(10);
   return sbw_chk(qcli_raddr);
 }
 
-void qcli_dacs::write_qcli(uint16_t value) {
+void qcli_util::write_qcli(uint16_t value) {
   sbwr_chk(qcli_waddr, value);
 }
 
-uint16_t qcli_dacs::wr_rd_qcli(uint16_t value) {
+uint16_t qcli_util::wr_rd_qcli(uint16_t value) {
   sbwr_chk( qcli_wsaddr, value );
   return read_qcli(1);
 }
 
-void qcli_dacs::wr_stop_qcli(uint16_t value) {
+void qcli_util::wr_stop_qcli(uint16_t value) {
   sbwr_chk(qcli_wsaddr, value);
 }
 
-void qcli_dacs::delay(int msec) {
-  struct timespec tp;
-  tp.tv_sec = 0;
-  tp.tv_nsec = msec * 1000000L;
-  if (nanosleep( &tp, NULL ) != 0)
-    msg(3, "nano_sleep saw signal");
-}
-
 /**
- @return zero on success
+ @return number of words that failed to verify, hence zero on success
  */
-int qcli_dacs::verify_block(uint16_t addr, uint16_t *prog, int blocklen) {
+int qcli_util::verify_block(uint16_t addr, uint16_t *prog, int blocklen) {
   static subbus_mread_req *vreq = 0;
   uint16_t ctrlr_status;
   uint16_t remaining;
@@ -162,7 +154,7 @@ void qclisrvr_init(int argc, char **argv) {
   while ((c = getopt(argc, argv, opt_string)) != -1) {
     switch (c) {
       case 'd':
-        qcli_dacs::board_number = atoi(optarg);
+        qcli_util::board_number = atoi(optarg);
         break;
       case '?':
         msg(3, "Unrecognized Option -%c", optopt);

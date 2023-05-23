@@ -26,7 +26,7 @@ bitdef qcli_bits[] = {
 };
 
 #define REPORT_MAX 80
-void qcli_dacs::report_status(uint16_t status) {
+void qcli_util::report_status(uint16_t status) {
   int i;
   char buf[REPORT_MAX+1];
   int nb;
@@ -47,7 +47,7 @@ void qcli_dacs::report_status(uint16_t status) {
  * @param dump If true, include full status dump in error report
  * @return false if the masked status is equal to value.
  **/
-bool qcli_dacs::check_status(uint16_t status, uint16_t mask,
+bool qcli_util::check_status(uint16_t status, uint16_t mask,
         uint16_t value, const char *text, bool dump) {
   if ( (status & mask) == value ) return false;
   qcli_error_reported = true;
@@ -62,7 +62,7 @@ bool qcli_dacs::check_status(uint16_t status, uint16_t mask,
      0 - prints errors only
      1 - prints progress and errors
 */
-int qcli_dacs::diags(int verbose) {  
+int qcli_util::diags(int verbose) {  
   uint16_t qcli_status;
 
   qcli_error_reported = false;
@@ -163,4 +163,12 @@ int qcli_dacs::diags(int verbose) {
     "Not IDLE after STOP", 1 );
 
   return !qcli_error_reported;
+}
+
+void qcli_util::delay(int msec) {
+  struct timespec tp;
+  tp.tv_sec = 0;
+  tp.tv_nsec = msec * 1000000L;
+  if (nanosleep( &tp, NULL ) != 0)
+    msg(3, "nano_sleep saw signal");
 }

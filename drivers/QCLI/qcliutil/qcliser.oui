@@ -1,8 +1,8 @@
 <package> qcli
 <include> "qcliutil.h"
 <follow> msg
-<opts> "d:"
+<opts> "p:"
 <sort>
-	-d <serial_port>
+	-p <serial_port>
 <init>
   qclisrvr_init(argc, argv);

@@ -53,9 +53,9 @@
 #define QCLI_WRITE_TPRE 0x0F00
 #define QCLI_BAD_CMD 0x1000
 
-class qcli_dacs {
+class qcli_util {
   public:
-    qcli_dacs(/* const char *service, const char *sub_service */);
+    qcli_util(/* const char *service, const char *sub_service */);
     void report_status(uint16_t status);
     uint16_t read_qcli(bool fresh);
     void write_qcli(uint16_t value);

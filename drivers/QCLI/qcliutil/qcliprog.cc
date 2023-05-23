@@ -143,7 +143,7 @@ uint16_t *load_program( long *proglenp ) {
       break;
   }
   qcli_readnum( &value, &count );
-  if ( count != 1 )	msg( 3, "First count != 1!" );
+  if ( count != 1 ) msg( 3, "First count != 1!" );
   proglen = value ? value : 65536L;
   prog = (uint16_t*)new_memory( proglen * sizeof(uint16_t) );
   prog[ip++] = proglen;
@@ -158,7 +158,7 @@ uint16_t *load_program( long *proglenp ) {
   return prog;
 }
 
-int write_block(qcli_dacs *qcli, uint16_t addr, uint16_t *prog, int blocklen ) {
+int write_block(qcli_util *qcli, uint16_t addr, uint16_t *prog, int blocklen ) {
   uint16_t chksum = 0, qcli_status;
   uint16_t startaddr = addr;
   uint16_t last_word = prog[addr];
@@ -251,7 +251,7 @@ int write_block(qcli_dacs *qcli, uint16_t addr, uint16_t *prog, int blocklen ) {
   return 0;
 }
 
-void write_program(qcli_dacs *qcli, uint16_t *prog, long proglen ) {
+void write_program(qcli_util *qcli, uint16_t *prog, long proglen ) {
   uint16_t addr = 0;
   while ( proglen > 0 ) {
     int blocklen = proglen > 128 ? 128 : proglen;
@@ -263,7 +263,7 @@ void write_program(qcli_dacs *qcli, uint16_t *prog, long proglen ) {
 }
 
 /* returns zero if everything checks out */
-int verify_program(qcli_dacs *qcli, uint16_t *prog, long proglen) {
+int verify_program(qcli_util *qcli, uint16_t *prog, long proglen) {
   uint16_t addr = 0;
   int rv = 0;
   while ( proglen > 0 ) {
@@ -277,7 +277,7 @@ int verify_program(qcli_dacs *qcli, uint16_t *prog, long proglen) {
   return rv;
 }
 
-void write_verify_program(qcli_dacs *qcli, uint16_t *prog, long proglen) {
+void write_verify_program(qcli_util *qcli, uint16_t *prog, long proglen) {
   uint16_t addr = 0;
 
   while ( proglen > 0 ) {
@@ -328,7 +328,7 @@ int main( int argc, char **argv ) {
   msg(0, "Loaded %ld words from %s",
     proglen, ifilename );
     
-  qcli_dacs *qcli = new qcli_dacs();
+  qcli_util *qcli = new qcli_util();
   for (i = 0; i < 4; ++i) {
     if ( qcli->diags( 0 ) ) break;
   }

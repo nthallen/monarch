@@ -7,7 +7,7 @@ using namespace DAS_IO;
 
 class QCLI_Command : public Cmd_reader {
   public:
-    QCLI_Command(qcli_dacs *qcli, const char *qcli_name);
+    QCLI_Command(qcli_util *qcli, const char *qcli_name);
     bool app_input();
   protected:
 
@@ -21,7 +21,7 @@ class QCLI_Command : public Cmd_reader {
     } qcli_cmd_def, *qcli_cmd_defp;
 
     qcli_cmd_defp parse_cmd(unsigned char *cmd);
-    qcli_dacs *qcli;
+    qcli_util *qcli;
     const char *qcli_name;
     static qcli_cmd_def qcli_cmds[];
 };

@@ -34,7 +34,7 @@ QCLI_Command::qcli_cmd_def QCLI_Command::qcli_cmds[] = {
   { XX, NULL, 0, 0 }
 };
 
-QCLI_Command::QCLI_Command(qcli_dacs *qcli, const char *qcli_name)
+QCLI_Command::QCLI_Command(qcli_util *qcli, const char *qcli_name)
     : Cmd_reader("Cmd", 40, qcli_name),
       qcli(qcli),
       qcli_name(qcli_name) {
@@ -148,7 +148,7 @@ int main( int argc, char **argv ) {
   AppID.report_startup();
   const char *qcli_name = AppID.name;
   
-  { qcli_dacs *qcli = new qcli_dacs();
+  { qcli_util *qcli = new qcli_util();
     if (qcli->diags(0)) /* for now, ignore the result, just log */
       msg(0,"QCLI Passed Diagnostics");
 
