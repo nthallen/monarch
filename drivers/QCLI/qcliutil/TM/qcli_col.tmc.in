@@ -1,5 +1,6 @@
 %{
-  #include "subbus.h"
+	#include "sspdrv.h"
+  #include "qclid.h"
   ssp_data_t SSP@SUFFIX@;
   qcli_data_t QCLI@SUFFIX@;
 %}

@@ -14,12 +14,12 @@
   @SSPRATE@ SSP@SUFFIX@_SN  @Panel@QCLI@SUFFIX@_stat SN
   1 QCLI@SUFFIX@_Stale  @Panel@QCLI@SUFFIX@_stat Stale
   @SSPRATE@ SSP@SUFFIX@_Stale   @Panel@QCLI@SUFFIX@_stat Stale
-  1 QCLI@SUFFIX@_err    @Panel@QCLI@SUFFIX@_stat err %.0lf
-  1 QCLI@SUFFIX@_fifodep @Panel@QCLI@SUFFIX@_stat fifodep
+# 1 QCLI@SUFFIX@_err    @Panel@QCLI@SUFFIX@_stat err %.0lf
+# 1 QCLI@SUFFIX@_fifodep @Panel@QCLI@SUFFIX@_stat fifodep
   1 QCLI@SUFFIX@_flash   @Panel@QCLI@SUFFIX@_stat flash
   1 QCLI@SUFFIX@_mode    @Panel@QCLI@SUFFIX@_stat mode %.0lf
-  1 QCLI@SUFFIX@_rw      @Panel@QCLI@SUFFIX@_stat rw %.0lf
-  1 QCLI@SUFFIX@_present:QCLI@SUFFIX@_CS:11 @Panel@QCLI@SUFFIX@_stat status
+# 1 QCLI@SUFFIX@_rw      @Panel@QCLI@SUFFIX@_stat rw %.0lf
+# 1 QCLI@SUFFIX@_present:QCLI@SUFFIX@_CS:11 @Panel@QCLI@SUFFIX@_stat status
   1 QCLI@SUFFIX@_laser:QCLI@SUFFIX@_s:12 @Panel@QCLI@SUFFIX@_stat status
   1 QCLI@SUFFIX@_cordte:QCLI@SUFFIX@_s:11 @Panel@QCLI@SUFFIX@_stat status
   1 QCLI@SUFFIX@_cmderr:QCLI@SUFFIX@_s:13 @Panel@QCLI@SUFFIX@_stat status

@@ -24,7 +24,6 @@ Moduledef QCLI [ SUFFIX= ADDR=0x1000 ACQCFG=AB3R RESET=# SSPRATE=1 AMP3=# Panel=
 }
 
 mode (default,ignore,amp,ampignore,noise,noiseignore) {
-  Module DACS
   tmcbase = qcli_types.tmc
   tmcbase = waves@SUFFIX@.tmc:
   tmcbase = QCLI@SUFFIX@.tmc:qcli.tmc.in

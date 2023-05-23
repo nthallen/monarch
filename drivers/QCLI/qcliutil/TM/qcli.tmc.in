@@ -11,7 +11,7 @@ Group QCLI@SUFFIX@_grp ( QCLI@SUFFIX@_Wave, QCLI@SUFFIX@_s ) {
   QCLI@SUFFIX@_Stale = QCLI@SUFFIX@_obj->Stale();
   QCLI@SUFFIX@_obj->synch();
 }
-TM 1 HZ QCLI_CS_t QCLI@SUFFIX@_CS; Address QCLI@SUFFIX@_CS @ADDR@;
+/* TM 1 HZ QCLI_CS_t QCLI@SUFFIX@_CS; Address QCLI@SUFFIX@_CS @ADDR@; */
 
 TM "Receive" SSP@SUFFIX@ 1;
 
