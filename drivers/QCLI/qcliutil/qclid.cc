@@ -13,7 +13,7 @@
 #include "nl_assert.h"
 #include "qcliutil.h"
 #include "oui.h"
-#include "qclidacsd.h"
+#include "qcli_cmd.h"
 #include "qclid.h"
 
 using namespace DAS_IO;
@@ -31,6 +31,7 @@ QCLI_Command::qcli_cmd_def QCLI_Command::qcli_cmds[] = {
   { D2, "D2", 1, 0 },
   { D3, "D3", 1, 0 },
   { QU, "QU", 0, 0 },
+  { QU, "Q\n", 0, 0 },
   { XX, NULL, 0, 0 }
 };
 
@@ -87,7 +88,13 @@ qcli_data_t qcli_data;
 
 bool QCLI_Command::app_input() {
   qcli_cmd_defp cd;
+  if (nc == 0) {
+    msg(1, "%s: Unexpected nc==0 in app_input()", iname);
+    return true;
+  }
+  msg(MSG_DBG(0), "%s: Received command '%s'", iname, buf);
   cd = parse_cmd(buf);
+  consume(nc);
   if ( cd != NULL ) {
     switch ( cd->index ) {
       case SW:
@@ -149,6 +156,7 @@ int main( int argc, char **argv ) {
   const char *qcli_name = AppID.name;
   
   { qcli_util *qcli = new qcli_util();
+    msg(0, "%s: Running QCLI Disgnostics");
     if (qcli->diags(0)) /* for now, ignore the result, just log */
       msg(0,"QCLI Passed Diagnostics");
 

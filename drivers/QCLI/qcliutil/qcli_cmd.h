@@ -1,5 +1,5 @@
-#ifndef QCLIDACSD_H_INCLUDED
-#define QCLIDACSD_H_INCLUDED
+#ifndef QCLI_CMD_H_INCLUDED
+#define QCLI_CMD_H_INCLUDED
 #include "dasio/cmd_reader.h"
 #include "qcliutil.h"
 
