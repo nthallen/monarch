@@ -29,6 +29,7 @@ class qcli_ser : public Serial {
 
 qcli_ser::qcli_ser(const char *port) : Serial("qclis", SBUFSIZE, port, O_RDWR) {
 	setup(57600,8,'n',1,SBUFSIZE,4);
+	hwflow_enable(true);
 }
 
 bool qcli_ser::protocol_input() {
