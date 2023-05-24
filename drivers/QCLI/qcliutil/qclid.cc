@@ -156,7 +156,7 @@ int main( int argc, char **argv ) {
   const char *qcli_name = AppID.name;
   
   { qcli_util *qcli = new qcli_util();
-    msg(0, "%s: Running QCLI Disgnostics");
+    msg(0, "%s: Running QCLI Diagnostics", qcli_name);
     if (qcli->diags(0)) /* for now, ignore the result, just log */
       msg(0,"QCLI Passed Diagnostics");
 
