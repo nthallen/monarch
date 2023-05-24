@@ -42,6 +42,7 @@ bool qcli_ser::protocol_timeout() {
 
 int qcli_ser::readcond(uint8_t *extbuf, int xbufsize) {
 	TO.Set(0, 400);
+	flags |= Fl_Timeout;
 	ELoop->event_loop();
 	int rv = nc < xbufsize ? nc : xbufsize;
 	memcpy((char *)extbuf, buf, rv);
