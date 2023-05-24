@@ -33,7 +33,7 @@ static char *mlf_config = NULL;
 static int latency = 1;
 static const char *ssp_name;
 #define SSP_AMP_NAME_SIZE 20
-static const char *ssp_amp_name;
+static char *ssp_amp_name;
 static int quit_received = 0;
 static int trigger_count = 0;
 ssp_config_t ssp_config;
@@ -351,7 +351,8 @@ int main(int argc, char **argv) {
 
     TM_data_sndr *tm_amp_data;
     { int nc = snprintf(0, 0, "%s_amp", ssp_name);
-      ssp_amp_name = (const char *)new_memory(nc+1);
+      ssp_amp_name = (char *)new_memory(nc+1);
+      snprintf(ssp_amp_name, nc+1, "%s_amp", ssp_name);
       tm_amp_data = new TM_data_sndr("TMn", 0,
         ssp_amp_name, &ssp_amp_data, sizeof(ssp_amp_data));
       tm_amp_data->set_retries(0, 0, 0, false);
