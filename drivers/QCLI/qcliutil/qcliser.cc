@@ -18,37 +18,37 @@ using namespace DAS_IO;
 #define SBUFSIZE (MAX_STATUS_WORDS*sizeof(uint16_t))
 
 class qcli_ser : public Serial {
-	public:
-		qcli_ser(const char *port);
-		bool protocol_input();
-		bool protocol_timeout();
-		int readcond(uint8_t *extbuf, int bufsize);
-		inline bool qwrite(const char *xbuf, int nbytes) { return iwrite(xbuf, nbytes); }
-	protected:
+  public:
+    qcli_ser(const char *port);
+    bool protocol_input();
+    bool protocol_timeout();
+    int readcond(uint8_t *extbuf, int bufsize);
+    inline bool qwrite(const char *xbuf, int nbytes) { return iwrite(xbuf, nbytes); }
+  protected:
 };
 
 qcli_ser::qcli_ser(const char *port) : Serial("qclis", SBUFSIZE, port, O_RDWR) {
-	setup(57600,8,'n',1,SBUFSIZE,4);
-	hwflow_enable(true);
+  setup(115200,8,'n',1,SBUFSIZE,4);
+  // hwflow_enable(true);
 }
 
 bool qcli_ser::protocol_input() {
-	return true;
+  return true;
 }
 
 bool qcli_ser::protocol_timeout() {
-	return true;
+  return true;
 }
 
 int qcli_ser::readcond(uint8_t *extbuf, int xbufsize) {
-	TO.Set(0, 400);
-	flags |= Fl_Timeout;
-	ELoop->event_loop();
-	int rv = nc < xbufsize ? nc : xbufsize;
-	memcpy((char *)extbuf, buf, rv);
-	consume(rv);
-	TO.Clear();
-	return rv;
+  TO.Set(0, 400);
+  flags |= Fl_Timeout;
+  ELoop->event_loop();
+  int rv = nc < xbufsize ? nc : xbufsize;
+  memcpy((char *)extbuf, buf, rv);
+  consume(rv);
+  TO.Clear();
+  return rv;
 }
 
 static qcli_ser *qclis;
