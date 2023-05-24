@@ -9,6 +9,7 @@ class QCLI_Command : public Cmd_reader {
   public:
     QCLI_Command(qcli_util *qcli, const char *qcli_name);
     bool app_input();
+		bool protocol_gflag(int gflag);
   protected:
 
     enum qcli_cmd { SW, RW, ST, CE, TN, TF, TP, D0, D1, D2, D3, QU, XX };

@@ -39,6 +39,7 @@ QCLI_Command::QCLI_Command(qcli_util *qcli, const char *qcli_name)
     : Cmd_reader("Cmd", 40, qcli_name),
       qcli(qcli),
       qcli_name(qcli_name) {
+	flags = Fl_Read | gflag(0);
 }
 
 /**
@@ -148,6 +149,11 @@ bool QCLI_Command::app_input() {
     }
   }
   return false;
+}
+
+bool QCLI_Command::protocol_gflag(int gflag) {
+	qcli_data.status = qcli->read_qcli(0);
+	return false;
 }
 
 int main( int argc, char **argv ) {
