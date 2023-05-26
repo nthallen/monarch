@@ -127,6 +127,9 @@ inline const char *get_subbus_name() {
   return subbus_mig::sb->get_subbus_name();
 }
 
+inline int tick_sic() { return subbus_mig::sb->tick_sic(); }
+inline int disarm_sic() { return subbus_mig::sb->disarm_sic(); }
+
 //extern int cache_write(uint16_t addr, uint16_t data);
 //extern uint16_t cache_read(uint16_t addr);
 

@@ -123,7 +123,8 @@ class subbuspp : public Client {
                           uint16_t *nwords);
 
     /**
-     * Historically, tick_sic() has been associated with two timers.
+     * Historically, tick_sic() has been associated with two
+     * watchdog timers on the "System Integrity Card".
      * The first is a 2-second timeout that can reboot the system.
      * The second is a 2-minute timeout that lights the main fail
      * light indicating that the instrument is not acquiring data.
