@@ -1,6 +1,7 @@
 %{
   #include "qclid.h"
   #include "sspdrv.h"
+  #include "subbus_mig.h"
   const char * SSP_Status_Text(const uint8_t stat) {
     switch (stat) {
       case SSP_STATUS_GONE:    return "   Gone";
@@ -19,7 +20,7 @@ TM typedef uint16_t XLONG { text "%5d"; }
 TM typedef int32_t QCLI_WORD { text "%8d"; }
 TM typedef uint16_t QCLI_CS_t {
   text "%5d";
-  collect x = sb_DACS->sbrd(x.address);
+  collect x = sbrw(x.address);
 }
 
 TM typedef float SSP_Amp_t { text "7.1lf"; }

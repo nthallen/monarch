@@ -1,15 +1,9 @@
 %{
-  #include "subbuspp.h"
-
-  subbuspp *sb_DACS;
+  #include "subbus_mig.h"
 
   void DACS_init() {
-    sb_DACS = new subbuspp("subbus", "serusb");
-    sb_DACS->load();
+    load_subbus();
   }
-
-  void tick_sic() { if (sb_DACS->fd >= 0) sb_DACS->tick_sic(); }
-  void disarm_sic() { if (sb_DACS->fd >= 0) sb_DACS->disarm_sic(); }
 %}
 TM INITFUNC DACS_init();
 
