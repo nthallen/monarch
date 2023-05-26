@@ -1,4 +1,5 @@
 <package> subbus_mig
+<follow> msg
 
 <comment>
   subbus_mig.oui defines the legacy implementation of subbus.

@@ -5,7 +5,7 @@ uint16_t subbus_subfunction;
 uint16_t subbus_features;
 uint16_t subbus_version;
 
-subbus_mig::subbus_mig() : subbuspp("subbus", 0) {}
+subbus_mig::subbus_mig() : subbuspp("subbus", "serusb") {}
 
 subbus_mig::~subbus_mig() {
   sb = 0;
