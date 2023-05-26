@@ -45,10 +45,10 @@ QCLI@SUFFIX@_S {
       "COR:"   (QCLI@SUFFIX@_cordte,4);
       "CErr:"  (QCLI@SUFFIX@_cmderr,4);
     }; |; {
-#     Com:  (QCLI@SUFFIX@_present,4);
-#     Act:  (QCLI@SUFFIX@_rw,2);
-#     FIFO: (QCLI@SUFFIX@_fifodep,3);
-#     Err:  (QCLI@SUFFIX@_err,2);
+      Com:  (QCLI@SUFFIX@_present,4);
+      Act:  (QCLI@SUFFIX@_rw,2);
+      FIFO: (QCLI@SUFFIX@_fifodep,3);
+      Err:  (QCLI@SUFFIX@_err,2);
 @RESET@     Rst:  (QCLI@SUFFIX@_Reset,3);
     }
   }

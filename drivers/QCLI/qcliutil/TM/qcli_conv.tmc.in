@@ -33,7 +33,6 @@ ok_fail_t QCLI@SUFFIX@_loc; invalidate QCLI@SUFFIX@_loc;
     validate QCLI@SUFFIX@_loc; }
 qclimode_t QCLI@SUFFIX@_mode; invalidate QCLI@SUFFIX@_mode;
   { QCLI@SUFFIX@_mode = QCLI@SUFFIX@_s & 0x7; validate QCLI@SUFFIX@_mode; }
-/*
 rw_t QCLI@SUFFIX@_rw; invalidate QCLI@SUFFIX@_rw;
   { QCLI@SUFFIX@_rw = ((QCLI@SUFFIX@_CS & 0x4000) ? 2 : 0) +
                 ((QCLI@SUFFIX@_CS & 0x400) ? 1 : 0);
@@ -51,7 +50,6 @@ qclierr_t QCLI@SUFFIX@_err; invalidate QCLI@SUFFIX@_err;
   { QCLI@SUFFIX@_err = ((QCLI@SUFFIX@_CS >> 8) & 0xBB) ^ 0x8;
     validate QCLI@SUFFIX@_err;
   }
-*/
 
 SSP_OVF SSP@SUFFIX@_CA; Invalidate SSP@SUFFIX@_CA;
 SSP_OVF SSP@SUFFIX@_PA; Invalidate SSP@SUFFIX@_PA;
