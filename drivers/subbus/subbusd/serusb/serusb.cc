@@ -678,7 +678,6 @@ void subbusd_serusb::init_subbus() {
   /* Enqueue initialization requests */
   enqueue_request( SBDR_TYPE_INTERNAL, 0, "\n", 0, 0 );
   enqueue_request( SBDR_TYPE_INTERNAL, 0, "V\n", 0, 0 );
-  enqueue_request( SBDR_TYPE_INTERNAL, 0, "T\n", 0, 0 );
 }
 
 void subbusd_serusb::shutdown_subbus(void) {
