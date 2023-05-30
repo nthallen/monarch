@@ -18,6 +18,6 @@ else (NOT DEFINED monarch_BINARY_DIR)
     ${monarch_SOURCE_DIR}/libs/nl)
 endif()
 
-add_compile_definitions(register=)
+add_definitions(-Dregister=)
 target_link_libraries(nctable dasio nl ncurses pthread)
 install(TARGETS nctable RUNTIME DESTINATION bin)
