@@ -10,6 +10,7 @@ SSP_TCP::SSP_TCP()
   Q.full = false;
   Q.front = 0;
   Q.back = 0;
+  flags = Fl_Read;
 }
 
 bool SSP_TCP::connected() {
@@ -64,20 +65,20 @@ bool SSP_TCP::protocol_input() {
       report_err("%s: Invalid response", iname);
       consume(nc);
     } else {
-      consume(cp);
+      return false; // keep waiting
     }
   } else {
     msg(MSG_DBG(0), "%s: returning %d from command %s",
       iname, rv, Q.q[Q.front]); 
-    Q.full = false;
-    if (++Q.front == TCP_QSIZE)
-      Q.front = 0;
-    if (empty()) {
-      state = FD_IDLE;
-    } else {
-      state = FD_WRITE;
-      send();
-    }
+  }
+  Q.full = false;
+  if (++Q.front == TCP_QSIZE)
+    Q.front = 0;
+  if (empty()) {
+    state = FD_IDLE;
+  } else {
+    state = FD_WRITE;
+    send();
   }
   return false;
 }

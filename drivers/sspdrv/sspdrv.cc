@@ -69,7 +69,7 @@ SSP_Cmd::SSP_Cmd(SSP_TCP *TCP, SSP_UDP *UDP)
       UDP(UDP) {};
 
 bool SSP_Cmd::is_eocmd(unsigned char c) {
-  return c == '\0' || c == ' ';
+  return c == '\0' || c == ' ' || c == '\n';
 }
 
 bool SSP_Cmd::report_invalid() {
