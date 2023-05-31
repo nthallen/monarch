@@ -124,7 +124,7 @@ bool SSP_Cmd::app_input() {
     while (cp < nc && isspace(buf[cp])) ++cp;
     if (cp < nc && buf[cp] == 'Q')
       return true;
-    if (cp+3 >= nc) return false; // incomplete command
+    if (cp+3 > nc) return false; // incomplete command
     head = tail = &buf[cp];
     /* In the following switch statement, if we break out, the command code
        will be directly transmitted to the SSP. If instead we continue, the
