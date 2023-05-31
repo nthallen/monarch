@@ -50,7 +50,7 @@ void SSP_TCP::send() {
   }
   char *cmd = (char*)Q.q[Q.front];
   int cmdlen = strlen(cmd);
-  msg(MSG_DBG(1), "%s: sending command '%s'", ascii_esc((const char *)cmd));
+  msg(MSG_DBG(1), "%s: sending command '%s'", iname, ascii_esc((const char *)cmd));
   iwrite(cmd, cmdlen);
   state = FD_READ;
   TO.Set(1,0);
