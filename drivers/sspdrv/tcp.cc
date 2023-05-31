@@ -76,6 +76,7 @@ bool SSP_TCP::protocol_input() {
       iname, rv, Q.q[Q.front]);
     report_ok(nc);
   }
+  TO.Clear();
   Q.full = false;
   if (++Q.front == TCP_QSIZE)
     Q.front = 0;
