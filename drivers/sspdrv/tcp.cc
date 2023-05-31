@@ -1,6 +1,7 @@
 /** @file tcp.cc */
 #include "sspint.h"
 #include "nl.h"
+#include "dasio/ascii_escape.h"
 
 using namespace DAS_IO;
 
@@ -28,6 +29,8 @@ void SSP_TCP::enqueue(const unsigned char *cmd) {
   if ( nb >= TCP_SEND_SIZE )
     msg(2, "TCP queue command too long: %s", cmd );
   else {
+    msg(MSG_DBG(1), "%s: command '%s' enqueued", iname,
+      ascii_esc((const char*)cmd));
     if ( ++Q.back == TCP_QSIZE )
       Q.back = 0;
     if ( Q.back == Q.front )
@@ -47,6 +50,7 @@ void SSP_TCP::send() {
   }
   char *cmd = (char*)Q.q[Q.front];
   int cmdlen = strlen(cmd);
+  msg(MSG_DBG(1), "%s: sending command '%s'", ascii_esc((const char *)cmd));
   iwrite(cmd, cmdlen);
   state = FD_READ;
   TO.Set(1,0);
