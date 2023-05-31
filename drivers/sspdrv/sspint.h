@@ -59,7 +59,9 @@ class SSP_TCP : public Socket {
 
   protected:
     bool protocol_input();
+    bool protocol_timeout();
     bool connected();
+    void send();
     inline bool empty() { return !Q.full && Q.front == Q.back; }
 
     static const int TCP_QSIZE = 20;
