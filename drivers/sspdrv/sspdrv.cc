@@ -119,7 +119,7 @@ bool SSP_Cmd::app_input() {
   int32_t newval32;
   uint32_t newvalu32;
 
-  msg(MSG_DBG(1), "%s: Rec'd cmd '%'", iname, ascii_esc((char *)buf));
+  msg(MSG_DBG(1), "%s: Rec'd cmd '%s'", iname, ascii_esc((char *)buf));
   while (cp < nc) {
     while (cp < nc && isspace(buf[cp])) ++cp;
     if (cp < nc && buf[cp] == 'Q')
