@@ -73,7 +73,8 @@ bool SSP_TCP::protocol_input() {
     }
   } else {
     msg(MSG_DBG(0), "%s: returning %d from command %s",
-      iname, rv, Q.q[Q.front]); 
+      iname, rv, Q.q[Q.front]);
+    report_ok(nc);
   }
   Q.full = false;
   if (++Q.front == TCP_QSIZE)
