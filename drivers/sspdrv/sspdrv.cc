@@ -116,6 +116,7 @@ bool SSP_Cmd::app_input() {
   unsigned char *head, *tail;
   uint16_t newval16;
   int32_t newval32;
+  uint32_t newvalu32;
 
   while (cp < nc) {
     while (cp < nc && isspace(buf[cp])) ++cp;
@@ -229,7 +230,9 @@ bool SSP_Cmd::app_input() {
         ++cp;
         if ( is_eocmd(buf[cp++]) ||
              buf[cp++] != ':' ||
-             not_uint16(newval16)) {
+             ( head[1] == 'F' ?
+               not_uint32(newvalu32) :
+               not_uint16(newval16))) {
           return report_invalid();
         }
         tail = &buf[cp];
@@ -244,7 +247,7 @@ bool SSP_Cmd::app_input() {
           case 'C': ssp_config.NC = newval16; break;
           case 'F':
             { unsigned char div_buf[80];
-              ssp_config.NF = 100000000/newval16;
+              ssp_config.NF = 100000000/newvalu32;
               snprintf((char*)div_buf, 80, "NF:%d", ssp_config.NF );
               TCP->enqueue(div_buf);
             }
