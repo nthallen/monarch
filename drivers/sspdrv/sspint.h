@@ -96,7 +96,7 @@ class SSP_UDP : public Interface {
     int scan_size; //< Number of bytes in scan
     int cur_word; //< Number of 32-bit words received so far
     bool scan_OK; //< T
-    uint32_t scan_buf[SSP_CLIENT_BUF_LENGTH];
+    uint32_t *scan_buf;
     uint32_t scan_serial_number;
     static const uint32_t scan0 = 6;
     uint32_t scan1;

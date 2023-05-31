@@ -5,11 +5,13 @@
 #include "mlf.h"
 
 SSP_UDP::SSP_UDP(mlf_def_t *mlf, TM_data_sndr *tm_amp_data)
-    : Interface("UDP", SSP_CLIENT_BUF_LENGTH),
+    : Interface("UDP", SSP_CLIENT_BUF_LENGTH*sizeof(uint32_t)),
       state(FD_IDLE),
       mlf(mlf),
       tm_amp_data(tm_amp_data),
-      do_amp(false) {}
+      do_amp(false) {
+  scan_buf = (uint32_t*)buf;
+}
 
 int SSP_UDP::connect() {
   this->do_amp =
@@ -108,22 +110,33 @@ void SSP_UDP::disconnect() {
 
 bool SSP_UDP::protocol_input() {
   if ( cur_word == 0 && !(*scan_buf & SSP_FRAG_FLAG) ) {
-    if ( nc == scan_size ) output_scan(scan_buf);
-    else msg( 2, "Expected %d bytes, received %d", scan_size, nc );
+    if ( nc == scan_size ) {
+      output_scan(scan_buf);
+      report_ok(nc);
+    } else {
+      report_err("%s: Expected %d bytes, received %d", iname, scan_size, nc );
+      consume(nc);
+    }
+    cur_word = 0;
+    scan_OK = 1;
   } else if ( !( scan_buf[cur_word] & SSP_FRAG_FLAG ) ) {
-    msg( -3, "Expected scan fragment" );
+    report_err("%s: Expected scan fragment", iname);
+    cur_word = 0;
+    scan_OK = 1;
+    consume(nc);
   } else {
     int frag_hdr = scan_buf[cur_word];
     int frag_offset = frag_hdr & 0xFFFFL;
     int frag_sn;
+    int cur_frag_bytes = nc - (cur_word * sizeof(uint32_t));
     if ( frag_offset != cur_word ) {
       if ( frag_offset == 0 ) {
-        memmove( scan_buf, scan_buf+cur_word, nc );
-        if ( scan_OK ) msg( -3, "Lost end of scan." );
+        consume(cur_word*sizeof(uint32_t));
+        if ( scan_OK ) report_err("%s: Lost end of scan.", iname);
         cur_word = 0;
         scan_OK = 1;
       } else if ( scan_OK ) {
-        msg( -3, "Lost fragment" );
+        report_err("%s: Lost fragment", iname);
         scan_OK = 0;
       }
     }
@@ -133,16 +146,23 @@ bool SSP_UDP::protocol_input() {
       scan_buf[cur_word] = frag_hold;
       if ( scan_OK && scan_serial_number != frag_sn ) {
         scan_OK = 0;
-        msg( -3, "Lost data: SN skip" );
+        report_err("%s: Lost data: SN skip", iname);
       }
     }
-    cur_word = frag_offset + (nc/sizeof(uint32_t)) - 1;
+    cur_word = frag_offset + (cur_frag_bytes/sizeof(uint32_t)) - 1;
     if ( frag_hdr & SSP_LAST_FRAG_FLAG ) {
       if ( scan_OK ) {
-        if ( cur_word == raw_length )
+        if ( cur_word == raw_length ) {
           output_scan(scan_buf+1);
-        else msg( 2, "Scan length error: expected %d words, received %d",
-          raw_length, cur_word );
+          report_ok(nc);
+        } else {
+          report_err("%s: Scan length error: expected %d words, received %d",
+            iname, raw_length, cur_word );
+          consume(nc);
+        }
+      } else {
+        report_err("%s: Unexpected SSP_LAST_FRAG_FLAG", iname);
+        consume(nc);
       }
       cur_word = 0;
       scan_OK = 1;
@@ -150,7 +170,8 @@ bool SSP_UDP::protocol_input() {
       frag_hold = scan_buf[cur_word];
     }
     if ( cur_word + SSP_MAX_FRAG_LENGTH > SSP_CLIENT_BUF_LENGTH ) {
-      msg( 2, "Bad fragment offset: %d(%d)", frag_offset, nc );
+      report_err("%s: Bad fragment offset: %d(%d)", iname, frag_offset, nc );
+      consume(nc);
       cur_word = 0;
       scan_OK = 1;
     }
@@ -211,14 +232,14 @@ void SSP_UDP::output_scan(uint32_t *scan) {
     return;
   }
   if (ssp_config.LE || do_amp) {
-    int i, j, nc = hdr->NChannels;
+    int i, j, nchans = hdr->NChannels;
     for ( j = 0; j < hdr->NChannels; ++j ) {
       uint32_t *id = &idata[j];
       float minv = 0, maxv = 0;
       for ( i = 0; i < hdr->NSamples; ++i ) {
         float sampleval = (*id) * divisor;
         fdata[j][i] = sampleval;
-        id += nc;
+        id += nchans;
         if (do_amp) {
           if (i == 0) {
             minv = maxv = sampleval;
