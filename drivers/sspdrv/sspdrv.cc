@@ -25,6 +25,7 @@
 #include "dasio/tm_data_sndr.h"
 #include "dasio/loop.h"
 #include "dasio/appid.h"
+#include "dasio/ascii_escape.h"
 #include "sspint.h"
 #include "oui.h"
 #include "nl.h"
@@ -118,6 +119,7 @@ bool SSP_Cmd::app_input() {
   int32_t newval32;
   uint32_t newvalu32;
 
+  msg(MSG_DBG(1), "%s: Rec'd cmd '%'", iname, ascii_esc((char *)buf));
   while (cp < nc) {
     while (cp < nc && isspace(buf[cp])) ++cp;
     if (cp < nc && buf[cp] == 'Q')
@@ -155,6 +157,7 @@ bool SSP_Cmd::app_input() {
           ssp_config.NE = 1;
           TCP->enqueue((const unsigned char*)"NE:1");
         }
+        msg(MSG_DBG(1), "%s: Processing EN", iname);
         ssp_config.NP = 0;
         { ssp_config.NP = UDP->connect();
           if (ssp_config.NP == 0) {
