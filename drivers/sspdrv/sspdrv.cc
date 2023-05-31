@@ -235,7 +235,7 @@ bool SSP_Cmd::app_input() {
                not_uint16(newval16))) {
           return report_invalid();
         }
-        tail = &buf[cp];
+        tail = &buf[cp++];
         if ( UDP->state != FD_IDLE ) {
           *tail = '\0';
           msg( 2, "Command invalid while SSP is enabled: '%s'", head );
@@ -264,7 +264,7 @@ bool SSP_Cmd::app_input() {
              not_uint16(newval16)) {
           return report_invalid();
         }
-        tail = &buf[cp];
+        tail = &buf[cp++];
         switch (head[1]) {
           case 'Z':
             noise_config.NZ = newval16;
@@ -289,7 +289,7 @@ bool SSP_Cmd::app_input() {
              not_int32(newval32)) {
           return report_invalid();
         }
-        tail = &buf[cp];
+        tail = &buf[cp++];
         switch (head[1]) {
           case 'U':
           case 'D':
