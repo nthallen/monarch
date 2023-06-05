@@ -31,7 +31,7 @@
 #include "nl.h"
 
 static char *mlf_config = NULL;
-static int latency = 1;
+int latency = 1;
 static const char *ssp_name;
 #define SSP_AMP_NAME_SIZE 20
 static char *ssp_amp_name;
@@ -363,6 +363,7 @@ int main(int argc, char **argv) {
       snprintf(ssp_amp_name, nc+1, "%s_amp", ssp_name);
       tm_amp_data = new TM_data_sndr("TMn", 0,
         ssp_amp_name, &ssp_amp_data, sizeof(ssp_amp_data));
+      tm_amp_data->set_gflag_no(1); // to avoid colliding with tm_data
       tm_amp_data->set_retries(0, 0, 0, false);
       tm_amp_data->connect();
       ELoop.add_child(tm_amp_data);
@@ -382,6 +383,8 @@ int main(int argc, char **argv) {
     // signal setup, if needed
     
     ELoop.event_loop();
+    ssp_data.Status = SSP_STATUS_GONE;
+    tm_data->Send();
     ELoop.delete_children();
     ELoop.clear_delete_queue();
   }

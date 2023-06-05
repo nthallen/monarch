@@ -9,8 +9,10 @@ SSP_UDP::SSP_UDP(mlf_def_t *mlf, TM_data_sndr *tm_amp_data)
       state(FD_IDLE),
       mlf(mlf),
       tm_amp_data(tm_amp_data),
+      trigger_count(0),
       do_amp(false) {
   scan_buf = (uint32_t*)buf;
+  flags |= gflag(0);
 }
 
 int SSP_UDP::connect() {
@@ -110,6 +112,8 @@ void SSP_UDP::disconnect() {
 
 bool SSP_UDP::protocol_input() {
   msg(MSG_DBG(1), "%s: p_i() in  nc=%-5u cur_word=%d\n", iname, nc, cur_word);
+  ssp_data.Status = SSP_STATUS_TRIG;
+  trigger_count = 0;
   if (nc >= cur_word*4+4 && scan_buf[cur_word] & SSP_FRAG_FLAG) {
     uint32_t fraghdr = scan_buf[cur_word];
     msg(MSG_DBG(1), "%s: Frag Last:%s SN:%-5u Off:%u", iname,
@@ -186,6 +190,13 @@ bool SSP_UDP::protocol_input() {
     }
   }
   msg(MSG_DBG(1), "%s: p_i() out nc=%u\n", iname, nc);
+  return false;
+}
+
+bool SSP_UDP::tm_sync() {
+  if ( ssp_data.Status == SSP_STATUS_TRIG &&
+       ++trigger_count > latency+1 )
+    ssp_data.Status = SSP_STATUS_ARMED;
   return false;
 }
 

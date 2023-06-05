@@ -11,6 +11,7 @@ SSP_TCP::SSP_TCP()
   Q.full = false;
   Q.front = 0;
   Q.back = 0;
+  ssp_data.Status = SSP_STATUS_CONNECT;
   flags = Fl_Read;
 }
 
@@ -106,4 +107,9 @@ bool SSP_TCP::protocol_timeout() {
     }
   }
   return false;
+}
+
+bool SSP_TCP::process_eof() {
+  ssp_data.Status = SSP_STATUS_CONNECT;
+  return reset();  
 }

@@ -60,6 +60,7 @@ class SSP_TCP : public Socket {
   protected:
     bool protocol_input();
     bool protocol_timeout();
+    bool process_eof();
     bool connected();
     void send();
     inline bool empty() { return !Q.full && Q.front == Q.back; }
@@ -88,6 +89,7 @@ class SSP_UDP : public Interface {
   protected:
     // bool fillbuf() override;
     bool protocol_input();
+    bool tm_sync();
     void output_scan(uint32_t *scan);
   private:
     int port; //< The current UDP port number
@@ -104,6 +106,8 @@ class SSP_UDP : public Interface {
     uint32_t frag_hold;
     mlf_def_t *mlf;
     TM_data_sndr *tm_amp_data;
+    int trigger_count;
+    int trigger_latency;
     bool do_amp;
 };
 
@@ -117,6 +121,7 @@ typedef struct {
 extern ssp_config_t ssp_config;
 extern ssp_data_t ssp_data;
 extern ssp_amp_data_t ssp_amp_data;
+extern int latency;
 
 typedef struct {
   uint16_t NZ, NN, NM, NSamp;
