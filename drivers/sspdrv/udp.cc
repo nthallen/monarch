@@ -109,6 +109,7 @@ void SSP_UDP::disconnect() {
  */
 
 bool SSP_UDP::protocol_input() {
+  msg(MSG_DBG(1), "%s: p_i() in  nc=%u\n", iname, nc);
   if ( cur_word == 0 && !(*scan_buf & SSP_FRAG_FLAG) ) {
     if ( nc == scan_size ) {
       output_scan(scan_buf);
@@ -176,6 +177,7 @@ bool SSP_UDP::protocol_input() {
       scan_OK = 1;
     }
   }
+  msg(MSG_DBG(1), "%s: p_i() out nc=%u\n", iname, nc);
   return false;
 }
 
