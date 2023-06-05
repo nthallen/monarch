@@ -86,3 +86,9 @@ bool dccc_ssclient::protocol_input() {
   report_ok(cp);
   return false;
 }
+
+bool dccc_ssclient::process_eof() {
+  DAS_IO::Socket::process_eof();
+  return true;
+}
+

@@ -24,6 +24,7 @@ class dccc_ssclient : public Serverside_client {
   protected:
     ~dccc_ssclient();
     bool protocol_input();
+    bool process_eof();
 };
 
 inline dccc_ssclient *new_dccc_ssclient(
