@@ -83,5 +83,6 @@ bool dccc_ssclient::protocol_input() {
     return false;
   }
   process_pcmd(&pcmd);
+  report_ok(cp);
   return false;
 }
