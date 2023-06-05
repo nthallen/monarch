@@ -124,7 +124,7 @@ bool SSP_Cmd::app_input() {
     while (cp < nc && isspace(buf[cp])) ++cp;
     if (cp < nc && buf[cp] == 'Q')
       return true;
-    if (cp+3 > nc) return false; // incomplete command
+    if (cp+3 > nc) break; // incomplete command
     head = tail = &buf[cp];
     /* In the following switch statement, if we break out, the command code
        will be directly transmitted to the SSP. If instead we continue, the
@@ -139,12 +139,11 @@ bool SSP_Cmd::app_input() {
         if ( *++tail != 'N' || !is_eocmd(*++tail) ) {
           return report_invalid();
         }
+        cp += 3;
         if ( UDP->state != FD_IDLE ) {
           msg( 2, "EN not valid: Already enabled" );
-          report_ok(nc);
-          return false;
+          continue;
         }
-        cp += 3;
         if ( TCP->state == FD_CONNECT ) {
           msg( 2, "EN suppressed: not connected" );
           continue;
@@ -162,15 +161,14 @@ bool SSP_Cmd::app_input() {
         { ssp_config.NP = UDP->connect();
           if (ssp_config.NP == 0) {
             msg(2, "UDP->connect() returned error");
-            report_ok(nc);
-            return false;
+            continue; // suppress EN
           }
           unsigned char udp_buf[20];
           snprintf((char *)udp_buf, 20, "NP:%d", ssp_config.NP);
           TCP->enqueue(udp_buf);
         }
         ssp_data.Status = SSP_STATUS_ARMED;
-        break;
+        break; // transmit EN
       case 'D':
         if ( *++tail != 'A' || !is_eocmd(*++tail) ) {
           return report_invalid();
@@ -224,6 +222,7 @@ bool SSP_Cmd::app_input() {
             UDP->disconnect();
             cp += 3;
             // quit_received = 1;
+            report_ok(cp);
             return true;
           default:
             return report_invalid();
@@ -242,6 +241,8 @@ bool SSP_Cmd::app_input() {
         if ( UDP->state != FD_IDLE ) {
           *tail = '\0';
           msg( 2, "Command invalid while SSP is enabled: '%s'", head );
+          // Abort the entire command line
+          report_ok(nc);
           return false;
         }
         switch (head[1]) {
@@ -309,6 +310,7 @@ bool SSP_Cmd::app_input() {
       TCP->enqueue(head);
     }
   }
+  report_ok(cp);
   if (noise_config.modified) {
     if (noise_config.NN == 0 || noise_config.NM == 0) {
       noise_config.NZ = 0;

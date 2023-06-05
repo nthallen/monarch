@@ -66,9 +66,9 @@
            (setup->Options & HSAD_TRIG_AUTO) ? 'E' : 'D' );
         } else msg(2, "SSP %d NAvg out of range", $1+1);
       }
-  : &SSP Stop * { $1->if_ssp->Turf( "DA" ); }
-  : &SSP Reset * { $1->if_ssp->Turf( "XR" ); }
-  : &SSP Exit * { $1->if_ssp->Turf( "XX" ); }
+  : &SSP Stop * { $1->if_ssp->Turf( "DA\n" ); }
+  : &SSP Reset * { $1->if_ssp->Turf( "XR\n" ); }
+  : &SSP Exit * { $1->if_ssp->Turf( "XX\n" ); }
   : &SSP Set NSample %ld (Number of Samples) * {
         $1->setup->NSample = $4;
       }
