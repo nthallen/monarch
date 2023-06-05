@@ -112,7 +112,7 @@ bool SSP_UDP::protocol_input() {
   msg(MSG_DBG(1), "%s: p_i() in  nc=%-5u cur_word=%d\n", iname, nc, cur_word);
   if (nc >= cur_word*4+4 && scan_buf[cur_word] & SSP_FRAG_FLAG) {
     uint32_t fraghdr = scan_buf[cur_word];
-    msg(MSG_DBG(1), "%s: Frag Last:%s SN:%-5u Off:%u",
+    msg(MSG_DBG(1), "%s: Frag Last:%s SN:%-5u Off:%u", iname,
       (fraghdr & SSP_LAST_FRAG_FLAG) ? "yes" : "no ",
       (fraghdr >> 16) & 0x3FFF,
       fraghdr & 0xFFFF);
