@@ -176,6 +176,7 @@ bool SSP_UDP::protocol_input() {
       scan_OK = 1;
     } else {
       frag_hold = scan_buf[cur_word];
+      nc -= sizeof(uint32_t);
     }
     if ( cur_word + SSP_MAX_FRAG_LENGTH > SSP_CLIENT_BUF_LENGTH ) {
       report_err("%s: Bad fragment offset: %d(%d)", iname, frag_offset, nc );
