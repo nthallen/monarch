@@ -79,7 +79,7 @@ int SSP_UDP::connect() {
     msg(MSG_FATAL, "Error setting O_NONBLOCK on UDP socket: %s",
       strerror(errno));
 
-  flags = Fl_Read;
+  flags |= Fl_Read;
   return port;
 }
 
