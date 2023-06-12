@@ -75,21 +75,21 @@ int main(int argc, char **argv) {
   MB->flush_input();
   configure_devices(MB);
 
-  Modbus::modbus_cmd *Cmd = new Modbus::modbus_cmd("Alicat", MB);
+  Modbus::modbus_cmd *Cmd = new Modbus::modbus_cmd(AppID.name, MB);
   Cmd->connect();
   ELoop.add_child(Cmd);
 
   TM_data_sndr *TM =
-    new TM_data_sndr("TM", 0, "Alicat", (void *)Alicat,
+    new TM_data_sndr("TM", 0, AppID.name, (void *)Alicat,
       n_drives * sizeof(alicat_tm_t));
   TM->connect();
   ELoop.add_child(TM);
 
   ELoop.add_child(MB);
-  msg(0, "%s %s Starting", DAS_IO::AppID.fullname, DAS_IO::AppID.rev);
+  AppID.report_startup();
   ELoop.event_loop();
   ELoop.delete_children();
   ELoop.clear_delete_queue();
-  msg(0, "%s Terminating", DAS_IO::AppID.name);
+  AppID.report_shutdown();
   return 0;
 }

@@ -13,4 +13,4 @@
   case 'p': Alicat_port = optarg; break;
 
 <defs>
-  DAS_IO::AppID_t DAS_IO::AppID("Alicat", "Alicat Mass Flow Controller Driver", "V1.0");
+  DAS_IO::AppID_t DAS_IO::AppID("Alicat", "Alicat Mass Flow Controller Driver", "V1.1");
