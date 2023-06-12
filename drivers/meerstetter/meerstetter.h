@@ -25,7 +25,7 @@ typedef struct {
    * response for each of the items above. Each bit is
    * cleared if the corresponding value was received.
    * Bit 0 is reserved to indicate that all values were
-   * received. If a readback is outstanding an TM sync,
+   * received. If any readback is outstanding at TM sync,
    * the drive Stale count is incremented.
    *  Bit 0: All values responding
    *  Bit 1: DeviceStatus

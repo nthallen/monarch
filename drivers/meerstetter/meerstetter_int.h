@@ -125,8 +125,8 @@ class Me_Cmd : public Cmd_reader {
 
 class Me_TM : public TM_data_sndr {
   public:
-    inline Me_TM(const char *name) :
-        TM_data_sndr(name, 0, Me_Name, &meerstetter, sizeof(meerstetter)) {}
+    inline Me_TM(const char *name, int n_drives) :
+        TM_data_sndr(name, 0, Me_Name, &meerstetter, n_drives*sizeof(me_drive_t)) {}
   protected:
     bool app_input();
 };

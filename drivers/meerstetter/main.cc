@@ -203,7 +203,7 @@ int main(int argc, char **argv) {
       Cmd->connect();
       ELoop.add_child(Cmd);
     }
-    { Me_TM *TM = new Me_TM(Me_Name);
+    { Me_TM *TM = new Me_TM(Me_Name, n_drives);
       TM->connect();
       ELoop.add_child(TM);
     }
