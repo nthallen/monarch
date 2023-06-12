@@ -47,7 +47,7 @@ void configure_devices(Modbus::RTU *MB) {
     if (*s == ':') {
       int i;
       ++s;
-      for (i = 0; i < MNEM_LEN-1 && *s && isalnum(*s); ++i) {
+      for (i = 0; i < MNEM_LEN-1 && *s && (isalnum(*s) || *s == '_'); ++i) {
         board_id[index].mnemonic[i] = *s++;
       }
       board_id[index].mnemonic[i] = '\0';
