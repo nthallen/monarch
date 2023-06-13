@@ -187,7 +187,6 @@ if ($have_digital) {
 print $tmc <<EOF
 %{
   /* alicat driver interface */
-  #define ALICAT_MAX_DRIVES $n_channels
   #include "alicat.h"
   #define ${Name}_drive(x,y) ${Name}[x].y
 %}
