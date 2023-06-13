@@ -402,6 +402,20 @@ for (my $i = 0; $i < $n_channels; ++$i) {
       "  [${datum}_pvdata];\n",
       "}\n\n";
 #   print $tbl "}\n";
+    my $text = $D->{text};
+    my $channel = $D->{channel};
+    if (!defined($text) || length($text) == 0) {
+      $text = $datum;
+    }
+    my @text = split(' ', "$text Pressure SetPoint");
+    my $fword = scalar(@text)+1;
+    if ($D->{type} eq 'digital') {
+      $cmddef .=
+        "  : " . join(' ', @text, '%f', "($Punits)", $Punits, '*') .
+        " { ${Name}_set($channel, \$$fword); }\n";
+    } else {
+      die "Unsupported type";
+    }
   }
 }
 
