@@ -215,7 +215,7 @@ void Me_Ser::free_pending() {
 }
 
 void Me_Ser::process_requests() {
-  if (pending || ~obuf_empty()) return;
+  if (pending || !obuf_empty()) return;
   if (!Transient_queue.empty()) {
     pending = Transient_queue.front();
     Transient_queue.pop_front();
