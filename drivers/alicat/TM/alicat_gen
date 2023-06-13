@@ -29,6 +29,7 @@ my $have_digital = 0;
 my $have_flows = 0;
 my $have_p_ctrl = 0;
 my $TX = '';
+my $panel;
 # my $have_analog = 0;
 # my $have_non_unity_ai = 0;
 # my %analog_units;
@@ -41,6 +42,10 @@ for (my $i = 1; $i < @ARGV; ++$i) {
     if ($1) {
       $TX = '^';
     }
+  } elsif ($ARGV[$i] =~ m/^Panel=([a-z][a-z0-9_]*):?$/i ) {
+    $panel = "$1:";
+  } elsif ($ARGV[$i] =~ m/^Panel=$/i ) {
+    $panel = '';
   } else {
     die "Invalid name specification: '$ARGV[$i]'\n";
   }
@@ -262,18 +267,18 @@ for (my $i = 0; $i < $n_channels; ++$i) {
     push(@grpmem, map "${datum}_$_", qw(P Status Stale));
 
     print $genui
-      "  $Rate ${datum}_Status ${Name}_HK Status %.0lf\n",
-      "  $Rate ${datum}_Stale  ${Name}_HK Stale\n",
-      "  $Rate ${datum}_P      ${Name}_HK ${Punits}\n";
+      "  $Rate ${datum}_Status $panel${Name}_HK Status %.0lf\n",
+      "  $Rate ${datum}_Stale  $panel${Name}_HK Stale\n",
+      "  $Rate ${datum}_P      $panel${Name}_HK ${Punits}\n";
     if ($has_flows) {
       print $genui
-        "  $Rate ${datum}_T      ${Name}_HK T\n",
-        "  $Rate ${datum}_MassFlow   $Name ${MFunits}\n",
-        "  $Rate ${datum}_VolFlow   $Name ${VFunits}\n";
+        "  $Rate ${datum}_T      $panel${Name}_HK T\n",
+        "  $Rate ${datum}_MassFlow   $panel$Name ${MFunits}\n",
+        "  $Rate ${datum}_VolFlow   $panel$Name ${VFunits}\n";
     }
     if ($has_flow_ctrl || $has_p_ctrl) {
       print $genui
-        "  $Rate ${datum}_Set    $Name ${SPunits}\n";
+        "  $Rate ${datum}_Set    $panel$Name ${SPunits}\n";
     }
   } else {
     die "Unsupported type";
@@ -428,7 +433,7 @@ if ($have_digital) {
     "  ${Name}_obj->synch();\n}\n";
 
   print $genui
-    "  $Rate ${Name}_Stale ${Name}_HK Stale\n";
+    "  $Rate ${Name}_Stale $panel${Name}_HK Stale\n";
 }
 
 if ($have_flows) {

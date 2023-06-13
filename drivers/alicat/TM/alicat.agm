@@ -1,4 +1,4 @@
-Moduledef alicat [ src= name=Alicat TX= ] {
+Moduledef alicat [ src= name=Alicat TX= Panel= ] {
   alicat Module requires a src variable defining the input file.
   name defines the base of all the variables and the header for
   the driver.
@@ -98,7 +98,7 @@ mode (default,driver,ignore) {
   SRC = @src@
   %%
 @name@.tmc @name@_col.tmc @name@.cmd @name@.genui @name@.tbl : @src@ @MODDIR@/alicat_gen
-	@MODDIR@/alicat_gen @src@ name=@name@ TX=@TX@
+	@MODDIR@/alicat_gen @src@ name=@name@ TX=@TX@ Panel=@Panel@
 }
 
 mode (ignore) {
