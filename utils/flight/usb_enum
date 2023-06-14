@@ -1,0 +1,40 @@
+#! /usr/bin/perl -w
+use strict;
+
+open(my $lsusbt, '-|', "lsusb -tvv") or
+  die "Cannot run lsusb -tvv\n";
+
+my %devnum;
+my $curdevnum = '';
+while (my $line = <$lsusbt>) {
+  if ($line =~ m/ Port \d+: Dev (\d+),/) {
+    $curdevnum = $1;
+  } elsif ($line =~ m|/sys/bus/usb/devices/([^ ]+) |) {
+    $devnum{$1} = $curdevnum;
+  }
+}
+close($lsusbt);
+
+# for my $usbt (keys %devnum) {
+#   print "usbt $usbt\n";
+# }
+
+my @serdevs = </sys/bus/usb/devices/*:*/tty*>;
+# print "Devices:\n", map("  $_\n", @serdevs);
+for my $devstr (@serdevs) {
+  $devstr =~ m|^/sys/bus/usb/devices/([^:]+):([^/]+)/(.*)$| ||
+    die "Pattern did not match\n";
+  my $usbt = $1;
+  my $if = $2;
+  my $port = "/dev/$3";
+  my $devnum = $devnum{$usbt};
+  open(my $lsusb, '-|', "lsusb -s1:$devnum -v 2>/dev/null | grep iSerial") or
+    die "Unable to open lsusb pipe\n";
+  my $line = <$lsusb>;
+  close($lsusb) or warn "Error closing lsusb pipe\n";
+  chomp $line;
+  $line =~ m/iSerial +\d+ +([^ ]+)$/ ||
+    die "Bad iSerial: '$line'";
+  my $SN = $1;
+  print "$port $usbt $if $devnum $SN\n";
+}
