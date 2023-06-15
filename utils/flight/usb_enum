@@ -1,6 +1,10 @@
 #! /usr/bin/perl -w
 use strict;
 
+my %ID;
+my %IDfound;
+load_id();
+
 open(my $lsusbt, '-|', "lsusb -tvv") or
   die "Cannot run lsusb -tvv\n";
 
@@ -33,8 +37,43 @@ for my $devstr (@serdevs) {
   my $line = <$lsusb>;
   close($lsusb) or warn "Error closing lsusb pipe\n";
   chomp $line;
-  $line =~ m/iSerial +\d+ +([^ ]+)$/ ||
+  $line =~ m/iSerial \s+ \d+ \s+ (\S+)$/x ||
     die "Bad iSerial: '$line'";
   my $SN = $1;
-  print "$port $usbt $if $devnum $SN\n";
+  if ($ID{"$SN:$if"}) {
+    print $ID{"$SN:$if"}, "_port=$port\n";
+    $IDfound{"$SN:$if"} = 1;
+  } else {
+    print "# Unidentified board found, SN $SN:$if, devnum $devnum on $port\n";
+  }
+}
+
+sub load_id {
+  my @idpath = qw(.);
+  defined($ENV{TMBINDIR}) &&
+    unshift(@idpath, $ENV{TMBINDIR});
+  while (@idpath) {
+    my $dir = pop(@idpath);
+    my $path = "$dir/USB.id";
+    if ( -f $path ) {
+      load_id_path($path);
+      return;
+    }
+  }
+}
+
+sub load_id_path {
+  my $path = shift(@_);
+  open(my $idfile, '<', $path) ||
+    warn "usb_enum: Unable to open '$path'\n";
+  while (my $line = <$idfile>) {
+    chomp $line;
+    next if $line =~ m/^\s*(?:#.*)?$/;
+    if ($line =~ m/^ \s* ([\w_]+) \s+ ([a-z0-9]+) ((?::\d+\.\d+)?) \s* $/ix) {
+      my $mnc = $1;
+      my $sn = $2;
+      my $if = $3 || ":1.0";
+      $ID{"$sn$if"} = $mnc;
+    }
+  }
 }
