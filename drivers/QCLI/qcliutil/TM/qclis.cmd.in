@@ -23,11 +23,11 @@
 
 %}
 # &SSP returns a pointer to a two-element structure
-&SSP <qclissp_t *>
+&SSP @CMDTYPE@ <qclissp_t *>
   : SSP@SUFFIX@ { $0 = &SSP@SUFFIX@_cmd; }
   ;
 # &QCLI returns an inteface
-&QCLI <cmdif_rd *>
+&QCLI @CMDTYPE@ <cmdif_rd *>
   : QCLI@SUFFIX@ { $0 = &if_QCLI@SUFFIX@; }
   ;
 &command

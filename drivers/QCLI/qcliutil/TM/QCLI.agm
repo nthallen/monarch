@@ -1,4 +1,4 @@
-Moduledef QCLI [ SUFFIX= ADDR=0x1000 ACQCFG=AB3R RESET=# SSPRATE=1 AMP3=# Panel= ] {
+Moduledef QCLI [ SUFFIX= ADDR=0x1000 ACQCFG=AB3R RESET=# SSPRATE=1 AMP3=# Panel= CMDTYPE= ] {
   QCLI definitions, takes mode, SUFFIX, ADDR, ACQCFG, SSPRATE and RESET
     arguments. Generates multiple files.
   mode is one of:
@@ -21,15 +21,27 @@ Moduledef QCLI [ SUFFIX= ADDR=0x1000 ACQCFG=AB3R RESET=# SSPRATE=1 AMP3=# Panel=
   RESET= will add QCLI@SUFFIX@_Reset to the .tbl file. This needs to
     be defined elsewhere as an on/off value, 3 spaces wide.
   Panel= optional panel prefix for genui output
+  'CMDTYPE=#' will define the return type for the &SSP and &QCLI non-literal
+    symbols in QCLI@SUFFIX@.cmd. This can only be done once.
+}
+
+mode (base,baseignore) {
+  Module DACS
+  tmcbase = qcli_types.tmc
+  cmdbase = qclia.cmd
+}
+
+mode (baseignore) {
+  IGNORE = qcli_types.tmc
+  IGNORE = qclia.cmd
+  OBJ = qcli_types.tmc
+  OBJ = qclia.cmd
 }
 
 mode (default,ignore,amp,ampignore,noise,noiseignore) {
-  Module DACS
-  tmcbase = qcli_types.tmc
   tmcbase = waves@SUFFIX@.tmc:
   tmcbase = QCLI@SUFFIX@.tmc:qcli.tmc.in
   colbase = QCLI@SUFFIX@_col.tmc:qcli_col.tmc.in
-  cmdbase = qclia.cmd
   cmdbase = QCLI@SUFFIX@.cmd:qclis.cmd.in
   qclibase = waves@SUFFIX@.qcli
   extbase = QCLI@SUFFIX@_conv.tmc:qcli_conv.tmc.in
@@ -38,20 +50,16 @@ mode (default,ignore,amp,ampignore,noise,noiseignore) {
 }
 
 mode (ignore,ampignore,noiseignore) {
-  IGNORE = qcli_types.tmc
   IGNORE = waves@SUFFIX@.tmc
   IGNORE = QCLI@SUFFIX@.tmc
   IGNORE = QCLI@SUFFIX@_col.tmc
-  IGNORE = qclia.cmd
   IGNORE = QCLI@SUFFIX@.cmd
   IGNORE = QCLI@SUFFIX@_conv.tmc
   IGNORE = QCLI@SUFFIX@.genui
   IGNORE = QCLI@SUFFIX@.tbl
-  OBJ = qcli_types.tmc
   OBJ = waves@SUFFIX@.tmc
   OBJ = QCLI@SUFFIX@.tmc
   OBJ = QCLI@SUFFIX@_col.tmc
-  OBJ = qclia.cmd
   OBJ = QCLI@SUFFIX@.cmd
   OBJ = QCLI@SUFFIX@_conv.tmc
   OBJ = QCLI@SUFFIX@.genui
