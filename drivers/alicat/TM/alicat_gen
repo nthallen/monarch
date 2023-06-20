@@ -11,6 +11,25 @@ use POSIX;
 #   # <name>_conv.tmc
 #   <name>.genui
 
+# Display Precision is determined as follows:
+#   We assume 5 digits of precision from the device based on
+#   it's full scale range.
+#
+#   We need one space for a possible negative sign and one
+#   space for a decimal point, so we need a width of 7.
+#
+#   We need ceil(log10(fullscale)) digits to the left of the
+#   decimal. This formulation explicitly discounts the full
+#   scale reading itself if it is a power of 10. e.g.
+#   ceil(log10(100)) = 2, allowing only for display up to
+#   99.999. This limitation really only affects the negative
+#   full scale value, where the extra space is required for
+#   sign.
+#
+#   Given 5 dignificant digits, then we are left with
+#   5 - ceil(log10(fullscale)) to the right of the decimal
+#   point.
+
 my $MKS_MAX_DRIVES = 5;
 my $MKS_MAX_ADDRESS = 254;
 
@@ -89,8 +108,8 @@ while (my $line = <$ifh>) {
     if ($chtype eq 'mfc' || $chtype eq 'vfc') {
       $text ||= $channel; # command defaults to channel mnemonic
     }
-    my $VFprec = 4 - floor(log10($vf_fullscale));
-    my $MFprec = 4 - floor(log10($mf_fullscale)),
+    my $VFprec = 5 - ceil(log10($vf_fullscale));
+    my $MFprec = 5 - ceil(log10($mf_fullscale)),
     my $SPunits;
     my $SPprec;
     if ($chtype eq 'mfc') {
@@ -109,10 +128,10 @@ while (my $line = <$ifh>) {
       MFunits => $MFunits,
       SPunits => $SPunits,
       Punits => $Punits,
-      VFprec => 4 - floor(log10($vf_fullscale)),
-      MFprec => 4 - floor(log10($mf_fullscale)),
+      VFprec => 5 - ceil(log10($vf_fullscale)),
+      MFprec => 5 - ceil(log10($mf_fullscale)),
       SPprec => $SPprec,
-      Pprec => 4 - floor(log10($p_fullscale)),
+      Pprec => 5 - ceil(log10($p_fullscale)),
       text => $text};
     $Channel{$channel} = $datum;
     push(@Index, $datum);
@@ -134,7 +153,7 @@ while (my $line = <$ifh>) {
     die "$srcfile:$linenum: Number of drives exceeds arbitrary limit of $MKS_MAX_DRIVES\n"
       if $n_channels >= $MKS_MAX_DRIVES;
     $text ||= $channel; # command defaults to channel mnemonic
-    my $Pprec = 4 - floor(log10($p_fullscale));
+    my $Pprec = 5 - ceil(log10($p_fullscale));
     my $SPunits = $Punits;
     my $SPprec = $Pprec;
     $Data{$datum} = {
@@ -146,8 +165,8 @@ while (my $line = <$ifh>) {
       # MFunits => $MFunits,
       SPunits => $SPunits,
       Punits => $Punits,
-      # VFprec => 4 - floor(log10($vf_fullscale)),
-      # MFprec => 4 - floor(log10($mf_fullscale)),
+      # VFprec => 5 - ceil(log10($vf_fullscale)),
+      # MFprec => 5 - ceil(log10($mf_fullscale)),
       SPprec => $SPprec,
       Pprec => $Pprec,
       text => $text};
