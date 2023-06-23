@@ -21,31 +21,36 @@ close($lsusbt);
 
 print "# usb_enum: ", scalar(localtime()), "\n";
 
-my @serdevs = </sys/bus/usb/devices/*:*/tty*>;
+my @serdevs = ( </sys/bus/usb/devices/*:*/tty?*>,
+                </sys/bus/usb/devices/*:*/tty/tty?*>);
 # print "Devices:\n", map("  $_\n", @serdevs);
 for my $devstr (@serdevs) {
-  $devstr =~ m|^/sys/bus/usb/devices/([^:]+):([^/]+)/(.*)$| ||
+  $devstr =~ m|^/sys/bus/usb/devices/([^:]+):([^/]+)/(?:[^/]+/)?(.*)$| ||
     die "Pattern did not match\n";
   my $usbt = $1;
   my $if = $2;
   my $port = "/dev/$3";
+  $usbt =~ m/^(\d+)-/ || die "Unexpected usbt for devstr '$devstr'\n";
+  my $bus = $1;
   my $devnum = $devnum{$usbt};
-  open(my $lsusb, '-|', "lsusb -s1:$devnum -v 2>/dev/null | grep iSerial") or
+  open(my $lsusb, '-|', "lsusb -s$bus:$devnum -v 2>/dev/null | grep iSerial") or
     die "Unable to open lsusb pipe\n";
-  my $line = <$lsusb>;
-  close($lsusb) or warn "Error closing lsusb pipe\n";
+  my $line = <$lsusb> || '';
+  close($lsusb) or print "# Error closing lsusb -s$bus:$devnum pipe for $port\n";
   chomp $line;
-  $line =~ m/iSerial \s+ \d+ \s+ (\S+)$/x ||
-    die "Bad iSerial: '$line'";
-  my $SN = $1;
-  if ($ID{"$SN:$if"}) {
-    print $ID{"$SN:$if"}, "_port=$port\n";
-    $IDfound{"$SN:$if"} = 1;
+  if ( $line =~ m/iSerial \s+ \d+ \s+ (\S+)$/x ) {
+    my $SN = $1;
+    if ($ID{"$SN:$if"}) {
+      print $ID{"$SN:$if"}, "_port=$port\n";
+      $IDfound{"$SN:$if"} = 1;
+    } else {
+      print "# Unidentified board found, SN $SN:$if, devnum $devnum on $port\n";
+    }
   } else {
-    print "# Unidentified board found, SN $SN:$if, devnum $devnum on $port\n";
+    print "# Unable to identify iSerial for devnum $devnum on $port: '$line'\n";
   }
 }
-
+    
 for my $snif (keys(%ID)) {
   print "$ID{$snif}_port=''\n" unless $IDfound{$snif};
 }
