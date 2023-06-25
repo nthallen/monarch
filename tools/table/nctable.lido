@@ -5,7 +5,7 @@ ATTR TableName: int;
 ATTR ncursesSetup : VOID;
 
 SYMBOL Program COMPUTE
-  SYNT.TableName = get_table_name(InputFile);
+  SYNT.TableName = get_table_name(Source);
 END;
 
 %----------------------------------------------------------------
