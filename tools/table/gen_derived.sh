@@ -19,6 +19,10 @@ cat <<EOF
 cmake_minimum_required(VERSION 2.8.8...3.20.0)
 cmake_policy(SET CMP0048 NEW)
 project(table_derived  VERSION 2.0.0)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+add_definitions(-Dregister= -D_DEFAULT_SOURCE=1)
 
 set_source_files_properties(Include.cc PROPERTIES
        COMPILE_FLAGS "-include unistd.h")

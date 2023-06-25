@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8.8...3.20.0)
 cmake_policy(SET CMP0048 NEW)
 project(table_derived  VERSION 2.0.0)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set_source_files_properties(Include.cc PROPERTIES
        COMPILE_FLAGS "-include unistd.h")
@@ -18,6 +21,6 @@ else (NOT DEFINED monarch_BINARY_DIR)
     ${monarch_SOURCE_DIR}/libs/nl)
 endif()
 
-add_definitions(-Dregister=)
+add_definitions(-Dregister= -D_DEFAULT_SOURCE=1)
 target_link_libraries(nctable dasio nl ncurses pthread)
 install(TARGETS nctable RUNTIME DESTINATION bin)
