@@ -11,7 +11,7 @@ function nl_error {
   exit 1
 }
 
-HAVE_SUDO=@HAVE_SUDO@
+# HAVE_SUDO=@HAVE_SUDO@
 
 # This is the code for standalone 'distribute' command
 if [ -z "$1" ]; then
@@ -70,15 +70,15 @@ tgt=$1
 shift 1
 case $tgt in
   *:*) cp_cmd=/usr/bin/scp; opts=-p;;
-  *)[ ! -d "$tgt" ] && nl_error "Target '$tgt' is not a directory"
-    if [ $HAVE_SUDO = yes ]; then
-      if [ `id -u` != 0 ]; then
-        exec @SUDO_EXE@ /usr/local/bin/distribute $tgt $*
-      fi
-      [ -n "$SUDO_USER" ] || nl_error Cannot determine user
-      ans=`@SUDO_EXE@ -u $SUDO_USER @SHELL_EXE@ -c "if [ -w \"$tgt\" ]; then echo yes; else echo no; fi"`
-      [ "$ans" != "yes" ] && nl_error "You do not have write permission in $tgt"
-    fi;;
+  *) [ ! -d "$tgt" ] && nl_error "Target '$tgt' is not a directory";;
+  # if [ $HAVE_SUDO = yes ]; then
+  #   if [ `id -u` != 0 ]; then
+  #     exec @SUDO_EXE@ /usr/local/bin/distribute $tgt $*
+  #   fi
+  #   [ -n "$SUDO_USER" ] || nl_error Cannot determine user
+  #   ans=`@SUDO_EXE@ -u $SUDO_USER @SHELL_EXE@ -c "if [ -w \"$tgt\" ]; then echo yes; else echo no; fi"`
+  #   [ "$ans" != "yes" ] && nl_error "You do not have write permission in $tgt"
+  # fi;;
 esac
-$cp_cmd $opts $* $tgt
+$cp_cmd $opts $* $tgt || nl_error "Some file failed to copy. See detail above"
 exit 0
