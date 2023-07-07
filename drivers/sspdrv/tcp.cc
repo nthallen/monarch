@@ -91,6 +91,7 @@ bool SSP_TCP::protocol_input() {
 }
 
 bool SSP_TCP::protocol_timeout() {
+  TO.Clear();
   if (empty() || state != FD_READ) {
     report_err("%s: Unexpected timeout without command pending", iname);
   } else {
