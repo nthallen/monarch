@@ -106,6 +106,21 @@ LaunchVdefault='-V'
 [ -z "$msgProgram" ] && msgProgram='load_exconfig.sh'
 msgDebug=-1
 
+#----------------------------------------------------------------
+# msgf [-V] <code> <message>
+#   -V specifies that output should got to stderr
+#   <code> values:
+#     0: Informational message (no prefix)
+#     1: Adds '[Warn] ' prefix
+#     2: Adds '[Error] ' prefix
+#     3: Adds '[Fatal] ' prefix and terminates with an error code
+#     4: Adds '[Internal] ' prefix and terminates with error
+#    -1: No prefix, terminates w/o error
+#   <-1: Debug codes. Message suppressed if < $msgDebug
+# Invokes /usr/local/bin/msg to format and/or transmit the
+# message. Be default, -V is asserted unless and until an
+# instance of memo is been Launched.
+#----------------------------------------------------------------
 function msgf {
   msgV=$msgVdefault
   sarg=''
@@ -140,6 +155,23 @@ function set_have {
   fi
 }
 
+#----------------------------------------------------------------
+# Launch [Debug] <name> <cmdline>
+#   <name> values:
+#     -: No socket expected--don't wait
+#     -TMC-: socket is named using process's PID
+#     /*: socket name is explicit
+#     *: socket is /var/run/monarch/$Experiment/<name>
+#
+# Starts the specified <cmdline> in the background. Waits 20
+# seconds for the named socket to appear or reports an error
+# and inhibits all subsequent Launch requests.
+#
+# If Debug is present *and* script is running under GNU Screen,
+# launch the new process under gdb in a new screen. Wait time
+# limit is lifted (wait forever) in order to allow user time
+# to do any manual initializations in gdb.
+#----------------------------------------------------------------
 function Launch {
   if [ -n "$launch_error" ]; then
     msgf $LaunchVdefault 2 "Skipping Launch $1 $2 due to earlier errors"
