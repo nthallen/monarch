@@ -68,9 +68,17 @@ if [ "x$1" = "x-f" ]; then
 fi
 tgt=$1
 shift 1
+cur_user=`id -un`
 case $tgt in
   *:*) cp_cmd=/usr/bin/scp; opts=-p;;
-  *) [ ! -d "$tgt" ] && nl_error "Target '$tgt' is not a directory";;
+  *)  [ ! -d "$tgt" ] && nl_error "Target '$tgt' is not a directory"
+      # Remove files that are older. This should eliminate the
+      # problem of not being able to preserve timestamps after
+      # copying
+      for src in $*; do
+        dest="$tgt/`basename $src`"
+        [ "$src" -nt "$dest" ] && rm -fv $dest
+      done;;
   # if [ $HAVE_SUDO = yes ]; then
   #   if [ `id -u` != 0 ]; then
   #     exec @SUDO_EXE@ /usr/local/bin/distribute $tgt $*

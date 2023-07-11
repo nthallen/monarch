@@ -388,12 +388,8 @@ if [ -n "$exp_base" -a -n "$exp_url" ]; then
       [ -d $exp_base ] || nl_error "git clone of $exp_url failed"
     fi
   fi
-  [ -d $exp_src ] || nl_error "Internal: expected exp_src at $exp_src"
-  exp_eng_path=$exp_src/eng
-  [ -d $exp_eng_path ] ||
-    nl_error "Unable to locate 'eng' under $exp_src"
-  exp_eng_wrap_path=`wrap_path $exp_eng_path`
-
+  [ -d $exp_src ] ||
+    nl_error "Internal: expected exp_src at $exp_src"
   arp_das_matlab_path=$arp_das_parent/arp-das-matlab
   [ -d $arp_das_parent ] ||
     nl_error "Internal: thought '$arp_das_parent' was a directory"
@@ -413,20 +409,39 @@ addpath('$exp_eng_wrap_path');
 savepath;
 EOF
 
-  if [ -f $exp_src/setup/getrun.cfg ]; then
+  if [ -f $exp_src/setup/getrun.ini ]; then
     [ -d ~/.monarch ] || mkdir ~/.monarch
-    while read Exp dirname startupname fdesc; do
-      [ -f "$exp_eng_path/$startupname.m" ] ||
-        nl_error "Startup script $startupname.m for $Exp not found"
-      cat >~/.monarch/getrun.$Exp.config <<EOF
-getrun_data_funcfile=$exp_eng_path/$dirname.m
-getrun_startup=$startupname
+    . /usr/local/libexec/setup_getrun.sh
+    function output_getrun_exp_ini {
+      if [ -z "$startup_func" ]; then
+        if [ -n "$ui_func" ]; then
+          startup_func="getrun_startup('$data_dir_func', @$ui_func)"
+        else
+          startup_func="getrun_startup('$data_dir_func')"
+        fi
+      fi
+      [ -z "data_dir_desc" ] &&
+        data_dir_desc="MATLAB data files for $cur_exp"
+      [ -z "$eng_dir" -a -d "$exp_src/eng" ] &&
+        eng_dir=eng
+      exp_eng_path=$exp_src/$eng_dir
+      [ -d $exp_eng_path ] ||
+        nl_error "Unable to locate '$eng_dir' under $exp_src"
+      exp_eng_wrap_path=`wrap_path $exp_eng_path`
+      cat >~/.monarch/getrun.$cur_exp.ini <<EOF
+[$cur_exp]
+data_dir_func=$data_dir_func
+data_dir_desc=$data_dir_desc
+startup_func="$startup_func"
+ui_func=$ui_func
+eng_dir=$exp_eng_path
 EOF
       cat >>$matscriptfile <<EOF
-fprintf(1,'Identify the directory for $fdesc\n');
-update_ne_runsdir('$dirname', '$exp_eng_wrap_path');
+fprintf(1,'Identify the directory for $data_dir_desc\n');
+update_ne_runsdir('$data_dir_func', '$exp_eng_wrap_path');
 EOF
-    done < $exp_src/setup/getrun.cfg
+    }
+    process_getrun_ini $exp_src/setup/getrun.ini
   fi
 
   # Now locate matlab and run it, specifying this directory and the

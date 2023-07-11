@@ -38,6 +38,7 @@ install(PROGRAMS
 install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/flight.sh
   ${CMAKE_CURRENT_SOURCE_DIR}/load_exconfig.sh
+  ${CMAKE_CURRENT_SOURCE_DIR}/setup_getrun.sh
   ${CMAKE_CURRENT_SOURCE_DIR}/usb_enum
   DESTINATION libexec)
 

@@ -9,7 +9,7 @@ getrun <run>+
   specified runs.
 
 Reads configuration information from Experiment.config
-and ~/.monarch/getrun.$Experiment.config
+and ~/.monarch/getrun.$Experiment.ini
 EOF
 exit 0
 
@@ -25,11 +25,6 @@ exit 0
 }
 
 msgProgram='getrun'
-
-function nl_error {
-  echo "getrun: $*" >&2
-  exit 1
-}
 
 #  flt=''
 #  # gse=dpi
@@ -88,32 +83,26 @@ function do_tar {
 }
 
 function locate_run {
-  # search localhost, and hosts in GSE, and FlightNode for
-  # Set $gse $RunPath on success. $GSEs_tried on failure
-  gse=localhost
+  # locate_run <run>
+  # search localhost, and hosts in GSE, and FlightNode for <run>
+  # Set $gse $RunPath on success. $GSEs_tried on any failures
+  gsetry=localhost
   lcl=`locate_rundir -a $run | sed -ne 's/^[^:]*://; s/:yes$//p'`
+  [ -n "$lcl" ] && gse=$gsetry
   RunPath=''
   GSEs_tried=$gse
-  for gse in $GSE; do
+  for gsetry in $GSE $FlightNode; do
     if [ -z "$lcl" ]; then
-      lcl=`ssh $gse locate_rundir -H $HomeDir -a $run | sed -ne 's/^[^:]*://; s/:yes$//p'`
-      [ -z "$lcl" ] && GSEs_tried="$GSEs_tried, $gse"
+      lcl=`ssh $gsetry locate_rundir -H $HomeDir -a $run | sed -ne 's/^[^:]*://; s/:yes$//p'`
+      if [ -z "$lcl" ]; then
+        GSEs_tried="$GSEs_tried, $gsetry"
+      else
+        gse=$gsetry
+      fi
     fi
   done
-  if [ -z "$lcl" -a -n "$FlightNode" ]; then
-    gse=$FlightNode
-    lcl=`ssh $gse locate_rundir -H $HomeDir -a $run | sed -ne 's/^[^:]*://; s/:yes$//p'`
-    [ -z "$lcl" ] && GSEs_tried="$GSEs_tried and $gse"
-  fi
   if [ -n "$lcl" ]; then
-    RunPath=${lcl%:yes}
-    RunPath=${RunPath#*:}
-    justrun=${RunPath#*/}
-    if [ "$justrun" = "$RunPath" ]; then
-      RunPath = '.';
-    else
-      RunPath=${RunPath%/*}
-    fi
+    RunPath=`dirname $lcl`
   fi
 }
 
@@ -126,23 +115,30 @@ PATH=$SAVEPATH
 [ -n "$CFG_ERROR" ] && [ -z "$Experiment" -o -z "$HomeDir" ] &&
   msgf 3 $CFG_ERROR
 
-if [ -r ~/.monarch/getrun.$Experiment.config ]; then
+if [ -r ~/.monarch/getrun.$Experiment.ini ]; then
+  . /usr/local/libexec/setup_getrun.sh
+  function output_getrun_exp_ini {
+    getrun_data_funcfile=$eng_dir/$data_dir_func.m
+    getrun_startup=$startup_func
+  }
+  process_getrun_ini ~/.monarch/getrun.$Experiment.ini
+elif [ -r ~/.monarch/getrun.$Experiment.config ]; then
   . ~/.monarch/getrun.$Experiment.config
 fi
 
 [ -n "$getrun_data_funcfile" -a -n "$getrun_startup" ] ||
-  nl_error "getrun_data_funcfile or getrun_startup undefined"
+  msgf 3 "getrun_data_funcfile or getrun_startup undefined"
 
 # READ getrun_data_funcfile
 [ -r "$getrun_data_funcfile" ] ||
-  nl_error "Unable to read from $getrun_data_funcfile"
+  msgf 3 "Unable to read from $getrun_data_funcfile"
 
 OS=`uname -s`
 case "$OS" in
   CYGWIN_NT*) machine=Cygwin;;
   Linux) machine=Linux;;
   Darwin) machine=Mac;;
-  *) nl_error "Unable to identify operating system: uname -s said '$OS'";;
+  *) msgf 3 "Unable to identify operating system: uname -s said '$OS'";;
 esac
 
 while read -r line; do
@@ -155,8 +151,8 @@ while read -r line; do
   fi
 done <$getrun_data_funcfile
 
-[ -n "$RunsDir" ] || nl_error "RunsDir not defined"
-[ -d "$RunsDir" ] || nl_error "RunsDir '$RunsDir' does not exist"
+[ -n "$RunsDir" ] || msgf 3 "RunsDir not defined"
+[ -d "$RunsDir" ] || msgf 3 "RunsDir '$RunsDir' does not exist"
 
 for run in $*; do
   case $run in
@@ -170,7 +166,8 @@ for run in $*; do
     nomatlab) Matlab=no;;
     [1-9][0-9][0-9][0-9][0-9][0-9].[0-9]*)
       echo $run
-      # sets $gse $RunPath $GSEs_tried
+      flt=''
+      # locate_run sets $gse $RunPath $GSEs_tried
       locate_run $run
       if [ -n "$RunPath" ]; then
         echo "Found run $run on $gse $RunPath"
@@ -191,7 +188,7 @@ for run in $*; do
       else
         echo "Unable to locate run $run on $GSEs_tried: skipping"
       fi;;
-    *) nl_error "Unrecognized option: '$run'";;
+    *) msgf 3 "Unrecognized option: '$run'";;
   esac
 done
 
@@ -215,7 +212,7 @@ if [ -f $RunsDir/runs.dat ] && [ "$Matlab" = "yes" ]; then
   if [ -n "$matlab" ]; then
     eval $matlab -sd '$pwd_wrap' -r $getrun_startup
   else
-    nl_error "Unable to locate Matlab executable"
+    msgf 3 "Unable to locate Matlab executable"
   fi
 fi
 
@@ -239,6 +236,6 @@ for run in $*; do
         [ -d $ANAL_Dir/$run$flt ] || mkdir -p $ANAL_Dir/$run$flt
         do_tar $run SSP
       fi;;
-    *) nl_error "Unrecognized option in second pass: '$run'";;
+    *) msgf 3 "Unrecognized option in second pass: '$run'";;
   esac
 done
