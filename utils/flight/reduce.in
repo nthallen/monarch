@@ -200,8 +200,7 @@ if [ ! -d $srcHomeDir/$directory ]; then
     fi
 
     if [ "$DoCopy" = "yes" ]; then
-      msgf 0 "Copying from $SrcDir to $DestDir ..."
-      # cp -frc $SrcDir $DestDir
+      msgf 0 "Copying from $SrcHome to $DestDir ..."
       do_tar $SrcHome $SrcRel .
       return 0
     fi

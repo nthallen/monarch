@@ -92,20 +92,20 @@ function test_and_accept {
   mypath=$2
   myrun=$3
   
-  if [ -d $mybase/$mypath/$myrun ]; then
-    [ $optA = yes -a -d $mybase/anal/$myrun ] && hasA=${sep}yes
-    echo $mybase$sep$mypath/$myrun$hasA
+  RUNBASE=$(basename $myrun)
+  if [ -d $mybase/$mypath/$RUNBASE ]; then
+    [ $optA = yes -a -d $mybase/anal/$RUNBASE ] && hasA=${sep}yes
+    echo $mybase$sep$mypath/$RUNBASE$hasA
+    [ $RUNBASE = $myrun ] || [ $mypath/$RUNBASE = $myrun ] ||
+      msgf 1 "Run $RUNBASE was found at $mypath, but request was for $myrun"
   fi
 }
 
 for RUN in $runs; do
   for base in $HomeDir $AltDir; do
-    if [ -z "$RunType" ]; then
-      test_and_accept $base . $RUN
-    else
-      for type in flight preflt cal data junk; do
-        test_and_accept $base raw/$type $RUN
-      done
-    fi
+    test_and_accept $base . $RUN
+    for type in flight preflt cal data junk; do
+      test_and_accept $base raw/$type $RUN
+    done
   done
 done
