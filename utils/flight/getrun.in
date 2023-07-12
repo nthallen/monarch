@@ -119,7 +119,7 @@ function locate_run {
   lcl=`locate_rundir -a $run | sed -ne 's/^[^:]*://; s/:yes$//p'`
   [ -n "$lcl" ] && gse=$gsetry
   RunPath=''
-  GSEs_tried=$gse
+  GSEs_tried=$gsetry
   for gsetry in $GSE $FlightNode; do
     if [ -z "$lcl" ]; then
       lcl=`ssh $gsetry locate_rundir -H $HomeDir -a $run | sed -ne 's/^[^:]*://; s/:yes$//p'`
@@ -140,7 +140,7 @@ function list_runs {
   locate_rundir -l $opt_t $opt_N $opt_a | sed -e 's/^[^:]*:/  /'
   for gsetry in $GSE $FlightNode; do
     echo $gsetry:
-    ssh $gsetry locate_rundir -l $opt_t $opt_N $opt_a | sed -e 's/^[^:]*:/  /'
+    ssh $gsetry locate_rundir -H $HomeDir -l $opt_t $opt_N $opt_a | sed -e 's/^[^:]*:/  /'
   done
 }
 
@@ -225,7 +225,7 @@ for run in $*; do
           fi
         fi
       else
-        echo "Unable to locate run $run on $GSEs_tried: skipping"
+        echo "Unable to locate CSV files for $run on $GSEs_tried: skipping"
       fi;;
     *) msgf 3 "Unrecognized option: '$run'";;
   esac
