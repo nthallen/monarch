@@ -7,6 +7,14 @@ getrun -h
 getrun <run>+
   Retrieves the .csv output and log files for the
   specified runs.
+getrun -l [-Nn] [-t type] [-a]
+  List the lastest run on each relevant system
+  -Nn list the n lastest runs (default 1)
+  -t type restrict search to the specified RunType:
+          one of data, cal, preflt, flight, junk.
+          (single letter prefix is accepted)
+  -a include suffix indicating whether csv files are
+     available
 
 Reads configuration information from Experiment.config
 and ~/.monarch/getrun.$Experiment.ini
@@ -25,6 +33,27 @@ exit 0
 }
 
 msgProgram='getrun'
+
+#----------------------------------------------------------------
+# Process command line options (-h, -a, -H HomeDir)
+#----------------------------------------------------------------
+opt_a=''
+opt_l=''
+opt_N=''
+opt_t=''
+while getopts "halt:N:" option; do
+  case $option in
+    h) print_usage;;
+    a) opt_a=-a;;
+    l) opt_l=-l;;
+    N) opt_N=-N$OPTARG;;
+    t) opt_t=-t$OPTARG;;
+    \?) echo; exit 1;;
+    *) msg -V -n $msgProgram "[ERROR] Unsupported option: -$option"; exit 1;;
+  esac
+done
+let sval=$OPTIND-1
+shift $sval
 
 #  flt=''
 #  # gse=dpi
@@ -106,6 +135,15 @@ function locate_run {
   fi
 }
 
+function list_runs {
+  echo localhost:
+  locate_rundir -l $opt_t $opt_N $opt_a | sed -e 's/^[^:]*:/  /'
+  for gsetry in $GSE $FlightNode; do
+    echo $gsetry:
+    ssh $gsetry locate_rundir -l $opt_t $opt_N $opt_a | sed -e 's/^[^:]*:/  /'
+  done
+}
+
 # load_exconfig.sh restricts PATH, but we at least need the
 # path to MATLAB
 SAVEPATH=$PATH
@@ -114,6 +152,11 @@ PATH=$SAVEPATH
 # Don't fail if HomeDir does not exist
 [ -n "$CFG_ERROR" ] && [ -z "$Experiment" -o -z "$HomeDir" ] &&
   msgf 3 $CFG_ERROR
+
+if [ -n "$opt_l" ]; then
+  list_runs
+  exit 0
+fi
 
 if [ -r ~/.monarch/getrun.$Experiment.ini ]; then
   . /usr/local/libexec/setup_getrun.sh
@@ -156,21 +199,17 @@ done <$getrun_data_funcfile
 
 for run in $*; do
   case $run in
-    -h) print_usage;;
-    help) print_usage;;
-    --help) print_usage;;
     nocsv) Copy_CSV=no;;
 #   [Ss][Ss][Pp]) Copy_SSP=yes;;
 #   gse=*) gse=${run#gse=};;
     decimate) Decimate=yes;;
     nomatlab) Matlab=no;;
     [1-9][0-9][0-9][0-9][0-9][0-9].[0-9]*)
-      echo $run
       flt=''
       # locate_run sets $gse $RunPath $GSEs_tried
       locate_run $run
       if [ -n "$RunPath" ]; then
-        echo "Found run $run on $gse $RunPath"
+        echo "Found run $run on $gse under $RunPath"
 
         [ "$RunPath" = "raw/flight" ] && flt=F
         [ -d $RunsDir/$run$flt ] || mkdir -p $RunsDir/$run$flt

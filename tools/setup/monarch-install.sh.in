@@ -405,8 +405,6 @@ fprintf(1,'Running $scriptname to setup Matlab PATH for $exp_base\n');
 addpath('$arp_das_matlab_wrap_path');
 addpath('$arp_das_matlab_ne_wrap_path');
 addpath('$arp_das_matlab_dfs_wrap_path');
-addpath('$exp_eng_wrap_path');
-savepath;
 EOF
 
   if [ -f $exp_src/setup/getrun.ini ]; then
@@ -437,11 +435,15 @@ ui_func=$ui_func
 eng_dir=$exp_eng_path
 EOF
       cat >>$matscriptfile <<EOF
+addpath('$exp_eng_wrap_path');
 fprintf(1,'Identify the directory for $data_dir_desc\n');
 update_ne_runsdir('$data_dir_func', '$exp_eng_wrap_path');
 EOF
     }
     process_getrun_ini $exp_src/setup/getrun.ini
+    cat >>$matscriptfile <<EOF
+savepath;
+EOF
   fi
 
   # Now locate matlab and run it, specifying this directory and the
