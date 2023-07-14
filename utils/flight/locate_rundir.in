@@ -85,7 +85,7 @@ fi
 . /usr/local/libexec/load_exconfig.sh
 [ -n "$CFG_ERROR" ] && msgf 3 $CFG_ERROR
 
-[ -n "$runs" ] || msgf 3 "No runs specified"
+[ -z "$runs" -a $optL = no ] && msgf 3 "No runs specified"
 
 function test_and_accept {
   mybase=$1
