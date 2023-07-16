@@ -6,7 +6,7 @@ use strict;
 # terms of the GNU Public License.
 
 #__USAGE
-#%C	[ -w ] [ -o outputfile ] [-v] [-l] [-c] [-C dir] dir [ dir ... ]
+#%C	[ -w ] [ -o outputfile ] [-t] [-v] [-l] [-c] [-C dir] dir [ dir ... ]
 #	Generates a listing of CRCs of the contents of the directory
 #	and all its subdirectories. This file should be sensitive
 #	only to the file names and their contents, not to the dates
@@ -17,7 +17,11 @@ use strict;
 #	not specified and .MD5SUM or .CKSUM exists, the current
 #	output is compared to that file and the differences are reported.
 #
-#	If on output file is not specified with the -o flag, output
+# If an output file is specified with the -o flag, the -t option
+# designates the outputfile as being a temp file, meaning it will
+# be deleted if it matches the existing .CKSUM or .MD5SUM file.
+#
+#	If an output file is not specified with the -o flag, output
 #	may be written to a temp file. The temp file may not be
 #	removed if a comparison against the old .CKSUM shows a
 #	discrepancy.
@@ -149,8 +153,8 @@ use Getopt::Std;
 use Cwd;
 use File::Compare;
 
-use vars qw($opt_c $opt_o $opt_w $opt_v $opt_l $opt_C);
-getopts('wvclo:C:');
+use vars qw($opt_c $opt_o $opt_t $opt_w $opt_v $opt_l $opt_C);
+getopts('wvclto:C:');
 
 my $pwd;
 if ($opt_C) {
@@ -186,6 +190,7 @@ foreach my $arg ( @ARGV ) {
     if ( $opt_o =~ m|^((//\d+/)?[/\w\d.]+)$| ) {
       $output_file = $1;
     } else { die "Bad output file name: $opt_o\n"; }
+    $output_is_temp = 1 if $opt_t;
   } elsif ( defined $opt_w ) {
     $output_file = $compare_file;
   } elsif ( -f $compare_file ) {
