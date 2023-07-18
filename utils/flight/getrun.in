@@ -108,7 +108,7 @@ function do_tar {
   DC=''
   [ $Decimate = yes ] && DC='--exclude="*[1-9].dat"'
   echo Retrieving $HomeDir/$RunPath/$run/$src
-  eval time ssh $gse tar -czf- -C $HomeDir/$RunPath/$run $DC $src | tar -C $RunsDir/$run$flt -xzf-
+  eval time ssh $gse tar -czf- -C $HomeDir/$RunPath/$run $DC $src | tar -C "$RunsDir/$run$flt" -xzf-
 }
 
 function locate_run {
@@ -212,14 +212,14 @@ for run in $*; do
         echo "Found run $run on $gse under $RunPath"
 
         [ "$RunPath" = "raw/flight" ] && flt=F
-        [ -d $RunsDir/$run$flt ] || mkdir -p $RunsDir/$run$flt
+        [ -d "$RunsDir/$run$flt" ] || mkdir -p "$RunsDir/$run$flt"
         [ "$gse" = "localhost" ] && gse=""
         if [ $Copy_CSV = yes ]; then
-          do_scp $gse:$HomeDir/anal/$run/*.csv $RunsDir/$run$flt
-          rmdir --ignore $RunsDir/$run$flt
-          if [ -d $RunsDir/$run$flt ]; then
-            echo "$run$flt" >>$RunsDir/runs.dat
-            do_scp $gse:$HomeDir/$RunPath/$run/*.log $RunsDir/$run$flt/
+          do_scp $gse:$HomeDir/anal/$run/*.csv "$RunsDir/$run$flt"
+          rmdir --ignore "$RunsDir/$run$flt"
+          if [ -d "$RunsDir/$run$flt" ]; then
+            echo "$run$flt" >>"$RunsDir/runs.dat"
+            do_scp $gse:$HomeDir/$RunPath/$run/*.log "$RunsDir/$run$flt/"
           else
             echo "No CSV files found for $run: skipping"
           fi
@@ -231,7 +231,7 @@ for run in $*; do
   esac
 done
 
-if [ -f $RunsDir/runs.dat ] && [ "$Matlab" = "yes" ]; then
+if [ -f "$RunsDir/runs.dat" ] && [ "$Matlab" = "yes" ]; then
   case `uname -s` in
     CYGWIN_NT*) pwd_wrap="`cygpath -w $PWD`";;
     *) pwd_wrap=$PWD;;
