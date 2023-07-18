@@ -7,6 +7,13 @@
 <sort>
   -p <port> specify the serial port to open
   -b <baud> specify the baud rate (default is 57600)
+<unsort>
+ser_chk provides a very low-level serial port diagnostic. It reads
+input from the keyboard (stdin) and transmits it on the designated serial
+port. It also reads input from the serial port and outputs it
+to stdout. This could be used in a simple loopback configuration or
+with another instance of ser_chk at the other end of the serial
+connection.
 
 <switch>
   case 'p': ser_chk_port = optarg; break;
