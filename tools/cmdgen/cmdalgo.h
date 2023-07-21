@@ -15,14 +15,13 @@
   #include "dasio/cmd_server.h"
 #endif
 
-int cmd_batch(DAS_IO::cmd_hdr_parser *CHPP);
-
 extern "C" {
 #endif // __cplusplus
 
 void cmd_init(void); // cmdgen.skel, called from library
 void cmd_interact(void); // cmdgen.skel if CMD_INTERACT_MODE. called from library
 int cmd_batch(const char *cmd, int test); // cmdgen.skel if !CMD_CLIENT. called from library
+
 typedef struct {
   unsigned short state;
   unsigned short value;

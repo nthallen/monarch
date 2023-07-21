@@ -1275,7 +1275,7 @@ static int cmd_exec(void) {
 
 #ifdef CMD_BATCH_MODE
 
-  int cmd_batch(DAS_IO::cmd_hdr_parser *CHPP) {
+  int cmd_batch_chp(DAS_IO::cmd_hdr_parser *CHPP) {
 #ifdef TRANSMITTING
     CHPP->assign_sn();
 #else

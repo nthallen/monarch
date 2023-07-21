@@ -68,16 +68,19 @@ namespace DAS_IO {
       char fmtcmd[Cmd_Server::MAX_COMMAND_IN];
     private:
       int hdrID_len;
-      static int latest_SN;
-      static const int N_SN = 5;
-      static struct {
+      
+      typedef struct {
         int SN;
         int retrans;
-        int next_idx;
-      } recent_SN[N_SN];
-      static int first_SN_idx;
-      static int last_SN_idx;
-      static int unused_SN_idx;
+      } recent_SN_t;
+      static const int N_SN_MAX = 10;
+      static recent_SN_t recent_SN[N_SN_MAX]; ///< Storage for most recent SNs
+      static int latest_SN; ///< The last SN created here
+      static int first_SN_idx; ///< index of the oldest SN recorded
+      static int N_SN; ///< Number of SNs recorded, <= N_SN_MAX
+      /** Number of retransmissions of the last N_SN_MAX SNs */
+      static int recent_retrans;
+
       /**
        * @param ibuf The source string
        * @param suffix The required suffix string
@@ -273,5 +276,6 @@ class cmdif_dgdata {
  * be added to Receive other messages.
  */
 void ci_server();
+int cmd_batch_chp(DAS_IO::cmd_hdr_parser *CHPP);
 
 #endif

@@ -95,7 +95,7 @@ bool cmd_hdr_parser::parse(const unsigned char *ibuf) {
   }
   cmd = &ibuf[i];
   if (!chk_trailing(cmd, "\n")) {
-    msg(2, "cmd_hdr_parser: missing newline");
+    msg(2, "cmd_hdr_parser: missing or multiple newlines");
     return true;
   }
   return false;
@@ -137,43 +137,59 @@ int cmd_hdr_parser::format() {
   return retcode(nc);
 }
 
-int cmd_hdr_parser::latest_SN;
+int cmd_hdr_parser::latest_SN = 0;
 
 void cmd_hdr_parser::assign_sn() {
   if (SN == 0) {
     SN = ++latest_SN;
   } else {
-    msg(MSG_WARN, "assign_sn: already assigned");
+    // We expect this when using a Relay
+    msg(MSG_DEBUG, "assign_sn: already assigned");
   }
 }
 
-struct {
-  int SN;
-  int retrans;
-  int next;
-} cmd_hdr_parser::recent_SN[N_SN];
+cmd_hdr_parser::recent_SN_t cmd_hdr_parser::recent_SN[N_SN_MAX];
 int cmd_hdr_parser::first_SN_idx = -1;
-int cmd_hdr_parser::last_SN_idx = -1;
-int cmd_hdr_parser::unused_SN_idx = 0;
+int cmd_hdr_parser::N_SN = 0;
+int cmd_hdr_parser::recent_retrans = 0;
 
+/**
+ * @return true if the specified SN has been seen recently
+ */
 bool cmd_hdr_parser::check_sn() {
   if (SN) {
-    Search through the list for value >= SN
-    if !at end && equal {
-      ++retrans
-      return true
-    } else if (at beginning and size < N_SN) or
-            (! at beginning)
-      insert
-      if size < N_SN
-        pop_front
-      return false
+    if (first_SN_idx < 0 || first_SN_idx >= N_SN_MAX) {
+      N_SN = 0;
+    }
+    if (N_SN > 0) {
+      for (int N = 0; N < N_SN; ++N) {
+        int i = first_SN_idx + N;
+        if (i >= N_SN_MAX) i -= N_SN_MAX;
+        if (recent_SN[i].SN == SN) {
+          ++recent_SN[i].retrans;
+          ++recent_retrans;
+          return true;
+        }
+      }
+    }
+    // Now we have a new SN
+    if (N_SN < N_SN_MAX) {
+      ++N_SN;
+      int i = first_SN_idx + N_SN;
+      recent_SN_t *rSN = &recent_SN[i];
+      rSN->SN = SN;
+      rSN->retrans = 0;
     } else {
-      // record really old SN
-      return true
+      recent_SN_t *rSN = &recent_SN[first_SN_idx];
+      recent_retrans -= rSN->retrans;
+      rSN->SN = SN;
+      rSN->retrans = 0;
+      if (++first_SN_idx >= N_SN_MAX) {
+        first_SN_idx = 0;
+      }
     }
   }
   return false;
 }
 
-}
+} // namespace DAS_IO
