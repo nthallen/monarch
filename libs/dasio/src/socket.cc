@@ -225,6 +225,7 @@ bool Socket::connect() {
       }
       break;
     case Socket_TCP:
+    case Socket_UDP:
       { nl_assert(iname != 0 && service != 0);
         char portname[6];
         
@@ -232,7 +233,8 @@ bool Socket::connect() {
           msg(MSG_FATAL, "%s: Unable to determine service port", iname);
         }
         
-        fd = socket(AF_INET, SOCK_STREAM, 0);
+        fd = socket(AF_INET,
+          sock_type == Socket_TCP ? SOCK_STREAM : SOCK_DGRAM, 0);
         if (fd < 0)
           msg(MSG_EXIT_ABNORM, "socket() failure in DAS_IO::Socket(%s): %s", iname,
             std::strerror(errno));
@@ -269,13 +271,17 @@ bool Socket::connect() {
             msg(MSG_FATAL, "%s: bind(%s, %s) failed with error %d: %s",
               iname, hostname, portname, errno, std::strerror(errno));
           }
-
-          if (listen(fd, MAXPENDING) < 0) {
-            msg(MSG_FATAL, "%s: listen() failure in DAS_IO::Socket(): %s", iname,
-              std::strerror(errno));
+          if (socket_type == Socket_TCP) {
+            if (listen(fd, MAXPENDING) < 0) {
+              msg(MSG_FATAL, "%s: listen() failure in DAS_IO::Socket(): %s", iname,
+                std::strerror(errno));
+            }
+            socket_state = Socket_listening;
+            flags = 0;
+          } else { // Socket_UDP
+            socket_state = Socket_connected;
+            flags = Fl_Read;
           }
-          socket_state = Socket_listening;
-          flags = 0;
         } else {
           /* Establish the connection to the server */
           struct sockaddr_in *addr = (struct sockaddr_in *)res->ai_addr;
@@ -294,9 +300,6 @@ bool Socket::connect() {
                   std::strerror(errno));
                 conn_fail_reported = true;
               }
-//            if (reset()) {
-//              msg(MSG_FATAL, "%s: Connect failure fatal after all retries", iname);
-//            }
               return reset() || connect_failed();
             }
           }

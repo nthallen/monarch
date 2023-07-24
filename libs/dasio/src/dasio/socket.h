@@ -72,8 +72,6 @@ class Socket : public Interface {
     
     /**
      * Create a server (listening) socket using hs-registry.
-     * While this type will be used for Socket_TCP, the
-     * function is not currently used
      * @param iname Interface name (for debugging)
      * @param function Application-specific function
      * @param service String representing the service name or port number
