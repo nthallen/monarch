@@ -21,6 +21,7 @@ fi
 crargs=''
 crname=''
 install=''
+buildtests=''
 while [ -n "$1" ]; do
   if [ "$1" = "cross" ]; then
     shift
@@ -28,6 +29,9 @@ while [ -n "$1" ]; do
   elif [ "$1" = "install" ]; then
     shift
     install=install
+  elif [ "$1" = "BUILD_TESTS" ]; then
+    shift
+    buildtests="-DBUILD_TESTS=ON"	  
   else
     msg "Unrecognized option: '$1'"
     print_usage
@@ -57,7 +61,8 @@ if [ ! -d $builddir ]; then
   msg Creating build $builddir
   mkdir -p $builddir
   cd $builddir
-  cmake -DCMAKE_BUILD_TYPE=Debug $crargs $relsrcroot$subdir ||
+  echo cmake -DCMAKE_BUILD_TYPE=Debug $crargs $buildtests $relsrcroot$subdir
+  cmake -DCMAKE_BUILD_TYPE=Debug $crargs $buildtests $relsrcroot$subdir ||
     nl_error "cmake failed. You will probably need to delete the build directory"
 else
   msg Using existing $builddir
