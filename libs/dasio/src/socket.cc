@@ -55,6 +55,20 @@ Socket::Socket(const char *iname, const char *function,
   common_init();
 }
 
+// UDP Socket
+Socket::Socket(const char *iname, const char *function,
+           const char *service, int bufsz, UDP_mode_t mode) :
+  Interface(iname, bufsz),
+  function(function),
+  hostname(0),
+  service(service),
+  is_server(mode == UDP_READ),
+  socket_state(Socket_disconnected),
+  socket_type(Socket_UDP)
+{
+  common_init();
+}
+
 // Server Socket
 Socket::Socket(const char *iname, const char *service,
         socket_type_t socket_type) :
@@ -121,10 +135,11 @@ void Socket::common_init() {
   set_retries(-1, 5, 60, true);
   conn_fail_reported = false;
   is_server_client = false;
-  if (socket_type == Socket_Function) {
+  if (function) {
     nl_assert(hostname == 0);
     hostname = hs_registry::query_host(function);
-    if (hostname) socket_type = Socket_TCP;
+    if (hostname && socket_type == Socket_Function)
+      socket_type = Socket_TCP;
   }
   if ((socket_type == Socket_Function && hostname == 0) ||
       (socket_type == Socket_Unix && function)) {
@@ -139,7 +154,8 @@ void Socket::common_init() {
     }
     socket_type = Socket_Unix;
   }
-  if (socket_type == Socket_TCP && is_server &&
+  if ((socket_type == Socket_TCP || socket_type == Socket_UDP)
+      && is_server &&
       !(hostname && hostname[0])) {
     hostname = "0.0.0.0";
   }
@@ -148,6 +164,8 @@ void Socket::common_init() {
 }
 
 bool Socket::connect() {
+  bool using_TCP = false;
+  
   switch (socket_type) {
     case Socket_Unix:
       if (unix_name == 0) {
@@ -225,6 +243,7 @@ bool Socket::connect() {
       }
       break;
     case Socket_TCP:
+      using_TCP = true; // and fall through
     case Socket_UDP:
       { nl_assert(iname != 0 && service != 0);
         char portname[6];
@@ -234,7 +253,7 @@ bool Socket::connect() {
         }
         
         fd = socket(AF_INET,
-          sock_type == Socket_TCP ? SOCK_STREAM : SOCK_DGRAM, 0);
+          socket_type == Socket_TCP ? SOCK_STREAM : SOCK_DGRAM, 0);
         if (fd < 0)
           msg(MSG_EXIT_ABNORM, "socket() failure in DAS_IO::Socket(%s): %s", iname,
             std::strerror(errno));
@@ -246,20 +265,24 @@ bool Socket::connect() {
 
         // ### use hints to resolve portname even for server
         // ### refer to test/network/getaddrinfo.c for example code
-        // struct sockaddr_in localAddr, srvrAddr;
         struct addrinfo hints;
         memset(&hints,0,sizeof(hints));
         hints.ai_family = AF_INET;
-        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_socktype = using_TCP ?
+                            SOCK_STREAM : SOCK_DGRAM;
         hints.ai_protocol = 0;
         hints.ai_flags = AI_ADDRCONFIG;
+        hints.ai_addrlen = 0;
+        hints.ai_canonname = 0;
+        hints.ai_addr = 0;
+        hints.ai_next = 0;
         struct addrinfo *res = 0;
         int err = getaddrinfo(hostname, portname, &hints, &res);
         if (err < 0) {
           msg(MSG_ERROR, "%s: getaddrinfo(%s, %s) failed with error %d: %s",
             iname, hostname, portname, err, gai_strerror(err));
           reset();
-          return false;
+          return true;
         }
         if (res == 0) {
           msg(MSG_FATAL, "%s: getaddrinfo(%s, %s) provided no result",
@@ -284,6 +307,16 @@ bool Socket::connect() {
           }
         } else {
           /* Establish the connection to the server */
+          if (socket_type == Socket_UDP &&
+              UDP_mode == UDP_BROADCAST) {
+            int broadcastEnable = 1;
+            if (setsockopt(fd, SOL_SOCKET, SO_BROADCAST,
+                  &broadcastEnable, sizeof(broadcastEnable))
+                < 0) {
+              msg(nl_response, "setsockopt failed: %s", strerror(errno));
+              return 1;
+            }
+          }
           struct sockaddr_in *addr = (struct sockaddr_in *)res->ai_addr;
           if (::connect(fd, (struct sockaddr *)(addr),
                 sizeof(struct sockaddr_in)) < 0) {
@@ -302,8 +335,10 @@ bool Socket::connect() {
               }
               return reset() || connect_failed();
             }
+            socket_state = Socket_connecting;
+          } else {
+            socket_state = Socket_connected;
           }
-          socket_state = Socket_connecting;
           flags |= Fl_Write;
         }
         flags |= Fl_Read | Fl_Except;

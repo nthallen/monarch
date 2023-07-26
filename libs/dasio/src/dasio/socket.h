@@ -35,6 +35,7 @@ class Socket : public Interface {
     typedef enum { Socket_Unix, Socket_TCP, Socket_UDP, Socket_CAN,
                    Socket_Function
     } socket_type_t;
+    typedef enum { UDP_READ, UDP_WRITE, UDP_BROADCAST } UDP_mode_t;
 
     /**
      * Create a socket connection to the specified hostname and service/port.
@@ -49,7 +50,7 @@ class Socket : public Interface {
            const char *service);
 
     /**
-     * Create a socket connection to the specified function and
+     * Create a socket to connect to the specified function and
      * service/port. The socket will use the host-session registry
      * along with command-line arguments to determine whether to
      * use a TCP socket or a Unix Domain socket.
@@ -60,6 +61,21 @@ class Socket : public Interface {
      */
     Socket(const char *iname, const char *function,
            const char *service, int bufsz);
+
+    /**
+     * Create a UDP socket using the specified function and
+     * service/port. The socket will use the host-session registry
+     * along with command-line arguments to determine the port
+     * and either the local interface (for UDP_READ) or the
+     * remote host (for UDP_WRITE or UDP_BROADCAST).
+     * @param iname Interface name (for debugging)
+     * @param function Application-specific function
+     * @param service The service name or port number
+     * @param bufsz The initial input buffer size
+     * @param mode UDP_READ, UDP_WRITE or UDP_BROADCAST
+     */
+    Socket(const char *iname, const char *function,
+           const char *service, int bufsz, UDP_mode_t mode);
     
     /**
      * Create a server (listening) socket.
@@ -355,6 +371,7 @@ class Socket : public Interface {
     long connect_timeout_msecs;
     socket_state_t socket_state;
     socket_type_t socket_type;
+    UDP_mode_t UDP_mode;
   private:
     static const int MAXPENDING = 5;
     /**
