@@ -1,0 +1,12 @@
+<package> tm_ip_export
+<include> msg oui
+<include> host_session
+
+<unsort>
+Host_Session function Relay: To specify relay host IP
+Host_Session function Uplink: To specify the local uplink interface
+
+<package> appid_default
+<include> "dasio/appid.h"
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("TMIPX", "tm_ip_export", "V1.0");

@@ -26,7 +26,7 @@ namespace DAS_IO {
 
   tm_rcvr::~tm_rcvr() {}
 
-  void tm_rcvr::load_tmdac(char *path) {
+  void tm_rcvr::load_tmdac(const char *path) {
     ::load_tmdac(path);
     init_tm_type();
   }
