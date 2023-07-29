@@ -3,8 +3,6 @@
  */
 #ifndef TM_IP_EXPORT_H_INCLUDED
 #define TM_IP_EXPORT_H_INCLUDED
-#include <netdb.h>
-#include <netinet/in.h>
 #include "dasio/tm_client.h"
 #include "serio_pkt.h"
 
