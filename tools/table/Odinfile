@@ -8,7 +8,7 @@
 
 %nflags == <<
  +cc='g++'
- +cc_flags='-g -I/usr/local/include -Wl,-rpath -Wl,/usr/local/lib -fpermissive -Dregister='
+ +cc_flags='-g -I/usr/local/include -Wl,-rpath -Wl,/usr/local/lib -Dregister='
  +lib=dasio nl ncurses pthread
  +lib_sp=(/usr/local/lib)
 
