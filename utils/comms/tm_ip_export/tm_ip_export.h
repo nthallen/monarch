@@ -4,7 +4,7 @@
 #ifndef TM_IP_EXPORT_H_INCLUDED
 #define TM_IP_EXPORT_H_INCLUDED
 #include "dasio/tm_client.h"
-#include "serio_pkt.h"
+#include "dasio/serio_pkt.h"
 
 using namespace DAS_IO;
 
@@ -20,7 +20,6 @@ class ipx_cmd_in : public Client {
     void send_row(uint16_t MFCtr, const uint8_t *raw);
   protected:
     // ~ipx_cmd_in();
-    bool not_serio_pkt_hdr();
 };
 
 /**

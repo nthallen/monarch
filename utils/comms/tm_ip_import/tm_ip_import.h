@@ -5,7 +5,7 @@
 #define TM_IP_IMPORT_H_INCLUDED
 #include "dasio/server.h"
 #include "dasio/client.h"
-#include "serio_pkt.h"
+#include "dasio/serio_pkt.h"
 
 using namespace DAS_IO;
 
@@ -21,7 +21,6 @@ class ipi_cmd_in : public Cmd_reader {
     bool app_input();
   protected:
     // ~ipi_cmd_in();
-    // bool not_serio_pkt_hdr();
 };
 
 /**
@@ -62,38 +61,29 @@ class ipi_cmd_out : public Serverside_client {
 }
 
 /**
- * Sends telemetry data to tm_ip_import via UDP
+ * Sends telemetry data to serin
  */
 
 class ipi_tm_out : public Client {
   public:
     ipi_tm_out(const char *iname);
     void send_row(uint16_t MFCtr, const uint8_t *raw);
-#ifdef HAVE_SCAN_DATA
-    void enqueue_scan(int32_t scannum);
-    void ipi_tm_out::send_scan_data();
-#endif
   protected:
     // ~ipi_tm_out();
-    uint16_t row_len;
-    uint16_t rows_per_row; //*< Scan rows transmitted per TM row
-    uint16_t rows_this_row; //*< Scan rows transmitted so far this TM row
-    bool connect_waiting;
-    bool dropping_tx_rows;
-    int n_tx_rows_dropped;
-    int total_tx_rows_dropped;
 };
 
 /**
- * Receives TM data from tm_bfr and forwards it to ipi_tm_out
+ * Receives TM data from ipx_tm_out via UDP and forwards it to ipi_tm_out
  */
 class ipi_tm_in : public Socket {
   public:
     ipi_tm_in(ipi_tm_out *tm_out);
   protected:
-    virtual ~ipi_tm_in();
-    unsigned int process_data();
-    void process_quit();
+    // virtual ~ipi_tm_in();
+    /**
+     * Check incoming data for packet validity, then forward
+     * to ipi_tm_out (for TM data at least) to forward to serin.
+    unsigned int protocol_input();
     ipi_tm_out *tm_out;
 };
 

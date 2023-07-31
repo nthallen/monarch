@@ -2,7 +2,7 @@
 #define SERIN_H_INCLUDED
 #include "dasio/tm_gen.h"
 #include "dasio/server.h"
-#include "serio_pkt.h"
+#include "dasio/serio_pkt.h"
 
 using namespace DAS_IO;
 
@@ -31,13 +31,6 @@ class serin_serin : public Serverside_client {
     static const int serin_serin_bufsize = 4096;
   protected:
     bool protocol_input();
-    /**
-     * @return false if header is located
-     * Any data prior to the header will be discarded with an
-     * error message, and cp will be advanced to point to the
-     * start of the header.
-     */
-    bool not_serio_pkt_hdr();
     serin *srvr;
 };
 

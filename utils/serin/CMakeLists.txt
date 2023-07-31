@@ -11,5 +11,9 @@ OUI_FILE(serin.oui)
 add_executable(serin serin.cc serinoui.cc)
 target_link_libraries(serin dasio nl pthread)
 
+if (DEFINED monarch_SOURCE_DIR)
+target_include_directories(tm_ip_export PRIVATE
+  ${monarch_SOURCE_DIR}/libs/dasio/src)
+endif (DEFINED monarch_SOURCE_DIR)
+
 install(TARGETS serin RUNTIME DESTINATION bin)
-install(FILES serio_pkt.h DESTINATION include)

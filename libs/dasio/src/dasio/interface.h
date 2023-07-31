@@ -745,6 +745,15 @@ class Interface {
      * @return false on a successful match
      */
     bool not_KW(char *KWbuf, char delim = ',');
+    /**
+     * @brief Locates a serio packet header in the input stream
+     * @return false on a successful match
+     *
+     * On success, updates cp to point to the beginning
+     * of the header. On failure, updates cp to point to the
+     * next possible beginning of a header.
+     */
+    bool not_serio_pkt_hdr();
     /** The name of this interface. Used in diagnostic messages. */
     const char *iname;
     /** The number of characters in buf */

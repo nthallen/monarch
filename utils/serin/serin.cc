@@ -118,29 +118,6 @@ Serverside_client *serin_serin::new_serin_serin(
   return new serin_serin(Auth, Auth->get_client_app(), srvr);
 }
 
-//bool serin_serin::not_serio_pkt_hdr<serin_serin>();
-
-bool serin_serin::not_serio_pkt_hdr() {
-  uint8_t lrc_sum = 0;
-  int cp0 = cp;
-  if (nc-cp < sizeof(serio_pkt_hdr)) return true;
-  for (int i = 0; i < sizeof(serio_pkt_hdr); ++i) {
-    lrc_sum += buf[cp+i];
-  }
-  if (lrc_sum == 0) return false;
-  while (nc-cp > sizeof(serio_pkt_hdr)) {
-    lrc_sum -= buf[cp++];
-    lrc_sum += buf[cp+sizeof(serio_pkt_hdr)-1];
-    if (lrc_sum == 0) {
-      msg(MSG_ERROR, "%s: Skipping %d bytes", iname, cp-cp0);
-      return false;
-    }
-  }
-  ++cp;
-  msg(MSG_ERROR, "%s: Skipping %d bytes", iname, cp-cp0);
-  return true;
-}
-
 bool serin_serin::protocol_input() {
   // Process incoming TM records here
   while (nc-cp >= sizeof(serio_pkt_hdr)) {

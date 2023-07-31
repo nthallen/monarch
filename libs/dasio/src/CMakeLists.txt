@@ -14,7 +14,7 @@ add_library(dasio interface.cc ascii_escape.cc cpu_usage.cc not_parsed.cc
   tm_queue.cc tm_client.cc tmdac.cc tm_info.cc nc_tm_client.cc tma.cc
   cmd_writer.cc cmd_version.cc cmd_version_def.cc msg.cc
   cic_transmit.cc cmd_server.cc quit.cc get_baud_code.cc csv_file.cc
-  timetext.cc tm_rcvr.cc host_session.cc cmd_hdr_parser.cc)
+  timetext.cc tm_rcvr.cc host_session.cc cmd_hdr_parser.cc serio_pkt.cc)
 target_include_directories(dasio PUBLIC
   ${dasio_src_BINARY_DIR}
   ${dasio_src_SOURCE_DIR}
