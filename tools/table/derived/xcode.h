@@ -172,13 +172,15 @@ case 16:	/* Entered on: + */
 
 case 17:	/* Entered on: # */
 	St_5:
-			TokenEnd=p=auxEOL(TokenStart, p-TokenStart);
+			RegexLength=p-TokenStart;
+			TokenEnd=p=auxEOL(TokenStart, RegexLength);
 			extcode = 15001;
 			goto done;
 
 case 18:	/* Entered on: " */
 	St_4:
-			TokenEnd=p=auxCString(TokenStart, p-TokenStart);
+			RegexLength=p-TokenStart;
+			TokenEnd=p=auxCString(TokenStart, RegexLength);
 			extcode = 16;
 			c_mkstr(TokenStart, TokenEnd-TokenStart,&extcode,v);
 			goto done;
@@ -187,7 +189,8 @@ case 18:	/* Entered on: " */
 default: TokenEnd=p; extcode=ExtCodeTbl[c]; goto done; /*  (-) , ;-< > [ ] { } */
 }
 	St_30:
-			TokenEnd=p=auxCComment(TokenStart, p-TokenStart);
+			RegexLength=p-TokenStart;
+			TokenEnd=p=auxCComment(TokenStart, RegexLength);
 			extcode = 15001;
 			goto done;
 	St_31:

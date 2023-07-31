@@ -414,7 +414,7 @@ char *name; int f;
 
 
 int
-finlBuf()
+finlBuf(void)
 /* Finalize the current source text buffer
  *   On entry-
  *     SrcBuffer points to the current source text buffer

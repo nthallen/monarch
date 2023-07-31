@@ -1,16 +1,17 @@
 SHELL   = /bin/sh
 
 CC	= g++
-CXXFLAGS	= -g -I/usr/local/include -Wl,-rpath -Wl,/usr/local/lib
+CXXFLAGS	= -g -I/usr/local/include -Wl,-rpath -Wl,/usr/local/lib \
+	-Dregister=
 LIBS	= -L/usr/local/lib -ldasio -lnl -lncurses -lpthread
 
 OBJS	= driver.o clpintf.o clp.o csm.o obstack.o obsave.o deftbl.o \
 	CoordMap.o coord.o source.o pdl_gen.o ptg_gen.o nparam.o \
 	ncbox.o PtgCommon.o VoidPtrList.o clplib.o envmod.o \
 	BitSet.o treecon.o visitmap.o visitprocs.o dim.o \
-	table_name.o ncmodprint.o Include.o glahead.o auxNUL.o \
-	dflteot.o tabsize.o idn.o Cint.o str.o auxScanEOL.o \
-	CchStr.o Ccomment.o SrcFileStack.o depfile.o Strings.o \
+	table_name.o ncmodprint.o Include.o idn.o SrcFileStack.o \
+	glahead.o auxNUL.o dflteot.o tabsize.o Cint.o str.o \
+	auxScanEOL.o CchStr.o Ccomment.o depfile.o Strings.o \
 	ColCScope.o TableCScope.o nodecode.o treebuild.o parser.o \
 	pgs_gen.o treestack.o dfltrepar.o attrmain.o
 
@@ -119,21 +120,26 @@ table_name.o:	table_name.cc table_name.h csm.h pdl_gen.h obstack.h \
 ncmodprint.o:	ncmodprint.cc ncmodprint.h ptg_gen.h csm.h eliproto.h ptg.h \
 		obstack.h
 
-Include.o:	Include.cc source.h csm.h gla.h err.h SrcFileStack.h \
-		Include.h CoordMap.h obstack.h eliproto.h coord.h
+Include.o:	Include.cc Include.h obstack.h err.h csm.h idn.h gla.h \
+		SrcFileStack.h CoordMap.h clp.h eliproto.h source.h coord.h \
+		clplib.h pdl_gen.h DefTableKeyList.h deftbl.h dim.h \
+		ptg_gen.h ptg.h VoidPtrList.h VoidPtr.h \
+		VoidPtrFunctionTypes.h
+
+idn.o:	idn.cc err.h idn.h csm.h obstack.h obsave.h idntbl.h \
+		eliproto.h coord.h
+
+SrcFileStack.o:	SrcFileStack.cc obstack.h
 
 glahead.o:	glahead.cc err.h csm.h source.h obstack.h scanops.h \
 		tabsize.h ScanProc.h gla.h xtables.h xcode.h eliproto.h \
 		coord.h
 
-auxNUL.o:	auxNUL.cc source.h gla.h
+auxNUL.o:	auxNUL.cc source.h coord.h eliproto.h
 
 dflteot.o:	dflteot.cc 
 
 tabsize.o:	tabsize.cc 
-
-idn.o:	idn.cc err.h idn.h csm.h obstack.h obsave.h idntbl.h \
-		eliproto.h coord.h
 
 Cint.o:	Cint.cc err.h eliproto.h coord.h
 
@@ -147,8 +153,6 @@ CchStr.o:	CchStr.cc err.h source.h gla.h csm.h tabsize.h ScanProc.h \
 
 Ccomment.o:	Ccomment.cc err.h gla.h source.h tabsize.h ScanProc.h \
 		eliproto.h coord.h
-
-SrcFileStack.o:	SrcFileStack.cc obstack.h
 
 depfile.o:	depfile.cc depfile.h err.h clp.h csm.h clplib.h pdl_gen.h \
 		DefTableKeyList.h eliproto.h deftbl.h dim.h ptg_gen.h ptg.h \

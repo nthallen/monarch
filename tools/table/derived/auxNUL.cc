@@ -22,7 +22,7 @@ Suite 330, Boston, MA 02111-1307, USA.  */
    created file as a part of that directory without restriction. */
 
 #include "source.h"
-#include "gla.h"
+#include "coord.h"
 
 /* Deal with an empty source text buffer
  * Returns pointer to first character of the remaining text

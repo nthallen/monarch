@@ -274,7 +274,7 @@ static struct idndata {
    void *idn_state;
 } savedata;
 
-void *SaveModuleIdn()
+void *SaveModuleIdn(void)
 {
 	void *mark = obstack_alloc(&idn_obstack, 1);
 	

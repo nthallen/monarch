@@ -655,7 +655,7 @@ _currn->_ATHeight=GlueDim(_AVUnnamedTable_MinHeight, _AVUnnamedTable_MinHeight);
 _currn->_ATWidth=GlueDim(_AVUnnamedTable_MinWidth, _AVUnnamedTable_MinWidth);
 /*SPC(267)*/
 (*(_CALL_VS_((NODEPTR )) (VS3MAP[_currn->_desc2->_prod])))((NODEPTR) _currn->_desc2);
-_currn->_ATTableName=get_table_name(InputFile);
+_currn->_ATTableName=get_table_name(Source);
 /*SPC(9)*/
 _AVNamedTablesStringPrint_pre=PTGNULL;
 /*SPC(397)*/
@@ -681,7 +681,7 @@ PTGOutFile(StringTable(GetClpValue(OutputFile, 0)), _AVProgram_FullOutput);
 PTGOut(_AVProgram_FullOutput);
 }
 ;
-/*SPC(415)*/
+/*SPC(413)*/
 _IG_incl20=_IL_incl20;
 _IG_incl19=_IL_incl19;
 _IG_incl18=_IL_incl18;
@@ -1749,7 +1749,7 @@ message(ERROR, CatStrInd("can not open file ", _currn->_ATTERM_1), 0, (&( _currn
 } else {
 }
 ;
-/*SPC(88)*/
+/*SPC(86)*/
 
 _VisitExit();
 }

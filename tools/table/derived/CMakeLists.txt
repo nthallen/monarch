@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set_source_files_properties(Include.cc PROPERTIES
        COMPILE_FLAGS "-include unistd.h")
 
-add_executable(nctable driver.cc clpintf.cc clp.cc csm.cc obstack.cc obsave.cc deftbl.cc CoordMap.cc coord.cc source.cc pdl_gen.cc ptg_gen.cc nparam.cc ncbox.cc PtgCommon.cc VoidPtrList.cc clplib.cc envmod.cc BitSet.cc treecon.cc visitmap.cc visitprocs.cc dim.cc table_name.cc ncmodprint.cc Include.cc glahead.cc auxNUL.cc dflteot.cc tabsize.cc idn.cc Cint.cc str.cc auxScanEOL.cc CchStr.cc Ccomment.cc SrcFileStack.cc depfile.cc Strings.cc ColCScope.cc TableCScope.cc nodecode.cc treebuild.cc parser.cc pgs_gen.cc treestack.cc dfltrepar.cc attrmain.cc)
+add_executable(nctable driver.cc clpintf.cc clp.cc csm.cc obstack.cc obsave.cc deftbl.cc CoordMap.cc coord.cc source.cc pdl_gen.cc ptg_gen.cc nparam.cc ncbox.cc PtgCommon.cc VoidPtrList.cc clplib.cc envmod.cc BitSet.cc treecon.cc visitmap.cc visitprocs.cc dim.cc table_name.cc ncmodprint.cc Include.cc idn.cc SrcFileStack.cc glahead.cc auxNUL.cc dflteot.cc tabsize.cc Cint.cc str.cc auxScanEOL.cc CchStr.cc Ccomment.cc depfile.cc Strings.cc ColCScope.cc TableCScope.cc nodecode.cc treebuild.cc parser.cc pgs_gen.cc treestack.cc dfltrepar.cc attrmain.cc)
 
 message("Pre-conditional")
 if (NOT DEFINED monarch_BINARY_DIR)

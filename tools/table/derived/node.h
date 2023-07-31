@@ -1,5 +1,5 @@
 
-/* definition of tree node structure */
+/* Definition of tree node structure */
 
 #ifndef NODE_H
 #define NODE_H
@@ -12,7 +12,7 @@
 #else
 #define _NODECOMMON int _prod;
 #endif
-struct NODEPTR_struct {
+struct NODEPTR_struct { 
         _NODECOMMON
 #ifdef __cplusplus
         void* operator new(size_t size);

@@ -63,8 +63,8 @@
 #endif
 
 /* Define PTGNode Type */
-#if defined(__cplusplus)
 struct _SPTG0;
+#if defined(__STDC__) || defined(__cplusplus)
 typedef void (* _PTGProc)(struct _SPTG0 *);
 #else
 typedef void (* _PTGProc)();
@@ -80,7 +80,7 @@ typedef _PPTG0 PTGNode;                      /* the only exported type */
 
 extern struct _SPTG0 _PTGNULL;
 #define PTGNULL (& _PTGNULL)
-#define PTGNull() (& _PTGNULL)
+#define PTGNull(void) (& _PTGNULL)
 
 /* output functions */
 

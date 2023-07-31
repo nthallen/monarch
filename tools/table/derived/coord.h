@@ -58,6 +58,7 @@ typedef POSITION *CoordPtr;
 	/* Variables exported by the Coordinate Module */
 
 extern int LineNum;	/* Index of the current line in the total source text */
+extern char *StartLine;	/* Adjusted beginning of the current line */
 extern POSITION NoCoord;  /* The NULL coordinate */
 extern POSITION curpos;	/* Position variable for general use */
 
@@ -71,9 +72,9 @@ earlier ELI_ARG((CoordPtr p, CoordPtr q));
  *          preceeds the position defined by q
  ***/
 
-#ifdef MONITOR
-/* Monitoring support for structured values */
+	/* Monitoring support for structured values */
 
+#ifdef MONITOR
 #define DAPTO_RESULTCoordPtr(p) DAPTO_RESULT_PTR(p)
 #define DAPTO_ARGCoordPtr(p)    DAPTO_ARG_PTR(p, CoordPtr)
 
@@ -82,4 +83,43 @@ earlier ELI_ARG((CoordPtr p, CoordPtr q));
     (_dap_format ("%d,%d-%d,%d", LineOf(p), ColOf(p), RLineOf(p), RColOf(p)))
 #endif
 
+#endif
+
+	/* Macros for setting curpos */
+
+/* Set the coordinates of the current token
+ *   On entry-
+ *     LineNum=index of the current line in the entire source text
+ *     p=index of the current column in the entire source line
+ *   On exit-
+ *     curpos has been updated to contain the current position as its
+ *     left coordinate
+ */
+#ifndef SETCOORD
+#ifdef MONITOR
+#define SETCOORD(p) { LineOf (curpos) = LineNum; \
+		      ColOf (curpos) = CumColOf (curpos) = (p); }
+#else
+#define SETCOORD(p) { LineOf (curpos) = LineNum; ColOf (curpos) = (p); }
+#endif
+#endif
+
+#ifdef RIGHTCOORD
+/* Set the coordinates of the end of the current token
+ *   On entry-
+ *     LineNum=index of the current line in the entire source text
+ *     p=index of the current column in the entire source line
+ *   On exit-
+ *     curpos has been updated to contain the current position as its
+ *     right coordinate
+ */
+#ifndef SETENDCOORD
+#ifdef MONITOR
+#define SETENDCOORD(p) { RLineOf (curpos) = LineNum; \
+			 RColOf (curpos) = RCumColOf (curpos) = (p); }
+#else
+#define SETENDCOORD(p) { RLineOf (curpos) = LineNum; \
+			 RColOf (curpos) = (p); }
+#endif
+#endif
 #endif

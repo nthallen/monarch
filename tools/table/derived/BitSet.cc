@@ -55,7 +55,7 @@ BitSet s;
         heap = s;
 }
 
-void FreeMemBitSet()
+void FreeMemBitSet(void)
 /* deallocates all memory allocated for sets
 */
 {
@@ -67,7 +67,7 @@ void FreeMemBitSet()
   }
 }
 
-BitSet NewBitSet()
+BitSet NewBitSet(void)
 /* allocates an empty set
 */
 {

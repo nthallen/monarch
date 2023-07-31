@@ -11,7 +11,7 @@
 static Obstack _PTGObstack;
 static void *_PTGFirstObj = NULL;
 
-static void _PTGInit()
+static void _PTGInit(void)
 {
        if (_PTGFirstObj)
                return;
@@ -19,7 +19,7 @@ static void _PTGInit()
        _PTGFirstObj = obstack_alloc(&_PTGObstack, 0);
 }
 
-void PTGFree()
+void PTGFree(void)
 {
        obstack_free(&_PTGObstack, _PTGFirstObj);
        _PTGFirstObj = obstack_alloc(&_PTGObstack, 0);
@@ -142,7 +142,7 @@ typedef struct _SPTGFile{
 	PTGNode p6;
 } * _PPTGFile;
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 static void _PrPTGFile(_PPTGFile n)
 #else
 static void _PrPTGFile(n)
@@ -185,7 +185,7 @@ static void _PrPTGFile(n)
 	preview_loop(f);
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 PTGNode PTGFile(PTGNode p1, PTGNode p2, PTGNode p3, CONST char* p4, PTGNode p5, PTGNode p6)
 #else
 PTGNode PTGFile(p1, p2, p3, p4, p5, p6)
@@ -220,7 +220,7 @@ typedef struct _SPTGWindow{
 	int p3;
 } * _PPTGWindow;
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 static void _PrPTGWindow(_PPTGWindow n)
 #else
 static void _PrPTGWindow(n)
@@ -238,7 +238,7 @@ static void _PrPTGWindow(n)
 	PTG_OUTPUT_STRING(f, ");\n");
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 PTGNode PTGWindow(CONST char* p1, int p2, int p3)
 #else
 PTGNode PTGWindow(p1, p2, p3)
@@ -269,7 +269,7 @@ typedef struct _SPTGField{
 	int p5;
 } * _PPTGField;
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 static void _PrPTGField(_PPTGField n)
 #else
 static void _PrPTGField(n)
@@ -288,7 +288,7 @@ static void _PrPTGField(n)
 	preview_field(f, n->p3, n->p4, n->p5);
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 PTGNode PTGField(CONST char* p1, PTGNode p2, int p3, int p4, int p5)
 #else
 PTGNode PTGField(p1, p2, p3, p4, p5)
@@ -323,7 +323,7 @@ typedef struct _SPTGString{
 	CONST char* p5;
 } * _PPTGString;
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 static void _PrPTGString(_PPTGString n)
 #else
 static void _PrPTGString(n)
@@ -344,7 +344,7 @@ static void _PrPTGString(n)
 	preview_label(f, n->p4, n->p3, n->p1, n->p2);
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 PTGNode PTGString(int p1, int p2, int p3, CONST char* p4, CONST char* p5)
 #else
 PTGNode PTGString(p1, p2, p3, p4, p5)
@@ -377,7 +377,7 @@ typedef struct _SPTGRuleDef{
 	PTGNode p3;
 } * _PPTGRuleDef;
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 static void _PrPTGRuleDef(_PPTGRuleDef n)
 #else
 static void _PrPTGRuleDef(n)
@@ -393,7 +393,7 @@ static void _PrPTGRuleDef(n)
 	PTG_OUTPUT_STRING(f, ", 0 };\n");
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 PTGNode PTGRuleDef(PTGNode p1, int p2, PTGNode p3)
 #else
 PTGNode PTGRuleDef(p1, p2, p3)
@@ -424,7 +424,7 @@ typedef struct _SPTGHRule{
 	int p5;
 } * _PPTGHRule;
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 static void _PrPTGHRule(_PPTGHRule n)
 #else
 static void _PrPTGHRule(n)
@@ -447,7 +447,7 @@ static void _PrPTGHRule(n)
 	preview_hrule(f, n->p5, n->p3, n->p4, n->p1);
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 PTGNode PTGHRule(int p1, PTGNode p2, int p3, int p4, int p5)
 #else
 PTGNode PTGHRule(p1, p2, p3, p4, p5)
@@ -482,7 +482,7 @@ typedef struct _SPTGVRule{
 	int p5;
 } * _PPTGVRule;
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 static void _PrPTGVRule(_PPTGVRule n)
 #else
 static void _PrPTGVRule(n)
@@ -505,7 +505,7 @@ static void _PrPTGVRule(n)
 	preview_vrule(f, n->p5, n->p3, n->p4, n->p1);
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 PTGNode PTGVRule(int p1, PTGNode p2, int p3, int p4, int p5)
 #else
 PTGNode PTGVRule(p1, p2, p3, p4, p5)
@@ -536,7 +536,7 @@ typedef struct _SPTGId{
 	int p1;
 } * _PPTGId;
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 static void _PrPTGId(_PPTGId n)
 #else
 static void _PrPTGId(n)
@@ -546,7 +546,7 @@ static void _PrPTGId(n)
 	PtgOutId(f, n->p1);
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 PTGNode PTGId(int p1)
 #else
 PTGNode PTGId(p1)
@@ -569,7 +569,7 @@ typedef struct _SPTGAsIs{
 	CONST char* p1;
 } * _PPTGAsIs;
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 static void _PrPTGAsIs(_PPTGAsIs n)
 #else
 static void _PrPTGAsIs(n)
@@ -579,7 +579,7 @@ static void _PrPTGAsIs(n)
 	PTG_OUTPUT_STRING(f, n->p1);
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 PTGNode PTGAsIs(CONST char* p1)
 #else
 PTGNode PTGAsIs(p1)
@@ -602,7 +602,7 @@ typedef struct _SPTGNumb{
 	int p1;
 } * _PPTGNumb;
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 static void _PrPTGNumb(_PPTGNumb n)
 #else
 static void _PrPTGNumb(n)
@@ -612,7 +612,7 @@ static void _PrPTGNumb(n)
 	PTG_OUTPUT_INT(f, n->p1);
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 PTGNode PTGNumb(int p1)
 #else
 PTGNode PTGNumb(p1)
@@ -635,7 +635,7 @@ typedef struct _SPTGCString{
 	CONST char* p1;
 } * _PPTGCString;
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 static void _PrPTGCString(_PPTGCString n)
 #else
 static void _PrPTGCString(n)
@@ -645,7 +645,7 @@ static void _PrPTGCString(n)
 	CPtgOutstr(f, n->p1);
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 PTGNode PTGCString(CONST char* p1)
 #else
 PTGNode PTGCString(p1)
@@ -668,7 +668,7 @@ typedef struct _SPTGCChar{
 	int p1;
 } * _PPTGCChar;
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 static void _PrPTGCChar(_PPTGCChar n)
 #else
 static void _PrPTGCChar(n)
@@ -678,7 +678,7 @@ static void _PrPTGCChar(n)
 	CPtgOutchar(f, n->p1);
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 PTGNode PTGCChar(int p1)
 #else
 PTGNode PTGCChar(p1)
@@ -701,7 +701,7 @@ typedef struct _SPTGPString{
 	CONST char* p1;
 } * _PPTGPString;
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 static void _PrPTGPString(_PPTGPString n)
 #else
 static void _PrPTGPString(n)
@@ -711,7 +711,7 @@ static void _PrPTGPString(n)
 	PPtgOutstr(f, n->p1);
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 PTGNode PTGPString(CONST char* p1)
 #else
 PTGNode PTGPString(p1)
@@ -735,7 +735,7 @@ typedef struct _SPTGSeq{
 	PTGNode p2;
 } * _PPTGSeq;
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 static void _PrPTGSeq(_PPTGSeq n)
 #else
 static void _PrPTGSeq(n)
@@ -746,7 +746,7 @@ static void _PrPTGSeq(n)
 	n->p2->_print(n->p2);
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 PTGNode PTGSeq(PTGNode p1, PTGNode p2)
 #else
 PTGNode PTGSeq(p1, p2)
@@ -774,7 +774,7 @@ typedef struct _SPTGCommaSeq{
 	PTGNode p2;
 } * _PPTGCommaSeq;
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 static void _PrPTGCommaSeq(_PPTGCommaSeq n)
 #else
 static void _PrPTGCommaSeq(n)
@@ -789,7 +789,7 @@ static void _PrPTGCommaSeq(n)
 	n->p2->_print(n->p2);
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 PTGNode PTGCommaSeq(PTGNode p1, PTGNode p2)
 #else
 PTGNode PTGCommaSeq(p1, p2)
@@ -816,7 +816,7 @@ typedef struct _SPTGEol{
 	PTGNode p1;
 } * _PPTGEol;
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 static void _PrPTGEol(_PPTGEol n)
 #else
 static void _PrPTGEol(n)
@@ -827,7 +827,7 @@ static void _PrPTGEol(n)
 	PTG_OUTPUT_STRING(f, "\n");
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 PTGNode PTGEol(PTGNode p1)
 #else
 PTGNode PTGEol(p1)
@@ -849,7 +849,7 @@ PTGNode p1;
 /* -------------------------------------------------------- */
 
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 void _PTGPrintInt(PTG_OUTPUT_FILE file, int param)
 #else
 void _PTGPrintInt(file, param)
@@ -860,7 +860,7 @@ void _PTGPrintInt(file, param)
        PTG_OUTPUT_STRING(file,buffer);
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 void _PTGPrintLong(PTG_OUTPUT_FILE file, long param)
 #else
 void _PTGPrintLong(file, param)
@@ -871,7 +871,7 @@ void _PTGPrintLong(file, param)
        PTG_OUTPUT_STRING(file,buffer);
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 void _PTGPrintDouble(PTG_OUTPUT_FILE file, double param)
 #else
 void _PTGPrintDouble(file, param)
@@ -882,7 +882,7 @@ void _PTGPrintDouble(file, param)
        PTG_OUTPUT_STRING(file,buffer);
 }
 
-#ifdef PROTO_OK
+#if defined(__STDC__) || defined(__cplusplus)
 void _PTGPrintChar(PTG_OUTPUT_FILE file, char param)
 #else
 void _PTGPrintChar(file, param)

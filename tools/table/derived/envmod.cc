@@ -99,7 +99,7 @@ DefTableKey SetKeyOfEnv (env, k) Environment env; DefTableKey k;
 
 #ifdef PROTO_OK
 int IsClass (Environment env)
-  /* 0 iff the environment env does not participate in 
+  /* 0 iff the environment env does not participate in
      an inheritance relation */
 #else
 int IsClass (env) Environment env;
@@ -136,7 +136,7 @@ InheritPtr  NextInherit (inh) InheritPtr inh;
 #define NoClassNo -1
 #define ClassVisited -2
 
-static struct EnvmodData 
+static struct EnvmodData
 {
     StkPtr FreeStackElements;
     void *baseptr;
@@ -163,12 +163,12 @@ static ObstackP NEW_OBSTACK ELI_ARG((void))
 {
     ObstackP obst = (ObstackP) obstack_alloc(&stacks, sizeof(Obstack));
     obstack_grow(&stack_adresses, &obst, sizeof(ObstackP));
-    
+
     return obst;
 }
 #else
 #define NEW_OBSTACK() (ObstackP)obstack_alloc(&space, sizeof(Obstack))
-#endif 
+#endif
 
 #ifdef MONITOR
 #define MON_BINDING(i,k,e) _dapto_binding_made (e, i, k)
@@ -241,7 +241,7 @@ NewStkElt()
  **/
 { if (state.FreeStackElements) {
     StkPtr tmp = state.FreeStackElements;
-    state.FreeStackElements = state.FreeStackElements->out; 
+    state.FreeStackElements = state.FreeStackElements->out;
     return tmp;
   }
   return (StkPtr)obstack_alloc(&space, sizeof(struct StkElt));
@@ -264,8 +264,8 @@ NewEnv()
   e->relate = NoBinding; e->parent = (Environment)0; e->key = NoKey;
   e->level = 0; e->classdescr = (_Class)0; e->nested = 1;
   e->haveusedbindings = 0;
-  e->access = (_Access)obstack_alloc(&space, sizeof(struct _AccessMechanism)); 
-  e->access->IdnTbl = NEW_OBSTACK(); obstack_init((e->access->IdnTbl)); 
+  e->access = (_Access)obstack_alloc(&space, sizeof(struct _AccessMechanism));
+  e->access->IdnTbl = NEW_OBSTACK(); obstack_init((e->access->IdnTbl));
   e->access->MaxIdn = 0; e->access->CurrEnv = e;
   e->access->ClassIdnTbl = (ObstackP)0; e->access->MaxClassIdn = 0;
   e->access->Classes = (_Class)0;
@@ -306,7 +306,7 @@ EnterClasses(cld) _Class cld;
     StkPtr s = NewStkElt(); s->binding = r;
 
     CLASS_ACCESSIBLE(r->idn, env)
-    
+
     s->out = CLASS_IDN_STK(env, r->idn); CLASS_IDN_STK(env, r->idn) = s;
   }
 }
@@ -319,9 +319,13 @@ EnterEnv(Environment env)
 #else
 EnterEnv(env) Environment env;
 #endif
-/* Make the state of the array reflect env
+/* Make certain that env is the current environment
+ *   of the tree access mechanism.
  *   On entry-
- *     The access of the array reflects the parent of env
+ *     The parent of env is the current environment
+ *     of the tree access mechanism.
+ *  If doenterclasses and env is a class not yet entered
+ *    into the class access mechanism, it is entered.
  **/
 { Binding r;
 
@@ -338,16 +342,17 @@ EnterEnv(env) Environment env;
     EnterClasses(env->classdescr);
   }
 }
- 
+
 static void
 #ifdef PROTO_OK
 LeaveEnv(Environment env)
 #else
 LeaveEnv(env) Environment env;
 #endif
-/* Make the access of the array reflect the parent of env
+/* Make certain that the parent of env is the current environment
+ *   of the tree access mechanism.
  *   On entry-
- *     The access of the array reflects env
+ *     env is the current environment of the tree access mechanism.
  **/
 { Binding r;
 
@@ -359,14 +364,14 @@ LeaveEnv(env) Environment env;
   env->nested = 0;
   env->access->CurrEnv = env->parent;
 }
- 
+
 static void
 #ifdef PROTO_OK
 SetEnv(Environment env)
 #else
 SetEnv(env) Environment env;
 #endif
-/* Make certain that the access of the array reflects env
+/* Make certain that env is the current env of the tree access mechanism.
  ***/
 {
   if (env) {
@@ -377,7 +382,7 @@ SetEnv(env) Environment env;
     }
   }
 }
- 
+
 Environment
 #ifdef PROTO_OK
 NewScope(Environment env)
@@ -390,7 +395,7 @@ NewScope(env) Environment env;
  ***/
 {
   Environment e;
- 
+
   if (!env) return NoEnv;
   e = (Environment)obstack_alloc(&space, sizeof(struct _EnvImpl));
   e->relate = NoBinding; e->parent = env; e->nested = 0;
@@ -405,7 +410,7 @@ NewScope(env) Environment env;
 
   return e;
 }
- 
+
 static void
 #ifdef PROTO_OK
 MakeClass(Environment env)
@@ -456,12 +461,12 @@ Inheritsfrom(tocl, fromcl) Environment tocl, fromcl;
  *     No further inheritance may be established to tocl or fromcl
  *     after this call.
  ***/
-{ 
+{
   if (!tocl || !fromcl) return 0;
   MakeClass(tocl); MakeClass(fromcl);
-  if (fromcl->classdescr->classno == NoClassNo) 
+  if (fromcl->classdescr->classno == NoClassNo)
      EnterClasses (fromcl->classdescr);
-  if (tocl->classdescr->classno == NoClassNo) 
+  if (tocl->classdescr->classno == NoClassNo)
      EnterClasses (tocl->classdescr);
 
   if (tocl == fromcl) return 1; /* shortcuts the following check */
@@ -480,7 +485,7 @@ ChkInherit(tocl, fromcl) Environment tocl, fromcl;
  * for existance of an inheritance path
  * To be called only in InheritClass.
  *   On entry-
- *     tocl and fromcl are Environments
+ *     tocl and fromcl are nodes of the same environment tree.
  *   On exit-
  *     1 is returned if tocl == fromcl or if there is an
  *     inheritance path from fromcl to tocl;
@@ -526,7 +531,7 @@ InheritClass(tocl, fromcl) Environment tocl, fromcl;
       tocl->access != fromcl->access ||
 				/* Classes are in different name spaces */
       ChkInherit (fromcl, tocl) ||
-				/* new inheritance would establish a cycle */ 
+				/* new inheritance would establish a cycle */
       tocl->haveusedbindings
 				/* tocl has been searched before */
       ) return 0;
@@ -544,13 +549,15 @@ BindKey(Environment env, int idn, DefTableKey key)
 #else
 BindKey(env, idn, key) Environment env; int idn; DefTableKey key;
 #endif
-/* Bind an identifier to a given key in a scope, entering that scope
+/* Bind an identifier to a given key in the innermost scope of env (isoe).
+ * The tree access mechanism is entered for isoe.
  *   If env is not the current environment then enter it
- *   If idn is bound in the innermost scope of env then on exit-
+ *   If idn is already bound in the isoe then on exit-
  *     BindKey=NoBinding
  *   Else on exit-
- *     BindKey=pointer to a new binding (idn,key)
- *       in the innermost scope of env
+ *     BindKey=pointer to a new binding (idn,isoe,key).
+ *       If isoe is a class node that has been entered into the
+ *          class access mechanism, the new binding is added to it.
  ***/
 { Binding r;
 
@@ -580,17 +587,26 @@ BindKeyInScope(Environment env, int idn, DefTableKey key)
 #else
 BindKeyInScope(env, idn, key) Environment env; int idn; DefTableKey key;
 #endif
-/* Bind an identifier to a given key in a scope without entering that scope
- *   If idn is bound in the innermost scope of env then on exit-
- *     BindKey=NoBinding
+/* Bind an identifier to a given key in the innermost scope of env (isoe).
+ * The tree access mechanism is NOT entered for isoe.
+ *   If idn is already bound in isoe then on exit-
+ *     BindKeyInScope=NoBinding
  *   Else on exit-
- *     BindKey=pointer to a new binding (idn,key)
- *       in the innermost scope of env
+ *     BindKeyInScope=pointer to a new binding (idn,isoe,key).
+ *       If isoe is a class node that has been entered into the
+ *          class access mechanism, the new binding is added to it.
  ***/
 { Binding r;
 
-  if (!env || BindingInScope(env, idn)) return NoBinding;
-  else while (env->nested) LeaveEnv(env->access->CurrEnv);
+  if (!env) return NoBinding;
+  /* use the class access mechanism to check whether idn is
+     defined in or inherited by innermost scope: */
+  r = BindingInScope(env, idn);
+  if (EnvOf (r) == env) return NoBinding;
+
+  /* prepare to insert an new binding
+     make sure that env is not on the stack access mechanism: */
+  while (env->nested) LeaveEnv(env->access->CurrEnv);
 
   IDN_ACCESSIBLE(idn, env)
 
@@ -610,12 +626,15 @@ BindIdn(Environment env, int idn)
 #else
 BindIdn(env, idn) Environment env; int idn;
 #endif
-/* Bind an identifier in a scope, guaranteed to be the current scope
- *   If idn is bound in the innermost scope of env then on exit-
- *     BindIdn=pointer to the binding for idn in the innermost scope of env
+/* Bind an identifier in the innermost scope of env (isoe).
+ * The tree access mechanism is entered for isoe.
+ *   If idn is bound in isoe then on exit-
+ *     BindIdn=pointer to the binding for idn in isoe.
  *   Else let n be a previously-unused definition table key
  *   Then on exit-
- *     BindIdn=pointer to a new binding (idn,n) in the innermost scope of env
+ *     BindIdn=pointer to a new binding (idn,isoe,n).
+ *       If isoe is a class node that has been entered into the
+ *          class access mechanism, the new binding is added to it.
  ***/
 { Binding r;
 
@@ -644,20 +663,26 @@ BindInScope(Environment env, int idn)
 #else
 BindInScope(env, idn) Environment env; int idn;
 #endif
-/* Bind an identifier in a scope without entering that scope
- *   If idn is defined in the innermost scope of env then on exit-
- *     BindingInScope=pointer to the binding for idn
- *       in the innermost scope of env
+/* Bind an identifier in the innermost scope of env (isoe).
+ * The tree access mechanism is NOT entered for isoe.
+ *   If idn is defined in isoe then on exit-
+ *     BindingInScope=pointer to the binding for idn in isoe.
  *   Else let n be a previously-unused definition table key
  *   Then on exit-
- *     BindingInScope=pointer to a new binding (idn,n)
- *       in the innermost scope of env
- ***/
+ *     BindingInScope=pointer to a new binding (idn,isoe,n).
+  *       If isoe is a class node that has been entered into the
+ *          class access mechanism, the new binding is added to it.
+***/
 { Binding r;
 
   if (!env) return NoBinding;
-  if ((r = BindingInScope(env, idn))) return r;
+  /* use the class access mechanism to check whether idn is
+     defined in or inherited by innermost scope: */
+  r = BindingInScope(env, idn);
+  if (EnvOf (r) == env) return r;
 
+  /* prepare to insert an new binding
+     make sure that env is not on the stack access mechanism: */
   while (env->nested) LeaveEnv(env->access->CurrEnv);
 
   IDN_ACCESSIBLE(idn, env)
@@ -679,14 +704,16 @@ BindingInEnv(Environment env, int idn)
 BindingInEnv(env, idn) Environment env; int idn;
 #endif
 /* Find the binding for an identifier in an environment
- *   If idn is bound in the innermost scope of env then on exit-
- *     BindingInEnv=pointer to the binding for idn in env
- *   Else if idn is bound in some ancestor of env then on exit-  
+ * The tree access mechanism is entered
+ * for innermost scope of env (isoe).
+ *   If idn is bound in isoe then on exit-
+ *     BindingInEnv=pointer to the binding for idn in isoe
+ *   Else if idn is bound in some ancestor of env then on exit-
  *     BindingInEnv=BindingInEnv(Parent(env),idn)
  *   Else on exit-
  *     BindingInEnv=NoBinding
  *   Any class environment on the path from env to surrounding
- *     environments is checked for inherited definitions of idn
+ *     environments is checked for inherited bindings of idn
  ***/
 { StkPtr stk; Environment par;
 
@@ -714,13 +741,18 @@ BindingInScope(Environment env, int idn)
 #else
 BindingInScope(env, idn) Environment env; int idn;
 #endif
-/* Find the binding for an identifier in a scope
- *   If idn is bound in the innermost scope of env then on exit-  
- *     BindingInScope=pointer to the binding for idn
- *       in the innermost scope of env
- *   Else on exit- 
+/* Find the binding for an identifier in the innermost scope of env (isoe),
+ * or in a node from which isoe inherits.
+ * The tree access mechanism is NOT entered.
+ * If isoe is a class node, the class access mechanism is used,
+     otherwise the list of bindings in isoe is searched linearly.
+ * If isoe is a class node, no further call of InheritClass (isoe, ...)
+ *   will succeed.
+ *   If idn is bound in isoe or in a node from which
+ *     isoe inherits then on exit-
+ *     BindingInScope=pointer to the binding for idn in that node
+ *   Else on exit-
  *     BindingInScope=NoBinding
- *   If env is a class environment inherited bindings are considered
  ***/
 { Binding r;
 
@@ -815,23 +847,24 @@ NextInhKey(Environment env, int idn, DefTableKey lastkey)
 #else
 NextInhKey(env, idn, lastkey) Environment env; int idn; DefTableKey lastkey;
 #endif
-/* On entry:
- *   lastkey is a key bound to identifier idn in an
- *   environment e which is inherited to an environment tocl
+/* Find another binding in the presence of multiple inheritance.
+ * Same effect as KeyOf(NextInhBinding (env, lastbinding)) where
+ *   lastbinding is a binding (idn,e,lastkey), and
+ *   class scope tocl inherits lastbinding from e, and
+ *   tocl is env or is the next ancestor of env
+ *   which inherits lastbinding.
+ * On entry:
+ *   lastkey is bound in (idn,e,lastkey), end
  *   that is env or is the next ancestor of env which
  *   inherits e.
  * On exit:
- *     NextInhKey=key that represents the next definition bound to
- *     identifier idn in an environment ep which is also
- *     inherited to tocl but not to e,
- *     if any such definition exists;
- *     otherwise NextInhKey=NoKey
+     NextInhKey=KeyOf(NextInhBinding (env, lastbinding))
  ***/
 { StkPtr stk;
 
-  if (lastkey == NoKey || 
+  if (lastkey == NoKey ||
       !env ||
-      !(env->access->ClassIdnTbl) || 
+      !(env->access->ClassIdnTbl) ||
       idn >= env->access->MaxClassIdn)
     return NoKey;
 
@@ -854,23 +887,24 @@ NextInhBinding (Environment env, Binding lastbinding)
 NextInhBinding (env, lastbinding)
   Environment env; Binding lastbinding;
 #endif
-/* On entry:
- *   lastbinding is a binding of an identifier idn in an
- *   environment e which is inherited to an environment tocl
- *   that is env or is the next ancestor of env which
- *   inherits e.
+/* Find another binding in the presence of multiple inheritance.
+ * On entry:
+ *   lastbinding is a binding (idn,e,k), and
+ *   class scope tocl inherits lastbinding from e, and
+ *   tocl is env or is the next ancestor of env
+ *   which inherits lastbinding.
  * On exit:
- *     NextInhBinding=bdg is the next binding of
- *     identifier idn in an environment ep which is also
- *     inherited to tocl but not to e,
- *     if any such definition exists;
+ *     NextInhBinding=bdg is the next binding (idn,ep,k1),
+ *     such that tocl inherits bdg from ep,
+ *     but e does not inherit bdg from ep,
+ *     if any such binding exists;
  *     otherwise NextInhBinding=NoBinding
  ***/
 { StkPtr stk;
 
-  if (lastbinding == NoBinding || 
+  if (lastbinding == NoBinding ||
       !env ||
-      !(env->access->ClassIdnTbl) || 
+      !(env->access->ClassIdnTbl) ||
       !(lastbinding->env->classdescr) ||
       lastbinding->idn >= env->access->MaxClassIdn)
     return NoBinding;
@@ -893,28 +927,27 @@ OverridesBinding (Binding bind)
 #else
 OverridesBinding (bind) Binding bind;
 #endif
-/* On entry:
- *   bind is a binding of an identifier idn in an
- *   environment env
+/* Find a binding that is overridden by bind.
+ * On entry:
+ *   bind is a binding (idn,env,k)
  * On exit:
- *     OverridesBinding=bdg is the binding of
- *     identifier idn in an environment which is
- *     inherited to env,
- *     if any such definition exists;
+ *     OverridesBinding=bdg is a binding (idn,e,k1)
+ *       which is inherited by env,
+ *       if any such binding exists;
  *     otherwise OverridesBinding=NoBinding
  ***/
 { StkPtr stk; BitSet inhset;
 
   if (bind == NoBinding ||
-      !(bind->env->access->ClassIdnTbl) || 
+      !(bind->env->access->ClassIdnTbl) ||
       !(bind->env->classdescr))
     return NoBinding;
 
   if (bind->env->classdescr->classno == NoClassNo)
                 /* inheritances of this class have not been processed */
      EnterClasses (bind->env->classdescr);
- 
-  if (bind->idn >= bind->env->access->MaxClassIdn) 
+
+  if (bind->idn >= bind->env->access->MaxClassIdn)
      return NoBinding;
 
 
@@ -943,18 +976,18 @@ static struct savedata_str
     void *saved_stacks;
     int stackscount;
     void *state;
-    void *stacks_base;    
+    void *stacks_base;
 } savedata;
 
 /* Store handles for saved obstacks somewhere. We need a dynamic growing array
  * to store them and must be able to Save/Restore the structure. So use an obstack: */
 Obstack saved_stacks = obstack_empty_chunk(4096, OBSTACK_PTR_ALIGN);
 
-void *SaveModuleEnvmod()
+void *SaveModuleEnvmod(void)
 {
     void *base;
     ObstackP *the_stacks;
-    
+
     /* envmod contains many growing obstacks; each contains one ever-growing object */
     /* The obstack 'stacks' contains pointers to all these object stacks */
     /* Strategy: Call SaveObstack for all these stacks and save the pointer
@@ -962,14 +995,14 @@ void *SaveModuleEnvmod()
 
     /* Make obstack 'saved_stacks' empty. */
     obstack_next_free(&saved_stacks) = (char *)obstack_base(&saved_stacks);
-    
+
     /* Extract an array of pointers to dynamically allocated obstacks */
     the_stacks = (ObstackP *)obstack_base(&stack_adresses);
-    
+
     if (the_stacks)
     {
 	ObstackP *stacks_end;
-	
+
 	savedata.stackscount = obstack_object_size(&stack_adresses) / sizeof(ObstackP);
 	stacks_end = the_stacks + savedata.stackscount;
 
@@ -989,24 +1022,24 @@ void *SaveModuleEnvmod()
 
     /* Mark current allocation level for the real obstacks */
     savedata.stacks_base = obstack_alloc(&stacks, 0);
-    
+
     /* Now save the rest of the data */
     base = obstack_alloc(&space, 0);
     savedata.space = SaveObstack(&space, base);
 
     /* and the static information */
     savedata.state = SaveData(&state, sizeof(state));
-    
+
     return SaveData(&savedata, sizeof(savedata));
 }
-    
+
 void
 #ifdef PROTO_OK
 RestoreModuleEnvmod(void *base)
 #else
-RestoreModuleEnvmod(base) 
+RestoreModuleEnvmod(base)
 void *base;
-#endif     
+#endif
 {
     ObstackP *the_stacks;
 
@@ -1021,7 +1054,7 @@ void *base;
 	ObstackP *stacks_end = the_stacks + stackscount_now;
 
 	the_stacks += savedata.stackscount;
-	if (savedata.stackscount > stackscount_now) 
+	if (savedata.stackscount > stackscount_now)
 	    abort();
 
 	/* For every newly appeard obstack, obstack_free will be called */
@@ -1043,10 +1076,10 @@ void *base;
     {
 	void **saved_stack;
 	ObstackP *stacks_end = the_stacks + savedata.stackscount;
-	
+
 	/* Restores Data in saved_stacks */
 	RestoreObstack(&saved_stacks, savedata.saved_stacks);
-	
+
 	saved_stack = (void **)obstack_base(&saved_stacks);
 	while (the_stacks != stacks_end)
 	{
@@ -1066,4 +1099,4 @@ void *base;
 
 #endif
 
-    
+

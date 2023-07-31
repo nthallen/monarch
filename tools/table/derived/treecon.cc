@@ -44,13 +44,13 @@ char* TreeNodeAlloc(size) int size;
 }
 #endif
 
-void InitTree()
+void InitTree(void)
 {
 	obstack_init(&TreeSpace);
 	_TreeBase=obstack_alloc(&TreeSpace,0);
 }
 
-void FreeTree()
+void FreeTree(void)
 {
 	obstack_free(&TreeSpace, _TreeBase);
 	_TreeBase=obstack_alloc(&TreeSpace,0);
@@ -82,9 +82,9 @@ char* TreeNodeAlloc(size) int size;
 }
 #endif
 
-void InitTree() { }
+void InitTree(void) { }
 
-void FreeTree() { }
+void FreeTree(void) { }
 
 #endif
 

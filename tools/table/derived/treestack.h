@@ -40,7 +40,7 @@ extern int _nsp;
 
 #define _nodestacktop (_nst[_nsp])
 
-extern void _incrnodestack ();
+extern void _incrnodestack (void);
 
 #define _nodestackpop() (_nst[_nsp--])
 

@@ -242,7 +242,7 @@ static struct csmdata {
     int numstr;
 } savedata;
 
-void *SaveModuleCsm()
+void *SaveModuleCsm(void)
 {
     savedata.characterstrings = obstack_alloc(&csm_obstack, 0);
     savedata.indexsize = obstack_object_size(&csm_indx_obstk);

@@ -33,10 +33,11 @@ static int DepFile_count = 0;
 DefTableKey OutputFile = NoKey;
 static int OutputFile_count = 0;
 int PreviewDisplay = 0;
-DefTableKey InputFile = NoKey;
+DefTableKeyList IncludeDirs = NULLDefTableKeyList;
+DefTableKey Source = NoKey;
 static int error_count = 0;
 
-#define NUMOPTS 7
+#define NUMOPTS 8
 
 static opt opts[] = {
     { "-d", STRVAL | SPACED, &DepFile_count, &DepFile, NULL },
@@ -46,6 +47,7 @@ static opt opts[] = {
     { "-h", USAGE , NULL, NULL, NULL },
     { "-?", USAGE , NULL, NULL, NULL },
     { "--", TERM, NULL, NULL, NULL },
+    { "-I", STRVAL | PLURAL | JOINED, NULL, NULL, &IncludeDirs },
     { "dummy", 0, NULL, NULL, NULL }
 };
 
@@ -93,8 +95,9 @@ clp_usage (prog)
   fprintf (stderr, "    -h       Display this usage message\n");
   fprintf (stderr, "    -?       Display this usage message\n");
   fprintf (stderr, "    --       Terminate options\n");
+  fprintf (stderr, "    -Istring Directories to search for included files*\n");
   fprintf (stderr, "  Parameters:\n");
-  fprintf (stderr, "    InputFile The file to be processed\n");
+  fprintf (stderr, "    Source   Primary input file\n");
     exit (1);
 }
 
@@ -112,7 +115,7 @@ char *argv[];
   opt *o;
   char *s;
 
-  SetFileErr ("%p cannot open %f: %t", 0);
+  SetFileErr ("%p: cannot open %f for reading", 0);
   for (i = 1; i < argc; i++) {
     for (j = 0, o = opts; j < NUMOPTS; j++, o++)
       if (strncmp (o->str, argv[i], strlen (o->str)) == 0)
@@ -198,9 +201,9 @@ char *argv[];
     }
   }
   if (i < argc) {
-    InputFile = NewKey ();
-    SetClpValue (InputFile, clp_string (argv[i++]), 0);
-    CLP_InputFile = InputFile;
+    Source = NewKey ();
+    SetClpValue (Source, clp_string (argv[i++]), 0);
+    CLP_InputFile = Source;
   }
   if ((i < argc) || (error_count > 0))
     clp_usage (argv[0]);
