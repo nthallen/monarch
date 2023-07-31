@@ -245,13 +245,9 @@ namespace DAS_IO {
 /* Command Interpreter Client (CIC) and Server (CIS) Utilities
    Message-level definition is in cmdalgo.h
  */
-// void cic_options(int argc, char **argv, const char *def_prefix);
-// int cic_init(void);
 void cic_reset(void);
 extern char ci_version[];
 void cic_transmit(char *buf, int n_chars, int transmit);
-// int ci_sendcmd(const char *cmdtext, int mode);
-// int ci_sendfcmd(int mode, const char *fmt, ...);
 void ci_settime( int32_t time );
 extern int cic_cmd_quit_fd;
 const char *ci_time_str();
@@ -265,15 +261,16 @@ void ci_report_version(void);
 void tma_new_state(unsigned int partition, const char *name);
 void tma_new_time(unsigned int partition, long int t1, const char *next_cmd);
 void tma_hold(int hold);
-/* Added 2020-01-29 by Miles so that everything in the lib/tm folder will compile for mkdoit, doit */
-//void cic_options(int argc, char **argv, const char *def_prefix);
-//extern const char *msghdr_init(const char *hdr_default, int argc, char **argv);
-//void tma_init_options(int argc, char **argv);
-//int tma_process( long int it );
-//void tma_init_state( int partno, tma_state *cmds, const char *name );
-//void ci_settime( long int time );
 
 /* tmdac.cc */
+/**
+ * @param path Where to look first for tm.dac.
+ *
+ * A path argument of 0 or "" is interpreted as ".". If tm.dac
+ * is not found in the specified location, the path
+ * "bin/VERSION/tm.dac" is tried, where VERSION is the contents
+ * of the VERSION file in the current directory.
+ */
 void load_tmdac( const char *path );
 
 #ifdef __cplusplus
