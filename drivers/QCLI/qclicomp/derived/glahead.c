@@ -52,43 +52,6 @@ Suite 330, Boston, MA 02111-1307, USA.  */
 #define SCANPTR { TokenEnd = TEXTSTART; StartLine = TokenEnd - 1; }
 #endif
 
-/* Set the coordinates of the current token
- *   On entry-
- *     LineNum=index of the current line in the entire source text
- *     p=index of the current column in the entire source line
- *   On exit-
- *     curpos has been updated to contain the current position as its
- *     left coordinate
- */
-#ifndef SETCOORD
-#ifdef MONITOR
-#define SETCOORD(p) { LineOf (curpos) = LineNum; \
-		      ColOf (curpos) = CumColOf (curpos) = (p); }
-#else
-#define SETCOORD(p) { LineOf (curpos) = LineNum; ColOf (curpos) = (p); }
-#endif
-#endif
-
-#ifdef RIGHTCOORD
-/* Set the coordinates of the end of the current token
- *   On entry-
- *     LineNum=index of the current line in the entire source text
- *     p=index of the current column in the entire source line
- *   On exit-
- *     curpos has been updated to contain the current position as its
- *     right coordinate
- */
-#ifndef SETENDCOORD
-#ifdef MONITOR
-#define SETENDCOORD(p) { RLineOf (curpos) = LineNum; \
-			 RColOf (curpos) = RCumColOf (curpos) = (p); }
-#else
-#define SETENDCOORD(p) { RLineOf (curpos) = LineNum; \
-			 RColOf (curpos) = (p); }
-#endif
-#endif
-#endif
-
 /* Return after recognising a basic symbol.
  *   On entry-
  *     v=syntax code of the recognised symbol
@@ -160,10 +123,10 @@ Suite 330, Boston, MA 02111-1307, USA.  */
 #endif
 #endif
 
-int ResetScan = 1;	/* Initialization switch */
-char *StartLine = 0;	/* Adjusted beginning of the current line */
+int ResetScan    = 1;	/* Initialization switch */
 char *TokenStart = 0;	/* First character position of the current token */
-char *TokenEnd = 0;	/* First character position beyond the current token */
+char *TokenEnd   = 0;	/* First character position beyond the current token */
+int RegexLength  = 0;	/* Length of the regular expression match */
 
 #define noASSERT
 
@@ -408,13 +371,16 @@ rescan:
      */
     if (TokenEnd < p) p = TokenEnd;
     
-    if (scan != NULL)
-      TokenEnd = p = (*scan) (TokenStart, TokenEnd - TokenStart);
-    
+    if (scan != NULL) {
+      RegexLength = TokenEnd - TokenStart;
+      TokenEnd = p = (*scan) (TokenStart, RegexLength);
+    }
+
     if (proc != NULL)
       (*proc) (TokenStart, TokenEnd - TokenStart, &extcode, v);
 
 done:
+    RegexLength = 0;	/* Don't retain the offset */
 #ifdef RIGHTCOORD
     SETENDCOORD(TokenEnd - StartLine);
 #endif

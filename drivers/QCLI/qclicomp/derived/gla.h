@@ -33,9 +33,9 @@ extern void lexerr();		/* Token processor for lexical errors */
 #endif
 
 extern int ResetScan;
-extern char *StartLine;
 extern char *TokenStart;
 extern char *TokenEnd;
+extern int RegexLength;
 
 #define NORETURN 15001
 

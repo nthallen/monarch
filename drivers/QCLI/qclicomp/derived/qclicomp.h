@@ -74,10 +74,9 @@ extern long round_to_step( double time, long step );
 /* #define SW_RAMP_OFF_LASER_ON_T (SW_RAMP_OFF_LASER_ON|SW_TRIGGER) */
 
 extern void ptg_output_short( PTG_OUTPUT_FILE file, short value );
-extern void ptg_output_word( PTG_OUTPUT_FILE file, unsigned short value, int count );
 extern void ptg_output_time( PTG_OUTPUT_FILE file );
 extern void ptg_output_name( PTG_OUTPUT_FILE file, const char *name );
-#define ptg_output_hex( f, v, c ) ptg_output_word(f,(unsigned short)v,c)
+// #define ptg_output_hex( f, v, c ) ptg_output_word(f,(unsigned short)v,c)
 
 /* New conversions for new op amp configuration 040423 */
 /* #define AMPS_PER_BIT -7.6294e-5
@@ -100,7 +99,7 @@ PTGNode RingdownPTG( double Istart, double Istop, double Istep, int ProgLen,
   int Ncoadd, int qclicfg, CoordPtr pos );
 
 extern void InitCol(void);
-extern void OutputLine(FILE *f, char *s);
+// extern void OutputLine(FILE *f, char *s);
 extern void CondMatNL(FILE *f);
 
 #endif

@@ -121,7 +121,7 @@ char *argv[];
   opt *o;
   char *s;
 
-  SetFileErr ("%p cannot open %f: %t", 0);
+  SetFileErr ("%p: cannot open %f for reading", 0);
   for (i = 1; i < argc; i++) {
     for (j = 0, o = opts; j < NUMOPTS; j++, o++)
       if (strncmp (o->str, argv[i], strlen (o->str)) == 0)

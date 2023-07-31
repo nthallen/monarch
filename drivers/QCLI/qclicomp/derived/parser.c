@@ -225,7 +225,7 @@ int                             TabellenTest = 0,
 	message(severity[Klasse], text[Schluessel], 0, ZPos)
 
 static void
-Expand()
+Expand(void)
 {
   StackSize += KELLERENDE;
 
@@ -911,7 +911,7 @@ int        SemKl;
 /*            Fehlerbehandlung - SucheAufsetzPunkt                    */
 /**********************************************************************/
 static void
-SucheAufsetzPunkt()
+SucheAufsetzPunkt(void)
 
 /* Es wird ein akzeptables Symbol gesucht, wobei eventuell Symbole  */
 /* ueberlesen werden.                                               */
@@ -957,7 +957,7 @@ SucheAufsetzPunkt()
 /*            Fehlerbehandlung - ErreicheAufsetzPunkt                 */
 /**********************************************************************/
 static void
-ErreicheAufsetzPunkt()
+ErreicheAufsetzPunkt(void)
 {
   int           F;
   K_TYP2                   Z;
@@ -1096,7 +1096,7 @@ ErreicheAufsetzPunkt()
 /**********************************************************************/
 
 static void
-FehlerBehandlung ()
+FehlerBehandlung (void)
 {
 
 #ifdef ZERTEILERTEST
@@ -1137,7 +1137,7 @@ FehlerBehandlung ()
 /*            Anfang des Zerteilers                                   */
 /**********************************************************************/
 
-void  Zerteiler()
+void  Zerteiler(void)
 {
   register  K_TYP2  *ZKeller;
   register  GRUNDSYMBOLDESKRIPTOR  *ZAttributKeller;

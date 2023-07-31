@@ -2,12 +2,12 @@
 #include "ptg_gen.h"
 #include "qclicomp.h"
        
-static col = 0;
+static int col = 0;
 void InitCol(void) {
    col = 0;
 }
 
-void OutputLine(FILE *f, char *s) {
+void OutputLine(FILE *f, const char *s) {
    int l;
    char *nl;
    if (!s) return;

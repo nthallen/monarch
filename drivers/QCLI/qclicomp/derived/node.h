@@ -1,5 +1,5 @@
 
-/* definition of tree node structure */
+/* Definition of tree node structure */
 
 #ifndef NODE_H
 #define NODE_H
@@ -12,7 +12,7 @@
 #else
 #define _NODECOMMON int _prod;
 #endif
-struct NODEPTR_struct {
+struct NODEPTR_struct { 
         _NODECOMMON
 #ifdef __cplusplus
         void* operator new(size_t size);
@@ -210,6 +210,7 @@ struct _TSG4
 {
 _NODECOMMON
 #endif
+POSITION _AT_propCoord;
 int _AT_const53;
 PTGNode _AT_const54;
 int _AT_const55;
@@ -231,6 +232,7 @@ struct _TSG3
 {
 _NODECOMMON
 #endif
+POSITION _AT_propCoord;
 long _AT_const69;
 double _AT_const70;
 int _AT_cICOSRampCount_post;
@@ -435,6 +437,7 @@ struct _TSSampleSpec
 {
 _NODECOMMON
 #endif
+POSITION _AT_propCoord;
 PTGNode _ATSummary;
 };
 
@@ -467,6 +470,7 @@ struct _TSRateDef
 {
 _NODECOMMON
 #endif
+POSITION _AT_propCoord;
 PTGNode _ATSummary;
 };
 
@@ -486,6 +490,7 @@ struct _TSNsampleDef
 {
 _NODECOMMON
 #endif
+POSITION _AT_propCoord;
 PTGNode _ATSummary;
 };
 
@@ -572,6 +577,7 @@ struct _TSPercent
 {
 _NODECOMMON
 #endif
+POSITION _AT_propCoord;
 PTGNode _ATSummary;
 };
 
@@ -628,6 +634,7 @@ struct _TSCurrent
 {
 _NODECOMMON
 #endif
+POSITION _AT_propCoord;
 };
 
 struct _TSICOSRateDef
@@ -930,6 +937,7 @@ struct _TPrule_11
 {
 _NODECOMMON
 #endif
+POSITION _AT_propCoord;
 PTGNode _ATSummary;
 int _ATTERM_1;
 };
@@ -941,6 +949,7 @@ struct _TPrule_12
 {
 _NODECOMMON
 #endif
+POSITION _AT_propCoord;
 PTGNode _ATSummary;
 int _ATTERM_1;
 };
@@ -990,6 +999,7 @@ struct _TPrule_16
 {
 _NODECOMMON
 #endif
+POSITION _AT_propCoord;
 PTGNode _ATSummary;
 _TSPRateUnit _desc1;
 _TSPNaverage _desc2;
@@ -1004,6 +1014,7 @@ struct _TPrule_17
 {
 _NODECOMMON
 #endif
+POSITION _AT_propCoord;
 PTGNode _ATSummary;
 _TSPNsample _desc1;
 int _ATTERM_1;
@@ -1258,6 +1269,7 @@ struct _TPrule_39
 {
 _NODECOMMON
 #endif
+POSITION _AT_propCoord;
 _TSPFloatVal _desc1;
 _TSPCurrentUnit _desc2;
 };
@@ -1729,6 +1741,7 @@ struct _TPrule_035
 {
 _NODECOMMON
 #endif
+POSITION _AT_propCoord;
 PTGNode _ATSummary;
 _TSPFloatVal _desc1;
 };
@@ -1955,6 +1968,7 @@ struct _TPrule_014
 {
 _NODECOMMON
 #endif
+POSITION _AT_propCoord;
 int _AT_const53;
 PTGNode _AT_const54;
 int _AT_const55;
@@ -1968,6 +1982,7 @@ struct _TPrule_013
 {
 _NODECOMMON
 #endif
+POSITION _AT_propCoord;
 int _AT_const53;
 PTGNode _AT_const54;
 int _AT_const55;
@@ -1982,6 +1997,7 @@ struct _TPrule_012
 {
 _NODECOMMON
 #endif
+POSITION _AT_propCoord;
 long _AT_const69;
 double _AT_const70;
 int _AT_cICOSRampCount_post;
@@ -1996,6 +2012,7 @@ struct _TPrule_011
 {
 _NODECOMMON
 #endif
+POSITION _AT_propCoord;
 long _AT_const69;
 double _AT_const70;
 int _AT_cICOSRampCount_post;

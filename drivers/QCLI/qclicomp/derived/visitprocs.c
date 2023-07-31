@@ -549,7 +549,7 @@ message(ERROR, "DAC3 is multiply defined in this waveform", 0, (&( _currn->_AT_p
 } else {
 }
 ;
-/*SPC(542)*/
+/*SPC(540)*/
 
 _VisitExit();
 }
@@ -608,7 +608,7 @@ message(ERROR, "DAC3 is multiply defined in this waveform", 0, (&( _currn->_AT_p
 } else {
 }
 ;
-/*SPC(542)*/
+/*SPC(540)*/
 
 _VisitExit();
 }
@@ -633,7 +633,7 @@ message(ERROR, "Tz specified in samples, but rate is zero", 0, (&( _currn->_AT_p
 } else {
 }
 ;
-/*SPC(348)*/
+/*SPC(347)*/
 (*(_CALL_VS_((NODEPTR )) (VS1MAP[_currn->_desc1->_prod])))((NODEPTR) _currn->_desc1);
 _currn->_ATTz=
 ((GT(_AVTzSpec_RawRate, 0.)
@@ -733,7 +733,7 @@ message(ERROR, "Tz percent must be less than 100", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(328)*/
+/*SPC(327)*/
 _currn->_ATTz=
 ((GT(_AVPercent_Value, 0)
 ) ? (MUL((* _IG_incl5), MUL(0.5, DIV(_AVPercent_Value, SUB(1., _AVPercent_Value))))
@@ -961,7 +961,7 @@ message(ERROR, "Ncoadd is multiply defined", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(125)*/
+/*SPC(124)*/
 
 _VisitExit();
 }
@@ -1494,7 +1494,7 @@ message(ERROR, "dI/dt is multiply defined", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(218)*/
+/*SPC(216)*/
 _AVICOSRamp_SSrampi=SUB(MUL(_AVICOSRamp_SplitFactor, _currn->_ATSrampi), 
 ((AND(AND(_AVICOSRamp_SplitCycle, EQ(_AVICOSRamp_SSzi, 0)), EQ(_currn->_ATICOSRampCount, (* _IG_incl8)))
 ) ? (1
@@ -1573,7 +1573,7 @@ message(ERROR, "dI/dt is multiply defined", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(186)*/
+/*SPC(184)*/
 
 _VisitExit();
 }
@@ -1863,7 +1863,7 @@ message(ERROR, "Prefix is multiply defined", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(94)*/
+/*SPC(92)*/
 
 _VisitExit();
 }
@@ -1909,7 +1909,7 @@ message(ERROR, "Digitizer is multiply defined", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(68)*/
+/*SPC(66)*/
 
 _VisitExit();
 }
@@ -1955,7 +1955,7 @@ message(ERROR, "Digitizer is multiply defined", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(68)*/
+/*SPC(66)*/
 
 _VisitExit();
 }
@@ -2001,7 +2001,7 @@ message(ERROR, "Digitizer is multiply defined", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(68)*/
+/*SPC(66)*/
 
 _VisitExit();
 }
@@ -2047,7 +2047,7 @@ message(ERROR, "QCLIConfig is multiply defined", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(33)*/
+/*SPC(31)*/
 
 _VisitExit();
 }
@@ -2093,7 +2093,7 @@ message(ERROR, "QCLIConfig is multiply defined", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(33)*/
+/*SPC(31)*/
 
 _VisitExit();
 }
@@ -2139,7 +2139,7 @@ message(ERROR, "QCLIConfig is multiply defined", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(33)*/
+/*SPC(31)*/
 
 _VisitExit();
 }
@@ -2185,7 +2185,7 @@ message(ERROR, "QCLIConfig is multiply defined", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(33)*/
+/*SPC(31)*/
 
 _VisitExit();
 }
@@ -2231,7 +2231,7 @@ message(ERROR, "QCLIConfig is multiply defined", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(33)*/
+/*SPC(31)*/
 
 _VisitExit();
 }
@@ -2277,7 +2277,7 @@ message(ERROR, "QCLIConfig is multiply defined", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(33)*/
+/*SPC(31)*/
 
 _VisitExit();
 }
@@ -2323,7 +2323,7 @@ message(ERROR, CatStrInd("Waveform is multiply defined: ", _currn->_ATSym), 0, (
 } else {
 }
 ;
-/*SPC(11)*/
+/*SPC(9)*/
 
 _VisitExit();
 }
@@ -2876,7 +2876,7 @@ message(ERROR, "Tz is multiply defined", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(107)*/
+/*SPC(106)*/
 
 _VisitExit();
 }
@@ -3034,7 +3034,7 @@ PTGOutFile(StringTable(GetClpValue(OutFile, 0)), _AVSourceFile_PTG);
 PTGOut(_AVSourceFile_PTG);
 }
 ;
-/*SPC(595)*/
+/*SPC(593)*/
 
 if (NE(VerbFile, NoKey)) {
 PTGOutFile(StringTable(GetClpValue(VerbFile, 0)), _AVSourceFile_Summary);
@@ -3042,7 +3042,7 @@ PTGOutFile(StringTable(GetClpValue(VerbFile, 0)), _AVSourceFile_Summary);
 } else {
 }
 ;
-/*SPC(654)*/
+/*SPC(653)*/
 
 if (NE(CmdFile, NoKey)) {
 PTGOutFile(StringTable(GetClpValue(CmdFile, 0)), _AVSourceFile_CMDoutput);
@@ -3050,7 +3050,7 @@ PTGOutFile(StringTable(GetClpValue(CmdFile, 0)), _AVSourceFile_CMDoutput);
 } else {
 }
 ;
-/*SPC(961)*/
+/*SPC(960)*/
 
 if (NE(MFile, NoKey)) {
 PTGOutFile(StringTable(GetClpValue(MFile, 0)), _AVSourceFile_Moutput);
@@ -3058,7 +3058,7 @@ PTGOutFile(StringTable(GetClpValue(MFile, 0)), _AVSourceFile_Moutput);
 } else {
 }
 ;
-/*SPC(1022)*/
+/*SPC(1021)*/
 
 if (NE(DispFile, NoKey)) {
 PTGOutFile(StringTable(GetClpValue(DispFile, 0)), _AVSourceFile_DISPoutput);
@@ -3066,7 +3066,7 @@ PTGOutFile(StringTable(GetClpValue(DispFile, 0)), _AVSourceFile_DISPoutput);
 } else {
 }
 ;
-/*SPC(1036)*/
+/*SPC(1035)*/
 _IG_incl27=_IL_incl27;
 _IG_incl25=_IL_incl25;
 _IG_incl14=_IL_incl14;
@@ -3273,7 +3273,7 @@ message(ERROR, "SampleRate is required", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(756)*/
+/*SPC(755)*/
 
 if (NOT(OR(HasNsample(_currn->_ATKey), HasToff(_currn->_ATKey)))) {
 message(ERROR, "Must specify either Toff or Nsample", 0, (&( _currn->_AT_pos)));
@@ -3281,7 +3281,7 @@ message(ERROR, "Must specify either Toff or Nsample", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(754)*/
+/*SPC(752)*/
 _currn->_ATRawRate=
 ((HasRateDef(_currn->_ATKey)
 ) ? (PTRSELECT(GetRateDef(_currn->_ATKey, 0), samples)
@@ -3331,7 +3331,7 @@ message(ERROR, "Ton is required", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(760)*/
+/*SPC(758)*/
 _AVRingCmds__const6=_AVG4__const6;
 /*SPC(1633)*/
 _IG_incl24=_IL_incl24;
@@ -4005,7 +4005,7 @@ message(ERROR, "Iz is multiply defined", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(116)*/
+/*SPC(115)*/
 
 _VisitExit();
 }
@@ -4094,7 +4094,7 @@ message(ERROR, "Only one definition of Nsample or SampleRate is allowed", 0, (&(
 } else {
 }
 ;
-/*SPC(138)*/
+/*SPC(135)*/
 
 _VisitExit();
 }
@@ -4128,7 +4128,7 @@ message(ERROR, "Cannot specify Nsample on waveform with no ramp", 0, (&( _currn-
 } else {
 }
 ;
-/*SPC(291)*/
+/*SPC(290)*/
 
 _VisitExit();
 }
@@ -4155,7 +4155,7 @@ message(ERROR, "Only one definition of Nsample or SampleRate is allowed", 0, (&(
 } else {
 }
 ;
-/*SPC(138)*/
+/*SPC(135)*/
 
 _VisitExit();
 }
@@ -4251,7 +4251,7 @@ message(ERROR, "dI/dt undefined", 0, (&( _currn->_AT_pos)));
 } else {
 }
 ;
-/*SPC(194)*/
+/*SPC(192)*/
 _AVICOSCmds_DtoA=alloc_dtoa(_currn->_ATDtoAs, _AVICOSCmds_Iz, (* _IG_incl2), (&( _currn->_AT_pos)));
 /*SPC(525)*/
 _currn->_ATICOSRampCountResult=_currn->_desc1->_AT_cICOSRampCount_post;

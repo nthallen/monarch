@@ -45,8 +45,8 @@ extern SrcBufPtr SrcBuffer;	/* Current source text buffer */
 #define TEXTSTART (SrcBuffer->TextStart)
 #define SRCFILE (SrcBuffer->name)
 
-#if defined(__cplusplus) || defined(__STDC__)
 
+#if defined(__cplusplus) || defined(__STDC__)
 extern void initBuf(const char *infile, int f);
 /* Create a source text buffer
  *   On entry-
@@ -61,7 +61,11 @@ extern void initBuf(const char *infile, int f);
  *       of the input file.  The entire line, including its terminating
  *       '\n', is in memory
  ***/
+#else
+extern void initBuf();
+#endif
 
+#if defined(__cplusplus) || defined(__STDC__)
 extern void refillBuf(char *p);
 /* Obtain additional information from the input file
  *   On entry-
@@ -76,8 +80,12 @@ extern void refillBuf(char *p);
  *     TEXTSTART points to the information previously pointed to by p
  *     The contents of the memory pointed to by p are undefined
  ***/
+#else
+extern void refillBuf();
+#endif
 
-extern int finlBuf();
+#if defined(__cplusplus) || defined(__STDC__)
+extern int finlBuf(void);
 /* Finalize the current source text buffer
  *   On entry-
  *     SrcBuffer points to the current source text buffer
@@ -86,10 +94,7 @@ extern int finlBuf();
  *     All storage for the current source text buffer has been freed
  *     SrcBuffer=0
  ***/
-
 #else
-extern void refillBuf();
-extern void initBuf();
 extern int finlBuf();
 #endif
 

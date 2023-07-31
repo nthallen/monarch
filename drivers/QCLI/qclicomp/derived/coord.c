@@ -33,6 +33,8 @@ Suite 330, Boston, MA 02111-1307, USA.  */
 int LineNum = 1;		/* Index of the current line
 				   in the total source text */
 
+char *StartLine;		/* Adjusted beginning of the current line */
+
 POSITION NoCoord = { 0 };       /* The NULL coordinate */
 
 POSITION curpos;		/* Position variable for general use */

@@ -46,7 +46,7 @@ POSITION SpanOf(POSITION left, POSITION right)
 }
 #endif
 
-void _incrnodestack ()
+void _incrnodestack (void)
 {
   _nsp++;
   if (_nsp >= _nodestacksize) {
@@ -64,7 +64,7 @@ void _incrnodestack ()
   }
 }
 
-void FreeNodestack()
+void FreeNodestack(void)
 {
   _nsp = 0;
   _nodestacksize = 0;

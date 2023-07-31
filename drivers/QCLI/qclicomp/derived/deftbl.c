@@ -45,7 +45,7 @@ static struct obstack DeftblObstack =
 
 /***/
 DefTableKey
-NewKey()
+NewKey(void)
 /* Establish a new definition
  *    On exit-
  *       NewKey=Unique definition table key
@@ -105,7 +105,7 @@ DefTableKey key; int p; Entry *r; size_t add;
 
 #ifndef NORESTORE
 
-void *SaveModuleDeftbl()
+void *SaveModuleDeftbl(void)
 {
 	void *mark = obstack_alloc(&DeftblObstack, 1);
 	

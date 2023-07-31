@@ -254,7 +254,7 @@ void ptg_output_short( PTG_OUTPUT_FILE file, short value ) {
   fprintf( file, "0x%04X", value );
 }
 
-void ptg_output_word( PTG_OUTPUT_FILE file, unsigned short value, int count ) {
+void ptg_output_word( FILE *file, unsigned short value, int count ) {
   if ( count > 1 )
     fprintf( file, "%04X x %d:", value, count );
   else

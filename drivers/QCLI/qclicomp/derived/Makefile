@@ -88,7 +88,7 @@ glahead.o:	glahead.c err.h csm.h source.h obstack.h scanops.h \
 		tabsize.h ScanProc.h gla.h xtables.h xcode.h eliproto.h \
 		coord.h
 
-auxNUL.o:	auxNUL.c source.h gla.h
+auxNUL.o:	auxNUL.c source.h coord.h eliproto.h
 
 auxEOF.o:	auxEOF.c 
 

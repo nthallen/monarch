@@ -46,7 +46,7 @@ extern void ATTREVAL ELI_ARG((void));
 /* The following is just a dummy function used in the Eli derivation to */
 /* make sure that the main program gets included. */
 int
-___Eli_Main()
+___Eli_Main(void)
 {
   return 0;
 }

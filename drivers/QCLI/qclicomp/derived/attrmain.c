@@ -27,7 +27,7 @@ Suite 330, Boston, MA 02111-1307, USA.  */
 #include "liga_dapto.h"
 #endif
 
-void ATTREVAL()
+void ATTREVAL(void)
 {
 #ifdef MONITOR
   _dapto_tree (_nodestacktop->_uid, 0, 0);
