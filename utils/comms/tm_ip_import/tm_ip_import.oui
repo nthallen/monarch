@@ -1,5 +1,9 @@
 <package> tm_ip_import
 <include> msg oui
+<include> host_session
+<unsort>
+Host_Session function tm_gen: Where to locate serin
+
 
 <package> appid_default
 <include> "dasio/appid.h"

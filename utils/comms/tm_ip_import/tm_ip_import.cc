@@ -1,7 +1,9 @@
 /** @file tm_ip_export.cc
  */
-#include "tm_ip_export.h"
+#include <cstring>
+#include "tm_ip_import.h"
 #include "crc16modbus.h"
+#include "dasio/server.h"
 #include "dasio/cmd_writer.h"
 #include "dasio/tm.h"
 #include "dasio/appid.h"
@@ -12,9 +14,8 @@
  * ipi_cmd_in connects to the local command txsrvr to receive commands,
  * then forwards them to ipi_cmd_out.
  */
-ipi_cmd_in::ipi_cmd_in(const char *iname, ipi_cmd_out *cmd_out)
-    : Cmd_reader("cmd_in", 256, "ip_ex"),
-      cmd_out(cmd_out)
+ipi_cmd_in::ipi_cmd_in(const char *iname)
+    : Cmd_reader("cmd_in", 256, "ip_ex")
 {
   set_retries(-1, 10, 60, false); // Never stop trying
 }
@@ -35,34 +36,33 @@ bool ipi_cmd_in::app_input() {
  * ipi_cmd_out
  */
 ipi_cmd_out::ipi_cmd_out(Authenticator *auth, const char *iname)
-    : Serverside_client(auth, iname, ipi_cmd_out_bufsize) {
+    : Serverside_client(auth, iname, serio::min_buffer_size) {
   set_obufsize(2048);
 }
 
 void ipi_cmd_out::attach(Server *srvr, const char *service) {
-  srvr->add_subservice(new SubService(service, new_ipi_cmd_out, 0);
+  srvr->add_subservice(new SubService(service, new_ipi_cmd_out, 0));
 }
 
-bool ipi_cmd_out::cond_send_cmd(const char *buf, unsigned int nc) {
+bool ipi_cmd_out::cond_send_cmd(uint8_t *buf, unsigned int nc) {
   if (cmd_out) {
-    return cmd_out->send_cmd(buf, nc);
+    return cmd_out->send_serio_pkt(buf, nc);
   } else {
-    msg(MSG_WARN, "%s: No connection: cmd dropped: %s",
-        iname, buf);
+    msg(MSG_WARN, "ipi_cmd_out: No connection: cmd dropped: %s", buf);
     ++cmds_dropped;
   }
   return false;
 }
 
 ipi_cmd_out *ipi_cmd_out::cmd_out = 0;
-int ipi_cmd_out ipi_cmd_out::cmds_dropped = 0;
+int ipi_cmd_out::cmds_dropped = 0;
 
 Serverside_client *ipi_cmd_out::new_ipi_cmd_out(
             Authenticator *Auth, SubService *SS) {
   return new ipi_cmd_out(Auth, Auth->get_client_app());
 }
 
-bool ipi_cmd_out::send_cmd(const char *xbuf, unsigned int xnc) {
+bool ipi_cmd_out::send_serio_pkt(uint8_t *xbuf, unsigned int xnc) {
   // We have allocated an obuf, so we can use auto vars for
   // io and hdr
   struct iovec io[2];
@@ -73,7 +73,7 @@ bool ipi_cmd_out::send_cmd(const char *xbuf, unsigned int xnc) {
   io[0].iov_len = sizeof(serio_pkt_hdr);
   io[0].iov_base = &hdr;
   io[1].iov_len = xnc;
-  io[1].iov_base = xbuf;
+  io[1].iov_base = (void *)xbuf;
   // Calculate the CRC of io[1]
   { unsigned CRC = crc16modbus_word(0,0,0);
     CRC = crc16modbus_word(CRC, io[1].iov_base, io[1].iov_len);
@@ -96,7 +96,7 @@ bool ipi_cmd_out::connected() {
   return false;
 }
 
-bool ipi_cmd_out::close() {
+void ipi_cmd_out::close() {
   cmd_out = 0;
   Serverside_client::close();
   msg(0, "%s: Connection closed", iname);
@@ -108,61 +108,55 @@ bool ipi_cmd_out::app_input() {
   return false;
 }
 
+/********
+ * ipi_tm_in
+ * Receives telemetry and/or photos via UDP and forwards them
+ * to ipi_tm_out to send to serin
+ */
+ipi_tm_in::ipi_tm_in(ipi_tm_out *tm_out)
+    : Socket("tm_in", "Relay", "ip_ex", serio::max_packet_size+1, UDP_READ),
+      tm_out(tm_out)
+{
+  load_tmdac(".");
+  connect();
+}
+
+ipi_tm_in::~ipi_tm_in() {
+}
+
+bool ipi_tm_in::protocol_input() {
+  bool have_hdr;
+  serio_pkt_type type;
+  uint16_t length;
+  uint8_t *payload;
+  
+  if (not_serio_pkt(have_hdr, type, length, payload)) {
+    return false;
+  }
+  int pktlen = length + serio::pkt_hdr_size;
+  bool rv = tm_out->forward_packet((const char*)&buf[cp], pktlen);
+  report_ok(pktlen);
+  return rv;
+}
+
 /***************
  * ipi_tm_out
  */
 ipi_tm_out::ipi_tm_out(const char *iname)
-    : Socket(iname, "Uplink", "ip_ex", 0, UDP_WRITE) {
+    : Client(iname, "tm_gen", "tm_gen", "serin", 10)
+{
 }
 
-/**
- * @param MFCtr
- * @param raw The raw homerow data without the leading MFCtr or
- *    trailing Synch
- */
-void ipi_tm_out::send_row(uint16_t MFCtr, const uint8_t *raw) {
-  if (obuf_empty()) {
-    if (dropping_tx_rows) {
-      msg(MSG_DEBUG, "%s: Tx resumed after dropping %d rows",
-        iname, n_tx_rows_dropped);
-      dropping_tx_rows = false;
-      total_tx_rows_dropped += n_tx_rows_dropped;
-      dropping_tx_rows = false;
-      n_tx_rows_dropped = 0;
-    }
-    // We have allocated an obuf, so we can use auto vars for
-    // io and hdr
-    struct iovec io[3];
-    serio_pkt_hdr hdr;
-    hdr.LRC = 0;
-    hdr.type = pkt_type_TM;
-    hdr.length = tm_info.tm.nbminf-2;
-    io[0].iov_len = sizeof(serio_pkt_hdr);
-    io[0].iov_base = &hdr;
-    io[1].iov_len = sizeof(MFCtr);
-    io[1].iov_base = &MFCtr;
-    io[2].iov_len = tm_info.tm.nbminf - 4;
-    io[2].iov_base = (void*)raw;
-    // Calculate the CRC of io[1] and io[2]
-    { unsigned CRC = crc16modbus_word(0,0,0);
-      CRC = crc16modbus_word(CRC, io[1].iov_base, io[1].iov_len);
-      CRC = crc16modbus_word(CRC, io[2].iov_base, io[2].iov_len);
-      hdr.CRC = CRC;
-      uint8_t *hdrp = (uint8_t *)io[0].iov_base;
-      for (int i = 1; i < io[0].iov_len; ++i) {
-        hdr.LRC += hdrp[i];
-      }
-      hdr.LRC = -hdr.LRC;
-    }
-    bool rv = iwritev(io, 3);
-    rows_this_row = 0;
+bool ipi_tm_out::forward_packet(const char *pkt, int length) {
+  if (is_negotiated() && obuf_empty()) {
+    // ++packets_forwarded;
+    // if (nl_debug_level < -1 && !(packets_forwarded%100))
+      // msg(MSG_DEBUG, "%s: packets_forwarded: %d", iname, packets_forwarded);
+    return iwrite(pkt, length);
   } else {
-    if (!dropping_tx_rows) {
-      msg(MSG_DEBUG, "%s: dropping MFCtr %u", iname, MFCtr);
-      dropping_tx_rows = true;
-    }
-    ++n_tx_rows_dropped;
+    msg(MSG_DEBUG, "%s: Packet dropped", iname);
   }
+  return false;
 }
 
 #ifdef HAVE_SCAN_DATA
@@ -318,59 +312,27 @@ void set_cur_photo(uint32_t Photo_Num) {
 }
 #endif
 
-ipi_tm_in::ipi_tm_in(ipi_tm_out *tm_out)
-    : tm_client(1024),
-      tm_out(tm_out)
-{
-  load_tmdac(".");
-}
-
-ipi_tm_in::~ipi_tm_in() {
-}
-
-// Extracted and adapted from extmain.skel
-unsigned int ipi_tm_in::process_data() {
-  const uint8_t *raw;
-  int n_rows = rows_in_buf;
-  uint16_t MFCtr = buf_mfctr;
-  majf_row = (((uint16_t)MFCtr) % tmi(nrowmajf));
-
-  for ( raw = data_row; n_rows > 0; --n_rows, raw += nbQrow ) {
-    tm_out->send_row(MFCtr, raw);
-    majf_row = (majf_row == tmi(nrowmajf)-1) ? 0 : (majf_row+1);
-    ++MFCtr;
-  }
-  next_minor_frame = MFCtr;
-  return rows_in_buf;
-}
-
-void ipi_tm_in::process_quit() {
-  msg(MSG, "%s: process_quit()", iname);
-  ELoop->set_loop_exit();
-}
-
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   AppID.report_startup();
-  { Server S;
+  { Server S("ip_ex");
 
     ipi_cmd_in *cmd_in = new ipi_cmd_in("cmd_in");
     S.ELoop.add_child(cmd_in);
     cmd_in->connect();
 
-    ipi_cmd_out::attach(&S, "ip_ex", cmd_in);
-    
-    
+    ipi_cmd_out::attach(&S, "ip_ex");
+
     ipi_tm_out *tm_out = new ipi_tm_out("tm_out");
-    ELoop.add_child(tm_out);
+    S.ELoop.add_child(tm_out);
     tm_out->connect();
-    
+
     // tm_client iname is hard-coded to tm_client
     ipi_tm_in *tm_in = new ipi_tm_in(tm_out);
-    ELoop.add_child(tm_in);
+    S.ELoop.add_child(tm_in);
     tm_in->connect();
     
-    ELoop.event_loop();
+    S.Start(Server::Srv_TCP);
   }
   AppID.report_shutdown();
   return 0;

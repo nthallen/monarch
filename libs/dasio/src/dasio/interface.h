@@ -7,6 +7,7 @@
 #include <string>
 #include <sys/uio.h>
 #include "timeout.h"
+#include "dasio/serio_pkt.h"
 
 namespace DAS_IO {
 
@@ -754,6 +755,22 @@ class Interface {
      * next possible beginning of a header.
      */
     bool not_serio_pkt_hdr();
+    /**
+     * @brief Locates and validates a serio packet
+     * @param have_hdr Set to true if a valid serio_pkt_hdr
+     * is found.
+     * @param type Set to the packet header type if have_hdr is true
+     * @param length Set to the packet payload length if have_hdr is true
+     * @param payload Set to the beginning of the payload on success
+     * @return true if no valid packet is found
+     * Discards and data prior to the valid packet header. The header
+     * data (type and length) may be useful when receiving from a
+     * serial device. have_hdr is always set, and type and length
+     * are valid if have_hdr is true. payload is only set if
+     * the function returns false.
+     */
+    bool not_serio_pkt(bool &have_hdr, serio_pkt_type &type,
+      uint16_t &length, uint8_t *&payload);
     /** The name of this interface. Used in diagnostic messages. */
     const char *iname;
     /** The number of characters in buf */
