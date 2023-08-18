@@ -75,7 +75,7 @@ TMCALGO=$(TMAREV) -o $@
 SOLFMT=solfmt -o$@
 GENUI_ENG_DIR=../eng
 GENUI2ENG=genui -d $(GENUI_ENG_DIR) -o $@ -c
-GENUI2JSON=genui -o $@ -j
+GENUI2JSON=genui -d $(GENUI_ENG_DIR) -o $@ -j
 GENUI2CSV=genui -o $@ -c
 
 # PHOTON Test:

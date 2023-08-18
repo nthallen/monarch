@@ -37,6 +37,7 @@ install(FILES
   collect.oui
   funcs_defined.oui
   host_session.oui
+  json_srvr.oui
   kbdclt.oui
   msg.oui
   nctable.oui

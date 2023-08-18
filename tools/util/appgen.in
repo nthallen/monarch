@@ -547,7 +547,8 @@ for i in $basetargets; do
     *engext)
       replace_all .genui ${i}.cdf "${nl}${tab}\$(GENUI2ENG)" $deps;;
     *jsonext)
-      replace_all .genui ${i}.cdf "${nl}${tab}\$(GENUI2JSON)" $deps;;
+      replace_all .genui ${i}.cdf " services${nl}${tab}\$(GENUI2JSON)" $deps &&
+        add_member ouis json_srvr;;
     *)
       replace_all .genui ${i}.cdf "${nl}${tab}\$(GENUI2CSV)" $deps;;
   esac

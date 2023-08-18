@@ -10,6 +10,8 @@
 #	-j generate .cdf for json instead of .edf
 #       -o <filename> specify output .cdf or .edf explicitly
 #
+# If -j and -d are specified, rt_$MNEMONIC will be written to matdir
+#
 # Generates p$mnemonic, g$mnemonic, ui_$mnemonic, dfs_$mnemonic and .edf outputs
 #
 # Input file format:
@@ -221,7 +223,7 @@ if ( $opts{c} || $opts{j} ) {
   close EDF || warn "Error closing $ofile\n";
 }
 
-if ($matdir) {
+if ($matdir  && !$opts{j}) {
   open( UI, ">", "${matdir}/ui_$experiment.m" ) ||
     die "Unable to open ui_$experiment.m\n";
   $generated{"ui_$experiment.m"} = 1;
@@ -339,6 +341,23 @@ if ($matdir) {
     "f = ne_dialg(f, 'newcol');\n",
     "ne_dialg(f, 'resize');\n";
   close UI || warn "Error closing ui_$experiment.m\n";
+}
+
+if ($matdir && $opts{j} ) {
+  my $jsonport;
+  if (open( SVCS, "<", "services")) {
+    while (my $line = <SVCS>) {
+      if ($line =~ m/^jsonext \s+ (\d+)/) {
+        $jsonport = $1;
+        last;
+      }
+    }
+    close(SVCS);
+  }
+
+  if (!defined($jsonport)) {
+    die "No services file or jsonext service port undefined\n";
+  }
 
   my $rt_filename = "rt_$experiment.m";
   open( DFS, ">", "${matdir}/$rt_filename" ) ||
@@ -363,7 +382,7 @@ else
 end
 EOF
 
-  $ui_rows = 0;
+  my $ui_rows = 0;
 
   for my $panel (@panel) {
     if ($usepanels) {
@@ -429,17 +448,18 @@ EOF
   print DFS
     "dfs.end_col;\n",
     "dfs.resize(context_level);\n",
-    "dfs.set_connection('127.0.0.1', 1080);\n",
+    "dfs.set_connection('127.0.0.1', $jsonport);\n",
     "if nargout > 0\n",
     "  dfs_out = dfs;\n",
     "end\n";
   close DFS || warn "Error closing $rt_filename\n";
+}
 
+if ($matdir) {
   my @mfiles = grep !$generated{$_}, sort map { s,^$matdir/,,; $_; }
     <$matdir/*.m>;
   if (@mfiles) {
-    warn "The following mfiles are not generated or referenced by genui:\n", map "  $_\n", @mfiles;
+    warn "The following mfiles were not generated or referenced by this instantiation of genui:\n", map "  $_\n", @mfiles;
   }
-
 }
 

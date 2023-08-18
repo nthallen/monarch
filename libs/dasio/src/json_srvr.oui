@@ -1,0 +1,6 @@
+<package> json_srvr
+<include> host_session
+<follow> host_session
+
+<unsort>
+Host_Session function jsonext: Where to locate the jsonext server

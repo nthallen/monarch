@@ -8,7 +8,7 @@
 namespace DAS_IO {
   
   json_listener::json_listener(const char *hostname, json_server *jsrvr)
-    : Socket("listener", "jsonext", Socket_TCP),
+    : Socket("listener", "jsonext", "jsonext", Socket_TCP),
       jsrvr(jsrvr) {
     if (hostname) {
       this->hostname = hostname;
