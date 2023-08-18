@@ -56,6 +56,7 @@ namespace DAS_IO {
     int quiet = 0;
     int rv;
 
+    msg(MSG_DEBUG, "%s: recd: %s", iname, buf);
     if (CHP.parse(buf)) return false;
     switch (CHP.mode) {
       case 'T': testing = 1; break;

@@ -71,13 +71,16 @@ bool cmd_hdr_parser::parse(const unsigned char *ibuf) {
       }
       break;
     }
-    int IDlen = i; // Includes ending NUL
-    if (IDlen > hdrID_len) {
-      nl_free_memory(hdrID_buf);
-      hdrID_len = IDlen;
-      hdrID_buf = (char*)new_memory(hdrID_len);
+    int IDlen = i-1;
+    if (IDlen > 0) {
+      if (IDlen+1 > hdrID_len) {
+        nl_free_memory(hdrID_buf);
+        hdrID_len = IDlen+1;
+        hdrID_buf = (char*)new_memory(hdrID_len);
+      }
+      memcpy(hdrID_buf, &ibuf[1], IDlen);
     }
-    memcpy(hdrID_buf, &ibuf[1], IDlen);
+    hdrID_buf[IDlen] = '\0';
     if (ibuf[i] == '#') {
       for (++i; isdigit((unsigned char)ibuf[i]); ++i) {
         SN = SN * 10 + ibuf[i] - '0';
