@@ -66,7 +66,7 @@ namespace DAS_IO {
   bool Client::connected() {
     // Issue the negotiation string
     int req_len;
-    const char *Exp = AppID.Experiment;
+    const char *Exp = cross_exp ? cross_exp : AppID.Experiment;
     if (sub_service && sub_service[0]) {
       req_len = snprintf(obuf, obufsize, "AuthLE %s %s %s/%s\n", Exp,
         AppID.name, service, sub_service);

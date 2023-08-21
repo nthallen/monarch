@@ -3,8 +3,8 @@
 <include> host_session
 
 <unsort>
-Host_Session function Relay: To specify relay host IP
-Host_Session function Uplink: To specify the local uplink interface
+Host_Session function Relay: To specify relay host IP for the ip_ex service
+Host_Session function Uplink: To specify the local Ethernet interface for the ip_ex service
 
 <package> appid_default
 <include> "dasio/appid.h"

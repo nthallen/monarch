@@ -81,6 +81,7 @@ namespace DAS_IO {
       bool connected();
       inline bool is_negotiated() { return clt_state == Clt_negotiated; }
       inline void set_subservice(const char *subs) { sub_service = subs; }
+      inline void set_cross_exp(const char *crexp) { cross_exp = crexp; }
     protected:
       // virtual ~Client();
     private:
@@ -88,6 +89,7 @@ namespace DAS_IO {
       char obuf[obufsize];
       clt_state_t clt_state;
       const char *sub_service;
+      const char *cross_exp;
   };
   
 }
