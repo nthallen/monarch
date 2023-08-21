@@ -21,7 +21,8 @@ namespace DAS_IO {
                  const char *service, const char *sub_service,
                  int bufsz)
     : DAS_IO::Socket(iname, function, service, bufsz),
-      sub_service(sub_service)
+      sub_service(sub_service),
+      cross_exp(0)
   {
     clt_state = Clt_connecting;
   }
