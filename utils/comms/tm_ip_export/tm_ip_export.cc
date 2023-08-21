@@ -8,6 +8,8 @@
 #include "nl.h"
 #include "oui.h"
 
+const char *ip_export_cross_exp;
+
 /**
  * Establishes connection to the Relay node and receives
  * commands.
@@ -328,6 +330,7 @@ int main(int argc, char **argv) {
   { Loop ELoop;
   
     ipx_cmd_in *cmd_in = new ipx_cmd_in("cmd_in");
+    cmd_in->set_cross_exp(ip_export_cross_exp);
     ELoop.add_child(cmd_in);
     cmd_in->connect();
     

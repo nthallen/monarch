@@ -58,4 +58,7 @@ class ipx_tm_in : public tm_client {
     ipx_tm_out *tm_out;
 };
 
+extern const char *ip_export_cross_exp;
+inline void set_cross_exp(const char *exp) { ip_export_cross_exp = exp; }
+
 #endif

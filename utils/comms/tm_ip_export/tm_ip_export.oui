@@ -1,6 +1,14 @@
 <package> tm_ip_export
 <include> msg oui
 <include> host_session
+<include> "tm_ip_export.h"
+
+<opts> "E:"
+<sort>
+  -E <Exp> Set remote Experiment to <Exp>
+
+<switch>
+  case 'E': set_cross_exp(optarg); break;
 
 <unsort>
 Host_Session function Relay: To specify relay host IP for the ip_ex service
