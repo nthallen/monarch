@@ -1,5 +1,6 @@
 /** @file tm_ip_export.cc
  */
+#include <cstring>
 #include "tm_ip_export.h"
 #include "crc16modbus.h"
 #include "dasio/cmd_writer.h"
@@ -87,7 +88,7 @@ bool ipx_cmd_in::app_input() {
 }
 
 ipx_tm_out::ipx_tm_out(const char *iname)
-    : Socket(iname, "Uplink", "ip_ex", 0, UDP_WRITE) {
+    : Socket(iname, "Relay", "ip_ex", 0, UDP_WRITE) {
 }
 
 /**
