@@ -118,7 +118,6 @@ ipi_tm_in::ipi_tm_in(ipi_tm_out *tm_out)
       tm_out(tm_out)
 {
   load_tmdac(".");
-  connect();
 }
 
 ipi_tm_in::~ipi_tm_in() {
