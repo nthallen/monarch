@@ -317,6 +317,11 @@ unsigned int ipx_tm_in::process_data() {
   return rows_in_buf;
 }
 
+void ipx_tm_in::process_init() {
+  memcpy(&tm_info, &tm_msg->body.init.tm, sizeof(tm_dac_t));
+  tm_rcvr::process_init();
+}
+
 void ipx_tm_in::process_quit() {
   msg(MSG, "%s: process_quit()", iname);
   ELoop->set_loop_exit();

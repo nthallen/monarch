@@ -54,6 +54,7 @@ class ipx_tm_in : public tm_client {
   protected:
     virtual ~ipx_tm_in();
     unsigned int process_data();
+    void process_init();
     void process_quit();
     ipx_tm_out *tm_out;
 };
