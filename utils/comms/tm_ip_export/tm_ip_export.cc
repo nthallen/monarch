@@ -296,9 +296,7 @@ void set_cur_photo(uint32_t Photo_Num) {
 ipx_tm_in::ipx_tm_in(ipx_tm_out *tm_out)
     : tm_client(1024),
       tm_out(tm_out)
-{
-  load_tmdac(".");
-}
+{}
 
 ipx_tm_in::~ipx_tm_in() {
 }
