@@ -291,8 +291,10 @@ bool Socket::connect() {
 
         if (is_server) {
           if (bind(fd, res->ai_addr, sizeof(struct sockaddr_in)) < 0) {
-            msg(MSG_FATAL, "%s: bind(%s, %s) failed with error %d: %s",
+            msg(MSG_ERROR, "%s: bind(%s, %s) failed with error %d: %s",
               iname, hostname, portname, errno, std::strerror(errno));
+            reset();
+            return false;
           }
           if (socket_type == Socket_TCP) {
             if (listen(fd, MAXPENDING) < 0) {
