@@ -18,7 +18,7 @@ const char *ip_export_cross_exp;
 ipx_cmd_in::ipx_cmd_in(const char *iname)
     : Client(iname, "Relay", "ip_ex", 0, serio::min_buffer_size)
 {
-  set_retries(-1, 10, 60, false); // Never stop trying
+  set_retries(-1, 10, 10, false); // Never stop trying
 }
 
 bool ipx_cmd_in::app_input() {
