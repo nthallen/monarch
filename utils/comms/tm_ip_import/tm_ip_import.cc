@@ -141,8 +141,9 @@ bool ipi_tm_in::protocol_input() {
 /***************
  * ipi_tm_out
  */
-ipi_tm_out::ipi_tm_out(const char *iname)
-    : Client(iname, "tm_gen", "tm_gen", "serin", 10)
+ipi_tm_out::ipi_tm_out(const char *iname, Server *srvr)
+    : Client(iname, "tm_gen", "tm_gen", "serin", 10),
+      srvr(srvr)
 {
 }
 
@@ -155,6 +156,12 @@ bool ipi_tm_out::forward_packet(const char *pkt, int length) {
   } else {
     msg(MSG_DEBUG, "%s: Packet dropped", iname);
   }
+  return false;
+}
+
+bool ipi_tm_out::process_eof() {
+  if (srvr)
+    srvr->Shutdown(true);
   return false;
 }
 
@@ -322,7 +329,7 @@ int main(int argc, char **argv) {
 
     ipi_cmd_out::attach(&S, "ip_ex");
 
-    ipi_tm_out *tm_out = new ipi_tm_out("tm_out");
+    ipi_tm_out *tm_out = new ipi_tm_out("tm_out", &S);
     S.ELoop.add_child(tm_out);
     tm_out->connect();
 

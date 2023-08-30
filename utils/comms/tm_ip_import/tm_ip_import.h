@@ -85,7 +85,7 @@ class ipi_tm_in : public Socket {
 
 class ipi_tm_out : public Client {
   public:
-    ipi_tm_out(const char *iname);
+    ipi_tm_out(const char *iname, Server *srvr);
     /**
      * @param pkt Pointer to the complete serio packet
      * @param length The number of bytes in the packet
@@ -94,6 +94,17 @@ class ipi_tm_out : public Client {
     bool forward_packet(const char *pkt, int length);
   protected:
     // ~ipi_tm_out();
+    /**
+     * Calls srvr->Shutdown(true)
+     *
+     * The correct approach may be to override app_process_eof() instead
+     * to avoid a possible race condition at startup.
+     *
+     * @return false, although it really doesn't matter, since the
+     * Shutdown() call takes care of termination.
+     */
+    bool process_eof();
+    Server *srvr;
 };
 
 #endif
