@@ -87,6 +87,11 @@ bool ipx_cmd_in::app_input() {
   return false;
 }
 
+bool ipx_cmd_in::process_eof() {
+  msg(MSG_ERROR, "%s: Connection dropped", iname);
+  return reset();
+}
+
 ipx_tm_out::ipx_tm_out(const char *iname)
     : Socket(iname, "Relay", "ip_ex", 0, UDP_WRITE) {
 }

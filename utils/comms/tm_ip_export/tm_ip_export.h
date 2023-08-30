@@ -21,7 +21,7 @@ class ipx_cmd_in : public Client {
   protected:
     // ~ipx_cmd_in();
     /** reset() instead of returning true */
-    inline bool process_eof() { return reset(); }
+    bool process_eof();
 };
 
 /**
