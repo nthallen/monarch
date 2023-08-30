@@ -209,6 +209,7 @@ namespace DAS_IO {
     }
     if (which & Srv_TCP) {
       TCP = new Server_socket("TCP", service, Socket::Socket_TCP, this);
+      TCP->set_retries(-1, 10, 10, false);
       TCP->reference();
       TCP->connect();
       ELoop.add_child(TCP);

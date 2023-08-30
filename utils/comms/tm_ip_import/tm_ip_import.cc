@@ -38,7 +38,6 @@ bool ipi_cmd_in::app_input() {
 ipi_cmd_out::ipi_cmd_out(Authenticator *auth, const char *iname)
     : Serverside_client(auth, iname, serio::min_buffer_size) {
   set_obufsize(2048);
-  set_retries(-1, 10, 10, false); // Never stop trying
 }
 
 void ipi_cmd_out::attach(Server *srvr, const char *service) {
