@@ -164,6 +164,7 @@ bool cmd_hdr_parser::check_sn() {
   if (SN) {
     msg(MSG_DEBUG, "check_sn idx:%d N_SN:%d", first_SN_idx, N_SN);
     if (first_SN_idx < 0 || first_SN_idx >= N_SN_MAX) {
+      first_SN_idx = 0;
       N_SN = 0;
     }
     if (N_SN > 0) {
