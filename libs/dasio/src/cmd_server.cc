@@ -75,7 +75,7 @@ namespace DAS_IO {
         }
       default: break;
     }
-    msg( quiet ? -2 : 0, "%s: %s", CHP.hdrID(), CHP.cmd );
+    msg( quiet ? -2 : 0, "%s#%d: %s", CHP.hdrID(), CHP.SN, CHP.cmd );
     cmd_init();
     rv = cmd_batch_chp(&CHP);
     switch ( CMDREP_TYPE(rv) ) {
@@ -99,7 +99,7 @@ namespace DAS_IO {
         consume(cp);
         return iwrite(obuf, len);
       case CMDREP_TYPE(CMDREP_DUPLICATE):
-        msg(MSG_DEBUG, "%s: Duplicate", CHP.hdrID());
+        msg(MSG_DEBUG, "%s#%d: Duplicate", CHP.hdrID(), CHP.SN);
         report_ok(nc);
         return iwrite("K\n");
       default:
@@ -109,122 +109,6 @@ namespace DAS_IO {
         consume(cp);
         return iwrite(obuf, len);
     }
-
-//-------------------------------------------------
-#ifdef OLD_CODE
-    if ( nc > Cmd_Server::MAX_COMMAND_IN ) {
-      report_err("%s: Command too long", iname);
-      consume(nc);
-      return false;
-    }
-
-    // Parse leading options
-    // No spaces, colons or right brackets allowed in mnemonics 
-    { const char *mnemonic = "--";
-      int quiet = 0;
-      int testing = 0;
-      unsigned char *s = buf;
-
-      if ( *s == '[' ) {
-        s++;
-        if ( isgraph(*s) && *s != ':' && *s != ']' ) {
-          mnemonic = (const char *)s++;
-          while ( isgraph(*s) && *s != ':' && *s != ']' )
-            s++;
-        }
-        if ( !isgraph(*s) ) {
-           report_err("%s: Invalid mnemonic string", iname);
-          consume(nc);
-          return iwrite("E0: Invalid mnemonic string\n");
-        }
-        if ( *s == ':' ) {
-          int end_of_opts = 0;
-          unsigned char *ver;
-
-          *s++ = '\0'; // terminate the mnemonic
-          // and then handle the options
-          while (!end_of_opts) {
-            switch (*s) {
-              case 'T': testing = 1; s++; break;
-              case 'Q': quiet = 1; s++; break;
-              case 'X': CmdServer->process_quit(); return false;
-              case 'V': // handle version command
-                ver = ++s;
-                while ( *s != ']' && *s != '\0' ) s++;
-                if ( *s == '\0' ) {
-                  report_err("%s: Unterminated version string", iname);
-                  consume(nc);
-                  return iwrite("E1: Unterminated version string\n");
-                }
-                *s = '\0';
-                if ( strcmp( (const char *)ver, ci_version ) == 0 ) {
-                  report_ok(nc);
-                  return iwrite("K\n");
-                } else {
-                  report_err("%s: Command Versions don't match", iname);
-                  consume(nc);
-                  return iwrite("E2: Command Versions don't match\n");
-                }
-              case ']': end_of_opts = 1; break;
-              default:
-                report_err("%s: Invalid option", iname);
-                consume(nc);
-                return iwrite("E3: Invalid option\n");
-            }
-          }
-        }
-        // blank out trailing ']' in case it's the end of the mnemonic
-        *s++ = '\0';
-      }
-      { unsigned char *cmd = s;
-        int len = 0;
-        int rv;
-        int clen;
-
-        // Now s points to a command we want to parse.
-        // Make sure it's kosher
-        for ( ; isprint(*s); ++s, ++len) {}
-        if (*s != '\n' || s[1] != '\0' ) {
-          report_err("%s: Invalid character or text after newline", iname);
-          consume(nc);
-          return iwrite("E4: Invalid character in command or text after newline\n");
-        }
-        ++s;
-        msg( quiet ? -2 : 0, "%s: %*.*s",
-          mnemonic, len, len, cmd );
-        cmd_init();
-        rv = cmd_batch( (char *)cmd, testing );
-        cp = s - &buf[0];
-        switch ( CMDREP_TYPE(rv) ) {
-          case 0:
-            report_ok(cp);
-            return iwrite("K\n");
-          case 1:
-            report_ok(cp);
-            if (testing) return iwrite("K\n");
-            CmdServer->process_quit();
-            return true;
-          case 2: /* Report Syntax Error */
-            if ( nl_response ) {
-              msg( MSG_ERROR, "%s: Syntax Error", mnemonic );
-              msg( MSG_ERROR, "%*.*s", len, len, cmd);
-              msg( MSG_ERROR, "%*s", rv - CMDREP_SYNERR, "^");
-            }
-            len = snprintf(obuf, OBUF_SIZE, "S%d: Syntax Error at column %d\n",
-              rv - CMDREP_SYNERR, rv - CMDREP_SYNERR);
-            // report_err("%s: %s", iname, obuf);
-            consume(cp);
-            return iwrite(obuf, len);
-          default:
-            len = snprintf(obuf, OBUF_SIZE, "E5: I/O error %d\n",
-              rv - CMDREP_EXECERR);
-            report_err("%s: %s", iname, obuf);
-            consume(cp);
-            return iwrite(obuf, len);
-        }
-      }
-    }
-#endif // OLD_CODE
   }
   
   void Cmd_receiver::process_quits() {
