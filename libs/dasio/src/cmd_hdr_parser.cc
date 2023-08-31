@@ -179,21 +179,21 @@ bool cmd_hdr_parser::check_sn() {
       }
     }
     // Now we have a new SN
+    recent_SN_t *rSN;
     if (N_SN < N_SN_MAX) {
-      ++N_SN;
       int i = first_SN_idx + N_SN;
-      recent_SN_t *rSN = &recent_SN[i];
-      rSN->SN = SN;
-      rSN->retrans = 0;
+      if (i >= N_SN_MAX) i -= N_SN_MAX;
+      ++N_SN;
+      rSN = &recent_SN[i];
     } else {
-      recent_SN_t *rSN = &recent_SN[first_SN_idx];
+      rSN = &recent_SN[first_SN_idx];
       recent_retrans -= rSN->retrans;
-      rSN->SN = SN;
-      rSN->retrans = 0;
       if (++first_SN_idx >= N_SN_MAX) {
         first_SN_idx = 0;
       }
     }
+    rSN->SN = SN;
+    rSN->retrans = 0;
   }
   return false;
 }
