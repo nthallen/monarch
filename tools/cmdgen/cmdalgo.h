@@ -37,7 +37,8 @@ void cis_interfaces_close(void); /* generated */
 #define CMDREP_QUIT 1000
 #define CMDREP_SYNERR 2000
 #define CMDREP_EXECERR 3000
-#define CMDREP_NOREPLY 4000
+#define CMDREP_OVERFLOW 4000
+#define CMDREP_DUPLICATE 5000
 #define CMDREP_TYPE(x) ((x)/1000)
 
 #ifdef __QNXNTO__

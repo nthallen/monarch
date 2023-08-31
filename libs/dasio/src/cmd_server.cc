@@ -79,15 +79,15 @@ namespace DAS_IO {
     cmd_init();
     rv = cmd_batch_chp(&CHP);
     switch ( CMDREP_TYPE(rv) ) {
-      case 0:
+      case CMDREP_OK:
         report_ok(nc);
         return iwrite("K\n");
-      case 1:
+      case CMDREP_TYPE(CMDREP_QUIT):
         report_ok(nc);
         if (testing) return iwrite("K\n");
         CmdServer->process_quit();
         return true;
-      case 2: /* Report Syntax Error */
+      case CMDREP_TYPE(CMDREP_SYNERR): /* Report Syntax Error */
         if ( nl_response ) {
           msg( MSG_ERROR, "%s: Syntax Error", CHP.hdrID() );
           msg( MSG_ERROR, "%s", CHP.cmd);
@@ -98,6 +98,10 @@ namespace DAS_IO {
           rv - CMDREP_SYNERR, rv - CMDREP_SYNERR);
         consume(cp);
         return iwrite(obuf, len);
+      case CMDREP_TYPE(CMDREP_DUPLICATE):
+        msg(MSG_DEBUG, "%s: Duplicate", CHP.hdrID());
+        report_ok(nc);
+        return iwrite("K\n");
       default:
         len = snprintf(obuf, OBUF_SIZE, "E5: I/O error %d\n",
           rv - CMDREP_EXECERR);
