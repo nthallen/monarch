@@ -160,7 +160,9 @@ int cmd_hdr_parser::recent_retrans = 0;
  * @return true if the specified SN has been seen recently
  */
 bool cmd_hdr_parser::check_sn() {
+  msg(MSG_DEBUG, "check_sn %d", SN);
   if (SN) {
+    msg(MSG_DEBUG, "check_sn idx:%d N_SN:%d", first_SN_idx, N_SN);
     if (first_SN_idx < 0 || first_SN_idx >= N_SN_MAX) {
       N_SN = 0;
     }
