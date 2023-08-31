@@ -1280,7 +1280,7 @@ static int cmd_exec(void) {
     CHPP->assign_sn();
 #else
     if (CHPP->check_sn())
-      return 0;
+      return CMDREP_DUPLICATE;
 #endif
     int cmdlen = CHPP->format();
     if (cmdlen) {
@@ -1288,7 +1288,7 @@ static int cmd_exec(void) {
       cmd_base = CHPP->fmtcmd;
 #endif
       return cmd_batch((const char *)CHPP->cmd, CHPP->mode == 'T');
-    } else return 1;
+    } else return CMDREP_OVERFLOW;
   }
 
   /* Parses the specified command, executing if test == 0.
