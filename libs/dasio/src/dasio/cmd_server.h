@@ -66,6 +66,10 @@ namespace DAS_IO {
       char mode;
       const unsigned char *cmd; // points into ibuf, assumed to remain constant
       char fmtcmd[Cmd_Server::MAX_COMMAND_IN];
+
+      /** Number of duplicates received of the last N_SN_MAX SNs */
+      static int recent_duplicates;
+      static int latest_SN_rx; ///< The last SN received
     private:
       int hdrID_len;
       
@@ -75,11 +79,9 @@ namespace DAS_IO {
       } recent_SN_t;
       static const int N_SN_MAX = 10;
       static recent_SN_t recent_SN[N_SN_MAX]; ///< Storage for most recent SNs
-      static int latest_SN; ///< The last SN created here
+      static int latest_SN_created; ///< The last SN created here
       static int first_SN_idx; ///< index of the oldest SN recorded
       static int N_SN; ///< Number of SNs recorded, <= N_SN_MAX
-      /** Number of retransmissions of the last N_SN_MAX SNs */
-      static int recent_retrans;
 
       /**
        * @param ibuf The source string

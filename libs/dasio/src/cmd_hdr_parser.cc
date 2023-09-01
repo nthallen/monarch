@@ -140,11 +140,12 @@ int cmd_hdr_parser::format() {
   return retcode(nc);
 }
 
-int cmd_hdr_parser::latest_SN = 0;
+int cmd_hdr_parser::latest_SN_rx = 0;
+int cmd_hdr_parser::latest_SN_created = 0;
 
 void cmd_hdr_parser::assign_sn() {
   if (SN == 0) {
-    SN = ++latest_SN;
+    SN = ++latest_SN_created;
   } else {
     // We expect this when using a Relay
     msg(MSG_DEBUG, "assign_sn: already assigned");
@@ -154,7 +155,7 @@ void cmd_hdr_parser::assign_sn() {
 cmd_hdr_parser::recent_SN_t cmd_hdr_parser::recent_SN[N_SN_MAX];
 int cmd_hdr_parser::first_SN_idx = -1;
 int cmd_hdr_parser::N_SN = 0;
-int cmd_hdr_parser::recent_retrans = 0;
+int cmd_hdr_parser::recent_duplicates = 0;
 
 /**
  * @return true if the specified SN has been seen recently
@@ -171,12 +172,13 @@ bool cmd_hdr_parser::check_sn() {
         if (i >= N_SN_MAX) i -= N_SN_MAX;
         if (recent_SN[i].SN == SN) {
           ++recent_SN[i].retrans;
-          ++recent_retrans;
+          ++recent_duplicates;
           return true;
         }
       }
     }
     // Now we have a new SN
+    latest_SN_rx = SN;
     recent_SN_t *rSN;
     if (N_SN < N_SN_MAX) {
       int i = first_SN_idx + N_SN;
@@ -185,7 +187,7 @@ bool cmd_hdr_parser::check_sn() {
       rSN = &recent_SN[i];
     } else {
       rSN = &recent_SN[first_SN_idx];
-      recent_retrans -= rSN->retrans;
+      recent_duplicates -= rSN->retrans;
       if (++first_SN_idx >= N_SN_MAX) {
         first_SN_idx = 0;
       }
