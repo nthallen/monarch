@@ -42,6 +42,12 @@ install(FILES
 install(FILES
   Version.agm
   loop.cmd
+  Command_SN.agm
+  command_sn.cmd
+  command_sn_col.tmc
+  command_sn.tmc.in
+  command_sn.genui.in
+  command_sn.tbl.in
   DESTINATION share/monarch/modules)
 
 else (NOT CMAKE_CROSSCOMPILING)

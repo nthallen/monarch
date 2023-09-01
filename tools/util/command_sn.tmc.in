@@ -1,0 +1,11 @@
+TM "Receive" Command_SN 0;
+
+TM typedef uint16_t SN_t { text "%5u"; }
+TM @rate@ Hz SN_t Cmd_SN;
+TM typedef uint8_t Cmd_Dups_t { text "%3u"; }
+TM @rate@ Hz Cmd_Dups_t Cmd_Dups;
+
+group Command_SN (Cmd_SN, Cmd_Dups) {
+  Cmd_SN = Command_SN.latest_SN_rx;
+  Cmd_Dups = Command_SN.recent_duplicates;
+}

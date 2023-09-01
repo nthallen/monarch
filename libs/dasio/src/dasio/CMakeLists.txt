@@ -8,6 +8,7 @@ install(FILES ascii_escape.h interface.h serial.h timeout.h
   loop.h msg.h tma.h
   csv_file.h tmctime.h nc_tm_client.h tm_rcvr.h
   cpu_usage.h json_srvr.h host_session.h serio_pkt.h
+  command_sn.h
   ${CMAKE_CURRENT_BINARY_DIR}/config.h
   DESTINATION include/dasio
 )

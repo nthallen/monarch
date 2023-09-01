@@ -401,6 +401,36 @@ command_out_t *cmdif_rd::free_command( command_out_t *cmd ) {
 
 command_out_t *cmdif_rd::free_commands;
 
+cmdif_tx::cmdif_tx(const char *name) : cmdif_rd(name) {
+  nl_assert(txmtr == 0);
+  last_cmd_txd[0] = '\0';
+  retransmit_reqd = false;
+  txmtr = this;
+}
+
+void cmdif_tx::Turf(const char *fmt, ...) {
+  va_list arglist;
+  int nb;
+
+  va_start(arglist, fmt);
+  nb = vsnprintf(last_cmd_txd, DAS_IO::Cmd_Server::MAX_COMMAND_IN,
+                  fmt, arglist);
+  va_end( arglist );
+  cmdif_rd::Turf("%s", last_cmd_txd);
+}
+
+void cmdif_tx::do_retransmit() {
+  if (retransmit_reqd && last_cmd_txd[0]) {
+    cmdif_rd::Turf("%s", last_cmd_txd);
+  }
+  retransmit_reqd = false;
+}
+
+void cmdif_tx::req_retransmit() {
+  if (cmdif_tx::txmtr)
+    cmdif_tx::txmtr->retransmit_reqd = true;
+}
+
 cmdif_wr_clt::cmdif_wr_clt(const char *iname, const char *service,
         const char *subservice)
       : DAS_IO::Client(iname, service, service, subservice, 80) {}

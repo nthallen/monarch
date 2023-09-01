@@ -1,0 +1,9 @@
+Command_SN {
+  SN:     (Cmd_SN,5);
+  Dups:   (Cmd_Dups,3);
+}
+
+Command_SN_H {
+  HBox { +-; Title: "Transmission"; -+ };
+  [Command_SN]
+}

@@ -18,8 +18,10 @@ namespace DAS_IO {
       void process_quit();
       /** The maximum input command length, including headers */
       static const int MAX_COMMAND_IN = 300;
-      /** The maximum message size out to drivers */
-      static const int MAX_COMMAND_OUT = 160;
+      /** The maximum message size out to drivers. Must match
+       *  MAX_COMMAND_IN for transmission.
+       */
+      static const int MAX_COMMAND_OUT = 300;
     protected:
       bool ready_to_quit();
       bool quit_processed;
@@ -206,6 +208,18 @@ class cmdif_rd {
     std::list<DAS_IO::Cmd_turf *> turfs;
     static command_out_t *free_commands;
     static std::list<cmdif_rd *> rdrs;
+};
+
+class cmdif_tx : public cmdif_rd {
+  public:
+    cmdif_tx(const char *name);
+    void Turf(const char *fmt, ...);
+    static void req_retransmit();
+    void do_retransmit();
+    char last_cmd_txd[DAS_IO::Cmd_Server::MAX_COMMAND_IN];
+    static cmdif_tx *txmtr;
+  protected:
+    bool retransmit_reqd;
 };
 
 class cmdif_wr_clt : public DAS_IO::Client {

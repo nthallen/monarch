@@ -56,6 +56,9 @@ void new_interface(char *if_name, int usage) {
           strcasecmp( new_if->if_name, "subbusd" ) == 0 ) {
     new_if->if_type = IFT_SUBBUS;
     fprintf( ofile, "#include \"subbus.h\"\n" );
+  } else if (usage == IF_USE_TX) {
+    cmd_class = "cmdif_tx";
+    new_if->if_type = IFT_READ;
   } else {
     cmd_class = "cmdif_rd";
     new_if->if_type = IFT_READ;

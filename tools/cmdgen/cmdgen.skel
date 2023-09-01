@@ -47,6 +47,8 @@ static short ioflags;
 
 %headers%
 
+cmdif_tx *cmdif_tx::txmtr;
+
 #if defined SNAFU_CURSES && ! defined SELF_SERVE
   #define SELF_SERVE
 #endif
@@ -1275,19 +1277,40 @@ static int cmd_exec(void) {
 
 #ifdef CMD_BATCH_MODE
 
+#if defined(COMMAND_SN_H_INCLUDED) && defined(SERVER) && !defined(TRANSMITTING)
+  Command_SN_t Command_SN;
+  
+  void send_Command_SN() {
+    Command_SN.recent_duplicates = DAS_IO::cmd_hdr_parser::recent_duplicates;
+    Command_SN.latest_SN_rx = DAS_IO::cmd_hdr_parser::latest_SN_rx;
+    if_Command_SN.Turf();
+  }
+  
+  #define COMMAND_SN_TM_TURF send_Command_SN();
+#else
+  #define COMMAND_SN_TM_TURF
+#endif
+
   int cmd_batch_chp(DAS_IO::cmd_hdr_parser *CHPP) {
 #ifdef TRANSMITTING
     CHPP->assign_sn();
 #else
-    if (CHPP->check_sn())
-      return CMDREP_DUPLICATE;
+    { int rv = CHPP->check_sn();
+      COMMAND_SN_TM_TURF
+      if (rv) return CMDREP_DUPLICATE;
+    }
 #endif
     int cmdlen = CHPP->format();
     if (cmdlen) {
+      int rv;
 #ifdef TRANSMITTING
       cmd_base = CHPP->fmtcmd;
 #endif
-      return cmd_batch((const char *)CHPP->cmd, CHPP->mode == 'T');
+      rv = cmd_batch((const char *)CHPP->cmd, CHPP->mode == 'T');
+#ifdef TRANSMITTING
+      cmdif_tx::txmtr->do_retransmit();
+#endif
+      return rv;
     } else return CMDREP_OVERFLOW;
   }
 

@@ -1,0 +1,10 @@
+Moduledef Command_SN [ rate=1 Panel= ] {
+}
+tmcbase = command_sn.tmc:command_sn.tmc.in
+colbase = command_sn_col.tmc
+cmdbase = command_sn.cmd
+genuibase = command_sn.genui:command_sn.genui.in
+- : command_sn.tbl:command_sn.tbl.in
+
+IGNORE = command_sn.tmc command_sn.genui command_sn.tbl
+OBJ = command_sn.tmc command_sn.genui command_sn.tbl

@@ -1,0 +1,4 @@
+%{
+  #include "dasio/command_sn.h"
+  Command_SN_t Command_SN;
+%}
