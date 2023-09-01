@@ -1296,7 +1296,9 @@ static int cmd_exec(void) {
     CHPP->assign_sn();
 #else
     { int rv = CHPP->check_sn();
-      COMMAND_SN_TM_TURF
+      if (CHPP->mode != 'T') {
+        COMMAND_SN_TM_TURF
+      }
       if (rv) return CMDREP_DUPLICATE;
     }
 #endif
