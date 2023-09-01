@@ -1,4 +1,4 @@
-/** @file tm_ip_export.cc
+/** @file tm_ip_import.cc
  */
 #include <cstring>
 #include "tm_ip_import.h"
@@ -15,9 +15,9 @@
  * then forwards them to ipi_cmd_out.
  */
 ipi_cmd_in::ipi_cmd_in(const char *iname)
-    : Cmd_reader("cmd_in", 256, "ip_ex")
+    : Cmd_reader("cmd_in", 256, "cmd_tx")
 {
-  set_retries(-1, 10, 60, false); // Never stop trying
+  set_retries(-1, 10, 10, false); // Never stop trying
 }
 
 bool ipi_cmd_in::app_input() {
