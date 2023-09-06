@@ -1,5 +1,15 @@
 <package> cmd_relay
 <include> msg oui
+<include> "cmd_relay.h"
+
+<opts> "F:T:"
+<sort>
+  -F <exp> set Experiment for txsrvr
+  -T <exp> set Experiment for rxsrvr
+
+<switch>
+  case 'F': cmd_relay::txExp = optarg; break;
+  case 'T': cmd_relay::rxExp = optarg; break;
 
 <unsort>
 Host_Session function txsrvr: Where commands come from

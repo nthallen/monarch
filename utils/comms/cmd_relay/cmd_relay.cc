@@ -8,6 +8,9 @@
 
 using namespace DAS_IO;
 
+const char *cmd_relay::txExp;
+const char *cmd_relay::rxExp;
+
 /**
  * cmd_relay connects to a txsrvr in order to receive commands.
  * It has an rxsrvr member which connects to a remote command
@@ -20,7 +23,11 @@ cmd_relay::cmd_relay() :
     n_tx_cmds_dropped(0),
     total_tx_cmds_dropped(0)
 {
+  if (txExp)
+    set_cross_exp(txExp);
   rxsrvr = new Cmd_writer("rxsrvr", "rxsrvr");
+  if (rxExp)
+    rxsrvr->set_cross_exp(rxExp);
   cic_init(rxsrvr);
 }
 

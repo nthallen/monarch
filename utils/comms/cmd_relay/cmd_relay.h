@@ -12,6 +12,7 @@ class cmd_relay : public Cmd_reader {
     ~cmd_relay();
     bool app_input();
     Cmd_writer *rxsrvr;
+    static const char *txExp, *rxExp;
   protected:
     cmd_hdr_parser CHP;
     bool dropping_tx_cmds;
