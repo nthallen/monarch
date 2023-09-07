@@ -59,7 +59,7 @@ while (<$fh>) {
     my $cltprog = $2;
     my $opts = $3 ? " $3" : '';
     $cltprog =~ m/^\w+clt$/ || die "Invalid client name: '$cltprog'\n";
-    $opts ne '' && warn "Options ignored on client program: '$cltprog'\n";
+    # $opts ne '' && warn "Options ignored on client program: '$cltprog'\n";
     my $pcond = parse_condition($cltcond);
     push @client, { prog => $cltprog, cond => $pcond, opts => $opts };
     push @interact, $cltprog;
@@ -312,7 +312,8 @@ print $fh "export RUNFILE_DOIT=$batchfile\n" if defined $batchfile;
         $clientset = 1;
         $conditionset && print $fh "else\n  ";
       }
-      print $fh 'client=', $client->{prog}, "\n";
+      print $fh 'client=', $client->{prog}, "\n  ";
+      print $fh 'clientopts="', $client->{opts}, '"', "\n";
     }
   }
   if ($conditionset) {
@@ -642,9 +643,9 @@ EOF
 
 print $fh "\n$clttermcond";
 print $fh
-  "  msgf -V 0 \"Starting \$client\$nc -S:\$SESSION \$CMD_OPT \$clt_term ",
+  "  msgf -V 0 \"Starting \$client\$nc \$clientopts -S:\$SESSION \$CMD_OPT \$clt_term ",
       join(' ', @clttermvarlist), "\"\n",
-  "  \$client\$nc -S:\$SESSION \$CMD_OPT \$clt_term ",
+  "  \$client\$nc \$clientopts -S:\$SESSION \$CMD_OPT \$clt_term ",
       join(' ', @clttermvarlist), "\n",
   "else\n",
   "  msgf -V 2 \"Unable to run client \$client\$nc due to missing ptys\"\n",
