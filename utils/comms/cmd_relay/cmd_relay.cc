@@ -18,7 +18,7 @@ const char *cmd_relay::rxExp;
  * the txsrvr to the rxsrvr.
  */
 cmd_relay::cmd_relay() :
-    Cmd_reader("txsrvr", 256, "RFDio", "txsrvr"),
+    Cmd_reader("txsrvr", 256, "cmd_tx", "txsrvr"),
     dropping_tx_cmds(false),
     n_tx_cmds_dropped(0),
     total_tx_cmds_dropped(0)
