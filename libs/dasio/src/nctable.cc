@@ -5,10 +5,7 @@
 #include "nl.h"
 #include "dasio/nctable.h"
 #include "dasio/cmd_writer.h"
-// #include "tm.h"
-// #include "cic.h" perhaps?
-// extern int cic_cmd_quit_fd; //###
-// int cic_init(void);
+#include "dasio/kbdclt.h"
 
 #include "nl_assert.h"
 #include "oui.h"
@@ -221,7 +218,7 @@ int nct_init( const char *winname, int n_rows, int n_cols ) {
 
 int nct_cmdclt_init() {
   int nct_win = nct_init("cmd", 2, 80);
-  if (cic_init()) exit(1);
+  if (kbdclt_cic_init()) exit(1);
   // nct_cmd_quit_fd = cic_cmd_quit_fd;
   return nct_win;
 }

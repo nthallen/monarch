@@ -5,7 +5,15 @@
   output function..
 
 <include> cmd_writer msg oui
+<include> "dasio/kbdclt.h"
 <follow> msg
+
+<opts> "X:"
+<sort>
+  -X <exp> Specify non-default Experiment for the command server
+
+<switch>
+  case 'X': kbdclt_cross_exp = optarg; break;
 
 <package> appid_default
 <include> "dasio/appid.h"
