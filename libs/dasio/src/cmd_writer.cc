@@ -204,10 +204,10 @@ void Cmd_writer::settime(int32_t time) {
 }
 
 bool cic_init(DAS_IO::Cmd_writer *cmd) {
-  if (DAS_IO::Cmd_writer::Cmd)
-    return false;
   if (cmd == 0)
-    cmd = new DAS_IO::Cmd_writer("Cmd");
+    cmd = DAS_IO::Cmd_writer::Cmd ?
+      DAS_IO::Cmd_writer::Cmd :
+      new DAS_IO::Cmd_writer("Cmd");
   if (DAS_IO::Cmd_writer::playback)
     return false;
   cmd->connect();
