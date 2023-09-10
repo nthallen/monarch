@@ -24,7 +24,7 @@ tm_relay::tm_relay()
   autostart = true;
   regulated = false;
   have_tstamp = false;
-  msg(0, "pointless message from tm_relay constructor");
+  load_tmdac(".");
 }
 
 tm_relay::~tm_relay() {}
