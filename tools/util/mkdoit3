@@ -643,9 +643,9 @@ EOF
 
 print $fh "\n$clttermcond";
 print $fh
-  "  msgf -V 0 \"Starting \$client\$nc\$clientopts -S:\$SESSION \$CMD_OPT \$clt_term ",
+  "  msgf -V 0 \"Starting \$client\$nc -S:\$SESSION \$CMD_OPT\$clientopts \$clt_term ",
       join(' ', @clttermvarlist), "\"\n",
-  "  \$client\$nc\$clientopts -S:\$SESSION \$CMD_OPT \$clt_term ",
+  "  \$client\$nc -S:\$SESSION \$CMD_OPT\$clientopts \$clt_term ",
       join(' ', @clttermvarlist), "\n",
   "else\n",
   "  msgf -V 2 \"Unable to run client \$client\$nc due to missing ptys\"\n",
