@@ -306,10 +306,12 @@ void Interface::set_ibufsize(int bufsz) {
 
 bool Interface::fillbuf(int N, int flag) {
   int nb_read;
-  if (!buf) msg(MSG_EXIT_ABNORM, "Ser_Sel::fillbuf with no buffer");
+  if (!buf) msg(MSG_EXIT_ABNORM,
+    "%s: Interface::fillbuf with no buffer", iname);
   if (N > bufsize)
-    msg(MSG_EXIT_ABNORM, "Ser_Sel::fillbuf(N) N > bufsize: %d > %d",
-      N, bufsize);
+    msg(MSG_EXIT_ABNORM,
+      "%s: Interface::fillbuf(N) N > bufsize: %d > %d",
+      iname, N, bufsize);
   if (nc >= N+binary_offset) return false;
   ++n_fills;
   nb_read = read( fd, &buf[nc], N + binary_offset - nc );
