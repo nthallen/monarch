@@ -343,7 +343,11 @@ bool Socket::connect() {
           }
           flags |= Fl_Write;
         }
-        flags |= Fl_Read | Fl_Except;
+        if (socket_type != Socket_UDP ||
+              UDP_mode == UDP_READ) {
+          flags |= Fl_Read;
+        }
+        flags |= Fl_Except;
       }
       break;
     default:
