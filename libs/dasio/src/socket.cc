@@ -341,7 +341,7 @@ bool Socket::connect() {
           } else {
             socket_state = Socket_connected;
           }
-          flags |= Fl_Write;
+          // flags |= Fl_Write;
         }
         if (socket_type != Socket_UDP ||
               UDP_mode == UDP_READ) {
