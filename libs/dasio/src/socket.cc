@@ -430,6 +430,8 @@ bool Socket::ProcessData(int flag) {
       break;
     case Socket_disconnected:
       // Handle timeout (i.e. attempt reconnection)
+      msg(MSG_DEBUG, "%s: ProcessData(%d)%s Expired", iname, flag,
+          TO.Expired() ? "" : " not");
       if (TO.Expired()) {
         if (reconn_max < 0 || reconn_retries < reconn_max) {
           TO.Clear();
@@ -481,6 +483,8 @@ bool Socket::reset() {
   reconn_seconds *= 2;
   if (reconn_seconds > reconn_seconds_max)
     reconn_seconds = reconn_seconds_max;
+  msg(MSG_DEBUG, "%s: reset() delay %d secs%s disconnected",
+      iname, delay_secs, socket_state == Socket_disconnected ? "" : " not");
   TO.Set(delay_secs,0);
   flags |= Fl_Timeout;
   return false;
