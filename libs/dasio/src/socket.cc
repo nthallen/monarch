@@ -338,16 +338,22 @@ bool Socket::connect() {
               return reset() || connect_failed();
             }
             socket_state = Socket_connecting;
+            flags |= Fl_Write;
           } else {
             socket_state = Socket_connected;
+            TO.Clear();
+            flags &= ~(Fl_Write|Fl_Timeout);
+            if (socket_type != Socket_UDP ||
+                  UDP_mode == UDP_READ) {
+              flags |= Fl_Read;
+            }
+            flags |= Fl_Except;
+            reconn_seconds = reconn_seconds_min;
+            reconn_retries = 0;
+            // conn_fail_reported = false;
+            return connected();
           }
-          // flags |= Fl_Write;
         }
-        if (socket_type != Socket_UDP ||
-              UDP_mode == UDP_READ) {
-          flags |= Fl_Read;
-        }
-        flags |= Fl_Except;
       }
       break;
     default:
