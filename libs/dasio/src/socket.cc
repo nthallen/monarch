@@ -350,7 +350,6 @@ bool Socket::connect() {
             flags |= Fl_Except;
             reconn_seconds = reconn_seconds_min;
             reconn_retries = 0;
-            // conn_fail_reported = false;
             return connected();
           }
         }
