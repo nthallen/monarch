@@ -439,6 +439,9 @@ bool Socket::ProcessData(int flag) {
             TO.Clear();
             return connect();
           } else return protocol_timeout();
+        } else if (!TO.Set()) {
+          msg(MSG_WARN, "%s: Expected TO.Set() in Socket::ProcessData",
+            iname);
         }
       }
       break;
