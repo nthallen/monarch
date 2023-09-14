@@ -430,13 +430,16 @@ bool Socket::ProcessData(int flag) {
       break;
     case Socket_disconnected:
       // Handle timeout (i.e. attempt reconnection)
-      msg(MSG_DEBUG, "%s: ProcessData(%d)%s Expired", iname, flag,
-          TO.Expired() ? "" : " not");
-      if (TO.Expired()) {
-        if (reconn_max < 0 || reconn_retries < reconn_max) {
-          TO.Clear();
-          return connect();
-        } else return protocol_timeout();
+      { bool expd = TO.Expired();
+        msg(MSG_DEBUG, "%s: ProcessData(%d)%s Expired", iname, flag,
+          expd ? "" : " not");
+        if (expd) {
+          if (reconn_max < 0 || reconn_retries < reconn_max) {
+            msg(MSG_DEBUG, "%s: Reconnecting", iname);
+            TO.Clear();
+            return connect();
+          } else return protocol_timeout();
+        }
       }
       break;
     case Socket_connected:
