@@ -17,7 +17,6 @@ class ipx_cmd_in : public Client {
   public:
     ipx_cmd_in(const char *iname);
     bool app_input();
-    void send_row(uint16_t MFCtr, const uint8_t *raw);
   protected:
     // ~ipx_cmd_in();
     /** reset() instead of returning true */

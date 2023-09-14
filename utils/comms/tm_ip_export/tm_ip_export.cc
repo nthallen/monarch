@@ -93,7 +93,11 @@ bool ipx_cmd_in::process_eof() {
 }
 
 ipx_tm_out::ipx_tm_out(const char *iname)
-    : Socket(iname, "Relay", "ip_ex", 0, UDP_WRITE) {
+    : Socket(iname, "Relay", "ip_ex", 0, UDP_WRITE),
+      dropping_tx_rows(false),
+      n_tx_rows_dropped(0),
+      total_tx_rows_dropped(0)
+{
 }
 
 /**
