@@ -431,8 +431,8 @@ bool Socket::ProcessData(int flag) {
     case Socket_disconnected:
       // Handle timeout (i.e. attempt reconnection)
       { bool expd = TO.Expired();
-        msg(MSG_DEBUG, "%s: ProcessData(%d)%s Expired", iname, flag,
-          expd ? "" : " not");
+        msg(MSG_DEBUG, "%s: ProcessData(%d/%d)%s Expired", iname,
+          flag, flags, expd ? "" : " not");
         if (expd) {
           if (reconn_max < 0 || reconn_retries < reconn_max) {
             msg(MSG_DEBUG, "%s: Reconnecting", iname);
