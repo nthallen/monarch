@@ -354,6 +354,11 @@ bool Socket::connect() {
             return connected();
           }
         }
+        if (socket_type != Socket_UDP ||
+              UDP_mode == UDP_READ) {
+          flags |= Fl_Read;
+        }
+        flags |= Fl_Except;
       }
       break;
     default:
