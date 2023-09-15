@@ -100,6 +100,17 @@ ipx_tm_out::ipx_tm_out(const char *iname)
 {
 }
 
+ipx_tm_out::~ipx_tm_out() {
+  msg(MSG, "%s: Destructing", iname);
+  if (dropping_tx_rows) {
+    msg(MSG, "%s: dropping %d rows", iname, n_tx_rows_dropped);
+  }
+  if (total_tx_rows_dropped || n_tx_rows_dropped) {
+    msg(MSG, "%s: total rows dropped: %d", iname,
+      n_tx_rows_dropped + total_tx_rows_dropped);
+  }
+}
+
 /**
  * @param MFCtr
  * @param raw The raw homerow data without the leading MFCtr or

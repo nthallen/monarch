@@ -36,11 +36,10 @@ class ipx_tm_out : public Socket {
     void ipx_tm_out::send_scan_data();
 #endif
   protected:
-    // ~ipx_tm_out();
+    ~ipx_tm_out();
     uint16_t row_len;
     uint16_t rows_per_row; //*< Scan rows transmitted per TM row
     uint16_t rows_this_row; //*< Scan rows transmitted so far this TM row
-    bool connect_waiting;
     bool dropping_tx_rows;
     int n_tx_rows_dropped;
     int total_tx_rows_dropped;
