@@ -476,11 +476,8 @@ void Socket::set_retries(int max_retries, int min_dly,
 
 void Socket::close() {
   if (fd >= 0) {
-    ::close(fd);
-    fd = -1;
+    Interface::close();
     socket_state = Socket_disconnected;
-    TO.Clear();
-    flags &= ~(Fl_Write|Fl_Read|Fl_Except|Fl_Timeout);
     if (unix_name) {
       if (unix_name->is_server()) {
         unix_name->release_server();

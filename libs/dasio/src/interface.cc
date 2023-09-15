@@ -293,6 +293,9 @@ void Interface::close() {
     fd = -1;
     TO.Clear();
     flags &= ~(Fl_Write|Fl_Read|Fl_Except|Fl_Timeout);
+    nc = cp = 0;
+    wiov = 0;
+    onc = 0;
   }
 }
 
