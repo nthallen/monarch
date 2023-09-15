@@ -231,7 +231,7 @@ class Interface {
     /**
      * @return true if there is no pending data in obuf
      */
-    inline bool obuf_empty() { return n_wiov == 0 && onc == 0; }
+    inline bool obuf_empty() { return fd >= 0 && n_wiov == 0 && onc == 0; }
     /**
      * Called from fillbuf() when read() returns an error. If read() returns zero,
      * read_error() is called with EOK, which higher-level processors can use
