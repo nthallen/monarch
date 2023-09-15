@@ -64,7 +64,8 @@ Socket::Socket(const char *iname, const char *function,
   service(service),
   is_server(mode == UDP_READ),
   socket_state(Socket_disconnected),
-  socket_type(Socket_UDP)
+  socket_type(Socket_UDP),
+  UDP_mode(mode)
 {
   common_init();
 }

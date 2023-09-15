@@ -368,6 +368,8 @@ int main(int argc, char **argv) {
     tm_in->connect();
     
     ELoop.event_loop();
+    ELoop.delete_children();
+    ELoop.clear_delete_queue(true);
   }
   AppID.report_shutdown();
   return 0;
