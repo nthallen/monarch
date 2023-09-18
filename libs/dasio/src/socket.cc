@@ -134,6 +134,7 @@ void Socket::common_init() {
   session = 0;
   unix_name = 0;
   set_retries(-1, 5, 60, true);
+  reconn_retries = 0;
   conn_fail_reported = false;
   is_server_client = false;
   if (function) {

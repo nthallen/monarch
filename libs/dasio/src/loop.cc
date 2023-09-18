@@ -19,7 +19,10 @@ Loop::Loop(bool is_memo) : is_memo_loop(is_memo) {
   pthread_sigmask(SIG_SETMASK, 0, &runset);
 }
 
-Loop::~Loop() {}
+Loop::~Loop() {
+  delete_children();
+  clear_delete_queue(true);
+}
 
 void Loop::add_child(Interface *P) {
   if (find_child_by_fd(P->fd) == S.end() ) {
