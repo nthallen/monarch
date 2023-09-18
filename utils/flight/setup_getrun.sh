@@ -9,6 +9,7 @@ function sgr_error {
 function output_getrun_exp_ini {
   echo "Experiment=$cur_exp"
   echo "  data_dir_func=$data_dir_func"
+  echo "  data_desc='$data_desc'"
   echo "  data_dir_desc='$data_dir_desc'"
   echo "  startup_func=$startup_func"
   echo "  ui_func=$ui_func"
@@ -18,6 +19,7 @@ function output_getrun_exp_ini {
 function clear_getrun_vars {
   cur_exp=''
   data_dir_func=''
+  data_desc=''
   data_dir_desc=''
   startup_func=''
   ui_func=''
@@ -57,10 +59,11 @@ function process_getrun_ini {
         val=${line##*=}
         case $var in
           data_dir_func) data_dir_func=$val;;
-          startup_func) startup_func=$val;;
-          eng_dir) eng_dir=$val;;
+          data_desc) data_desc=$val;;
           data_dir_desc) data_dir_desc=$val;;
+          eng_dir) eng_dir=$val;;
           ui_func) ui_func=$val;;
+          startup_func) startup_func=$val;;
           *) nl_error "Unrecognized var '$var'";;
         esac;;
       *) [ -n "$line" ] && sgr_error "Unrecognized input in $ifile: '$line'";;

@@ -228,8 +228,20 @@ if ($matdir  && !$opts{j}) {
     die "Unable to open ui_$experiment.m\n";
   $generated{"ui_$experiment.m"} = 1;
   print UI
-    "function ui_$experiment\n",
-    "f = ne_dialg('$header',1);\n";
+    "function ui_$experiment(dirfunc, stream)\n",
+    "% ui_$experiment(dirfunc)\n",
+    "% dirfunc is a string specifying the name of a function\n",
+    "% that specifies where data run directories are stored.\n",
+    "% stream is an optional argument specifying which stream\n",
+    "% the run directories have recorded, e.g. 'SerIn'\n",
+    "if nargin < 1\n",
+    "  dirfunc = '$homedir';\n",
+    "end\n",
+    "if nargin >= 2\n",
+    "  f = ne_dialg(['$header: ' stream], 1);\n",
+    "else\n",
+    "  f = ne_dialg('$header',1);\n";
+    "end\n",
   my $ui_rows = 0;
 
   for my $panel (@panel) {
@@ -337,7 +349,7 @@ if ($matdir  && !$opts{j}) {
     "f = ne_dialg(f, 'newtab', 'Runs');\n"
     if $usepanels;
   print UI
-    "f = ne_listdirs(f, '$homedir', ", int($ui_limit*.75), ");\n",
+    "f = ne_listdirs(f, dirfunc, ", int($ui_limit*.75), ");\n",
     "f = ne_dialg(f, 'newcol');\n",
     "ne_dialg(f, 'resize');\n";
   close UI || warn "Error closing ui_$experiment.m\n";
