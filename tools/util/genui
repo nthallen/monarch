@@ -229,19 +229,20 @@ if ($matdir  && !$opts{j}) {
   $generated{"ui_$experiment.m"} = 1;
   print UI
     "function ui_$experiment(dirfunc, stream)\n",
-    "% ui_$experiment(dirfunc)\n",
+    "% ui_$experiment\n",
+    "% ui_$experiment(dirfunc [, stream])\n",
     "% dirfunc is a string specifying the name of a function\n",
-    "% that specifies where data run directories are stored.\n",
+    "%   that specifies where data run directories are stored.\n",
     "% stream is an optional argument specifying which stream\n",
-    "% the run directories have recorded, e.g. 'SerIn'\n",
+    "%   the run directories have recorded, e.g. 'SerIn'\n",
     "if nargin < 1\n",
     "  dirfunc = '$homedir';\n",
     "end\n",
     "if nargin >= 2\n",
-    "  f = ne_dialg(['$header: ' stream], 1);\n",
+    "  f = ne_dialg(stream, 1);\n",
     "else\n",
-    "  f = ne_dialg('$header',1);\n";
-    "end\n",
+    "  f = ne_dialg('$header',1);\n",
+    "end\n";
   my $ui_rows = 0;
 
   for my $panel (@panel) {
