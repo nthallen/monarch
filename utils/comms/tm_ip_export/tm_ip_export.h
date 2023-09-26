@@ -37,12 +37,19 @@ class ipx_tm_out : public Socket {
 #endif
   protected:
     ~ipx_tm_out();
+    void flush();
     uint16_t row_len;
     uint16_t rows_per_row; //*< Scan rows transmitted per TM row
     uint16_t rows_this_row; //*< Scan rows transmitted so far this TM row
     bool dropping_tx_rows;
     int n_tx_rows_dropped;
     int total_tx_rows_dropped;
+    int MTU;
+    const int IP_header_len = 20;
+    const int UDP_header_len = 8;
+    int max_udp_payload;
+    uint8_t *payload;
+    unsigned int pyld_nc;
 };
 
 /**

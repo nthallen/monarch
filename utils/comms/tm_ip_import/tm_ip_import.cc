@@ -129,13 +129,21 @@ bool ipi_tm_in::protocol_input() {
   uint16_t length;
   uint8_t *payload;
   
-  if (not_serio_pkt(have_hdr, type, length, payload)) {
-    return false;
+  while (cp < nc) {
+    if (not_serio_pkt(have_hdr, type, length, payload)) {
+      consume(cp);
+      return false;
+    }
+    int pktlen = length + serio::pkt_hdr_size;
+    bool rv = tm_out->forward_packet((const char*)&buf[cp], pktlen);
+    cp += pktlen;
+    if (rv) {
+      report_ok(cp);
+      return rv;
+    }
   }
-  int pktlen = length + serio::pkt_hdr_size;
-  bool rv = tm_out->forward_packet((const char*)&buf[cp], pktlen);
-  report_ok(pktlen);
-  return rv;
+  report_ok(cp);
+  return false;
 }
 
 /***************

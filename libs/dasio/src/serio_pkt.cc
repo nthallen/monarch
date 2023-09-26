@@ -19,12 +19,12 @@ bool Interface::not_serio_pkt_hdr() {
     lrc_sum -= buf[cp++];
     lrc_sum += buf[cp+serio::pkt_hdr_size-1];
     if (lrc_sum == 0) {
-      msg(MSG_ERROR, "%s: Skipping %d bytes", iname, cp-cp0);
+      report_err("%s: Skipping %d bytes", iname, cp-cp0);
       return false;
     }
   }
   ++cp;
-  msg(MSG_ERROR, "%s: Skipping %d bytes", iname, cp-cp0);
+  report_err("%s: Skipping %d bytes", iname, cp-cp0);
   return true;
 }
 
@@ -55,7 +55,7 @@ bool Interface::not_serio_pkt(bool &have_hdr, serio_pkt_type &type,
       case pkt_type_CMD:
         break;
       default:
-        msg(MSG_ERROR, isgraph(hdr.type) ?
+        report_err(isgraph(hdr.type) ?
           "%s: Invalid packet type: '%c'" :
           "%s: Invalid packet type: 0x%02X",
             iname, hdr.type);
@@ -79,7 +79,7 @@ bool Interface::not_serio_pkt(bool &have_hdr, serio_pkt_type &type,
     CRC = crc16modbus_word(CRC,
               &buf[cp+serio::pkt_hdr_size], hdr.length);
     if (CRC != hdr.CRC) {
-      msg(MSG_ERROR, "%s: CRC error: hdr: 0x%04X calc: 0x%04X",
+      report_err("%s: CRC error: hdr: 0x%04X calc: 0x%04X",
         iname, hdr.CRC, CRC);
       ++cp;
       continue;

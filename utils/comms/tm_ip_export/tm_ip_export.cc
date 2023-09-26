@@ -96,8 +96,12 @@ ipx_tm_out::ipx_tm_out(const char *iname)
     : Socket(iname, "Relay", "ip_ex", 0, UDP_WRITE),
       dropping_tx_rows(false),
       n_tx_rows_dropped(0),
-      total_tx_rows_dropped(0)
+      total_tx_rows_dropped(0),
+      MTU(1500),
+      pyld_nc(0)
 {
+  max_udp_payload = MTU - IP_header_len - UDP_header_len;
+  payload = (uint8_t *)new_memory(max_udp_payload);
 }
 
 ipx_tm_out::~ipx_tm_out() {
@@ -126,31 +130,38 @@ void ipx_tm_out::send_row(uint16_t MFCtr, const uint8_t *raw) {
       dropping_tx_rows = false;
       n_tx_rows_dropped = 0;
     }
+    int rowsize = sizeof(serio_pkt_hdr) + sizeof(MFCtr) + tm_info.tm.nbminf - 4;
+    if (pyld_nc + rowsize >= max_udp_payload)
+      flush();
+
     // We have allocated an obuf, so we can use auto vars for
     // io and hdr
-    struct iovec io[3];
     serio_pkt_hdr hdr;
     hdr.LRC = 0;
     hdr.type = pkt_type_TM;
     hdr.length = tm_info.tm.nbminf-2;
-    io[0].iov_len = sizeof(serio_pkt_hdr);
-    io[0].iov_base = &hdr;
-    io[1].iov_len = sizeof(MFCtr);
-    io[1].iov_base = &MFCtr;
-    io[2].iov_len = tm_info.tm.nbminf - 4;
-    io[2].iov_base = (void*)raw;
+
+    int hdr_offset = pyld_nc;
+    pyld_nc += sizeof(serio_pkt_hdr);
+    int mfc_offset = pyld_nc;
+    memcpy(&payload[pyld_nc], &MFCtr, sizeof(MFCtr));
+    pyld_nc += sizeof(MFCtr);
+    memcpy(&payload[pyld_nc], (void*)raw, tm_info.tm.nbminf - 4);
+    pyld_nc += tm_info.tm.nbminf - 4;
+    
     // Calculate the CRC of io[1] and io[2]
     { unsigned CRC = crc16modbus_word(0,0,0);
-      CRC = crc16modbus_word(CRC, io[1].iov_base, io[1].iov_len);
-      CRC = crc16modbus_word(CRC, io[2].iov_base, io[2].iov_len);
+      CRC = crc16modbus_word(CRC, &payload[mfc_offset], pyld_nc-mfc_offset);
       hdr.CRC = CRC;
-      uint8_t *hdrp = (uint8_t *)io[0].iov_base;
-      for (int i = 1; i < io[0].iov_len; ++i) {
+      uint8_t *hdrp = (uint8_t *)&hdr;
+      for (int i = 1; i < sizeof(serio_pkt_hdr); ++i) {
         hdr.LRC += hdrp[i];
       }
       hdr.LRC = -hdr.LRC;
     }
-    bool rv = iwritev(io, 3);
+    memcpy(&payload[hdr_offset],&hdr,sizeof(serio_pkt_hdr));
+    if (pyld_nc + rowsize >= max_udp_payload)
+      flush();
     rows_this_row = 0;
   } else {
     if (!dropping_tx_rows) {
@@ -159,6 +170,11 @@ void ipx_tm_out::send_row(uint16_t MFCtr, const uint8_t *raw) {
     }
     ++n_tx_rows_dropped;
   }
+}
+
+void ipx_tm_out::flush() {
+  iwrite((char*)payload, pyld_nc);
+  pyld_nc = 0;
 }
 
 #ifdef HAVE_SCAN_DATA
