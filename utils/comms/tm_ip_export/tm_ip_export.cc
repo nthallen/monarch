@@ -6,6 +6,7 @@
 #include "dasio/cmd_writer.h"
 #include "dasio/tm.h"
 #include "dasio/appid.h"
+#include "dasio/ascii_escape.h"
 #include "nl.h"
 #include "oui.h"
 
@@ -173,6 +174,10 @@ void ipx_tm_out::send_row(uint16_t MFCtr, const uint8_t *raw) {
 }
 
 void ipx_tm_out::flush() {
+  if (nl_debug_level <= MSG_DEBUG) {
+    msg(MSG_DEBUG, "%s: Send packet %d bytes", iname, pyld_nc);
+    dump_hex(MSG, iname, (const char*)payload, pyld_nc);
+  }
   iwrite((char*)payload, pyld_nc);
   pyld_nc = 0;
 }
