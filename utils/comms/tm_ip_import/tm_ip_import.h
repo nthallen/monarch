@@ -76,6 +76,7 @@ class ipi_tm_in : public Socket {
      * to ipi_tm_out (for TM data at least) to forward to serin.
      */
     bool protocol_input();
+    void dump_buf();
     ipi_tm_out *tm_out;
 };
 

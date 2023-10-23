@@ -7,6 +7,7 @@
 #include "dasio/cmd_writer.h"
 #include "dasio/tm.h"
 #include "dasio/appid.h"
+#include "dasio/ascii_escape.h"
 #include "nl.h"
 #include "oui.h"
 
@@ -118,6 +119,7 @@ ipi_tm_in::ipi_tm_in(ipi_tm_out *tm_out)
       tm_out(tm_out)
 {
   load_tmdac(".");
+  set_qerr_threshold(-1);
 }
 
 ipi_tm_in::~ipi_tm_in() {
@@ -131,19 +133,35 @@ bool ipi_tm_in::protocol_input() {
   
   while (cp < nc) {
     if (not_serio_pkt(have_hdr, type, length, payload)) {
+      if (cp == 0 && nc >= bufsize) {
+        report_err("%s: not_serio_pkt() failed with full buffer", iname);
+        consume(nc);
+        return false;
+      }
+      if (cp == 0) return false; // Must need more input
       consume(cp);
-      return false;
-    }
-    int pktlen = length + serio::pkt_hdr_size;
-    bool rv = tm_out->forward_packet((const char*)&buf[cp], pktlen);
-    cp += pktlen;
-    if (rv) {
-      report_ok(cp);
-      return rv;
+      if (!have_hdr) { // failed in not_serio_pkg_hdr(), so need more
+        return false;
+      } else {
+        continue;
+      }
+    } else {
+      int pktlen = length + serio::pkt_hdr_size;
+      bool rv = tm_out->forward_packet((const char*)&buf[cp], pktlen);
+      cp += pktlen;
+      if (rv) {
+        report_ok(cp);
+        return rv;
+      }
     }
   }
   report_ok(cp);
   return false;
+}
+
+void ipi_tm_in::dump_buf() {
+  msg(MSG_ERROR, "%s: Input was:", iname);
+  dump_hex(MSG, iname, (const char*)buf, nc);
 }
 
 /***************
