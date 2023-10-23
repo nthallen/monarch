@@ -19,7 +19,8 @@ bool Interface::not_serio_pkt_hdr() {
     lrc_sum -= buf[cp++];
     lrc_sum += buf[cp+serio::pkt_hdr_size-1];
     if (lrc_sum == 0) {
-      report_err("%s: Skipping %d bytes before new LRC", iname, cp-cp0);
+      report_err("%s: Skipping %d bytes before new LRC type %d",
+        iname, cp-cp0, buf[1]);
       return false;
     }
   }
