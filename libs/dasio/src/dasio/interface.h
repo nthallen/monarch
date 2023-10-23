@@ -77,7 +77,11 @@ class Interface {
      * The default threshold value is 5.
      * @param thr New qualified protocol error threshold value
      */
-    void set_qerr_threshold(int thr);
+    inline void set_qerr_threshold(int thr) {
+      qerr_threshold = thr;
+      n_errors = 0;
+      report_ok(0);
+    }
     /** The event loop we belong to */
     Loop *ELoop;
     /** getter for interface name. */
@@ -246,6 +250,7 @@ class Interface {
      * ASCII is not relevant can override with appropriate alternatives.
      */
     virtual const char *ascii_escape();
+    virtual void dump_buf();
     
     /**
      * Called by ProcessData() when new data is available to the protocol level.

@@ -366,14 +366,17 @@ void Interface::report_err( const char *fmt, ... ) {
     va_start(args, fmt);
     msgv( MSG_ERROR, fmt, args );
     va_end(args);
-    if (nc)
-      msg(MSG_ERROR, "%s: Input was: '%s'", iname, ascii_escape() );
+    if (nc) dump_buf();
   } else {
     if ( !n_suppressed )
       msg(MSG_ERROR, "%s: Error threshold reached: suppressing errors", iname);
     ++n_suppressed;
     ++total_suppressed;
   }
+}
+
+void Interface::dump_buf() {
+  msg(MSG_ERROR, "%s: Input was: '%s'", iname, ascii_escape() );
 }
 
 void Interface::signal(int signum, bool handle) {

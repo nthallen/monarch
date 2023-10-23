@@ -7,5 +7,7 @@
 extern const char *ascii_escape(const char *str, int len);
 extern const char *ascii_escape(const std::string &s);
 extern const char *ascii_esc(const char *str);
+extern void dump_hex(int msgcode, const char *hdr,
+                     const char *ibuf, int len);
 
 #endif

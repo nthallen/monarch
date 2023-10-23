@@ -19,12 +19,12 @@ bool Interface::not_serio_pkt_hdr() {
     lrc_sum -= buf[cp++];
     lrc_sum += buf[cp+serio::pkt_hdr_size-1];
     if (lrc_sum == 0) {
-      report_err("%s: Skipping %d bytes", iname, cp-cp0);
+      msg(MSG, "%s: Skipping %d bytes before new LRC", iname, cp-cp0);
       return false;
     }
   }
   ++cp;
-  report_err("%s: Skipping %d bytes", iname, cp-cp0);
+  msg(MSG, "%s: Skipping %d bytes to near end of buffer", iname, cp-cp0);
   return true;
 }
 
@@ -34,7 +34,7 @@ bool Interface::not_serio_pkt(bool &have_hdr, serio_pkt_type &type,
   have_hdr = false;
   while (nc-cp >= serio::pkt_hdr_size) {
     if (not_serio_pkt_hdr()) {
-      consume(cp);
+      // consume(cp);
       return true;
     }
     serio_pkt_hdr hdr;
@@ -67,20 +67,22 @@ bool Interface::not_serio_pkt(bool &have_hdr, serio_pkt_type &type,
     }
     if (nc-cp < (unsigned)serio::pkt_hdr_size+hdr.length) {
       // Full packet not present
-      consume(cp);
+      // consume(cp);
       return true;
     }
     if (cp+serio::pkt_hdr_size+hdr.length+1 > (unsigned)bufsize) {
       // It's all there and it can fit, but we're positioned
-      // with no room for the final NUL
-      consume(cp);
+      // with no room for the final NUL. Why do we need a final
+      // NUL??
+      //consume(cp);
+      return true;
     }
     uint16_t CRC = crc16modbus_word(0,0,0);
     CRC = crc16modbus_word(CRC,
               &buf[cp+serio::pkt_hdr_size], hdr.length);
     if (CRC != hdr.CRC) {
-      report_err("%s: CRC error: hdr: 0x%04X calc: 0x%04X",
-        iname, hdr.CRC, CRC);
+      report_err("%s: CRC error: cp:%d len:%d hdr: 0x%04X calc: 0x%04X",
+        iname, cp, hdr.length, hdr.CRC, CRC);
       ++cp;
       continue;
     }
