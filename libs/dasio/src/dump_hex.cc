@@ -6,20 +6,19 @@
 void dump_hex(int msgcode, const char *hdr,
                      const char *ibuf, int len) {
   static std::string s;
-  while (len) {
+  int offset = 0;
+  while (offset < len) {
     char snbuf[8];
     int ix = 0, nb;
     s.clear();
     s.append(hdr);
     s.append(": ");
-    snprintf(snbuf, 8, "%3d:", len);
+    snprintf(snbuf, 8, "%3d:", offset);
     s.append(snbuf);
     for (ix = 0; ix < 16 && ix < len; ++ix) {
-      nb = snprintf(snbuf, 8, " %02x", ibuf[ix]);
+      nb = snprintf(snbuf, 8, " %02x", ibuf[offset++]);
       s.append(snbuf);
     }
     msg(msgcode, "%s", s.c_str());
-    ibuf += ix;
-    len -= ix;
   }
 }
