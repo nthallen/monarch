@@ -77,6 +77,7 @@ class ipi_tm_in : public Socket {
      */
     bool protocol_input();
     void dump_buf();
+    bool buffer_dumped;
     ipi_tm_out *tm_out;
 };
 

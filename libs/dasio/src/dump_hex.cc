@@ -12,6 +12,8 @@ void dump_hex(int msgcode, const char *hdr,
     s.clear();
     s.append(hdr);
     s.append(": ");
+    snprintf(snbuf, 8, "%3d:", len);
+    s.append(snbuf);
     for (ix = 0; ix < 16 && ix < len; ++ix) {
       nb = snprintf(snbuf, 8, " %02x", ibuf[ix]);
       s.append(snbuf);

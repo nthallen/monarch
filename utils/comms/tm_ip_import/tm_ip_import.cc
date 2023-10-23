@@ -116,7 +116,8 @@ bool ipi_cmd_out::app_input() {
  */
 ipi_tm_in::ipi_tm_in(ipi_tm_out *tm_out)
     : Socket("tm_in", "Relay", "ip_ex", serio::max_packet_size+1, UDP_READ),
-      tm_out(tm_out)
+      tm_out(tm_out),
+      buffer_dumped(false)
 {
   load_tmdac(".");
   set_qerr_threshold(-1);
@@ -131,6 +132,7 @@ bool ipi_tm_in::protocol_input() {
   uint16_t length;
   uint8_t *payload;
   
+  buffer_dumped = false;
   while (cp < nc) {
     if (not_serio_pkt(have_hdr, type, length, payload)) {
       if (cp == 0 && nc >= bufsize) {
@@ -160,8 +162,12 @@ bool ipi_tm_in::protocol_input() {
 }
 
 void ipi_tm_in::dump_buf() {
-  msg(MSG_ERROR, "%s: Input was:", iname);
-  dump_hex(MSG, iname, (const char*)buf, nc);
+  msg(MSG_ERROR, "%s: cp:%d nc:%d Input %s", iname, cp, nc,
+    buffer_dumped ? "suppressed" : "was:");
+  if (!buffer_dumped) {
+    dump_hex(MSG, iname, (const char*)buf, nc);
+    buffer_dumped = true;
+  }
 }
 
 /***************
