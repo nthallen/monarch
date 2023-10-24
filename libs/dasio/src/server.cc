@@ -93,7 +93,7 @@ namespace DAS_IO {
         not_svc(svc, svc_len)) { // Can also check for CRC
       msg(MSG_ERROR, "%s: Rejecting client connection at column %d",
                     iname, cp);
-      msg(MSG_ERROR, "%s: Auth string was '%s'", ascii_escape());
+      msg(MSG_ERROR, "%s: Auth string was '%s'", iname, ascii_escape());
       close();
       if (ELoop)
         ELoop->delete_child(this);
