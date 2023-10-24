@@ -120,7 +120,7 @@ ipi_tm_in::ipi_tm_in(ipi_tm_out *tm_out)
       buffer_dumped(false)
 {
   load_tmdac(".");
-  set_qerr_threshold(-1);
+  set_qerr_threshold(20);
 }
 
 ipi_tm_in::~ipi_tm_in() {
