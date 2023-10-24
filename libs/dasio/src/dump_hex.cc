@@ -4,7 +4,7 @@
 #include "nl.h"
 
 void dump_hex(int msgcode, const char *hdr,
-                     const char *ibuf, int len) {
+                     const unsigned char *ibuf, int len) {
   static std::string s;
   int offset = 0;
   while (offset < len) {

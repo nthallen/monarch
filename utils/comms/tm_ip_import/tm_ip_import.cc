@@ -165,7 +165,7 @@ void ipi_tm_in::dump_buf() {
   msg(MSG_ERROR, "%s: cp:%d nc:%d Input %s", iname, cp, nc,
     buffer_dumped ? "suppressed" : "was:");
   if (!buffer_dumped) {
-    dump_hex(MSG, iname, (const char*)buf, nc);
+    dump_hex(MSG, iname, buf, nc);
     buffer_dumped = true;
   }
 }
