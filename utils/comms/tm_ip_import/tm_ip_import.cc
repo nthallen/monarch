@@ -115,7 +115,7 @@ bool ipi_cmd_out::app_input() {
  * to ipi_tm_out to send to serin
  */
 ipi_tm_in::ipi_tm_in(ipi_tm_out *tm_out)
-    : Socket("tm_in", "Relay", "ip_ex", serio::max_packet_size+1, UDP_READ),
+    : Socket("tm_in", "Relay", "ip_ex", 1500, UDP_READ),
       tm_out(tm_out),
       buffer_dumped(false)
 {
