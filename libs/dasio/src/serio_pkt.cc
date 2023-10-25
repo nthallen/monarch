@@ -43,8 +43,9 @@ bool Interface::not_serio_pkt(bool &have_hdr, serio_pkt_type &type,
     type = hdr.type;
     length = hdr.length;
     have_hdr = true;
-    if (hdr.length > serio::max_pkt_payload) {
-      report_err("%s: Invalid pkt length: %d", iname, hdr.length);
+    if (hdr.length + serio::pkt_hdr_size + 1 > bufsize) {
+      report_err("%s: Invalid pkt length: %d bufsize: %u",
+        iname, hdr.length, bufsize);
       ++cp;
       have_hdr = false;
       continue;
@@ -74,7 +75,7 @@ bool Interface::not_serio_pkt(bool &have_hdr, serio_pkt_type &type,
     if (cp+serio::pkt_hdr_size+hdr.length+1 > (unsigned)bufsize) {
       // It's all there and it can fit, but we're positioned
       // with no room for the final NUL. Why do we need a final
-      // NUL??
+      // NUL?? Oh, for commands, which are sent as text.
       //consume(cp);
       return true;
     }

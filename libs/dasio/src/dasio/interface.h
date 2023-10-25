@@ -770,6 +770,19 @@ class Interface {
      * serial device. have_hdr is always set, and type and length
      * are valid if have_hdr is true. payload is only set if
      * the function returns false.
+     *
+     * In order to evaluate the CRC, the entire serio packet must
+     * be able to fit into the buffer along with space for a trailing
+     * NUL (for use with ASCII commands). Therefore the application
+     * must ensure the input buffer size is large enough.
+     * not_serio_pkt() will reject any packet header that specifies
+     * a packet larger than will fit in the input buffer. Note
+     * that this is not a very tight restriction, since we will want
+     * to pack more than one serio packet into a UDP packet.
+     *
+     * It remains up to the application to impose tighter restrictions.
+     * Failing to recognize an erroneously large packet size could
+     * cause an unnecessary delay in evaluating the incoming data.
      * @param have_hdr Set to true if a valid serio_pkt_hdr
      * is found.
      * @param type Set to the packet header type if have_hdr is true

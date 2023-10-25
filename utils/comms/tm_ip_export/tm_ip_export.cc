@@ -23,68 +23,32 @@ ipx_cmd_in::ipx_cmd_in(const char *iname)
 }
 
 bool ipx_cmd_in::app_input() {
-  // Interpret incoming command? No, just send it to srvr
-  while (nc-cp >= serio::pkt_hdr_size) {
-    if (not_serio_pkt_hdr()) {
-      consume(cp);
+  bool have_hdr;
+  serio_pkt_type type;
+  uint16_t length;
+  uint8_t *payload;
+
+  while (cp < nc) {
+    if (not_serio_pkt(have_hdr, type, length, payload)) {
+      if (have_hdr && type != pkt_type_CMD) {
+        report_err("%s: Invalid command type: '%c'", iname, type);
+        ++cp;
+        continue;
+      }
       return false;
     }
-    serio_pkt_hdr *hdr = (serio_pkt_hdr*)&buf[cp];
-    if (hdr->length > serio::max_pkt_payload) {
-      report_err("%s: Invalid pkt length: %d", iname, hdr->length);
+    if (type != pkt_type_CMD) {
+      report_err("%s: Invalid command type: '%c'", iname, type);
       ++cp;
       continue;
     }
-    switch (hdr->type) {
-      case pkt_type_CMD:
-        break;
-      case pkt_type_TM:
-      case pkt_type_PNG_Start:
-      case pkt_type_PNG_Cont:
-      default:
-        msg(MSG_ERROR, isgraph(hdr->type) ?
-          "%s: Invalid packet type: '%c'" :
-          "%s: Invalid packet type: 0x%02X",
-            iname, hdr->type);
-      case pkt_type_NULL: // Ignore type 0, which can show up on a long string of zeros
-        ++cp;
-        continue;
-    }
-    if (nc-cp < (unsigned)serio::pkt_hdr_size+hdr->length) {
-      // Full packet not present
-      if (cp+serio::pkt_hdr_size+hdr->length > (unsigned)bufsize) {
-        consume(cp);
-      }
-      break;
-    }
-    uint16_t CRC = crc16modbus_word(0,0,0);
-    CRC = crc16modbus_word(CRC,
-              &buf[cp+serio::pkt_hdr_size], hdr->length);
-    if (CRC != hdr->CRC) {
-      msg(MSG_ERROR, "%s: CRC error: hdr: 0x%04X calc: 0x%04X",
-        iname, hdr->CRC, CRC);
-      ++cp;
-      continue;
-    }
-    switch (hdr->type) {
-      case pkt_type_CMD:
-        { char save_char = buf[cp + serio::pkt_hdr_size + hdr->length];
-          buf[cp + serio::pkt_hdr_size + hdr->length] = '\0';
-          ci_sendcmd(Cmd_Send, (char *)&buf[cp + serio::pkt_hdr_size]);
-          buf[cp + serio::pkt_hdr_size + hdr->length] = save_char;
-          cp += serio::pkt_hdr_size + hdr->length;
-          report_ok(cp);
-        }
-        continue;
-      case pkt_type_TM:
-      case pkt_type_PNG_Start:
-      case pkt_type_PNG_Cont:
-      default:
-        msg(MSG_ERROR, "%s: Unexpected type on second check", iname);
-        ++cp;
-        continue;
-    }
+    char save_char = buf[cp + serio::pkt_hdr_size + length];
+    buf[cp + serio::pkt_hdr_size + length] = '\0';
+    ci_sendcmd(Cmd_Send, (char *)&buf[cp + serio::pkt_hdr_size]);
+    buf[cp + serio::pkt_hdr_size + length] = save_char;
+    cp += serio::pkt_hdr_size + length;
   }
+  report_ok(cp);
   return false;
 }
 

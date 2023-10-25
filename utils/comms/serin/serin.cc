@@ -41,11 +41,12 @@ void serin::service_row_timer() {
 }
 
 void serin::process_tm(serio_pkt_hdr *hdr) {
-  if (hdr->length % (tm_info.tm.nbminf-2)) {
+  if (hdr->length != (tm_info.tm.nbminf-2)) {
     msg(MSG_ERROR,
       "serin: process_tm() nbminf-2=%d does not divide length=%d",
       hdr->length, tm_info.tm.nbminf-2);
   }
+  // This code is now overly complex because rows will always be 1
   int rows = (hdr->length / (tm_info.tm.nbminf-2));
   uint8_t *raw = ((uint8_t*)hdr) + sizeof(serio_pkt_hdr);
   for (int rowi = 0; rowi < rows; ++rowi) {
@@ -119,64 +120,33 @@ Serverside_client *serin_serin::new_serin_serin(
 }
 
 bool serin_serin::protocol_input() {
-  // Process incoming TM records here
-  while (nc-cp >= sizeof(serio_pkt_hdr)) {
-    if (not_serio_pkt_hdr()) {
+  bool have_hdr;
+  serio_pkt_type type;
+  uint16_t length;
+  uint8_t *payload;
+  
+  /* Unlike tm_ip_import, we are receiving TCP data, so we won't
+   * discard partial packets.
+   */
+  while (cp < nc) {
+    bool rv = not_serio_pkt(have_hdr, type, length, payload);
+    if (have_hdr &&
+        ((type != pkt_type_TM) || (length != tm_info.tm.nbminf-2))) {
+      report_err("%s: Invalid packet type '%c' or length %d",
+        iname, type, length);
+      ++cp;
+      continue;
+    }
+    if (rv) {
       consume(cp);
       return false;
-    }
-    serio_pkt_hdr *hdr = (serio_pkt_hdr*)&buf[cp];
-    if (hdr->length > serio::max_pkt_payload) {
-      msg(MSG_ERROR, "%s: Invalid pkt length: %d", iname, hdr->length);
-      ++cp;
-      continue;
-    }
-    switch (hdr->type) {
-      case pkt_type_TM:
-        break;
-      case pkt_type_PNG_Start:
-      case pkt_type_PNG_Cont:
-      case pkt_type_CMD:
-      default:
-        msg(MSG_ERROR, isgraph(hdr->type) ?
-          "%s: Invalid packet type: '%c'" :
-          "%s: Invalid packet type: 0x%02X",
-            iname, hdr->type);
-        ++cp;
-        continue;
-    }
-    if (nc-cp < sizeof(serio_pkt_hdr)+hdr->length) {
-      // Full packet not present
-      if (cp+sizeof(serio_pkt_hdr)+hdr->length > bufsize) {
-        consume(cp);
-      }
-      break;
-    }
-    uint16_t CRC = crc16modbus_word(0,0,0);
-    CRC = crc16modbus_word(CRC,
-              &buf[cp+sizeof(serio_pkt_hdr)], hdr->length);
-    if (CRC != hdr->CRC) {
-      msg(MSG_ERROR, "%s: CRC error: hdr: 0x%04X calc: 0x%04X",
-        iname, hdr->CRC, CRC);
-      ++cp;
-      continue;
-    }
-    switch (hdr->type) {
-      case pkt_type_TM:
-        srvr->process_tm(hdr);
-        cp += sizeof(serio_pkt_hdr) + hdr->length;
-        report_ok(nc-cp < serio::max_pkt_payload + sizeof(serio_pkt_hdr)
-                  ? cp : 0);
-        continue;
-      case pkt_type_PNG_Start:
-      case pkt_type_PNG_Cont:
-      case pkt_type_CMD:
-      default:
-        msg(MSG_ERROR, "%s: Unexpected type on second check", iname);
-        ++cp;
-        continue;
+    } else {
+      serio_pkt_hdr *hdr = (serio_pkt_hdr*)&buf[cp];
+      srvr->process_tm(hdr);
+      cp += sizeof(serio_pkt_hdr) + hdr->length;
     }
   }
+  report_ok(cp);
   return false;
 }
 

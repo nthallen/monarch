@@ -132,32 +132,42 @@ bool ipi_tm_in::protocol_input() {
   uint16_t length;
   uint8_t *payload;
   
+  /* We are receiving UDP data and we require all serio packets
+   * to be entirely contained within a UDP packet, and our buffer
+   * will be large enough to receive an entire UDP packet. Therefore
+   * we will never have a partial serio packet in our buffer. If
+   * we don't find a packet in the buffer, we should discard the
+   * entire buffer and wait for the next UDP packet.
+   *
+   * This logic does not apply when reading from a TCP stream,
+   * e.g. in serin.
+   */
   buffer_dumped = false;
   while (cp < nc) {
     if (not_serio_pkt(have_hdr, type, length, payload)) {
-      if (cp == 0 && nc >= bufsize) {
-        report_err("%s: not_serio_pkt() failed with full buffer", iname);
-        consume(nc);
-        return false;
+      if (nc > cp) {
+        report_err("%s: discarding %d bytes: no valid packet",
+          iname, nc-cp);
       }
-      if (cp == 0) return false; // Must need more input
-      consume(cp);
-      if (!have_hdr) { // failed in not_serio_pkg_hdr(), so need more
-        return false;
-      } else {
-        continue;
-      }
+      consume(nc);
+      return false;
     } else {
-      int pktlen = length + serio::pkt_hdr_size;
-      bool rv = tm_out->forward_packet((const char*)&buf[cp], pktlen);
-      cp += pktlen;
-      if (rv) {
-        report_ok(cp);
-        return rv;
+      if (type != pkt_type_TM || length != tm_info.tm.nbminf-2) {
+        report_err("%s: Invalid packet type '%c' length %d",
+          iname, type, length);
+        ++cp; // Look for the next one...
+      } else {
+        int pktlen = length + serio::pkt_hdr_size;
+        bool rv = tm_out->forward_packet((const char*)&buf[cp], pktlen);
+        cp += pktlen;
+        if (rv) {
+          report_ok(nc);
+          return rv;
+        }
       }
     }
   }
-  report_ok(cp);
+  report_ok(nc);
   return false;
 }
 
