@@ -102,13 +102,15 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   msg(0, "Startup");
   
-  DAS_IO::Quit QC;
-  TMDF_data_sndr TM( 60, tmdf_name, 0, &TMDF, sizeof(TMDF) );
-  QC.connect();
-  TM.connect();
-  Loop ELoop;
-  ELoop.add_child(&QC);
-  ELoop.add_child(&TM);
-  ELoop.event_loop();
-  msg(0, "Terminating");
+  { Quit *QC = new Quit();
+    TMDF_data_sndr *TM =
+      new TMDF_data_sndr( 60, tmdf_name, 0, &TMDF, sizeof(TMDF) );
+    QC->connect();
+    TM->connect();
+    Loop ELoop;
+    ELoop.add_child(QC);
+    ELoop.add_child(TM);
+    ELoop.event_loop();
+    msg(0, "Terminating");
+  }
 }
