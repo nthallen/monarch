@@ -5,14 +5,14 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-include( ../../oui_setup.cmake )
+include( ../../../oui_setup.cmake )
 
 OUI_FILE(serin.oui)
 add_executable(serin serin.cc serinoui.cc)
 target_link_libraries(serin dasio nl pthread)
 
 if (DEFINED monarch_SOURCE_DIR)
-target_include_directories(tm_ip_export PRIVATE
+target_include_directories(serin PRIVATE
   ${monarch_SOURCE_DIR}/libs/dasio/src)
 endif (DEFINED monarch_SOURCE_DIR)
 

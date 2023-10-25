@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 add_definitions( -D_POSIX_SOURCE=1 -D_XOPEN_SOURCE=500 )
 
+add_subdirectory(serin)
 add_subdirectory(tm_relay)
 add_subdirectory(ser_chk)
 add_subdirectory(cmd_relay)
