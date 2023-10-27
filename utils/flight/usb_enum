@@ -10,11 +10,24 @@ open(my $lsusbt, '-|', "lsusb -tvv") or
 
 my %devnum;
 my $curdevnum = '';
+my $curindentlen = 0;
+my $curbus = '';
+my @indent;
 while (my $line = <$lsusbt>) {
-  if ($line =~ m/ Port \d+: Dev (\d+),/) {
-    $curdevnum = $1;
-  } elsif ($line =~ m|/sys/bus/usb/devices/([^ ]+) |) {
-    $devnum{$1} = $curdevnum;
+  if ($line =~ m|^/:  Bus (\d+)\.Port|) {
+    $curbus = $1+0;
+  } elsif ($line =~ m/^(\s*)\|__ Port (\d+): Dev (\d+),/) {
+    $newindent = $1;
+    $newindentlen = length($newindent);
+    $curport = $2;
+    $curdevnum = $3;
+    while (@indent && $newindentlen >= $indent[0]->indentlen) {
+      shift(@indent);
+    }
+    my $prefix = @indent ? $indent[0]->usbt . "." : "$curbus-";
+    my $usbt = "$prefix$curport";
+    unshift(@indent,{indentlen => $newindentlen, usbt => $usbt});
+    devnum{$usbt} = $curdevnum;
   }
 }
 close($lsusbt);
