@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
   Loop ELoop;
   serio_if *serio = new serio_if();
   ELoop.add_child(serio);
-  RFD_interface *RFD = new RFD_interface("radio", serio);
+  RFD_interface *RFD = new RFD_interface("TMRFI", serio);
   ELoop.add_child(RFD);
   RFD_cmd *cmd = new RFD_cmd(RFD);
   ELoop.add_child(cmd);

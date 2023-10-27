@@ -25,7 +25,7 @@ int tm_rf_if::air_speed = 125000;
 bool tm_rf_if::hwflow = true;
 
 tm_rf_if::tm_rf_if() :
-    Serial("radio", serio::min_buffer_size),
+    Serial("TMRFX", serio::min_buffer_size),
     row_len(0),
     connect_waiting(false),
     dropping_tx_rows(false),
