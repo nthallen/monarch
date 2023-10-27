@@ -47,6 +47,7 @@ class tm_rcvr {
      * and data_row are all defined before the call, and
      * it is assumed that process_data() will process that
      * data before returning.
+     * @return The number of rows processed.
      */
     virtual unsigned int process_data() = 0;
     /**

@@ -9,7 +9,7 @@
 using namespace DAS_IO;
 
 const char *RFD_interface::RFD_port;
-int RFD_interface::RFD_baud_rate = 57600;
+int RFD_interface::RFD_baud_rate = 115200;
 bool RFD_interface::hwflow = true;
 
 RFD_interface::RFD_interface(const char *name, serio_if *serio) :

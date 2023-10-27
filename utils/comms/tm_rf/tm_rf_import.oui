@@ -8,7 +8,7 @@
 <opts> "p:b:f"
 <sort>
   -p <serial port> the serial port connected to the RFD900x
-  -b <baud rate> the serial port baud rate (57600)
+  -b <baud rate> the serial port baud rate (115200)
   -f disable hardware flow control on serial port
 
 <unsort>
@@ -41,4 +41,4 @@ void RFDio_init_options(int argc, char **argv) {
 <include> "dasio/appid.h"
 <defs>
   DAS_IO::AppID_t DAS_IO::AppID("TMRFI",
-    "RFDio Radio Communications Driver", "V1.0");
+    "Telemetry Import Radio Communications Driver", "V1.0");

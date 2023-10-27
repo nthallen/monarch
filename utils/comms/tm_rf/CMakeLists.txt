@@ -10,10 +10,15 @@ include( ../../../oui_setup.cmake )
 OUI_FILE(tm_rf_import.oui)
 add_executable(tm_rf_import tm_rf_import.cc tm_rf_importoui.cc)
 target_link_libraries(tm_rf_import dasio nl pthread)
+OUI_FILE(tm_rf_export.oui)
+add_executable(tm_rf_export tm_rf_export.cc tm_rf_exportoui.cc)
+target_link_libraries(tm_rf_export dasio nl pthread)
 
 if (DEFINED monarch_SOURCE_DIR)
 target_include_directories(tm_rf_import PRIVATE
   ${monarch_SOURCE_DIR}/libs/dasio/src)
+target_include_directories(tm_rf_export PRIVATE
+  ${monarch_SOURCE_DIR}/libs/dasio/src)
 endif (DEFINED monarch_SOURCE_DIR)
 
-install(TARGETS tm_rf_import RUNTIME DESTINATION bin)
+install(TARGETS tm_rf_import tm_rf_export RUNTIME DESTINATION bin)
