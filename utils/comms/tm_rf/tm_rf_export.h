@@ -67,8 +67,7 @@ class tm_rf_if : public Serial {
 
 class tm_rf_tm_client : public tm_client {
   public:
-    inline tm_rf_tm_client() :
-      tm_client(4096, TM_CLIENT_FAST) {}
+    tm_rf_tm_client();
   protected:
     unsigned int process_data();
     void process_quit();

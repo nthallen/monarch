@@ -371,6 +371,11 @@ void set_cur_photo(uint32_t Photo_Num) {
 }
 #endif
 
+tm_rf_tm_client::tm_rf_tm_client() :
+      tm_client(4096, TM_CLIENT_FAST) {
+  load_tmdac(".");
+}
+
 /**
  \brief Handles incoming data records
  
@@ -404,11 +409,12 @@ int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   AppID.report_startup();
   Loop ELoop;
-  tm_rf_if *radio = new tm_rf_if();
-  ELoop.add_child(radio);
+  // Instantiate tm_rf_tm_client first to initialize tmdac
   tm_rf_tm_client *tm = new tm_rf_tm_client();
   ELoop.add_child(tm);
   tm->connect();
+  tm_rf_if *radio = new tm_rf_if();
+  ELoop.add_child(radio);
   ELoop.event_loop();
   AppID.report_shutdown();
   ELoop.delete_children();

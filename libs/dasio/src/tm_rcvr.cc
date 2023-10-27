@@ -44,8 +44,8 @@ namespace DAS_IO {
           }
           switch ( tm_msg->hdr.tm_type ) {
             case TMTYPE_INIT:
-              if ( tm_info_ready )
-                msg(MSG_FATAL, "%sReceived redundant TMTYPE_INIT", context());
+              // if ( tm_info_ready )
+              //   msg(MSG_FATAL, "%sReceived redundant TMTYPE_INIT", context());
               toread += sizeof(tm_info);
               tm_state = TM_STATE_INIT;
               break;
