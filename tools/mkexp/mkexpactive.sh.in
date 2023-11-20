@@ -20,15 +20,16 @@ cat <<EOF
 mkexpactive <exp>
   Make Experiment <exp> the active experiment by linking
   /home/flight/Experiment.config -> /home/<exp>/Experiment.config
+  /home/flight/flight.sh.log -> /home/<exp>/flight.sh.log
 mkexpactive -x
-  Delete /home/flight/Experiment.config to deactivate
+  Delete /home/flight/Experiment.config and flight.sh.log to deactivate
 EOF
 exit 0
 fi
 
 if [ "x$1" = "x-x" ]; then
   echo "mkexpactive: deactivating"
-  rm -f /home/flight/Experiment.config
+  rm -f /home/flight/Experiment.config /home/flight/flight.sh.log
   exit 0
 fi
 
@@ -45,6 +46,7 @@ fi
 [ -e /home/$Experiment/Experiment.config ] || nl_error "missing /home/$Experiment/Experiment.config"
 
 ln -sf /home/$Experiment/Experiment.config /home/flight/Experiment.config
+ln -sf /home/$Experiment/flight.sh.log /home/flight/flight.sh.log
 systemctl restart monarch
 echo "mkexpactive: finished"
 
