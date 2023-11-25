@@ -525,6 +525,8 @@ struct intcnv {
   int flag;
 };
 #define ICNV_INT 1
+#define ICNV_LINT 2
+#define ICNV_LLINT 4
 
 struct intcnvl {
   struct intcnv *first, *last;
@@ -543,7 +545,8 @@ static struct intcnv *find_ndr(struct calibration *cal,
   int32_t dmax, nbest, n, dbest, d, r, rmin, rmax;
   int32_t x, y, dx, dtx, dx1, ty;
   int32_t y0, dy;
-  int32_t op_range, dlast;
+  int32_t dlast;
+  int64_t op_range;
   struct intcnv *result, *ic, *ica;
 
   if (show(CONVERSIONS))
@@ -570,6 +573,7 @@ static struct intcnv *find_ndr(struct calibration *cal,
     y0 = floor(m*x0+b);
     dy = 0;
     y = floor(m*x1+b);
+    assert(y >= y0); // the conditional below appears to be always false
     if (y < y0) {
       dy = y0 - y;
       y0 = y;
@@ -582,11 +586,13 @@ static struct intcnv *find_ndr(struct calibration *cal,
         dbest = 1;
         break;
       } else {
-        dmax = op_range/dy;
+        dmax = op_range/dy; // maximum possible divisor
         if (dmax > UINT16_MAX) dmax = UINT16_MAX; /* arbitrary limit */
       }
 
       drbest = -1;
+      // Now loop through possible divisors, attempting to minimize the
+      // error over the entire input span.
       for (dlast = 1; dlast <= dmax; dlast++) {
         n = floor(m*dlast + .5);
         dr = fabs((m - ((double)n)/dlast) * ddx);
@@ -597,6 +603,7 @@ static struct intcnv *find_ndr(struct calibration *cal,
           if (dr == 0.) break;
         }
       }
+      // if the error is less than 1, we have a good choice
       if (op_range == INT16_MAX && drbest > 1.0) op_range = INT32_MAX;
       else break;
     }
@@ -611,6 +618,8 @@ static struct intcnv *find_ndr(struct calibration *cal,
     /* Now see how far this gets us */
     n = nbest; d = dbest;
     y = floor(m*x0+b);
+    // Below is that range of possible r (remainder) values.
+    // We will refine this during the test
     rmin = (y-y0)*d;
     rmax = rmin + d - 1;
     if (show(CONVERSIONS))
@@ -665,12 +674,6 @@ static struct intcnv *find_ndr(struct calibration *cal,
     ic->d  = d;
     ic->r  = r;
     ic->y0 = y0;
-    ic->flag = (op_range == INT16_MAX) ? ICNV_INT : 0;
-    if (result == NULL) result = ica = ic;
-    else {
-      ica->next = ic;
-      ica = ic;
-    }
     if (show(CONVERSIONS))
       fprintf(vfile,
         "%d - %d : (%d*X + (%d (+%d))) / %d + (%d) [%s]\n",
@@ -685,6 +688,21 @@ static struct intcnv *find_ndr(struct calibration *cal,
       if (INT32_MAX-dtx < x) dx1 = INT32_MAX-dtx;
       else dx1 = x;
       for (dx = x0; dx <= dx1; dx += dtx) {
+        double numerator = dx*(double)n + r;
+        if (numerator > op_range || numerator < -op_range) {
+          switch (op_range) {
+            case INT16_MAX: op_range = INT32_MAX; break;
+            case INT32_MAX: op_range = INT64_MAX; break;
+            case INT64_MAX:
+              compile_error(3,
+                "Intermediate value is huge! in Conversion (%s => %s)\n",
+                cal->type[0]->name, cal->type[1]->name);
+            default:
+              compile_error(3,
+                "Invalid op_range: %lld in Conversion(%s => %s)\n",
+                op_range, cal->type[0]->name, cal->type[1]->name);
+          }
+        }
         y = sign_m * floor(m*dx+b);
         ty = (n*dx + r)/d + y0;
         if (ty != y)
@@ -693,6 +711,17 @@ static struct intcnv *find_ndr(struct calibration *cal,
             cal->type[0]->name, cal->type[1]->name, dx, y, ty);
       }
       if (show(CONVERSIONS)) fprintf(vfile, "passed\n");
+    }
+    switch (op_range) {
+      case INT16_MAX: ic->flag = ICNV_INT; break;
+      case INT32_MAX: ic->flag = ICNV_LINT; break;
+      case INT64_MAX: ic->flag = ICNV_LLINT; break;
+      default: assert(0);
+    }
+    if (result == NULL) result = ica = ic;
+    else {
+      ica->next = ic;
+      ica = ic;
     }
     if (x == x1) break;
     x0 = x+1;
@@ -790,9 +819,15 @@ static void gen_itc_code(int n, struct intcnv *p, char *ovtxt) {
       }
       if (p->r != 0) print_indent("(");
       print_indent("x");
-      if ((p->flag & ICNV_INT) == 0)
-        fprintf(ofile, "*(%dL)", p->n);
-      else if (p->n != 1) fprintf(ofile, "*(%d)", p->n);
+      if (p->n != 1) {
+        if (p->flag & ICNV_INT)
+          fprintf(ofile, "*(%d)", p->n);
+        else if (p->flag & ICNV_LINT)
+          fprintf(ofile, "*(%dL)", p->n);
+        else if (p->flag & ICNV_LLINT)
+          fprintf(ofile, "*(%dLL)", p->n);
+        else assert(0);
+      }
       if (p->r != 0) {
         /* This portion of code will generate invalid output in
            a 32-bit environment. The solution is to either add
