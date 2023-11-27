@@ -542,11 +542,11 @@ static struct intcnv *find_ndr(struct calibration *cal,
         int32_t x0, int32_t x1, double m, double b) {
   double drbest, dr, ddx;
   int sign_m;
-  int32_t dmax, nbest, n, dbest, d, r, rmin, rmax;
+  int32_t dmax, dbest, d, rmin, rmax;
   int32_t x, y, dx, dtx, dx1, ty;
   int32_t y0, dy;
   int32_t dlast;
-  int64_t op_range;
+  int64_t op_range, nbest, n, r;
   struct intcnv *result, *ic, *ica;
 
   if (show(CONVERSIONS))
