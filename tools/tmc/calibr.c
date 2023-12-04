@@ -533,6 +533,27 @@ struct intcnvl {
   int n_regions;
 };
 
+static int64_t check_op_range(struct calibration *cal,
+                    int64_t old_range, double val) {
+  int64_t new_range = INT16_MAX;
+  if (val > INT16_MAX || val < -INT16_MAX-1) {
+    if (val > INT32_MAX || val < -INT32_MAX-1) {
+      if (val > INT64_MAX || val < -(double)INT64_MAX ) {
+        compile_error(3,
+          "Intermediate value is huge! in Conversion (%s => %s)\n",
+          cal->type[0]->name, cal->type[1]->name);
+      } else {
+        new_range = INT64_MAX;
+      }
+    } else {
+      new_range = INT32_MAX;
+    }
+  } else {
+    new_range = INT16_MAX;
+  }
+  return new_range > old_range ? new_range : old_range;
+}
+
 /* Given slope and intercept and input range, generates a chain
    of regions over which a simple linear integer expression will
    produce the predicted results.
@@ -542,11 +563,11 @@ static struct intcnv *find_ndr(struct calibration *cal,
         int32_t x0, int32_t x1, double m, double b) {
   double drbest, dr, ddx;
   int sign_m;
-  int32_t dmax, dbest, d, rmin, rmax;
+  int32_t dmax, dbest, d;
   int32_t x, y, dx, dtx, dx1, ty;
   int32_t y0, dy;
   int32_t dlast;
-  int64_t op_range, nbest, n, r;
+  int64_t op_range, nbest, n, r, rmin, rmax;
   struct intcnv *result, *ic, *ica;
 
   if (show(CONVERSIONS))
@@ -689,20 +710,9 @@ static struct intcnv *find_ndr(struct calibration *cal,
       else dx1 = x;
       for (dx = x0; dx <= dx1; dx += dtx) {
         double numerator = dx*(double)n + r;
-        if (numerator > op_range || numerator < -op_range) {
-          switch (op_range) {
-            case INT16_MAX: op_range = INT32_MAX; break;
-            case INT32_MAX: op_range = INT64_MAX; break;
-            case INT64_MAX:
-              compile_error(3,
-                "Intermediate value is huge! in Conversion (%s => %s)\n",
-                cal->type[0]->name, cal->type[1]->name);
-            default:
-              compile_error(3,
-                "Invalid op_range: %lld in Conversion(%s => %s)\n",
-                op_range, cal->type[0]->name, cal->type[1]->name);
-          }
-        }
+        op_range = check_op_range(cal, op_range, dx*(double)n);
+        op_range = check_op_range(cal, op_range, (double)r);
+        op_range = check_op_range(cal, op_range, dx*(double)n + r);
         y = sign_m * floor(m*dx+b);
         ty = (n*dx + r)/d + y0;
         if (ty != y)
