@@ -3,16 +3,16 @@ use strict;
 use POSIX qw(uname);
 
 my %ID;
-my %IDfound;
+my %mnc;
 load_id();
+print "# usb_enum: ", scalar(localtime()), "\n";
+
 load_ports();
 
-
-print "# usb_enum: ", scalar(localtime()), "\n";
-    
-for my $snif (keys(%ID)) {
-  print "$ID{$snif}_port=''\n" unless $IDfound{$snif};
+for my $mnc (keys %mnc) {
+  print "${mnc}_port='", join(' ', @{$mnc{$mnc}}), "';\n";
 }
+
 
 sub load_id {
   my @idpath = qw(.);
@@ -23,8 +23,11 @@ sub load_id {
     my $path = "$dir/USB.id";
     if ( -f $path ) {
       load_id_path($path);
-      return;
+      last;
     }
+  }
+  for my $id (values %ID) {
+    $mnc{$id} = [];
   }
 }
 
@@ -55,7 +58,8 @@ sub load_id_path {
 
 sub load_ports {
   my @uname = uname();
-  if ($uname[0] =~ m/^CYGWIN_NT) {
+  if ($uname[0] =~ m/^CYGWIN_NT/) {
+    die "Windows/Cygwin not yet supported\n";
   } else {
     open(my $lsusbt, '-|', "lsusb -t") or
       die "Cannot run lsusb -t\n";
@@ -122,13 +126,15 @@ sub load_ports {
         $SN = "$idVendor:$idProduct";
       } else {
         print "# Unable to identify iSerial for bus:devnum $bus:$devnum on $port\n";
-        print "#   $vendstr $prodstr";
+        print "#   $vendstr $prodstr\n";
       }
-      if ($SN) {
-        if ($ID{"$SN:$if"}) {
-          print $ID{"$SN:$if"}, "_port=$port\n";
-          $IDfound{"$SN:$if"} = 1;
-        } else {
+      if ($SN && $ID{"$SN:$if"}) {
+        push(@{$mnc{$ID{"$SN:$if"}}}, $port);
+        # print $ID{"$SN:$if"}, "_port=$port\n";
+      } else {
+        $mnc{unknown} ||= [];
+        push(@{$mnc{unknown}}, $port);
+        if ($SN) {
           print "# Unidentified board found, SN $SN:$if, bus:devnum $bus:$devnum on $port\n";
           print "#   $vendstr $prodstr\n";
         }
