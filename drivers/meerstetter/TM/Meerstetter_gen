@@ -17,8 +17,20 @@ my $srcfile = $ARGV[0] ||
   die "Must specify a source file\n";
 my $name_cl = '';
 my $Rate = '1';
-my $Port = '/dev/ser1';
 my $name_src = '';
+my %Format = (
+  Temp => '%7.2f',
+  Amps => '%7.2f',
+  Volts => '%7.2f' );
+my %Width = (
+  Temp => 7,
+  Amps => 7,
+  Volts => 7 );
+my %Precision = (
+  Temp => 2,
+  Amps => 2,
+  Volts => 2 );
+my $HasSink = 1;
 my %Data;
 my %Channel;
 my @Index;
@@ -47,7 +59,13 @@ while (my $line = <$ifh>) {
   if ( $line =~ m|^\s*Rate\s+(\d+(?:/\d+)?)\s+Hz\s*|i ) {
     $Rate = $1;
   } elsif ( $line =~ m/^\s*Port\s+(\S+)\s*$/i ) {
-    $Port = $1;
+    warn "$srcfile:$linenum: Port keyword is obsolete\n";
+  } elsif ( $line =~ m/^\s* (Temp|Volts|Amps)Format \s* (%(\d+)\.(\d+)f) \s*$/xi ) {
+    $Format{$1} = $2;
+    $Width{$1} = $3;
+    $Precision{$1} = $4;
+  } elsif ( $line =~ m/^\s* NoSink \s*$/xi) {
+    $HasSink = 0;
   } elsif ( $line =~ m/^\s*Name\s+([a-z]\w*)\s*$/i ) {
     die "$srcfile:$linenum: Name redefined\n"
       if $name_src ne '';
@@ -113,7 +131,8 @@ for (my $i = 0; $i < $n_channels; ++$i) {
   $datadef .= "TM $Rate Hz ${Name}_Error_t ${datum}_ErrorInstance;\n";
   $datadef .= "TM $Rate Hz ${Name}_Error_t ${datum}_ErrorParameter;\n";
   $datadef .= "TM $Rate Hz ${Name}_Temp_t ${datum}_T;\n";
-  $datadef .= "TM $Rate Hz ${Name}_Temp_t ${datum}_Sink_T;\n";
+  $datadef .= "TM $Rate Hz ${Name}_Temp_t ${datum}_Sink_T;\n"
+    if $HasSink;
   $datadef .= "TM $Rate Hz ${Name}_Temp_t ${datum}_Set_T;\n";
   $datadef .= "TM $Rate Hz ${Name}_Amps_t ${datum}_OutputCurrent;\n";
   $datadef .= "TM $Rate Hz ${Name}_Volts_t ${datum}_OutputVoltage;\n";
@@ -124,13 +143,18 @@ for (my $i = 0; $i < $n_channels; ++$i) {
   $coldef .= "  ${datum}_ErrorInstance = ${Name}_drive($i,ErrorInstance);\n";
   $coldef .= "  ${datum}_ErrorParameter = ${Name}_drive($i,ErrorParameter);\n";
   $coldef .= "  ${datum}_T = ${Name}_drive($i,ObjectTemp);\n";
-  $coldef .= "  ${datum}_Sink_T = ${Name}_drive($i,SinkTemp);\n";
+  $coldef .= "  ${datum}_Sink_T = ${Name}_drive($i,SinkTemp);\n"
+    if $HasSink;
   $coldef .= "  ${datum}_Set_T = ${Name}_drive($i,TargetObjectTemp);\n";
   $coldef .= "  ${datum}_OutputCurrent = ${Name}_drive($i,ActualOutputCurrent);\n";
   $coldef .= "  ${datum}_OutputVoltage = ${Name}_drive($i,ActualOutputVoltage);\n";
   $coldef .= "  ${datum}_Stale = ${Name}_drive($i,Stale);\n";
 
-  push(@grpmem, map "${datum}_$_", qw(DevStatus ErrorNumber ErrorInstance ErrorParameter T Sink_T Set_T));
+  # The ordering here is ensure backwards compatibility: The order of the group members
+  # affects the TM frame layout and hence VERSION
+  push(@grpmem, map "${datum}_$_", qw(DevStatus ErrorNumber ErrorInstance ErrorParameter T));
+  push(@grpmem, map "${datum}_$_", qw(Sink_T)) if $HasSink;
+  push(@grpmem, map "${datum}_$_", qw(Set_T));
 
   print $genui
     "  $Rate ${datum}_ErrorNumber $panel${Name}_Errors ${datum}_Errors\n",
@@ -138,16 +162,20 @@ for (my $i = 0; $i < $n_channels; ++$i) {
     "  $Rate ${datum}_ErrorParameter $panel${Name}_Errors ${datum}_Errors\n",
     "  $Rate ${datum}_Stale $panel${Name}_Stale ${datum}_Stale\n",
 
-    "  $Rate ${datum}_T $panel${Name}_${datum} Temp %.2lf\n",
-    "  $Rate ${datum}_Set_T $panel${Name}_${datum} Temp\n",
-    "  $Rate ${datum}_Sink_T $panel${Name}_${datum} Temp\n",
+    "  $Rate ${datum}_T $panel${Name}_${datum} Temp %.$Precision{Temp}lf\n",
+    "  $Rate ${datum}_Set_T $panel${Name}_${datum} Temp\n";
+  print $genui
+    "  $Rate ${datum}_Sink_T $panel${Name}_${datum} Temp\n"
+    if $HasSink;
+  print $genui
     "  $Rate ${datum}_OutputCurrent $panel${Name}_${datum} Current\n",
     "  $Rate ${datum}_OutputVoltage $panel${Name}_${datum} Voltage\n",
     "  $Rate ${datum}_DevStatus $panel${Name}_${datum} Status %.0lf\n";
 
   my $datumtbl =
-    "  ${datum}: (${datum}_DevStatus,7) (${datum}_Stale,3) " .
-    "(${datum}_Sink_T,7) (${datum}_Set_T,7) (${datum}_T,7)" .
+    "  ${datum}: (${datum}_DevStatus,7) (${datum}_Stale,3) ";
+  $datumtbl .= "(${datum}_Sink_T,7) " if $HasSink;
+  $datumtbl .= "(${datum}_Set_T,7) (${datum}_T,7)" .
     "(${datum}_OutputVoltage,7) (${datum}_OutputCurrent,7);\n";
 
   $tbldef .= $datumtbl;
@@ -159,7 +187,7 @@ for (my $i = 0; $i < $n_channels; ++$i) {
     "  HBox { +-; Title: ${datum}; -+ };\n",
     "  Status: (${datum}_DevStatus,7);\n",
     "  Stale:  (${datum}_Stale,3);\n",
-    "  Sink_T: (${datum}_Sink_T,7) C;\n",
+    $HasSink ? "  Sink_T: (${datum}_Sink_T,7) C;\n" : '',
     "  Set_T:  (${datum}_Set_T,7) C;\n",
     "  T:      (${datum}_T,7) C;\n",
     "}\n\n";
@@ -198,12 +226,14 @@ print $tmc <<EOF
 %}
 TM typedef uint8_t ${Name}_DevStatus_t { text "%7u" ${Name}_DevStatus_text(); }
 TM typedef uint8_t ${Name}_Stale_t { text "%3u"; }
-TM typedef float ${Name}_Temp_t { text "%7.2f"; }
 TM typedef uint8_t ${Name}_Error_t { text"%3u"; }
-TM typedef float ${Name}_Amps_t { text "%7.2f"; }
-TM typedef float ${Name}_Volts_t { text "%7.2f"; }
 EOF
 ;
+
+for my $type (keys %Format) {
+  print $tmc "TM typedef float ${Name}_${type}_t { text \"",
+  $Format{$type}, "\"; }\n";
+}
 
 print $tmc
   "\n$datadef" ,
@@ -221,7 +251,9 @@ print $col
 print $tbl
   "$Name {\n" .
   "  HBox { +-; Title: $Name; -+ };\n" .
-  "  (${Name}_Stale,3) >Status< >Stl< >Sink< >Set< >T< >V< >A<;\n" .
+  ($HasSink
+     ? "  (${Name}_Stale,3) >Status< >Stl< >Sink< >Set< >T< >V< >A<;\n"
+     : "  (${Name}_Stale,3) >Status< >Stl< >Set< >T< >V< >A<;\n") .
   $tbldef .
   "}\n";
 
