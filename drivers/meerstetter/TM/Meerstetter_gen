@@ -174,9 +174,9 @@ for (my $i = 0; $i < $n_channels; ++$i) {
 
   my $datumtbl =
     "  ${datum}: (${datum}_DevStatus,7) (${datum}_Stale,3) ";
-  $datumtbl .= "(${datum}_Sink_T,7) " if $HasSink;
-  $datumtbl .= "(${datum}_Set_T,7) (${datum}_T,7)" .
-    "(${datum}_OutputVoltage,7) (${datum}_OutputCurrent,7);\n";
+  $datumtbl .= "(${datum}_Sink_T,$Width{Temp}) " if $HasSink;
+  $datumtbl .= "(${datum}_Set_T,$Width{Temp}) (${datum}_T,$Width{Temp})" .
+    "(${datum}_OutputVoltage,$Width{Volts}) (${datum}_OutputCurrent,$Width{Amps});\n";
 
   $tbldef .= $datumtbl;
   
