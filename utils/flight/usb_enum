@@ -1,59 +1,18 @@
 #! /usr/bin/perl -w
 use strict;
+use POSIX qw(uname);
 
 my %ID;
-my %IDfound;
+my %mnc;
 load_id();
-
-open(my $lsusbt, '-|', "lsusb -tvv") or
-  die "Cannot run lsusb -tvv\n";
-
-my %devnum;
-my $curdevnum = '';
-while (my $line = <$lsusbt>) {
-  if ($line =~ m/ Port \d+: Dev (\d+),/) {
-    $curdevnum = $1;
-  } elsif ($line =~ m|/sys/bus/usb/devices/([^ ]+) |) {
-    $devnum{$1} = $curdevnum;
-  }
-}
-close($lsusbt);
-
 print "# usb_enum: ", scalar(localtime()), "\n";
 
-my @serdevs = ( </sys/bus/usb/devices/*:*/tty?*>,
-                </sys/bus/usb/devices/*:*/tty/tty?*>);
-# print "Devices:\n", map("  $_\n", @serdevs);
-for my $devstr (@serdevs) {
-  $devstr =~ m|^/sys/bus/usb/devices/([^:]+):([^/]+)/(?:[^/]+/)?(.*)$| ||
-    die "Pattern did not match\n";
-  my $usbt = $1;
-  my $if = $2;
-  my $port = "/dev/$3";
-  $usbt =~ m/^(\d+)-/ || die "Unexpected usbt for devstr '$devstr'\n";
-  my $bus = $1;
-  my $devnum = $devnum{$usbt};
-  open(my $lsusb, '-|', "lsusb -s$bus:$devnum -v 2>/dev/null | grep iSerial") or
-    die "Unable to open lsusb pipe\n";
-  my $line = <$lsusb> || '';
-  close($lsusb) or print "# Error closing lsusb -s$bus:$devnum pipe for $port\n";
-  chomp $line;
-  if ( $line =~ m/iSerial \s+ \d+ \s+ (\S+)$/x ) {
-    my $SN = $1;
-    if ($ID{"$SN:$if"}) {
-      print $ID{"$SN:$if"}, "_port=$port\n";
-      $IDfound{"$SN:$if"} = 1;
-    } else {
-      print "# Unidentified board found, SN $SN:$if, devnum $devnum on $port\n";
-    }
-  } else {
-    print "# Unable to identify iSerial for devnum $devnum on $port: '$line'\n";
-  }
+load_ports();
+
+for my $mnc (keys %mnc) {
+  print "${mnc}_port='", join(' ', @{$mnc{$mnc}}), "';\n";
 }
-    
-for my $snif (keys(%ID)) {
-  print "$ID{$snif}_port=''\n" unless $IDfound{$snif};
-}
+
 
 sub load_id {
   my @idpath = qw(.);
@@ -64,8 +23,11 @@ sub load_id {
     my $path = "$dir/USB.id";
     if ( -f $path ) {
       load_id_path($path);
-      return;
+      last;
     }
+  }
+  for my $id (values %ID) {
+    $mnc{$id} = [];
   }
 }
 
@@ -75,12 +37,108 @@ sub load_id_path {
     warn "usb_enum: Unable to open '$path'\n";
   while (my $line = <$idfile>) {
     chomp $line;
-    next if $line =~ m/^\s*(?:#.*)?$/;
+    #next if $line =~ m/^\s*(?:#.*)?$/;
+    $line =~ s/\s*(?:#.*)?$//;
     if ($line =~ m/^ \s* ([\w_]+) \s+ ([a-z0-9]+) ((?::\d+\.\d+)?) \s* $/ix) {
       my $mnc = $1;
       my $sn = $2;
       my $if = $3 || ":1.0";
       $ID{"$sn$if"} = $mnc;
+    } elsif ($line =~ m/^ \s* ([\w_]+) \s+ (0x[a-f0-9]{4}:0x[a-f0-9]{4})
+                          ((?::\d+\.\d+)?) \s* $/ix) {
+      my $mnc = $1;
+      my $sn = $2;
+      my $if = $3 || ":1.0";
+      $ID{"$sn$if"} = $mnc;
+    } elsif ( $line ne '' ) {
+      warn "Syntax Error: '$line'\n";
+    }
+  }
+}
+
+sub load_ports {
+  my @uname = uname();
+  if ($uname[0] =~ m/^CYGWIN_NT/) {
+    die "Windows/Cygwin not yet supported\n";
+  } else {
+    open(my $lsusbt, '-|', "lsusb -t") or
+      die "Cannot run lsusb -t\n";
+
+    my %devnum;
+    my $curbus = '';
+    my @indent;
+    while (my $line = <$lsusbt>) {
+      if ($line =~ m|^/:  Bus (\d+)\.Port|) {
+        $curbus = $1+0;
+      } elsif ($line =~ m/^(\s*)\|__ Port (\d+): Dev (\d+),/) {
+        my $newindent = $1;
+        my $newindentlen = length($newindent);
+        my $curport = $2;
+        my $curdevnum = $3;
+        while (@indent && $newindentlen <= $indent[0]->{indentlen}) {
+          shift(@indent);
+        }
+        my $prefix = @indent ? $indent[0]->{usbt} . "." : "$curbus-";
+        my $usbt = "$prefix$curport";
+        unshift(@indent,{indentlen => $newindentlen, usbt => $usbt});
+        $devnum{$usbt} = $curdevnum;
+      }
+    }
+    close($lsusbt);
+
+    my @serdevs = ( </sys/bus/usb/devices/*:*/tty?*>,
+                    </sys/bus/usb/devices/*:*/tty/tty?*>);
+    # print "Devices:\n", map("  $_\n", @serdevs);
+    for my $devstr (@serdevs) {
+      $devstr =~ m|^/sys/bus/usb/devices/([^:]+):([^/]+)/(?:[^/]+/)?(.*)$| ||
+        die "Pattern did not match\n";
+      my $usbt = $1;
+      my $if = $2;
+      my $port = "/dev/$3";
+      $usbt =~ m/^(\d+)-/ || die "Unexpected usbt for devstr '$devstr'\n";
+      my $bus = $1;
+      my $devnum = $devnum{$usbt};
+      open(my $lsusb, '-|', "lsusb -s$bus:$devnum -v 2>/dev/null") or
+        die "Unable to open lsusb pipe\n";
+      my $iSerial;
+      my $idVendor;
+      my $idProduct;
+      my $vendstr = '';
+      my $prodstr = '';
+      my $SN;
+      while ( my $line = <$lsusb> || '') {
+        chomp $line;
+        if ( $line =~ m/iSerial \s+ \d+ \s+ (\S+)$/x ) {
+          $iSerial = $1;
+          last;
+        } elsif ($line =~ m/idVendor \s+ (0x[0-9A-F]{4}) \s+ (\S.*)$/ix) {
+          $idVendor = $1;
+          $vendstr = $2;
+        } elsif ($line =~ m/idProduct \s+ (0x[0-9A-F]{4}) \s (\S.*)$/ix) {
+          $idProduct = $1;
+          $prodstr = $2;
+        }
+      }
+      close($lsusb) or print "# Error closing lsusb -s$bus:$devnum pipe for $port\n";
+      if ($iSerial) {
+        $SN = $iSerial;
+      } elsif ( $idVendor && $idProduct ) {
+        $SN = "$idVendor:$idProduct";
+      } else {
+        print "# Unable to identify iSerial for bus:devnum $bus:$devnum on $port\n";
+        print "#   $vendstr $prodstr\n";
+      }
+      if ($SN && $ID{"$SN:$if"}) {
+        push(@{$mnc{$ID{"$SN:$if"}}}, $port);
+        # print $ID{"$SN:$if"}, "_port=$port\n";
+      } else {
+        $mnc{unknown} ||= [];
+        push(@{$mnc{unknown}}, $port);
+        if ($SN) {
+          print "# Unidentified board found, SN $SN:$if, bus:devnum $bus:$devnum on $port\n";
+          print "#   $vendstr $prodstr\n";
+        }
+      }
     }
   }
 }

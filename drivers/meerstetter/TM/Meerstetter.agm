@@ -12,7 +12,9 @@ Moduledef Meerstetter [ src= name=ME Panel= ] {
       comment /
       'Name' word /
       'Rate' \d+ 'Hz' /
-      'Port' path /
+      'TempFormat' '%' \d+ '.' \d+ 'f' /
+      'VoltsFormat' '%' \d+ '.' \d+ 'f' /
+      'AmpsFormat' '%' \d+ '.' \d+ 'f' /
       'Data' word address command .
     word : \w+ .
     address : \d+ .
