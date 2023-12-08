@@ -32,9 +32,7 @@
 #ifndef _TMCSTR_H
 #define _TMCSTR_H
 
-#ifndef _RATIONAL_H
-  #error Must include rational.h before tmcstr.h
-#endif
+#include "rational.h"
 
 /* nm is the structure by which names are defined. The next field is
    used at definition to chain together the names in the current scope.

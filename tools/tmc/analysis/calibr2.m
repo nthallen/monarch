@@ -100,6 +100,14 @@ for i = 1:N
   score = test_noxdroy(R(1),R(2),R(3),R(4),R(5),R(6),R(7),R(8));
 end
 %%
+% Save I in ascii suitable for C testing
+N = size(I,1);
+fid = fopen('I.txt', 'w');
+for i = 1:N
+  fprintf(fid, ' %12.4e %12.4e %12.4e %12.4e\n', I(i,:));
+end
+fclose(fid);
+%%
 function [n,d,r,m,b,ox0,ox1,oy0] = find_noxdroy(X,Y,iX1)
   assert(all(size(X) == [1 2]));
   assert(all(size(Y) == [1 2]));
@@ -226,5 +234,6 @@ function y = eval_ndrxyx(n,d,r,x0,y0,x)
 end
 
 function accept(i,n,d,r,ox0,ox1,oy0)
-  % fprintf(1,'%d: %d %d %d %d %d %d\n',i,n,d,r,ox0,ox1,oy0);
+  %fprintf(1,'%d: %d %d %d %d %d %d\n',i,n,d,r,ox0,ox1,oy0);
+  fprintf(1, '%d: x=[%d:%d] n/d=%d/%d r=%d y0=%d\n',i,ox0,ox1,n,d,r,oy0);
 end

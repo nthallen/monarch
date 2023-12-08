@@ -1,10 +1,8 @@
 /* calibr.h defines structures and functions pertinent to calibration. */
-#ifndef _TMCSTR_H
-  #error Must include tmcstr.h before calibr.h
-#endif
-
 #ifndef _CALIBR_H
 #define _CALIBR_H
+#include "tmcstr.h"
+
 struct pair {
   struct pair *next;
   double v[2];

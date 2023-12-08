@@ -24,13 +24,14 @@ struct intcnvl {
 
 typedef struct {
   struct calibration *cal;
-  int64_t n, d, r0, X0, X1, Y0;
+  int64_t n, d, X0, X1, Y0;
+  int64_t r_min, r_max;
   int fix_dir; // Direction of r adjustment
   double m, b;
 } calseg_t;
 
 typedef struct {
-  int64_t r; // Value of r we were testing
+  // int64_t r; // Value of r we were testing
   int64_t fX; // X value where it failed
 } test_result_t;
 
@@ -54,14 +55,14 @@ static int64_t gcd(int64_t a, int64_t b) {
  * basis in test_seg().
  */
 static void rationalize(calseg_t *cseg) {
-  int64_t n, d, d1, g, iY0;
-  double riY0, fY0, rr, prec, dX;
+  int64_t n, d, d1, g;
+  double prec, dX;
   
   if (cseg->m == 0) {
-    cseg->Y0 = cseg->b;
+    cseg->Y0 = round(cseg->b);
     cseg->n = 0;
     cseg->d = 1;
-    cseg->r0 = 0;
+    cseg->r_min = cseg->r_max = 0;
     return;
   }
   dX = cseg->X1 - cseg->X0;
@@ -89,43 +90,59 @@ static void rationalize(calseg_t *cseg) {
   }
   cseg->n = n;
   cseg->d = d;
-  // Now calculate r0 and Y0
-  riY0 = cseg->m * cseg->X0 + cseg->b;
-  iY0 = floor(riY0);
-  fY0 = riY0 - iY0;
-  nl_assert(fY0 >= 0);
-  if (n < 0) {
-    // need -1 < rr <= 0
-    rr = fY0 - 0.5; // because we round toward zero
-    if (rr > 0) {
-      --rr;
-      ++iY0;
+  #ifdef PRE_Y0_CHANGE
+    // Now calculate r0 and Y0
+    riY0 = cseg->m * cseg->X0 + cseg->b;
+    iY0 = floor(riY0);
+    fY0 = riY0 - iY0;
+    nl_assert(fY0 >= 0);
+    if (n < 0) {
+      // need -1 < rr <= 0
+      rr = fY0 - 0.5; // because we round toward zero
+      if (rr > 0) {
+        --rr;
+        ++iY0;
+      }
+    } else {
+      // need 0 <= rr < 1
+      rr = fY0+0.5;
+      if (rr >= 1) {
+        --rr;
+        ++iY0;
+      }
     }
-  } else {
-    // need 0 <= rr < 1
-    rr = fY0+0.5;
-    if (rr >= 1) {
-      --rr;
-      ++iY0;
-    }
-  }
-  cseg->r0 = round(rr*d);
-  cseg->Y0 = iY0;
+    cseg->r0 = round(rr*d);
+    cseg->Y0 = iY0;
+  #else
+    cseg->Y0 = round(cseg->m*cseg->X0+cseg->b) + (n > 0 ? -1 : 1);
+    cseg->r_min = 1;
+    cseg->r_max = -1;
+  #endif
 }
 
 /**
  * @param cseg calibration segment details
- * @param r candidate remainder parameter
  * @param x candidate X parameter
- * Tests the calculated parameters in cseg for inputs x and r
- * @returns -1, 0 or 1 based on the sign of
- *    f(x,n,d,r,y0)-f(x,m,b)
+ * Calculates range of r values that work for sample x
+ * and updates the cseg structure.
+ * @returns true if there is no range of r values that works for x
  */
-static int test_ndrxy(calseg_t *cseg, int64_t r, int64_t x) {
+static int test_ndrxy(calseg_t *cseg, int64_t x) {
   int64_t Yd = round(cseg->m*x + cseg->b);
-  int64_t Yi = (cseg->n*(x - cseg->X0)+r)/cseg->d + cseg->Y0;
-  int sign_dY = Yi==Yd ? 0 : Yi>Yd ? 1 : -1;
-  return sign_dY;
+  int64_t dynd = cseg->d*(Yd-cseg->Y0)-cseg->n*(x-cseg->X0);
+  int64_t r_min = dynd + ((cseg->n>0) ? 0 : -cseg->d+1);
+  int64_t r_max = dynd + ((cseg->n>0) ? cseg->d-1 : 0);
+  if (cseg->r_min <= cseg->r_max) {
+    // update the local limits to be the intersection
+    if (cseg->r_min > r_min) r_min = cseg->r_min;
+    if (cseg->r_max < r_max) r_max = cseg->r_max;
+  }
+  if (r_min <= r_max) {
+    cseg->r_min = r_min;
+    cseg->r_max = r_max;
+    return 0;
+  }
+  return 1;
 }
 
 /**
@@ -134,12 +151,18 @@ static int test_ndrxy(calseg_t *cseg, int64_t r, int64_t x) {
  * @param xt X value to start testing from
  * @param res Result structure
  */
-static void test_seg(calseg_t *cseg, int64_t r, int64_t xt,
+static void test_seg(calseg_t *cseg, int64_t xt,
                     test_result_t *res) {
-  int64_t x, x2;
+  int64_t x;
   int err_dir = 0;
   for (x = xt; err_dir == 0 && x <= cseg->X1; ++x) {
-    err_dir = test_ndrxy(cseg, r, x);
+    if (test_ndrxy(cseg, x)) {
+      res->fX = x;
+      return;
+    }
+  }
+  res->fX = x;
+  #ifdef PRE_Y0_CHANGE
     if (err_dir) {
       if (cseg->fix_dir == 0) {
         cseg->fix_dir = err_dir;
@@ -182,6 +205,7 @@ static void test_seg(calseg_t *cseg, int64_t r, int64_t xt,
   // Made it through to xt. We passed the first time between
   // xt and x, so we are good to x now.
   res->fX = x;
+  #endif
 }
 
 /* Given slope and intercept and input range, generates a chain
@@ -202,7 +226,7 @@ static struct intcnv *find_ndr(calseg_t *cseg) {
   for (x = cseg->X0; x <= cseg->X1; x = res.fX) {
     // Find ndr by rationalization and initialize calseg
     rationalize(cseg); // sets n, d, r0, Y0
-    test_seg(cseg, cseg->r0, x, &res);
+    test_seg(cseg, x, &res);
     nl_assert(res.fX > x);
     cv = new_memory(sizeof(struct intcnv));
     cv->next = 0;
@@ -210,9 +234,10 @@ static struct intcnv *find_ndr(calseg_t *cseg) {
     cv->x1 = res.fX-1;
     cv->n  = cseg->n;
     cv->d  = cseg->d;
-    cv->r  = res.r;
+    cv->r  = cseg->r_min;
+    cv->y0 = cseg->Y0;
     // y = round(m*x+b) ~= (n*(x-x0)+r)/d + y0
-    cv->y0 = round(cseg->m*x + cseg->b) - res.r/cseg->d;
+    // cv->y0 = round(cseg->m*x + cseg->b) - res.r/cseg->d;
     if (cl.last) {
       cl.last->next = cv;
     } else {
@@ -271,9 +296,11 @@ static void summarize(calseg_t *cseg, struct intcnv *cl,
           X0, X1, Y0, Y1);
   while (li) {
     ++n_regions;
+    printf("   x=[%d:%d] n/d=%d/%d r=%d x0=%d y0=%d\n",
+      li->x0, li->x1, li->n, li->d, li->r, li->x0, li->y0);
     li = li->next;
   }
-  printf("  Generated %d regions:\n", n_regions);
+  printf("   Generated %d regions:\n", n_regions);
 }
 
 int main(int argc, char **argv) {
