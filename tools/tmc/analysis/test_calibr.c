@@ -9,8 +9,8 @@
 
 struct intcnv {
   struct intcnv *next;
-  int32_t x0, x1;
-  int32_t n, r, d, y0;
+  int64_t x0, x1;
+  int64_t n, r, d, y0;
   int flag;
 };
 #define ICNV_INT 1
@@ -90,34 +90,9 @@ static void rationalize(calseg_t *cseg) {
   }
   cseg->n = n;
   cseg->d = d;
-  #ifdef PRE_Y0_CHANGE
-    // Now calculate r0 and Y0
-    riY0 = cseg->m * cseg->X0 + cseg->b;
-    iY0 = floor(riY0);
-    fY0 = riY0 - iY0;
-    nl_assert(fY0 >= 0);
-    if (n < 0) {
-      // need -1 < rr <= 0
-      rr = fY0 - 0.5; // because we round toward zero
-      if (rr > 0) {
-        --rr;
-        ++iY0;
-      }
-    } else {
-      // need 0 <= rr < 1
-      rr = fY0+0.5;
-      if (rr >= 1) {
-        --rr;
-        ++iY0;
-      }
-    }
-    cseg->r0 = round(rr*d);
-    cseg->Y0 = iY0;
-  #else
-    cseg->Y0 = round(cseg->m*cseg->X0+cseg->b) + (n > 0 ? -1 : 1);
-    cseg->r_min = 1;
-    cseg->r_max = -1;
-  #endif
+  cseg->Y0 = round(cseg->m*cseg->X0+cseg->b) + (n > 0 ? -1 : 1);
+  cseg->r_min = 1;
+  cseg->r_max = -1;
 }
 
 /**
@@ -162,50 +137,6 @@ static void test_seg(calseg_t *cseg, int64_t xt,
     }
   }
   res->fX = x;
-  #ifdef PRE_Y0_CHANGE
-    if (err_dir) {
-      if (cseg->fix_dir == 0) {
-        cseg->fix_dir = err_dir;
-      }
-      if (cseg->fix_dir == err_dir) {
-        test_seg(cseg, r-err_dir, x, res);
-        if (res->fX > x) {
-          // presumably got through 2nd pass
-          return;
-        } else if (res->fX == x) {
-          // Got nowhere, continue with 2nd pass
-          break;
-        } else {
-          // Failed during 2nd pass
-          // If res.Fx > xt, we got past our starting
-          // point, but otherwise, we need to continue
-          // 2nd pass testing.
-          break;
-        }
-      } else {
-        // Cannot go forward, continue with 2nd pass
-        res->fX = x;
-        break;
-      }
-    }
-  }
-  res->r = r;
-  if (cseg->fix_dir == 0) {
-    // Made it through first time with no errors, done.
-    nl_assert(x == cseg->X1+1);
-    res->fX = x;
-    return;
-  }
-  for (x2 = res->fX < x ? res->fX : cseg->X0; x2 < xt; ++x2) {
-    if (test_ndrxy(cseg, r, x2)) {
-      res->fX = x2;
-      return;
-    }
-  }
-  // Made it through to xt. We passed the first time between
-  // xt and x, so we are good to x now.
-  res->fX = x;
-  #endif
 }
 
 /* Given slope and intercept and input range, generates a chain
@@ -296,7 +227,7 @@ static void summarize(calseg_t *cseg, struct intcnv *cl,
           X0, X1, Y0, Y1);
   while (li) {
     ++n_regions;
-    printf("   x=[%d:%d] n/d=%d/%d r=%d x0=%d y0=%d\n",
+    printf("   x=[%ld:%ld] n/d=%ld/%ld r=%ld x0=%ld y0=%ld\n",
       li->x0, li->x1, li->n, li->d, li->r, li->x0, li->y0);
     li = li->next;
   }
