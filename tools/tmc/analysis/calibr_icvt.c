@@ -1,39 +1,20 @@
-/* test_calibr.c */
+/* calibr_icvt.c
+ * int_conv() for starters
+ * Would like this to include gen_itc_code() and perhaps most of
+ * gen_itc_icvt();
+ * Perhaps have gen_itc_icvt() call a new function that does not
+ * need access to any of the parsing structures, so it can be more
+ * easily tested.
+ * Originally placed in analysis, but hope to move it down into tmc
+ * during refactoring.
+ */
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "nl.h"
 #include "nl_assert.h"
-#include "calibr.h"
-
-struct intcnv {
-  struct intcnv *next;
-  int64_t x0, x1;
-  int64_t n, r, d, y0;
-  int flag;
-};
-#define ICNV_INT 1
-#define ICNV_LINT 2
-#define ICNV_LLINT 4
-
-struct intcnvl {
-  struct intcnv *first, *last;
-  int n_regions;
-};
-
-typedef struct {
-  struct calibration *cal;
-  int64_t n, d, X0, X1, Y0;
-  int64_t r_min, r_max;
-  int fix_dir; // Direction of r adjustment
-  double m, b;
-} calseg_t;
-
-typedef struct {
-  // int64_t r; // Value of r we were testing
-  int64_t fX; // X value where it failed
-} test_result_t;
+#include "calibr_icvt.h"
 
 static int64_t gcd(int64_t a, int64_t b) {
   int64_t temp;
@@ -181,84 +162,76 @@ static struct intcnv *find_ndr(calseg_t *cseg) {
   return cl.first;
 }
 
-static int input_line_number = 0;
-
-#if NEED_SET_RANGE
-static void set_range(calseg_t *cseg, double X0, double X1) {
-  if (X0 >= 0 && X1 >= 0) {
-    if (X0 <= UINT8_MAX && X1 <= UINT8_MAX) {
-      cseg->X0 = 0;
-      cseg->X1 = UINT8_MAX;
-    } else if (X0 <= UINT16_MAX && X1 <= UINT16_MAX) {
-      cseg->X0 = 0;
-      cseg->X1 = UINT16_MAX;
-    } else if (X0 <= UINT32_MAX && X1 <= UINT32_MAX) {
-      cseg->X0 = 0;
-      cseg->X1 = UINT32_MAX;
-    } else if (X0 <= UINT64_MAX && X1 <= UINT64_MAX) {
-      cseg->X0 = 0;
-      cseg->X1 = UINT64_MAX;
-    }
-  } else if (X0 >= INT8_MIN && X1 >= INT8_MIN &&
-             X0 <= INT8_MAX && X1 <= INT8_MAX) {
-    cseg->X0 = INT8_MIN;
-    cseg->X1 = INT8_MAX;
-  } else if (X0 >= INT16_MIN && X1 >= INT16_MIN &&
-             X0 <= INT16_MAX && X1 <= INT16_MAX) {
-    cseg->X0 = INT16_MIN;
-    cseg->X1 = INT16_MAX;
-  } else if (X0 >= INT32_MIN && X1 >= INT32_MIN &&
-             X0 <= INT32_MAX && X1 <= INT32_MAX) {
-    cseg->X0 = INT32_MIN;
-    cseg->X1 = INT32_MAX;
-  } else if (X0 >= INT64_MIN && X1 >= INT64_MIN &&
-             X0 <= INT64_MAX && X1 <= INT64_MAX) {
-    cseg->X0 = INT64_MIN;
-    cseg->X1 = INT64_MAX;
-  }
-}
-#endif
-
-static void summarize(calseg_t *cseg, struct intcnv *cl,
-        double X0, double X1, double Y0, double Y1) {
-  struct intcnv *li = cl;
-  int n_regions = 0;
-  printf("%d: %9.3lf %9.3lf %9.3lf %9.3lf\n", input_line_number,
-          X0, X1, Y0, Y1);
-  while (li) {
-    ++n_regions;
-    printf("   x=[%ld:%ld] n/d=%ld/%ld r=%ld x0=%ld y0=%ld\n",
-      li->x0, li->x1, li->n, li->d, li->r, li->x0, li->y0);
-    li = li->next;
-  }
-  printf("   Generated %d regions:\n", n_regions);
-}
-
-int main(int argc, char **argv) {
-  double X0, X1, Y0, Y1;
-  FILE *ifp = fopen("I.txt", "r");
+/* generate chain of regions where simple linear conversion
+   is possible based on calibration. *input_min and *input_max
+   are both inputs and outputs. On input, they are the input
+   domain. On output, they are the output range.
+*/
+void int_conv(struct pair *p, // calibration *cal,
+                     double *input_min, double *input_max,
+                     double yscale, struct intcnvl *cl) {
+  // struct pair *p;
   calseg_t calseg;
-  struct intcnv *cl;
+  double m, b, fx, y, cvt_min, cvt_max;
+  int32_t x0, x1, x;
+  struct intcnv *cv;
   
-  if (ifp == 0) {
-    msg(3, "Unable to open input file I.txt");
+  // calseg.cal = cal;
+  calseg.X0 = x0 = *input_min;
+  x1 = *input_max;
+  calseg.fix_dir = 0;
+  calseg.n = calseg.d = 0;
+  cvt_min = cvt_max = 0.;
+  // assert(cal->flag & CALB_XUNIQ); Obsolete: guaranteed during parsing
+  // p = cal->pl.pairs;
+  assert(p != NULL);
+  if (p->next == NULL) {
+    // There is only a single line in the TMC calibration,
+    // so a constant
+    calseg.X1 = x1;
+    cvt_min = cvt_max = p->v[1];
+    calseg.m = 0.;
+    calseg.b = p->v[1];
+    cl->first = cl->last = find_ndr(&calseg);
+    cl->n_regions = 1;
+    assert(cl->last->next == 0); // I think this is true
+    while (cl->last->next != 0) {
+      cl->last = cl->last->next;
+      cl->n_regions++;
+    }
+  } else {
+    // There are two or more lines, so we will loop
+    // through the one or more segments defined.
+    cl->first = cl->last = NULL;
+    cl->n_regions = 0;
+    for (;;) {
+      while (p->next->next != NULL && x0 > p->next->v[0]) p = p->next;
+      if (p->next->next == NULL) x = x1;
+      else x = p->next->v[0] < x1 ? p->next->v[0] : x1;
+      calseg.m = m =
+        yscale * (p->next->v[1] - p->v[1])/(p->next->v[0] - p->v[0]);
+      calseg.b = b = yscale * p->v[1] - m * p->v[0];
+      calseg.X0 = x0;
+      calseg.X1 = x;
+      for (fx = x0; ; fx = x) {
+        y = m*fx + b;
+        if (y < cvt_min) cvt_min = y;
+        if (y > cvt_max) cvt_max = y;
+        if (fx == x) break;
+      }
+      cv = find_ndr(&calseg);
+      if (cl->last == NULL) cl->first = cl->last = cv;
+      else { cl->last->next = cv; cl->last = cv; }
+      cl->n_regions++;
+      while (cl->last->next != NULL) {
+        cl->last = cl->last->next;
+        cl->n_regions++;
+      }
+      assert(cl->last->x1 == x);
+      if (x == x1) break;
+      x0 = x+1;
+    }
   }
-  while (fscanf(ifp, " %lf %lf %lf %lf\n", &X0, &X1, &Y0, &Y1) == 4) {
-    // Read lines from I.txt and calculate segments
-    // printf("Read %9.3lf %9.3lf %9.3lf %9.3lf\n", X0, X1, Y0, Y1);
-    // set_range(&calseg, X0, X1);
-    ++input_line_number;
-    nl_assert(X0 < X1);
-    calseg.m = (Y1-Y0)/(X1-X0);
-    calseg.b = Y0 - calseg.m*X0;
-    calseg.X0 = ceil(X0);
-    calseg.X1 = floor(X1);
-    calseg.cal = 0;
-    calseg.fix_dir = 0;
-    calseg.n = calseg.d = 0;
-    calseg.Y0 = 0;
-    // Compare to Matlab results
-    cl = find_ndr(&calseg);
-    summarize(&calseg, cl, X0, X1, Y0, Y1);
-  }
+  *input_min = cvt_min;
+  *input_max = cvt_max;
 }

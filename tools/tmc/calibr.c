@@ -101,7 +101,7 @@
 
 static struct calibration *calibrations;
 
-/* add_pair sorts the values as they are input */
+/* add_pair sorts the pairs so the input values are increasing */
 void add_pair(struct pairlist *list, double v0, double v1) {
   struct pair *np, *p0, *p1;
   
@@ -117,10 +117,15 @@ void add_pair(struct pairlist *list, double v0, double v1) {
     p0 = p1;
     p1 = p1->next;
   }
-  np->next = p1;
-  if (p0 == NULL) list->pairs = np;
-  else p0->next = np;
-  list->npts++;
+  if (v0 == p1->v[0]) {
+    compile_error(2, "Duplicate input value %g in calibration: discarding", v0);
+    free_memory(np);
+  } else {
+    np->next = p1;
+    if (p0 == NULL) list->pairs = np;
+    else p0->next = np;
+    list->npts++;
+  }
 }
 
 void add_calibration(struct nm *type0, struct nm *type1, struct pairlist *pl) {
@@ -142,13 +147,14 @@ void add_calibration(struct nm *type0, struct nm *type1, struct pairlist *pl) {
   nc->pl = *pl;
   nc->next = calibrations;
   calibrations = nc;
-  nc->flag = CALB_XUNIQ;
+  // nc->flag = CALB_XUNIQ;
   if (pl->npts < 2) compile_error(1, "Poor excuse for a calibration");
   else for (p = pl->pairs; p->next != NULL; p = p->next) {
-    if (p->v[0] == p->next->v[0]) {
-      nc->flag &= ~CALB_XUNIQ;
-      break;
-    }
+    nl_assert(p->v[0] < p->next->v[0]);
+    // if (p->v[0] == p->next->v[0]) {
+      // nc->flag &= ~CALB_XUNIQ;
+      // break;
+    // }
   }
 }
 
@@ -555,7 +561,7 @@ static int64_t check_op_range(struct calibration *cal,
 }
 
 typedef struct {
-  struct calibration *cal;
+  //struct calibration *cal;
   int64_t n, d, r0, X0, X1, Y0;
   int fix_dir; // Direction of r adjustment
   double m, b;
@@ -927,39 +933,32 @@ static struct intcnv *find_ndr(calseg_t *cseg) {
 }
 
 /* generate chain of regions where simple linear conversion
-   is possible based on calibration. Sets *input_min and
-   *input_max to the output min and max.
+   is possible based on calibration. *input_min and *input_max
+   are both inputs and outputs. On input, they are the input
+   domain. On output, they are the output range.
 */
-static void int_conv(struct calibration *cal,
+static void int_conv(struct pair *p, // calibration *cal,
                      double *input_min, double *input_max,
                      double yscale, struct intcnvl *cl) {
-  struct pair *p;
+  // struct pair *p;
   calseg_t calseg;
   double m, b, fx, y, cvt_min, cvt_max;
   int32_t x0, x1, x;
   struct intcnv *cv;
   
-  if ( show(CONVERSIONS) )
-    fprintf( vfile, "int_conv( %s -> %s )\n",
-      cal->type[0]->name, cal->type[1]->name );
-  if (*input_max > INT32_MAX)
-    compile_error(3, "Cannot convert uint32_t (%s -> %s)",
-      cal->type[0]->name, cal->type[1]->name );
-  else if (*input_max > UINT16_MAX)
-    compile_error(1, "Conversion (%s => %s) of int32_t cannot be fully validated",
-      cal->type[0]->name, cal->type[1]->name);
-  calseg.cal = cal;
+  // calseg.cal = cal;
   calseg.X0 = x0 = *input_min;
-  calseg.X1 = x1 = *input_max;
+  x1 = *input_max;
   calseg.fix_dir = 0;
   calseg.n = calseg.d = 0;
   cvt_min = cvt_max = 0.;
-  assert(cal->flag & CALB_XUNIQ);
-  p = cal->pl.pairs;
+  // assert(cal->flag & CALB_XUNIQ); Obsolete: guaranteed during parsing
+  // p = cal->pl.pairs;
   assert(p != NULL);
   if (p->next == NULL) {
     // There is only a single line in the TMC calibration,
     // so a constant
+    calseg.X1 = x1;
     cvt_min = cvt_max = p->v[1];
     calseg.m = 0.;
     calseg.b = p->v[1];
@@ -979,7 +978,6 @@ static void int_conv(struct calibration *cal,
       while (p->next->next != NULL && x0 > p->next->v[0]) p = p->next;
       if (p->next->next == NULL) x = x1;
       else x = p->next->v[0] < x1 ? p->next->v[0] : x1;
-        /* min(p->next->v[0], x1); */
       calseg.m = m =
         yscale * (p->next->v[1] - p->v[1])/(p->next->v[0] - p->v[0]);
       calseg.b = b = yscale * p->v[1] - m * p->v[0];
@@ -1346,7 +1344,14 @@ static void gen_int_icvt( struct tmtype *ftype ) {
   /* generate chain of regions. Translates cvt_min/max from
      input_min/max to output_min/max
   */
-  int_conv( cal, &cvt_min, &cvt_max, pow( 10.0, cdf->yscale ), &cl );
+  if ( show(CONVERSIONS) )
+    fprintf( vfile, "int_conv( %s -> %s )\n",
+      cal->type[0]->name, cal->type[1]->name );
+  nl_assert(*input_max <= INT64_MAX);
+  if (*input_max > UINT16_MAX)
+    compile_error(1, "Conversion (%s => %s) of large int type cannot be fully validated",
+      cal->type[0]->name, cal->type[1]->name);
+  int_conv( cal->pl.pairs, &cvt_min, &cvt_max, pow( 10.0, cdf->yscale ), &cl );
   cvs->out_min = cvt_min;
   cvs->out_max = cvt_max;
 

@@ -1,9 +1,18 @@
 %%
 Range = 100000;
-N = 1000;
-dmax = 100000;
+N = 100;
 %%
-I = -Range + 2*Range*rand(N,4);
+while true
+  I = -Range + 2*Range*rand(N,4);
+  if any(I(:,1)==I(:,2))
+    fprintf(1,'Found random duplicate input, retrying\n');
+    continue;
+  end
+  V = I(:,2) < I(:,1);
+  I(V,:) = I(V,[2 1 4 3]);
+  break;
+end
+clear V
 %%
 Res = zeros(N,11);
 for i = 1:N
@@ -107,6 +116,7 @@ for i = 1:N
   fprintf(fid, ' %12.4e %12.4e %12.4e %12.4e\n', I(i,:));
 end
 fclose(fid);
+clear fid i ans
 %%
 function [n,d,r,m,b,ox0,ox1,oy0] = find_noxdroy(X,Y,iX1)
   assert(all(size(X) == [1 2]));
