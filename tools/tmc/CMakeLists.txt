@@ -19,6 +19,7 @@ ADD_FLEX_BISON_DEPENDENCY(TMCScanner TMCParser)
 
 add_executable(tmc tmcmain.c parsfunc.c pdecls.c genpcm.c place.c
     pfuncs.c calibr.c postproc.c pointers.c states.c decls.c
+    calibr_icvt.c
     ${BISON_TMCParser_OUTPUT_SOURCE}
     ${FLEX_TMCScanner_OUTPUTS})
 target_include_directories(tmc PRIVATE

@@ -10,10 +10,12 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include "nl.h"
+#include "nl_assert.h"
 #include "rational.h"
 #include "tmcstr.h"
 #include "tmc.h"
 #include "calibr.h"
+#include "calibr_icvt.h"
 
 #ifdef __DOCUMENTATION
 
@@ -113,11 +115,11 @@ void add_pair(struct pairlist *list, double v0, double v1) {
   p0 = NULL;
   p1 = list->pairs;
   while (p1 != NULL) {
-    if (v0 < p1->v[0]) break;
+    if (v0 <= p1->v[0]) break;
     p0 = p1;
     p1 = p1->next;
   }
-  if (v0 == p1->v[0]) {
+  if (p1 && v0 == p1->v[0]) {
     compile_error(2, "Duplicate input value %g in calibration: discarding", v0);
     free_memory(np);
   } else {
@@ -524,6 +526,8 @@ static void type_range( unsigned int type, double *min, double *max) {
   } else { *min = 0; *max = -1; }
 }
 
+#ifndef CALIBR_ICVT_H_INCLUDED
+
 struct intcnv {
   struct intcnv *next;
   int32_t x0, x1;
@@ -752,7 +756,6 @@ static struct intcnv *find_ndr(calseg_t *cseg) {
     cseg->X0 = res.fX;
   }
   return cl.first;
-}
 
   double drbest, dr, ddx;
   int sign_m;
@@ -1076,6 +1079,7 @@ static void gen_itc_code(int n, struct intcnv *p, char *ovtxt) {
   }
   adjust_indent(-2);
 }
+#endif // CALIBR_ICVT_H_INCLUDED
 
 /* converts x to ov using cal. If ttype is integral adds floor(x+.5) */
 /*
@@ -1347,8 +1351,8 @@ static void gen_int_icvt( struct tmtype *ftype ) {
   if ( show(CONVERSIONS) )
     fprintf( vfile, "int_conv( %s -> %s )\n",
       cal->type[0]->name, cal->type[1]->name );
-  nl_assert(*input_max <= INT64_MAX);
-  if (*input_max > UINT16_MAX)
+  nl_assert(cvt_max <= INT64_MAX);
+  if (cvt_max > UINT16_MAX)
     compile_error(1, "Conversion (%s => %s) of large int type cannot be fully validated",
       cal->type[0]->name, cal->type[1]->name);
   int_conv( cal->pl.pairs, &cvt_min, &cvt_max, pow( 10.0, cdf->yscale ), &cl );
@@ -1371,7 +1375,10 @@ static void gen_int_icvt( struct tmtype *ftype ) {
   adjust_indent(0);
 
   /* generate code to convert to ttype */
-  gen_itc_code( cl.n_regions, cl.first, "ov" );
+  if (gen_itc_code( cl.n_regions, cl.first, "ov" )) {
+    compile_error(2, "Previous error relates to Conversion (%s => %s)",
+      cal->type[0]->name, cal->type[1]->name);
+  }
   adjust_indent(2);
   print_indent( "\nreturn ov;" );
   adjust_indent(-2);

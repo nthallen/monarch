@@ -15,6 +15,7 @@
 #include "nl.h"
 #include "nl_assert.h"
 #include "calibr_icvt.h"
+#include "tmc.h"
 
 static int64_t gcd(int64_t a, int64_t b) {
   int64_t temp;
@@ -109,13 +110,19 @@ static int test_ndrxy(calseg_t *cseg, int64_t x) {
  */
 static void test_seg(calseg_t *cseg, int64_t xt,
                     test_result_t *res) {
-  int64_t x;
+  int64_t x, dx;
   int err_dir = 0;
-  for (x = xt; err_dir == 0 && x <= cseg->X1; ++x) {
+  
+  dx = (cseg->X1-xt <= UINT16_MAX) ? 1 :
+          (cseg->X1 - xt)/UINT16_MAX;
+  for (x = xt; err_dir == 0 && x <= cseg->X1; x += dx) {
     if (test_ndrxy(cseg, x)) {
       res->fX = x;
       return;
     }
+  }
+  if (dx > 1 && x > cseg->X1) {
+    x = floor(cseg->X1)+1;
   }
   res->fX = x;
 }
@@ -125,7 +132,7 @@ static void test_seg(calseg_t *cseg, int64_t xt,
    produce the predicted results.
    New form: y = (nx+r)/d + y0
 */
-static struct intcnv *find_ndr(calseg_t *cseg) {
+struct intcnv *find_ndr(calseg_t *cseg) {
   test_result_t res;
   struct intcnvl cl;
   struct intcnv *cv;
@@ -135,6 +142,9 @@ static struct intcnv *find_ndr(calseg_t *cseg) {
   cl.first = cl.last = 0;
   cl.n_regions = 0;
   
+  if (cseg->X1-cseg->X0 > INT64_MAX) {
+    compile_error(3, "Input range > INT64_MAX in find_ndr()");
+  }
   for (x = cseg->X0; x <= cseg->X1; x = res.fX) {
     // Find ndr by rationalization and initialize calseg
     rationalize(cseg); // sets n, d, r0, Y0
@@ -167,9 +177,9 @@ static struct intcnv *find_ndr(calseg_t *cseg) {
    are both inputs and outputs. On input, they are the input
    domain. On output, they are the output range.
 */
-void int_conv(struct pair *p, // calibration *cal,
-                     double *input_min, double *input_max,
-                     double yscale, struct intcnvl *cl) {
+void  int_conv(struct pair *p,
+               double *input_min, double *input_max,
+               double yscale, struct intcnvl *cl) {
   // struct pair *p;
   calseg_t calseg;
   double m, b, fx, y, cvt_min, cvt_max;
@@ -234,4 +244,105 @@ void int_conv(struct pair *p, // calibration *cal,
   }
   *input_min = cvt_min;
   *input_max = cvt_max;
+}
+
+/**
+ * @return 0 on error
+ */
+static char *check_op_range(double val) {
+  if (val > INT16_MAX || val < -INT16_MAX-1) {
+    if (val > INT32_MAX || val < -INT32_MAX-1) {
+      if (val > INT64_MAX || val < -(double)INT64_MAX ) {
+        compile_error(2, "Intermediate value is huge!");
+        return 0;
+      } else if (sizeof(long int) == 8) {
+        return "L";
+      } else if (sizeof(long long int) == 8) {
+        return "LL";
+      } else {
+        compile_error(3, "Unable to resolve 64-bit suffix");
+      }
+    } else {
+      if (sizeof(int) == 4) {
+        return "";
+      } else if (sizeof(long int) == 4) {
+        return "L";
+      } else {
+        compile_error(3, "Unable to resolve 32-bit suffix");
+      }
+    }
+  } else {
+    return "";
+  }
+}
+
+/* generates integer-integer conversion code for the n regions
+   pointed to by p. ovtxt holds the name of the variable into
+   which the final result is to be placed.
+ * @return true on error
+*/
+int gen_itc_code(int n, struct intcnv *p, char *ovtxt) {
+  int n1, i;
+  struct intcnv *p1;
+
+  adjust_indent(2);
+  if (n == 1) {
+    print_indent(NULL);
+    fprintf(ofile, "%s = ", ovtxt);
+    // (n*(x-x0)+r)/d+y0
+    if (p->n == 0) {
+      p->y0 += p->r/p->d;
+      fprintf(ofile, "%ld", p->y0);
+    } else {
+      double ddx = p->x1-(double)p->x0;
+      char *dx_suffix = check_op_range(ddx);
+      double dndx = p->n * ddx;
+      char *ndx_suffix = check_op_range(dndx);
+      double dndxr = dndx + p->r;
+      char *ndxr_suffix = check_op_range(dndxr);
+      double dndxry = dndxr/p->d + p->y0;
+      char *ndxry_suffix = check_op_range(dndxry);
+      if (dx_suffix == 0 || ndx_suffix == 0 || ndxr_suffix == 0
+          || ndxry_suffix == 0) return 1;
+      if (p->d == 1) {
+        p->r += p->y0;
+        p->y0 = 0;
+      }
+      print_indent("(");
+      if (p->x0) {
+        fprintf(ofile, "(x-(%ld%s))", p->x0, dx_suffix);
+      } else {
+        print_indent("x");
+      }
+      if (p->n != 1) {
+        fprintf(ofile, "*(%ld%s)", p->n, ndx_suffix);
+      }
+      if (p->r != 0) {
+        fprintf(ofile, "+(%ld%s)", p->r, ndxr_suffix);
+      }
+      print_indent(")");
+      if (p->d != 1) {
+        fprintf(ofile, "/%ld", p->d);
+      }
+      if (p->y0 != 0) {
+        fprintf(ofile, "+(%ld%s)", p->y0,ndxry_suffix);
+      }
+    }
+    print_indent(";");
+    adjust_indent(0);
+  } else {
+    n1 = n/2;
+    for (p1 = p, i = n1; i > 0; i--) {
+      assert(p->next != NULL);
+      p1 = p1->next;
+    }
+    print_indent(NULL);
+    fprintf(ofile, "if (x < %ld) {", p1->x0);
+    gen_itc_code(n1, p, ovtxt);
+    print_indent("} else {");
+    gen_itc_code(n-n1, p1, ovtxt);
+    print_indent("}");
+  }
+  adjust_indent(-2);
+  return 0;
 }

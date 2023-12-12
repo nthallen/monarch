@@ -7,11 +7,12 @@ struct intcnv {
   struct intcnv *next;
   int64_t x0, x1;
   int64_t n, r, d, y0;
-  int flag;
+  int64_t op_range;
+  // int flag;
 };
-#define ICNV_INT 1
-#define ICNV_LINT 2
-#define ICNV_LLINT 4
+// #define ICNV_INT 1
+// #define ICNV_LINT 2
+// #define ICNV_LLINT 4
 
 struct intcnvl {
   struct intcnv *first, *last;
@@ -31,8 +32,10 @@ typedef struct {
   int64_t fX; // X value where it failed
 } test_result_t;
 
-extern void int_conv(struct pair *p, // calibration *cal,
-                     double *input_min, double *input_max,
-                     double yscale, struct intcnvl *cl);
+void  int_conv(struct pair *p, // calibration *cal,
+               double *input_min, double *input_max,
+               double yscale, struct intcnvl *cl);
+struct intcnv *find_ndr(calseg_t *cseg);
+int gen_itc_code(int n, struct intcnv *p, char *ovtxt);
 
 #endif
