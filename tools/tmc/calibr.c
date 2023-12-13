@@ -17,93 +17,15 @@
 #include "calibr.h"
 #include "calibr_icvt.h"
 
-#ifdef __DOCUMENTATION
-
-  The main external interfaces:
-
-    void get_cfnc(struct sttmnt *s, int cflg) {
-      Called from tmc.y when a conversion is parsed by either
-      convert(), text() or display() syntax.
-    }
-    
-    struct cvtfunc *mk_cvt_func( char *name, char syntax ) {
-      Called from tmc.y during TM typedef when an explicit 
-      conversion function is specified.
-    }
-
-    void add_pair(struct pairlist *list, double v0, double v1) {
-      Called from tmc.y when parsing calibrations.
-      Sorts the values as they are input.
-    }
-
-    void add_calibration(struct nm *type0, struct nm *type1,
-                          struct pairlist *pl) {
-      Called from tmc.y when a calibration has been parsed
-    }
-    
-    void declare_convs(void) {
-      Called from tmcmain.c/main() to decide which conversions 
-      need to be generated.
-    }
-    
-    classify_conv()
-    specify_conv()
-
-  Internal Functions:
-
-    static double cal_convert(double iv, struct calibration *cal) {
-        Uses the specified calibration to produce an output based on the
-        input. Produces warnings if extrapolation is necessary.
-    }
-
-    static int txtfmt(char *buf, char *format, struct pfmt *pformat,
-                double ov, unsigned int type) {
-        Given format and value, produces output text. Used for
-        8-bit text conversions.
-    }
-
-    struct intcnv *find_ndr(struct calibration *cal,
-          int32_t x0, int32_t x1, double m, double b) {
-       Given slope and intercept and input range, generates a chain
-       of regions over which a simple linear integer expression will
-       produce the predicted results.
-       New form: y = (nx+r)/d + y0
-    }
-
-    static void int_conv(struct calibration *cal,
-                         double *input_min, double *input_max,
-                         double yscale, struct intcnvl *cl) {
-      generates chain of regions where simple linear conversion
-      is possible based on calibration. Sets *input_min and
-      _max to output min and max.
-      calls:
-        find_ndr
-    }
-
-    static void gen_itc_code(int n, struct intcnv *p, char *ovtxt) {
-      generates integer-integer conversion code for the n regions
-      pointed to by p. ovtxt holds the name of the variable into
-      which the final result is to be placed.
-      recurses.
-    }
-    
-    static void gen_dtc_code();
-    
-    static void gen_int_icvt();
-    static void gen_int_cvt();
-    static void gen_doub_cvt();
-    static void gen_doub_icvt();
-    static void gen_int_tcvt();
-    static void gen_e_tcvt();
-    static void generate_tfunc();
-    identify_calibrations();
-    generate_calibrations();
-
-#endif
-
 static struct calibration *calibrations;
 
-/* add_pair sorts the pairs so the input values are increasing */
+/**
+ * @param list The calibration's list of pairs
+ * @param v0 Value of the raw unconverted data
+ * @param v1 Converted value corresponding to v0
+ * Called from tmc.y when parsing calibrations.
+ * Sorts the values as they are input.
+ */
 void add_pair(struct pairlist *list, double v0, double v1) {
   struct pair *np, *p0, *p1;
   
@@ -130,6 +52,12 @@ void add_pair(struct pairlist *list, double v0, double v1) {
   }
 }
 
+/**
+ * @param type0 struct nm ptr of the type of the raw data
+ * @param type1 struct nm ptr of the type of the converted data
+ * @param pl The calibration's struct pairlist
+ * Called from tmc.y when a calibration has been parsed
+ */
 void add_calibration(struct nm *type0, struct nm *type1, struct pairlist *pl) {
   struct calibration *nc;
   int i;
@@ -253,9 +181,13 @@ static double cal_interp(double iv, struct pair *p) {
   return(v1 + dv1 * (iv - v0)/dv0);
 }
 
-/* Uses the specified calibration to produce an output based on the
-   input. Produces warnings if extrapolation is necessary.
-*/
+/**
+ * @param iv The input value
+ * @param cal The calibration
+ * @return The converted value
+ * Uses the specified calibration to produce an output based on the
+ * input. Produces warnings if extrapolation is necessary.
+ */
 static double cal_convert(double iv, struct calibration *cal) {
   struct pair *p;
   
@@ -272,9 +204,15 @@ static double cal_convert(double iv, struct calibration *cal) {
   }
 }
 
-/* Given format and value, produces output text. Used for
-   8-bit text conversions. Returns non-zero on error
-*/
+/**
+ * @param buf pointer to an 80-char array
+ * @param format The printf-style output format
+ * @param pformat The parsed format information
+ * @param ov The output value
+ * @param type bit-encoded integer type information
+ * Given format and value, produces output text. Used for
+ * 8-bit text conversions. Returns non-zero on error
+ */
 static int txtfmt(char *buf, char *format, struct pfmt *pformat,
             double ov, unsigned int type) {
   double mn, mx;
@@ -525,561 +463,6 @@ static void type_range( unsigned int type, double *min, double *max) {
     else { *min = INT16_MIN; *max = INT16_MAX; }
   } else { *min = 0; *max = -1; }
 }
-
-#ifndef CALIBR_ICVT_H_INCLUDED
-
-struct intcnv {
-  struct intcnv *next;
-  int32_t x0, x1;
-  int32_t n, r, d, y0;
-  int flag;
-};
-#define ICNV_INT 1
-#define ICNV_LINT 2
-#define ICNV_LLINT 4
-
-struct intcnvl {
-  struct intcnv *first, *last;
-  int n_regions;
-};
-
-static int64_t check_op_range(struct calibration *cal,
-                    int64_t old_range, double val) {
-  int64_t new_range = INT16_MAX;
-  if (val > INT16_MAX || val < -INT16_MAX-1) {
-    if (val > INT32_MAX || val < -INT32_MAX-1) {
-      if (val > INT64_MAX || val < -(double)INT64_MAX ) {
-        compile_error(3,
-          "Intermediate value is huge! in Conversion (%s => %s)\n",
-          cal->type[0]->name, cal->type[1]->name);
-      } else {
-        new_range = INT64_MAX;
-      }
-    } else {
-      new_range = INT32_MAX;
-    }
-  } else {
-    new_range = INT16_MAX;
-  }
-  return new_range > old_range ? new_range : old_range;
-}
-
-typedef struct {
-  //struct calibration *cal;
-  int64_t n, d, r0, X0, X1, Y0;
-  int fix_dir; // Direction of r adjustment
-  double m, b;
-} calseg_t;
-
-typedef struct {
-  int64_t r; // Value of r we were testing
-  int64_t fX; // X value where it failed
-} test_result_t;
-
-static int64_t gcd(int64_t a, int64_t b) {
-  int64_t temp;
-  while (b != 0) {
-    temp = a % b;
-    a = b;
-    b = temp;
-  }
-  return a;
-}
-
-/**
- * @param cseg Calibration segment definition
- * On input, m, b, X0, X1 are defined and cal and
- * fix_dir are initialized.
- * On exit, n, d, r0 and Y0 are defined.
- * The value r0 is very close to the fine remainder
- * value r, but that is adjust on a segment-by-segment
- * basis in test_seg().
- */
-static rationalize(calseg_t *cseg) {
-  int64_t n, d, r0, d1, g, iY0;
-  double riY0, fY0, rr;
-  
-  if (m == 0) {
-    cseg->Y0 = cseg->b;
-    cseg->n = 0;
-    cseg->d = 1;
-    cseg->r = 0;
-    return;
-  }
-  d = 1;
-  n = round(cseg->m);
-  for (;;) {
-    double rem = cseg->m - n/(double)d;
-    if (abs(rem) < prec) {
-      cseg->n = n;
-      cseg->d = d;
-      break;
-    }
-    nl_assert(abs(rem) < 1.0);
-    d1 = round(1/rem);
-    n = n*d1 + d;
-    d = d*d1;
-    g = gcd(n, d);
-    n /= g;
-    d /= g;
-    if (d < 0) {
-      n = -n;
-      d = -d;
-    }
-  }
-  cseg->n = n;
-  cseg->d = d;
-  // Now calculate r0 and Y0
-  riY0 = cseg->m * cseg->X0 + cseg->b;
-  iY0 = floor(riY0);
-  fY0 = riY0 - iY0;
-  nl_assert(fy) >= 0);
-  if (n < 0) {
-    // need -1 < rr <= 0
-    rr = fy0 - 0.5;
-    if (rr > 0) {
-      --rr;
-      ++iY0;
-    }
-  } else {
-    // need 0 <= rr < 1
-    rr = fy0+0.5;
-    if (rr >= 1) {
-      --rr;
-      ++iY0;
-    }
-  }
-  r0 = round(rr*d);
-  cseg->Y0 = iY0;
-}
-
-/**
- * @param cseg calibration segment details
- * @param r candidate remainder parameter
- * @param x candidate X parameter
- */
-static int test_ndrxy(calseg_t *cseg, int64_t r, int64_t x) {
-  
-}
-
-/**
- * @param cseg calibration segment details
- * @param r candidate remainder parameter
- * @param xt X value to start testing from
- * @param res Result structure
- */
-static void test_seg(calseg_t *cseg, int64_t r, int64_t xt,
-                    test_result_t *res) {
-  int64_t x, x2;
-  int err_dir = 0;
-  for (x = xt; err_dir == 0 && x <= cseg->X1; ++x) {
-    err_dir = test_ndrxy(cseg, r, x);
-    if (err_dir) {
-      if (cseg.fix_dir == 0) {
-        cseg.fix_dir = err_dir;
-      }
-      if (cseg.fix_dir == err_dir) {
-        test_seg(cseg, r-err_dir, x, res);
-        if (res.fX > x) {
-          // presumably got through 2nd pass
-          return;
-        } else if (res.fX == x) {
-          // Got nowhere, continue with 2nd pass
-          break;
-        } else {
-          // Failed during 2nd pass
-          // If res.Fx > xt, we got past our starting
-          // point, but otherwise, we need to continue
-          // 2nd pass testing.
-          break;
-        }
-      } else {
-        // Cannot go forward, continue with 2nd pass
-        res->fX = x;
-        break;
-      }
-    }
-  }
-  res->r = r;
-  if (cseg->fix_dir == 0) {
-    // Made it through first time with no errors, done.
-    assert(x == cseg->X1+1);
-    res->fX = x;
-    return;
-  }
-  for (x2 = res->fX < x ? res->fX : cseg->X0; x2 < xt; ++x2) {
-    if (test_ndrxy(cseg, r, x2)) {
-      res->fX = x2;
-      return;
-    }
-  }
-  // Made it through to xt. We passed the first time between
-  // xt and x, so we are good to x now.
-  res->fX = x;
-}
-
-/* Given slope and intercept and input range, generates a chain
-   of regions over which a simple linear integer expression will
-   produce the predicted results.
-   New form: y = (nx+r)/d + y0
-*/
-static struct intcnv *find_ndr(calseg_t *cseg) {
-  test_result_t res;
-  struct intcnvl cl;
-  struct intcnv *cv;
-  uint64_t x, y0;
-  
-  cl.first = cl.last = 0;
-  cl.n_regions = 0;
-  
-  for (x = cseg->X0; x <= cseg->X1; x = res.fX) {
-    // Find ndr by rationalization and initialize calseg
-    rationalize(cseg); // sets n, d, r, Y0
-    test_seg(cseg, r, x, &res);
-    assert(res.fX > x);
-    cv = new_memory(sizeof(struct intcnv));
-    cv->next = 0;
-    cv->x0 = x;
-    cv->x1 = res.fX-1;
-    cv->n  = cseg->n;
-    cv->d  = cseg->d;
-    cv->r  = res.r;
-    y = round(m*x+b) = (n*(x-x)+r)/d + y0
-    cv->y0 = round(cseg->m*x + cseg->b) - res.r/cseg->d;
-    if (cl.last) {
-      cl.last->next = cv;
-    } else {
-      cl.first = cv;
-    }
-    cl.last = cv;
-    
-    cseg->X0 = res.fX;
-  }
-  return cl.first;
-
-  double drbest, dr, ddx;
-  int sign_m;
-  int32_t dmax, dbest, d;
-  int32_t x, y, dx, dtx, dx1, ty;
-  int32_t y0, dy;
-  int32_t dlast;
-  int64_t op_range, nbest, n, r, rmin, rmax;
-  struct intcnv *result, *ic, *ica;
-
-  if (show(CONVERSIONS))
-    fprintf(vfile, "(%s => %s)\n"
-                   "Looking for rational expression for:\n"
-                   "  Y = %gX%+g  where %d <= X <= %d\n",
-                   cal->type[0]->name, cal->type[1]->name,
-                   m, b, x0, x1);
-
-  /* Make m positive */
-  if (m < 0.0) {
-    m = -m;
-    b = -b;
-    sign_m = -1;
-  } else sign_m = 1;
-  b += .5;
-
-  assert(x1 >= x0);
-  op_range = INT16_MAX;
-  dlast = 1;
-  result = NULL;
-  for (;;) {
-    ddx = (double) x1 - x0;
-    y0 = floor(m*x0+b);
-    dy = 0;
-    y = floor(m*x1+b);
-    assert(y >= y0); // the conditional below appears to be always false
-    if (y < y0) {
-      dy = y0 - y;
-      y0 = y;
-    } else dy = y - y0;
-
-    for (;;) {
-      if (dy == 0) {
-        nbest = 0;
-        drbest = 0;
-        dbest = 1;
-        break;
-      } else {
-        dmax = op_range/dy; // maximum possible divisor
-        if (dmax > UINT16_MAX) dmax = UINT16_MAX; /* arbitrary limit */
-      }
-
-      drbest = -1;
-      // Now loop through possible divisors, attempting to minimize the
-      // error over the entire input span.
-      for (dlast = 1; dlast <= dmax; dlast++) {
-        n = floor(m*dlast + .5);
-        dr = fabs((m - ((double)n)/dlast) * ddx);
-        if (drbest < 0 || dr < drbest) {
-          drbest = dr;
-          nbest = n;
-          dbest = dlast;
-          if (dr == 0.) break;
-        }
-      }
-      // if the error is less than 1, we have a good choice
-      if (op_range == INT16_MAX && drbest > 1.0) op_range = INT32_MAX;
-      else break;
-    }
-    if (drbest >= 2.0)
-      /* compile_error(3, "Unable to derive ratio: drbest = %.1lf", drbest); */
-      compile_error(3, "(%s => %s)\n"
-                   "Unable to derive rational expression for:\n"
-                   "  Y = %gX%+g  where %d <= X <= %d\n"
-                   "  drbest = %.1lf",
-                   cal->type[0]->name, cal->type[1]->name,
-                   m, b, x0, x1, drbest);
-    /* Now see how far this gets us */
-    n = nbest; d = dbest;
-    y = floor(m*x0+b);
-    // Below is that range of possible r (remainder) values.
-    // We will refine this during the test
-    rmin = (y-y0)*d;
-    rmax = rmin + d - 1;
-    if (show(CONVERSIONS))
-      fprintf(vfile, "Checking values for %d/%d\n", n, d);
-    if (ddx > UINT16_MAX) dtx = ddx/UINT16_MAX;
-    else dtx = 1;
-    if (INT32_MAX-dtx < x1) dx1 = INT32_MAX-dtx;
-    else dx1 = x1;
-    for (x = x0 + dtx; x <= dx1; x += dtx) {
-      y = floor(m*x+b);
-      r = (y - y0)*d - (x - x0)*n;
-      if (r < rmin) {
-        r += d - 1;
-        if (r < rmin) break;
-        else if (r < rmax) rmax = r;
-      } else if (r > rmax) break;
-      else if (r > rmin) rmin = r;
-    }
-    if (x > dx1) x = x1;
-    else x -= dtx; /* Last value which worked, x1 if all worked */
-    if (x < x1 && op_range == INT16_MAX) {
-      op_range = INT32_MAX;
-      continue;
-    }
-    /* 32-bit issue: Here we redefine r assuming n*x is OK */
-    r = rmin - n*x0;
-    if (y0 > 0 && (y0+dy) * (double)d <= op_range) {
-      r += y0 * d;
-      y0 = 0;
-    }
-    if (r < 0 && r+rmax-rmin >= 0) {
-      rmin -= r;
-      r = 0;
-    }
-    y0 *= sign_m;
-    d *= sign_m;
-    if (d < 0) { d *= -1; n *= -1; r *= -1; op_range = INT32_MAX; }
-    /* This following test is to account for a bug where the
-       source type is unsigned short but the result is signed
-       and goes negative. Since signed ints are promoted to
-       unsigned, if the result is assigned to a long, you'll
-       get the wrong answer. At this point, we don't know
-       what the source type is, so we'll just punt and promote
-       to long anyway.
-    */
-    if ( op_range == INT16_MAX && y0 < 0 ) op_range = INT32_MAX;
-    ic = new_memory(sizeof(struct intcnv));
-    ic->next = NULL;
-    ic->x0 = x0;
-    ic->x1 = x;
-    ic->n  = n;
-    ic->d  = d;
-    ic->r  = r;
-    ic->y0 = y0;
-    if (show(CONVERSIONS))
-      fprintf(vfile,
-        "%d - %d : (%d*X + (%d (+%d))) / %d + (%d) [%s]\n",
-          x0, x, n, r, rmax-rmin, d, y0, op_range==INT16_MAX ?
-          "short" : "long");
-    /* dtx was set for rmin/rmax determination */
-    if (drbest < 2.0) { /* change this to != 0.0 */
-      if (show(CONVERSIONS)) {
-        fprintf(vfile, "Double Checking: ");
-        fflush(vfile);
-      }
-      if (INT32_MAX-dtx < x) dx1 = INT32_MAX-dtx;
-      else dx1 = x;
-      for (dx = x0; dx <= dx1; dx += dtx) {
-        double numerator = dx*(double)n + r;
-        op_range = check_op_range(cal, op_range, dx*(double)n);
-        op_range = check_op_range(cal, op_range, (double)r);
-        op_range = check_op_range(cal, op_range, dx*(double)n + r);
-        y = sign_m * floor(m*dx+b);
-        ty = (n*dx + r)/d + y0;
-        if (ty != y)
-          compile_error(3,
-            "Conversion(%s => %s): f(%d) = %d but I got %d\n",
-            cal->type[0]->name, cal->type[1]->name, dx, y, ty);
-      }
-      if (show(CONVERSIONS)) fprintf(vfile, "passed\n");
-    }
-    switch (op_range) {
-      case INT16_MAX: ic->flag = ICNV_INT; break;
-      case INT32_MAX: ic->flag = ICNV_LINT; break;
-      case INT64_MAX: ic->flag = ICNV_LLINT; break;
-      default: assert(0);
-    }
-    if (result == NULL) result = ica = ic;
-    else {
-      ica->next = ic;
-      ica = ic;
-    }
-    if (x == x1) break;
-    x0 = x+1;
-  }
-  return(result);
-}
-
-/* generate chain of regions where simple linear conversion
-   is possible based on calibration. *input_min and *input_max
-   are both inputs and outputs. On input, they are the input
-   domain. On output, they are the output range.
-*/
-static void int_conv(struct pair *p, // calibration *cal,
-                     double *input_min, double *input_max,
-                     double yscale, struct intcnvl *cl) {
-  // struct pair *p;
-  calseg_t calseg;
-  double m, b, fx, y, cvt_min, cvt_max;
-  int32_t x0, x1, x;
-  struct intcnv *cv;
-  
-  // calseg.cal = cal;
-  calseg.X0 = x0 = *input_min;
-  x1 = *input_max;
-  calseg.fix_dir = 0;
-  calseg.n = calseg.d = 0;
-  cvt_min = cvt_max = 0.;
-  // assert(cal->flag & CALB_XUNIQ); Obsolete: guaranteed during parsing
-  // p = cal->pl.pairs;
-  assert(p != NULL);
-  if (p->next == NULL) {
-    // There is only a single line in the TMC calibration,
-    // so a constant
-    calseg.X1 = x1;
-    cvt_min = cvt_max = p->v[1];
-    calseg.m = 0.;
-    calseg.b = p->v[1];
-    cl->first = cl->last = find_ndr(&calseg);
-    cl->n_regions = 1;
-    assert(cl->last->next == 0); // I think this is true
-    while (cl->last->next != 0) {
-      cl->last = cl->last->next;
-      cl->n_regions++;
-    }
-  } else {
-    // There are two or more lines, so we will loop
-    // through the one or more segments defined.
-    cl->first = cl->last = NULL;
-    cl->n_regions = 0;
-    for (;;) {
-      while (p->next->next != NULL && x0 > p->next->v[0]) p = p->next;
-      if (p->next->next == NULL) x = x1;
-      else x = p->next->v[0] < x1 ? p->next->v[0] : x1;
-      calseg.m = m =
-        yscale * (p->next->v[1] - p->v[1])/(p->next->v[0] - p->v[0]);
-      calseg.b = b = yscale * p->v[1] - m * p->v[0];
-      calseg.X0 = x0;
-      calseg.X1 = x;
-      for (fx = x0; ; fx = x) {
-        y = m*fx + b;
-        if (y < cvt_min) cvt_min = y;
-        if (y > cvt_max) cvt_max = y;
-        if (fx == x) break;
-      }
-      cv = find_ndr(&calseg);
-      if (cl->last == NULL) cl->first = cl->last = cv;
-      else { cl->last->next = cv; cl->last = cv; }
-      cl->n_regions++;
-      while (cl->last->next != NULL) {
-        cl->last = cl->last->next;
-        cl->n_regions++;
-      }
-      assert(cl->last->x1 == x);
-      if (x == x1) break;
-      x0 = x+1;
-    }
-  }
-  *input_min = cvt_min;
-  *input_max = cvt_max;
-}
-
-/* generates integer-integer conversion code for the n regions
-   pointed to by p. ovtxt holds the name of the variable into
-   which the final result is to be placed.
-*/
-static void gen_itc_code(int n, struct intcnv *p, char *ovtxt) {
-  int n1, i;
-  struct intcnv *p1;
-
-  adjust_indent(2);
-  if (n == 1) {
-    print_indent(NULL);
-    fprintf(ofile, "%s = ", ovtxt);
-    if (p->n == 0) {
-      p->y0 += p->r/p->d;
-      fprintf(ofile, "%d", p->y0);
-    } else {
-      if (p->d == 1) {
-        p->r += p->y0;
-        p->y0 = 0;
-      }
-      if (p->r != 0) print_indent("(");
-      print_indent("x");
-      if (p->n != 1) {
-        if (p->flag & ICNV_INT)
-          fprintf(ofile, "*(%d)", p->n);
-        else if (p->flag & ICNV_LINT)
-          fprintf(ofile, "*(%dL)", p->n);
-        else if (p->flag & ICNV_LLINT)
-          fprintf(ofile, "*(%dLL)", p->n);
-        else assert(0);
-      }
-      if (p->r != 0) {
-        /* This portion of code will generate invalid output in
-           a 32-bit environment. The solution is to either add
-           a flag to TMC to indicate 32-bit output, or to
-           sanitize the code to make it generally safe. The
-           latter is probably more desirable, since it will
-           avoid the tricks of allowing wrapping when it's OK.
-           The format would then be y = (n*(x-x0)+r)/d + y0.
-           Currently y = (x*(n)+r)/d + y0
-           This might require changes to the calculation of r
-           Mitigated 2012-06-29
-        */
-        #if UINT_MAX > 65536L
-          fprintf(ofile, "%+d)", p->r);
-        #else
-          if (p->flag & ICNV_INT) fprintf(ofile, "%+d)", (int16_t) p->r);
-          else fprintf(ofile, "%+d)", p->r);
-        #endif
-      }
-      if (p->d != 1) fprintf(ofile, "/(%d)", p->d);
-      if (p->y0 != 0) fprintf(ofile, "%+d", p->y0);
-    }
-    print_indent(";");
-    adjust_indent(0);
-  } else {
-    n1 = n/2;
-    for (p1 = p, i = n1; i > 0; i--) {
-      assert(p->next != NULL);
-      p1 = p1->next;
-    }
-    print_indent(NULL);
-    fprintf(ofile, "if (x < %d) {", p1->x0);
-    gen_itc_code(n1, p, ovtxt);
-    print_indent("} else {");
-    gen_itc_code(n-n1, p1, ovtxt);
-    print_indent("}");
-  }
-  adjust_indent(-2);
-}
-#endif // CALIBR_ICVT_H_INCLUDED
 
 /* converts x to ov using cal. If ttype is integral adds floor(x+.5) */
 /*
@@ -2014,6 +1397,10 @@ static void generate_calibrations( struct tmtype *ftype ) {
   cdf->convclass |= CV_DEFD;
 }
 
+/**
+ * Called from tmcmain.c/main() to decide which conversions 
+ * need to be generated.
+ */
 void declare_convs(void) {
   struct nm *nr;
 
@@ -2054,12 +1441,14 @@ struct cvtfunc *specify_conv( struct tmtype *ftype,
   return cfn;
 }
 
-/* Called from tmc.y. 
-   s is a statement which should only contain a simple reference
-   (which can only include pretext and a STATPC_REF).
-   The STATPC_REF is replaced with a STATPC_CONVERT which points
-   to the _REF.
-   cflg flags whether or not this is a text conversion.
+/**
+ * Called from tmc.y. 
+ * @param s a statement
+ * @param cflg flags whether or not this is a text conversion.
+ * s which should only contain a simple reference
+ * (which can only include pretext and a STATPC_REF).
+ * The STATPC_REF is replaced with a STATPC_CONVERT which points
+ * to the _REF.
  */
 void get_cfnc(struct sttmnt *s, int cflg) {
   struct statpc *spc;
@@ -2105,7 +1494,17 @@ void get_cfnc(struct sttmnt *s, int cflg) {
   } else initstat(s, spc);
 }
 
-/* Now supporting null name */
+/**
+ * @param name The name of the explicit conversion function or 0
+ * @param syntax 0, '(' or '['
+ * @return pointer to a newly allocated struct cvtfunc
+ * The name and syntax parameters are only non-zero when
+ * called from tmc.y during TM typedef when an explicit 
+ * conversion function is specified. The syntax argument
+ * specifies whether the explicit definition is a function
+ * call '(' or an array reference '['.
+ */
+
 struct cvtfunc *mk_cvt_func( char *name, char syntax ) {
   struct cvtfunc *cfn;
   int len;
