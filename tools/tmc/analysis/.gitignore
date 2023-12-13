@@ -2,3 +2,5 @@
 *.asv
 *.exe
 *.o
+check_type
+test_calibr

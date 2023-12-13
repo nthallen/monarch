@@ -98,7 +98,7 @@ static void summarize(calseg_t *cseg, struct intcnv *cl,
           X0, X1, Y0, Y1);
   while (li) {
     ++n_regions;
-    printf("   x=[%ld:%ld] n/d=%ld/%ld r=%ld x0=%ld y0=%ld\n",
+    printf("   x=[%lld:%lld] n/d=%lld/%lld r=%lld x0=%lld y0=%lld\n",
       li->x0, li->x1, li->n, li->d, li->r, li->x0, li->y0);
     li = li->next;
   }

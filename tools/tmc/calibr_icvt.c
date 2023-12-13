@@ -309,7 +309,7 @@ int gen_itc_code(int n, struct intcnv *p, char *ovtxt) {
     // (n*(x-x0)+r)/d+y0
     if (p->n == 0) {
       p->y0 += p->r/p->d;
-      fprintf(ofile, "%ld", p->y0);
+      fprintf(ofile, "%lld", p->y0);
     } else {
       double ddx = p->x1-(double)p->x0;
       char *dx_suffix = check_op_range(ddx);
@@ -327,22 +327,22 @@ int gen_itc_code(int n, struct intcnv *p, char *ovtxt) {
       }
       print_indent("(");
       if (p->x0) {
-        fprintf(ofile, "(x-(%ld%s))", p->x0, dx_suffix);
+        fprintf(ofile, "(x-(%lld%s))", p->x0, dx_suffix);
       } else {
         print_indent("x");
       }
       if (p->n != 1) {
-        fprintf(ofile, "*(%ld%s)", p->n, ndx_suffix);
+        fprintf(ofile, "*(%lld%s)", p->n, ndx_suffix);
       }
       if (p->r != 0) {
-        fprintf(ofile, "+(%ld%s)", p->r, ndxr_suffix);
+        fprintf(ofile, "+(%lld%s)", p->r, ndxr_suffix);
       }
       print_indent(")");
       if (p->d != 1) {
-        fprintf(ofile, "/%ld", p->d);
+        fprintf(ofile, "/%lld", p->d);
       }
       if (p->y0 != 0) {
-        fprintf(ofile, "+(%ld%s)", p->y0,ndxry_suffix);
+        fprintf(ofile, "+(%lld%s)", p->y0,ndxry_suffix);
       }
     }
     print_indent(";");
@@ -354,7 +354,7 @@ int gen_itc_code(int n, struct intcnv *p, char *ovtxt) {
       p1 = p1->next;
     }
     print_indent(NULL);
-    fprintf(ofile, "if (x < %ld) {", p1->x0);
+    fprintf(ofile, "if (x < %lld) {", p1->x0);
     gen_itc_code(n1, p, ovtxt);
     print_indent("} else {");
     gen_itc_code(n-n1, p1, ovtxt);
