@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 int main(int argc, char **argv) {
   int nb_int = sizeof(int)*8;
@@ -18,6 +19,7 @@ int main(int argc, char **argv) {
   printf("%-12s: %2d\n", "int16", nb_int16);
   printf("%-12s: %2d\n", "int32", nb_int32);
   printf("%-12s: %2d\n", "int64", nb_int64);
+  printf("Format for int64_t is %%%s\n", PRId64);
   return 0;
 }
 

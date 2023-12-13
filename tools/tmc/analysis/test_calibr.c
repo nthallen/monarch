@@ -1,6 +1,7 @@
 /* test_calibr.c */
 #include <math.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -98,7 +99,8 @@ static void summarize(calseg_t *cseg, struct intcnv *cl,
           X0, X1, Y0, Y1);
   while (li) {
     ++n_regions;
-    printf("   x=[%lld:%lld] n/d=%lld/%lld r=%lld x0=%lld y0=%lld\n",
+    printf("   x=[%" PRId64 ":%" PRId64 "] n/d=%" PRId64 "/%" PRId64
+              " r=%" PRId64 " x0=%" PRId64 " y0=%" PRId64 "\n",
       li->x0, li->x1, li->n, li->d, li->r, li->x0, li->y0);
     li = li->next;
   }
