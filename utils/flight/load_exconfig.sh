@@ -74,8 +74,8 @@ if [ $FltNode_Access = Remote ]; then
   TM_OPT="-H bfr:$FlightNode"
   CMD_OPT="-H srvr:$FlightNode"
   MC_OPT="-H parent:$FlightNode -H monarchctl: -S:$SESSION"
-  SSH_CMD="ssh -t flight@$FlightNode"
-  SSH_TAR_CMD="ssh -T flight@$FlightNode"
+  SSH_CMD="ssh -t $FlightNode"
+  SSH_TAR_CMD="ssh -T $FlightNode"
   SERVICE=Installed
 else
   TM_OPT="-S bfr:"
