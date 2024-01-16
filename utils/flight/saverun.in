@@ -72,7 +72,7 @@ FILE_OPT=$1
   msgf 3 dg for Experiment $Experiment currently active
 
 if [ $FltNode_Access = Remote ]; then
-  $SSH_CMD saverun $FILE_OPT || exit 1
+  $SSH_CMD "cd $HomeDir && saverun $FILE_OPT" || exit 1
   if [ -n "$FILE_OPT" ]; then
     scp flight@$FlightNode:$HomeDir/$FILE_OPT $FILE_OPT
     if [ -e $FILE_OPT ]; then
