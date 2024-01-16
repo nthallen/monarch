@@ -34,6 +34,6 @@ if ! grep -q "^$username:" /etc/passwd; then
 else
   echo "user $username is already in /etc/passwd"
 fi
-for group in flight dailout plugdev; do
+for group in flight dialout plugdev; do
   adduser $username $group
 done
