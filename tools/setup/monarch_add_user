@@ -1,0 +1,39 @@
+#! /bin/bash
+
+function nl_error {
+  echo "monarch_new_user: $*" >&2
+  exit 1
+}
+
+function usage {
+  nl_error "Usage: monarch_new_user username fullname"
+}
+
+username=$1
+fullname=$2
+
+[ -n "$username" ] || usage
+
+if [ $(id -u) != 0 ]; then
+  valid=no
+  echo "$username" | grep -Eq "^[a-zA-Z][a-zA-Z0-9_]+$" && valid=yes
+  [ $valid = yes ] || nl_error "Username '$username' is not valid"
+
+  exec sudo $0 $username "$fullname"
+  echo "I never should have reached this line"
+  exit 1
+fi
+
+[ $(id -u) != 0 ] && nl_error "I got here, but I'm still not root"
+# echo "I am root here"
+#echo "username is '$username'"
+#echo "fullname is '$fullname'"
+if ! grep -q "^$username:" /etc/passwd; then
+  echo "need to add user $username"
+  adduser --disabled-password --gecos "$fullname" $username
+else
+  echo "user $username is already in /etc/passwd"
+fi
+for group in flight dailout plugdev; do
+  adduser $username $group
+done

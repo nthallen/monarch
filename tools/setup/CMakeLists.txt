@@ -32,6 +32,10 @@ install(PROGRAMS
   ${CMAKE_CURRENT_SOURCE_DIR}/mk_installers
   DESTINATION bin)
 
+install(PROGRAMS
+  ${CMAKE_CURRENT_SOURCE_DIR}/monarch_add_user
+  DESTINATION sbin)
+
 install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/monarch.service services
   DESTINATION share/monarch/setup)
