@@ -74,7 +74,7 @@ FILE_OPT=$1
 if [ $FltNode_Access = Remote ]; then
   $SSH_CMD "cd $HomeDir && saverun $FILE_OPT" || exit 1
   if [ -n "$FILE_OPT" ]; then
-    scp flight@$FlightNode:$HomeDir/$FILE_OPT $FILE_OPT
+    scp $FlightNode:$HomeDir/$FILE_OPT $FILE_OPT
     if [ -e $FILE_OPT ]; then
       $SSH_CMD rm $HomeDir/$FILE_OPT
     fi
