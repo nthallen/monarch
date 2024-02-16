@@ -71,6 +71,7 @@ if [ -n "$LOOP_ON_FILE" -a -e "$LOOP_ON_FILE" ]; then
     exec parent $parent_srvr -V -T "reduce error"
   fi
   [ -f $LOOP_SCRIPT_FILE ] && mv $LOOP_SCRIPT_FILE $LOOP_START_FILE
+  rm -f $LOOP_STOP_FILE
   exit 0 # exit to reestablish tee log
 elif [ -e "$LOOP_STOP_FILE" ]; then
   if [ -n "$RESTART_FILE" -a -e "$RESTART_FILE" -a -f "$LOOP_SCRIPT_FILE" ]; then
@@ -83,6 +84,7 @@ elif [ -e "$LOOP_STOP_FILE" ]; then
     script=/dev/null
   fi
 elif [ -e "$LOOP_START_FILE" ]; then
+  msgf 0 "Restarting after reduce"
   script=`cat $LOOP_START_FILE`
   rm -f $LOOP_START_FILE
 fi
