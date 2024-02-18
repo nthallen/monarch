@@ -11,10 +11,11 @@ for i in tags libs tools utils drivers; do
 done
 
 function generate {
+  basedir=$PWD
   cd $1
   doxygen || nl_error "doxygen failed in $1"
-  cd -
-  [ -d .git -a ../git -ef . ] || nl_error "cd - did not returns us to source base directory"
+  cd $basedir
+  [ -d .git -a ../git -ef . ] || nl_error "cd \$basedir did not returns us to source base directory"
 }
 
 generate libs/nl
