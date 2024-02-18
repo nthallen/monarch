@@ -37,7 +37,7 @@ if (-not (Test-Path -Path setup-x86_64.exe -PathType Leaf))
 
 if (Test-Path -Path setup-x86_64.exe -PathType Leaf)
 {
-  start-process setup-x86_64.exe  -Wait -argumentlist "--packages bzip2,cygwin-doc,file,less,openssh,git,chere,cmake,doxygen,graphviz,gcc-core,gcc-g++,gdb,make,bison,flex,perl,libncurses-devel,screen"
+  start-process setup-x86_64.exe  -Wait -argumentlist "--packages bzip2,cygwin-doc,file,less,openssh,git,chere,cmake,doxygen,graphviz,gcc-core,gcc-g++,gdb,make,bison,flex,perl,libncurses-devel,screen --upgrade-also --no-desktop"
 }
 else
 {
