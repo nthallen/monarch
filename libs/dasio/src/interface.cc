@@ -72,7 +72,8 @@ Timeout *Interface::GetTimeout() {
 bool Interface::ProcessData(int flag) {
   // msg(0, "%s: Interface::ProcessData(%d)", iname, flag);
   if (MSG_IS_VERBOSE(1) && (flags&flag&Fl_Timeout)) {
-    msg(MSG_DBG(1), "%s: Timeout at top of ProcessData(%d)", iname, flag);
+    msg(MSG_DBG(1), "%s: Timeout at top of ProcessData(%d): %s",
+      iname, flag, TO.Expired() ? "Expired" : "Pending");
   }
   if ((flags & flag & Fl_gflags) &&
       protocol_gflag(flags & flag & Fl_gflags))
