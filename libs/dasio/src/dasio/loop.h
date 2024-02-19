@@ -154,6 +154,8 @@ class Loop {
     bool loop_exit;
     sigset_t blockset;
     sigset_t runset;
+    bool timeout_set_reported;
+    bool timeout_reported;
 };
 
 }

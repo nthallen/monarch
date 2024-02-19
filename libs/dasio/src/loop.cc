@@ -17,6 +17,7 @@ Loop::Loop(bool is_memo) : is_memo_loop(is_memo) {
   list_element_deleted = false;
   pthread_sigmask(SIG_SETMASK, 0, &blockset);
   pthread_sigmask(SIG_SETMASK, 0, &runset);
+  timeout_set_reported = timeout_reported = true;
 }
 
 Loop::~Loop() {
@@ -133,10 +134,18 @@ void Loop::event_loop() {
       }
       if (P->flags & P->Fl_Timeout) TA.Set_Min( P->GetTimeout() );
     }
+    if (MSG_IS_VERBOSE(1) && !timeout_set_reported && TA.Set()) {
+      msg(MSG_DBG(1), "Loop timeout set");
+      timeout_set_reported = true;
+    }
     // rc = select(width, &readfds, &writefds, &exceptfds, TA.timeout_val());
     rc = pselect(width, &readfds, &writefds, &exceptfds,
                  TA.timeout_val_ns(), &runset);
     if ( rc == 0 ) {
+      if (MSG_IS_VERBOSE(1) && !timeout_reported) {
+        msg(MSG_DBG(1), "Loop timeout observed");
+        timeout_reported = true;
+      }
       if ( ProcessTimeout() ) {
         if (!is_memo_loop) {
           msg(MSG_DBG(1), "Loop.ProcessTimeout() requested termination");
@@ -224,10 +233,12 @@ void Loop::event_loop() {
     }
     clear_delete_queue();
   } while (keep_going && !loop_exit);
+  timeout_set_reported = timeout_reported = false;
   clear_delete_queue();
 }
 
 void Loop::set_loop_exit() {
+  timeout_set_reported = timeout_reported = true;
   loop_exit = true;
 }
 
