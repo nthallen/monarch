@@ -170,7 +170,7 @@ namespace DAS_IO {
        * Shutdown() can be called more than once in order to change the
        * full shutdown selection provided the second call occurs before
        * processing reaches Server::ready_to_quit().
-       * @param full 
+       * @param full true to specify the full shutdown sequence
        */
       void Shutdown(bool full = true);
       /** Called by Serverside_client objects on creation.
