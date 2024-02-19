@@ -117,7 +117,7 @@ namespace DAS_IO {
     protected:
       ~Cmd_receiver();
       cmd_hdr_parser CHP;
-      bool process_timeout();
+      bool protocol_timeout();
       void process_quit();
       bool quit_recd;
       static std::list<Cmd_receiver *> rcvrs;

@@ -127,7 +127,7 @@ namespace DAS_IO {
     return cr;
   }
 
-  bool Cmd_receiver::process_timeout() {
+  bool Cmd_receiver::protocol_timeout() {
     msg(MSG_DEBUG, "%s: Received timeout", iname);
     ELoop->delete_child(this);
     return false;
