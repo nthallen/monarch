@@ -37,8 +37,6 @@ class tmq_ref {
      */
     tmq_ref *dereference(bool use_next);
     tmq_ref *next_tmqr;
-    /* Either data or timestamp */
-    // tmqtype type;
     /** Used by bfr to keep track of (output) client references */
     int ref_count;
     
@@ -69,17 +67,6 @@ class tmq_ref {
     /** The number of unretired Qrows this tmq_ref references */
     int n_Qrows;
 };
-
-// class tmq_data_ref : public tmq_ref {
-  // public:
-    // tmq_data_ref(mfc_t MFCtr, int mfrow, int Qrow_in, int nrows_in, tmq_ref *tsp);
-    // void append_rows( int nrows );
-    // tmq_ref *tsp;
-    // mfc_t MFCtr_start, MFCtr_next;
-    // int row_start, row_next, Qrows_retired;
-    // int Qrow;
-    // int n_rows;
-// };
 
 /** Semantics of tm_queue
    tm_queue.first, .last are indices into row and range from

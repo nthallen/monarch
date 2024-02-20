@@ -198,7 +198,13 @@ void tm_queue::commit_quit() {
 void tm_queue::retire_rows(tmq_ref *tmqd, int n_rows ) {
   lock(__FILE__,__LINE__);
   nl_assert( n_rows >= 0 );
-  nl_assert( tmqd->n_Qrows >= n_rows);
+  if (tmqd->n_Qrows >= n_rows) {
+    msg(MSG_EXIT_ABNORM,
+      "tmqd->n_Qrows(%d) < n_rows(%d) ref_count:%d next:%s",
+      tmqd->n_Qrows, n_rows, tmqd->ref_count,
+      tmqd->next_tmqr ? "yes" : "no");
+  }
+  // nl_assert( tmqd->n_Qrows >= n_rows);
   nl_assert( tmqd->Qrow == first );
   if ( first < last ) {
     first += n_rows;
