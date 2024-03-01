@@ -232,7 +232,6 @@ if [ "$opt_exts" = "no" ]; then
   opt_anal=no
 elif [ -z "$Extractions" ]; then
   msgf 0 "No Extractions Defined"
-  opt_anal=no
 else
   msgf 0 "Extraction Proceeding ..."
   export Extractions ExtProducts RDR_OPTS
