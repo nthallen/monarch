@@ -11,6 +11,7 @@ cat <<EOF
  
    -x  Don't run extractions or analysis
    -a  Don't run analysis
+   -A  Run analysis even if -x is specified
    -v  Increase verbosity
  
   Reduce performs a series of operations following a data run.
@@ -43,6 +44,7 @@ exit 0
 
 opt_exts=yes
 opt_anal=yes
+opt_anal_force=no
 CopyData=yes
 FixDisk=no
 Dircksum=no
@@ -62,8 +64,9 @@ function do_tar {
 #----------------------------------------------------------------
 # Process command line options (-x, -a)
 #----------------------------------------------------------------
-while getopts "ahxv" option; do
+while getopts "aAhxv" option; do
   case $option in
+  A) opt_anal_force=yes;;
   a) opt_anal=no;;
   h) print_usage;;
   x) opt_exts=no;;
@@ -224,12 +227,17 @@ fi
 #----------------------------------------------------------------
 # Do Extractions if defined and not disabled
 #----------------------------------------------------------------
-[ -z "$Extractions" ] && msgf -1 "No Extractions Defined"
-[ "$opt_exts" = "no" ] && msgf -1 "Extractions Disabled"
-
-msgf 0 "Extraction Proceeding ..."
-export Extractions ExtProducts RDR_OPTS
-extract $directory || msgf 0 "Extraction Apparently Failed"
+if [ "$opt_exts" = "no" ]; then
+  msgf 0 "Extractions Disabled"
+  opt_anal=no
+elif [ -z "$Extractions" ]; then
+  msgf 0 "No Extractions Defined"
+  opt_anal=no
+else
+  msgf 0 "Extraction Proceeding ..."
+  export Extractions ExtProducts RDR_OPTS
+  extract $directory || msgf 0 "Extraction Apparently Failed"
+fi
 
 #----------------------------------------------------------------
 # Analysis
@@ -259,9 +267,13 @@ extract $directory || msgf 0 "Extraction Apparently Failed"
 #   Analysis='anal/script -f opt $analdir'
 #----------------------------------------------------------------
 
-[ -z "$Analysis" ] && msgf 0 "No Analysis Defined" && exit 0
-[ "$opt_anal" = "no" ] && msgf 0 "Analysis Disabled" && exit 0
-analdir=anal/`basename $directory`
-eval echo "\"reduce: Beginning Analysis: $Analysis\""
-eval $Analysis
-msgf 0 "Analysis Completed"
+if [ -z "$Analysis" ]; then
+  msgf 0 "No Analysis Defined"
+elif [ "$opt_anal" = "no" -a $opt_anal_force = "no" ]; then
+  msgf 0 "Analysis Disabled"
+else
+  analdir=anal/`basename $directory`
+  eval msgf 0 "\"reduce: Beginning Analysis: $Analysis\""
+  eval $Analysis
+  msgf 0 "Analysis Completed"
+fi
