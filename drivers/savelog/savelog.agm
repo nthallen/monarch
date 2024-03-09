@@ -1,0 +1,16 @@
+Moduledef savelog [ logfile=saverun.log ] {
+  Adds the > SaveLog %s (Enter Log Message) * command,
+  which creats and/or appends to the file named by the
+  logfile parameter. The logfile defaults to saverun.log.
+  This can be used in conjunction with the following
+  Experiment.config variables:
+    RunLog: if defined to the same filename as logfile, saverun
+    will not prompt for the contents of the file.
+    LOOP_ON_FILE: if this file exists after quit, flight.sh
+    will execute reduce and automatically restart to achieve
+    nearly continuous operation.
+}
+
+cmdbase = savelog.cmd:savelog.cmd.in
+IGNORE = savelog.cmd
+OBJ = savelog.cmd
