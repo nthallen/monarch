@@ -1,0 +1,11 @@
+package DoReport;
+
+our %account = (
+  queue_dir => '/home/u',
+  username => 'u@example.com',
+  password => 'password',
+  server => 'smtp.example.com',
+  port => 587
+);
+
+1;
