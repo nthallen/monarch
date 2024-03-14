@@ -100,27 +100,26 @@ void tm_generator::transmit_data( bool single_row ) {
   transmit_blocked = false;
   // We can read from the queue without locking
   // But we need to lock when we reference tmg_bfr_fd
-  tmq_ref *tmqdr;
   int rc;
   tm_hdrs_t hdrs;
   hdrs.s.hdr.tm_id = TMHDR_WORD;
-  while ( first_tmqr ) {
-    if (first_tmqr->tsp != cur_tsp) {
-      cur_tsp = first_tmqr->tsp;
-      hdrs.s.hdr.tm_type = TMTYPE_TSTAMP;
-      SETIOV(&pvt_iov[0], &hdrs, sizeof(tm_hdr_t));
-      SETIOV(&pvt_iov[1], &cur_tsp->TS, sizeof(cur_tsp->TS));
-      lock(__FILE__, __LINE__);
-      if ( bfr ) {
-        bfr->iwritev(pvt_iov, 2, "transmitting tstamp");
-      }
-      unlock();
-    }
-    tmqdr = first_tmqr;
+  tmq_ref *tmqdr = first_tmqr;
+  while ( tmqdr ) {
     if (tmqdr->n_Qrows == 0) {
-      if (tmqdr->next_tmqr) retire_rows(tmqdr, 0);
-      else break;
+      // No longer calling retire_rows(tmqdr,0);
+      tmqdr = tmqdr->next_tmqr;
     } else {
+      if (tmqdr->tsp != cur_tsp) {
+        cur_tsp = tmqdr->tsp;
+        hdrs.s.hdr.tm_type = TMTYPE_TSTAMP;
+        SETIOV(&pvt_iov[0], &hdrs, sizeof(tm_hdr_t));
+        SETIOV(&pvt_iov[1], &cur_tsp->TS, sizeof(cur_tsp->TS));
+        lock(__FILE__, __LINE__);
+        if ( bfr ) {
+          bfr->iwritev(pvt_iov, 2, "transmitting tstamp");
+        }
+        unlock();
+      }
       hdrs.s.hdr.tm_type = output_tm_type;
       int n_rows = single_row ? 1 : tmqdr->n_Qrows;
       hdrs.s.u.dhdr.n_rows = n_rows;
@@ -141,9 +140,9 @@ void tm_generator::transmit_data( bool single_row ) {
       lock(__FILE__,__LINE__);
       if ( bfr ) {
         bfr->iwritev(pvt_iov, n_iov, "transmitting data");
-        unlock();
-      } else unlock();
-      retire_rows(tmqdr, n_rows);
+      }
+      unlock();
+      retire_rows(first_tmqr, n_rows);
       if ( single_row ) break;
     }
   }
