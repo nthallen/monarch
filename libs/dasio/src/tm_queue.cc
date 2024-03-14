@@ -195,49 +195,70 @@ void tm_queue::commit_quit() {
   tm_gen_quit = true;
 }
 
-void tm_queue::retire_rows(tmq_ref *tmqd, int n_rows ) {
+void tm_queue::retire_rows(tmq_ref *tmqd, int n_rows_ret ) {
   lock(__FILE__,__LINE__);
-  nl_assert( n_rows >= 0 );
-  if (tmqd->n_Qrows < n_rows) {
-    msg(MSG_EXIT_ABNORM,
-      "tmqd->n_Qrows(%d) < n_rows(%d) ref_count:%d next:%s",
-      tmqd->n_Qrows, n_rows, tmqd->ref_count,
-      tmqd->next_tmqr ? "yes" : "no");
-  }
-  // nl_assert( tmqd->n_Qrows >= n_rows);
-  nl_assert( tmqd->Qrow == first );
-  if ( first < last ) {
-    first += n_rows;
-    if ( first > last )
-      msg( MSG_EXIT_ABNORM, "Underflow in retire_rows" );
-  } else {
-    first += n_rows;
-    if ( first >= total_Qrows ) {
-      first -= total_Qrows;
-      if ( first > last )
-        msg( MSG_EXIT_ABNORM, "Underflow after wrap in retire_rows" );
+  nl_assert( n_rows_ret >= 0 );
+  do {
+    int n_rows = tmqd->n_Qrows < n_rows_ret ? tmqd->n_Qrows : n_rows_ret;
+    n_rows_ret -= n_rows;
+    if (tmqd->n_Qrows < n_rows) {
+      msg(MSG_EXIT_ABNORM,
+        "tmqd->n_Qrows(%d) < n_rows(%d) ref_count:%d next:%s",
+        tmqd->n_Qrows, n_rows, tmqd->ref_count,
+        tmqd->next_tmqr ? "yes" : "no");
     }
-  }
-  if (n_rows > 0) full = false;
-  tmqd->Qrow = first;
-  tmqd->n_Qrows -= n_rows;
-  tmqd->Qrows_retired += n_rows;
-  if ( tmqd->n_Qrows == 0 && tmqd->next_tmqr && tmqd->ref_count <= 0) {
-    tmq_ref *nxt = tmqd->next_tmqr;
-    --tmqd->tsp->ref_count; // because tmqd is being deleted
-    nl_assert(tmqd == first_tmqr);
-    if (nxt->tsp != tmqd->tsp) {
-      nl_assert(tmqd->tsp->ref_count == 0);
-      delete(tmqd->tsp);
+    // nl_assert( tmqd->n_Qrows >= n_rows);
+    if (n_rows > 0) {
+      // We know n_Qrows >= n_rows > 0, so not empty, so:
+      nl_assert( tmqd->Qrow == first );
+      if ( first < last ) {
+        first += n_rows;
+        if ( first > last )
+          msg( MSG_EXIT_ABNORM, "Underflow in retire_rows" );
+      } else {
+        first += n_rows;
+        if ( first >= total_Qrows ) {
+          first -= total_Qrows;
+          if ( first > last )
+            msg( MSG_EXIT_ABNORM, "Underflow after wrap in retire_rows" );
+        }
+      }
+      full = false;
+      tmqd->Qrow = first;
+      tmqd->n_Qrows -= n_rows;
+      tmqd->Qrows_retired += n_rows;
+    } else {
+      // This assertion is based on current usage. Some restructuring
+      // might be wise.
+      nl_assert(tmqd->next_tmqr);
     }
-    // first_tmqr = tmqd->next_tmqr;
-    first_tmqr = nxt;
-    delete( tmqd );
-  } else {
-    tmqd->row_start += n_rows;
-    tmqd->MFCtr_start += tmqd->row_start / tm_info.nrowminf;
-    tmqd->row_start %= tm_info.nrowminf;
-  }
+    if ( tmqd->n_Qrows == 0 && tmqd->next_tmqr) { // && tmqd->ref_count <= 0) {
+      tmq_ref *nxt = tmqd->next_tmqr;
+      if (tmqd->ref_count <= 0 && tmqd == first_tmqr) {
+        --tmqd->tsp->ref_count; // because tmqd is being deleted
+        if (nxt->tsp != tmqd->tsp) {
+          nl_assert(tmqd->tsp->ref_count == 0);
+          delete(tmqd->tsp);
+        }
+        // first_tmqr = tmqd->next_tmqr;
+        first_tmqr = nxt;
+        delete( tmqd );
+      }
+      tmqd = nxt;
+    } else {
+      /* The basis for the following assertion is that:
+       * - We only call retire_rows(tmqdr, 0) if tmqdr->n_Qrows == 0
+       *    and tmqdr->next_tmqr
+       * - There should never be a need to retire all the data in
+       *   the tm_queue, so tmqd->n_Qrows should never be zero unless
+       *   there is a following tmq_ref.
+       */
+      nl_assert(n_rows_ret == 0);
+      tmqd->row_start += n_rows;
+      tmqd->MFCtr_start += tmqd->row_start / tm_info.nrowminf;
+      tmqd->row_start %= tm_info.nrowminf;
+    }
+  } while (n_rows_ret > 0);
   unlock();
 }
 

@@ -24,6 +24,7 @@ static int opt_kluge_a;
 static int opt_autoquit;
 static unsigned long opt_start_file = 1;
 static unsigned long opt_end_file = 0;
+static bool opt_nonblocking = false;
 
 /** Options we need to support:
 
@@ -305,6 +306,9 @@ void rdr_init( int argc, char **argv ) {
         opt_autostart = 1;
         opt_regulate = 1;
         break;
+      case 'B':
+        opt_nonblocking = true;
+        break;
       case 'P':
         opt_basepath = optarg;
         break;
@@ -334,7 +338,7 @@ int main( int argc, char **argv ) {
   if (nQrows < 2) nQrows = 2;
   rdr_mlf *mlf = new rdr_mlf(opt_basepath);
   Reader *rdr = new Reader(nQrows, mlf); 
-  rdr->init(nQrows, false, RDR_BUFSIZE);
+  rdr->init(nQrows, opt_nonblocking, RDR_BUFSIZE);
   rdr->start();
   msg(0, "Shutdown");
 }

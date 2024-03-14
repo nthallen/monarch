@@ -4,10 +4,11 @@
 <follow> msg
 <include> host_session
 
-<opts> "aAP:kqF:L:"
+<opts> "aABP:kqF:L:"
 <sort>
 	-A autostart fast forward
 	-a autostart regulated
+  -B use non-blocking bfr channel (debug only)
 	-P <path> specify base path for data files
 	-k Invoke kluge to work around lgr bug
 	-q quit when end of data is reached
