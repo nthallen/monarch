@@ -7,3 +7,7 @@ Command_SN_H {
   HBox { +-; Title: "Transmission"; -+ };
   [Command_SN]
 }
+
+Command_SN_hor {
+  SN: (Cmd_SN,5) Dups: (Cmd_Dups,3)
+}
