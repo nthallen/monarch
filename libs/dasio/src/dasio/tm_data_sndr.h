@@ -6,6 +6,9 @@
 
 namespace DAS_IO {
 
+  /**
+   * @brief Class for sending telemetry data from a driver to collection.
+   */
   class TM_data_sndr : public Client {
     public:
       /**
