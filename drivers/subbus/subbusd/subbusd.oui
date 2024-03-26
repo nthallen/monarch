@@ -5,7 +5,7 @@
 
 <opts> "s:q"
 <sort>
-	-s <service> Specify service name
+	-s <service> Specify service name (default: subbusd)
 	-q Connect to cmd/Quit for shutdown
 
 <init>

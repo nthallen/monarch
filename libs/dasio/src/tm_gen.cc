@@ -103,11 +103,13 @@ void tm_generator::transmit_data( bool single_row ) {
   int rc;
   tm_hdrs_t hdrs;
   hdrs.s.hdr.tm_id = TMHDR_WORD;
-  tmq_ref *tmqdr = first_tmqr;
+  tmq_ref *tmqdr = 0;
+  next_tmqr(&tmqdr);
   while ( tmqdr ) {
     if (tmqdr->n_Qrows == 0) {
       // No longer calling retire_rows(tmqdr,0);
-      tmqdr = tmqdr->next_tmqr;
+      if (!next_tmqr(&tmqdr)) break;
+      // tmqdr = tmqdr->next_tmqr;
     } else {
       if (tmqdr->tsp != cur_tsp) {
         cur_tsp = tmqdr->tsp;
@@ -146,6 +148,7 @@ void tm_generator::transmit_data( bool single_row ) {
       if ( single_row ) break;
     }
   }
+  if (tmqdr) tmqdr->dereference(false);
   if (queue_empty())
     tm_queue_is_empty();
 }
