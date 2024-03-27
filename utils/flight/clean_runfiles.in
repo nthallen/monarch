@@ -45,11 +45,20 @@ while getopts "hkr" option; do
   esac
 done
 
+function pid_is_live {
+  pid=$1
+  if p=$(kill -0 $1 2>&1) || echo $p | grep -q "Operation not permitted"; then
+    echo yes
+  else
+    echo no
+  fi
+}
+
 # Remove any abandoned sockets
 for socket in `find /var/run/monarch -type s`; do
   if [ -f ${socket}.pid ]; then
     pid=`cat ${socket}.pid`
-    if ! kill -0 $pid 2>/dev/null; then
+    if [ $(pid_is_live $pid) = no ]; then
       echo socket $socket is abandoned
       rm -f $socket
       rm -f ${socket}.pid
@@ -63,7 +72,7 @@ done
 if [ -d /var/run/monarch/run ]; then
   for pidfile in `find /var/run/monarch/run -type f`; do
     pid=${pidfile##*/}
-    if kill -0 $pid 2>/dev/null; then
+    if [ $(pid_is_live $pid) = yes ]; then
       echo "TM client $pidfile is still active"
     else
       echo "TM client $pidfile is gone"
