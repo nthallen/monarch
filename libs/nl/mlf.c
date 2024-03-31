@@ -97,7 +97,7 @@ void mlf_free_mlfn( mlf_ntup_t *mlfn ) {
 
 /* Set the file path from an array of ints.
    Called from mlf_set_ntup() which parses a filename and
-   mlf_set_index() which parses a long int.
+   mlf_set_index() which parses a 32-bit int.
  */
 static void mlf_set_ixs( mlf_def_t *mlf, int *ixs ) {
   mlf->index = 0;
@@ -140,9 +140,9 @@ static void mlf_set_ixs( mlf_def_t *mlf, int *ixs ) {
     mlf->flags |= MLF_INC_FIRST;
 }
 
-void mlf_set_index( mlf_def_t * mlf, unsigned long index ) {
+void mlf_set_index( mlf_def_t * mlf, uint32_t index ) {
   int ixs[MLF_MAX_LEVELS+1], i, nf = mlf->n_files;
-  unsigned long ix = index > 0 ? index - 1 : 0;
+  uint32_t ix = index > 0 ? index - 1 : 0;
   for ( i = mlf->n_levels; i > 0; i-- ) {
     ixs[i] = ix % nf;
     ix = ix/nf;
@@ -157,7 +157,7 @@ void mlf_set_index( mlf_def_t * mlf, unsigned long index ) {
 =Synopsis
 
   #include "mlf.h"
-  void mlf_set_index( mlf_def_t * mlf, unsigned long index );
+  void mlf_set_index( mlf_def_t * mlf, uint32_t index );
 
 =Description
   

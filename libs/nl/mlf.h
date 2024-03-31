@@ -1,6 +1,7 @@
 #ifndef MLF_H_INCLUDED
 #define MLF_H_INCLUDED
 #include <stdio.h>
+#include <stdint.h>
 #include <limits.h>
 #include <fcntl.h>
 
@@ -16,7 +17,7 @@ typedef struct {
   char fpath[PATH_MAX];
   const char *fsuffix;
   int flags;
-  unsigned long index;
+  uint32_t index;
 } mlf_def_t;
 #define MLF_INC_FIRST 1
 #define MLF_WRITING 2
@@ -43,7 +44,7 @@ mlf_ntup_t *mlf_convert_fname( mlf_def_t *mlf, const char *fbase, const char *fn
 void mlf_free_mlfn( mlf_ntup_t *mlfn );
 void mlf_set_ntup( mlf_def_t *mlf, mlf_ntup_t *mlfn );
 int mlf_compare( mlf_def_t *mlf, mlf_ntup_t *mlfn );
-void mlf_set_index( mlf_def_t * mlf, unsigned long index );
+void mlf_set_index( mlf_def_t * mlf, uint32_t index );
 
 #ifdef __cplusplus
 };
