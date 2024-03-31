@@ -84,7 +84,7 @@ elif [ -e "$LOOP_STOP_FILE" ]; then
     script=/dev/null
   fi
 elif [ -e "$LOOP_START_FILE" ]; then
-  msgf 0 "Restarting after reduce"
+  msgf 0 "Taking script from LOOP_START_FILE"
   script=`cat $LOOP_START_FILE`
   rm -f $LOOP_START_FILE
 fi
