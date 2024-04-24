@@ -2,12 +2,20 @@
 <include> host_session
 <include> cmd_version
 <follow> cmd_version
+<include> "dasio/cmd_server.h"
 <comment>
   This is the OUI definition for data acquisition system
   command server applications, formerly known as server.oui
 
+<opts> "Q"
+<sort>
+  -Q Connect to other cmd_server for Quit notification
+<switch>
+  case 'Q': DAS_IO::Cmd_Server::opt_Q = true; break;
+
 <unsort>
 Host_Session function srvr: Define listening sockets
+Host_Session function Qsrvr: For Quit notification
 
 <package> appid_default
 <include> "dasio/appid.h"

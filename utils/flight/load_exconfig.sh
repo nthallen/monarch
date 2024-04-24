@@ -10,6 +10,8 @@
 # SERVICE: Either 'Installed' or 'AdHoc'
 # TM_OPT: Options to access tm_bfr on the flight node
 # CMD_OPT: Options to access cmd on the flight node
+# PBS_OPT: Options for playbackserver to access cmd on the
+#    flight node for Quit
 # MC_OPT: Options for monarchctl to access parent
 # VERSION: Read from the VERSION file or defaults to 1.0
 # TMBINDIR: Where the experiment-specific binaries are located
@@ -44,7 +46,7 @@ umask g+w
 #----------------------------------------------------------------
 cfile=./Experiment.config
 unset Experiment HomeDir FlightNode CFG_ERROR
-unset FltNode_Access TM_OPT CMD_OPT
+unset FltNode_Access TM_OPT CMD_OPT PBS_OPT
 if [ -f "$cfile" -a -r "$cfile" ]; then
   . $cfile
   if [ -n "$Experiment" -a -n "$HomeDir" -a -d "$HomeDir" ]; then
@@ -73,6 +75,7 @@ fi
 if [ $FltNode_Access = Remote ]; then
   TM_OPT="-H bfr:$FlightNode"
   CMD_OPT="-H srvr:$FlightNode"
+  PBS_OPT="-QH Qsrvr:$FlightNode"
   MC_OPT="-H parent:$FlightNode -H monarchctl: -S:$SESSION"
   SSH_CMD="ssh -t $FlightNode"
   SSH_TAR_CMD="ssh -T $FlightNode"
@@ -80,6 +83,7 @@ if [ $FltNode_Access = Remote ]; then
 else
   TM_OPT="-S bfr:"
   CMD_OPT="-S srvr:"
+  PBS_OPT="-QS Qsrvr:"
   MC_OPT=""
   if [ /home/flight/Experiment.config -ef $cfile ]; then
   # if [ -e /var/run/monarch/$Experiment/parent -a \

@@ -22,6 +22,7 @@ namespace DAS_IO {
        *  MAX_COMMAND_IN for transmission.
        */
       static const int MAX_COMMAND_OUT = 300;
+      static bool opt_Q;
     protected:
       bool ready_to_quit();
       bool quit_processed;

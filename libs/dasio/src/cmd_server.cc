@@ -7,11 +7,13 @@
 #include "dasio/cmd_server.h"
 #include "dasio/cmd_version.h"
 #include "dasio/msg.h"
+#include "dasio/quit.h"
 #include "nl_assert.h"
 #include "cmdalgo.h"
 
 namespace DAS_IO {
-  
+  bool Cmd_Server::opt_Q = false;
+
   bool Cmd_Server::ready_to_quit() {
     Server::ready_to_quit();
     return cmdif_rd::all_closed() && active_clients == 0;
@@ -214,7 +216,7 @@ namespace DAS_IO {
     return new Cmd_turf(auth, auth->get_client_app(), (cmdif_rd*)(ss->svc_data));
   }
   
-}
+} // End of DAS_IO
 
 void ci_server(void) {
   cis_initialize(); // not actually implemented
@@ -223,6 +225,12 @@ void ci_server(void) {
   nl_assert(DAS_IO::CmdServer != 0);
   DAS_IO::CmdServer->add_subservice(new DAS_IO::SubService("cmd/server",
     (DAS_IO::socket_clone_t)DAS_IO::Cmd_receiver::new_cmd_receiver, (void *)0));
+  DAS_IO::Quit *Q;
+  if (DAS_IO::Cmd_Server::opt_Q) {
+    Q = new DAS_IO::Quit(DAS_IO::CmdServer, true, "Qsrvr");
+    DAS_IO::CmdServer->ELoop.add_child(Q);
+    Q->connect();
+  }
 
   // Call the cmdgen-generated initialization routine
   cis_interfaces();

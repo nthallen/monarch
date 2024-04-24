@@ -20,7 +20,9 @@ namespace DAS_IO {
        * @brief Quit client
        * @param srvr optional pointer to Server
        */
-      Quit(Server *srvr = 0, bool full = false);
+      Quit( Server *srvr = 0,
+            bool full = false,
+            const char *function = "srvr");
       bool app_input();
       bool process_eof();
     protected:

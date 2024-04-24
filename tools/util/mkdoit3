@@ -107,7 +107,8 @@ close $fh || warn "Error closing source file\n";
 # Default client and server
 push @client, { prog => 'playbackclt', cond => undef,
       opts => '' };
-push @extract, { prog => 'playbacksrvr', name => 'cmd', cond => undef, opts => ' -n pbsrvr' };
+push @extract, { prog => 'playbacksrvr', name => 'cmd', cond => undef,
+      opts => ' $PBS_OPT -n pbsrvr' };
 
 if ( $opts{M} ) {
   open( $fh, ">", "$opts{o}.dep" ) ||
