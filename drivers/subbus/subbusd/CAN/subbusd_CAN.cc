@@ -6,6 +6,7 @@
 #include "subbusd_int.h"
 #include "subbusd_CAN.h"
 #include "dasio/ascii_escape.h"
+#include "oui.h"
 
 using namespace DAS_IO;
 
@@ -358,7 +359,7 @@ void subbusd_CAN::shutdown_subbus() {
 }
 
 void subbusd_CAN_init_options(int argc, char **argv) {
-#ifdef USE_SOCKET_CAN
+#ifdef USE_CAN_SOCKET
 	int c;
 
   optind = OPTIND_RESET;
