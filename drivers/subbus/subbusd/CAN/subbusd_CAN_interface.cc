@@ -17,6 +17,10 @@
   #include <net/if.h>
 #endif
 
+#ifdef USE_CAN_SOCKET
+  const char *CAN_socket::net_interface_name = "can0";
+#endif
+
 CAN_interface::CAN_interface() :
     request_processing(false),
     req_no(0)
