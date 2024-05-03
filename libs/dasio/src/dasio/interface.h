@@ -601,6 +601,44 @@ class Interface {
      */
     bool not_ISO8601(double &Time, bool w_hyphens = true);
     /**
+     * @brief Skip spaces or tabs
+     *
+     * The name is slightly misleading. The not_ prefix
+     * is used to show that it fits in with the other not_
+     * methods here, but it always returns false.
+     *
+     * Advances the current position until either the
+     * end of the buffer or the next character is not
+     * a space or tab character.
+     *
+     * @return false always
+     */
+    inline bool not_spaces() {
+      while (cp < nc && (buf[cp] == ' ' || buf[cp] == '\t'))
+        ++cp;
+      return false;
+    }
+    
+    /**
+     * @brief Recognizes NaN values
+     * 
+     * This routine recognizes NaNs in the following
+     * situations.
+     *
+     *   - If the next character is a comma, newline or carriage return
+     *   - If the next three characters are 'nan' (case insensitive)
+     *
+     * The current position (cp) is changed only in the case of
+     * the explicit 'nan' string.
+     *
+     * It is expected that this method will only be used internally.
+     * It is something of a special case, since it requires
+     * additional code around it to take an appropriate action.
+     *
+     * @return true expect on NaN condition
+     */
+    bool not_nan();
+    /**
      * @brief Accepts a string representing a floating point number
      * without converting it.
      *
@@ -651,6 +689,21 @@ class Interface {
      * @return false on a successful match
      */
     bool not_nfloat(float *value, float NaNval = 99999.);
+    /**
+     * @brief Match a double or NaN
+     *
+     * Accepts a float or an explicit 'NaN' (case insensitive).
+     * In the case of NaN, the specified NaNval is used. The
+     * NaNval is also used for missing values, as indicated
+     * if the next character is a comma or CR or NL.
+     *
+     * Note the difference in prototype from not_nfloat().
+     * The value parameter is a reference instead of a pointer.
+     * This is more consistent with the other not_ functions.
+     *
+     * @return false on a successful match
+     */
+    bool not_ndouble(double &value, double NaNval);
     /**
      * @brief Matches a literal string
      *

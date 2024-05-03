@@ -440,7 +440,28 @@ bool DAS_IO::Interface::not_ISO8601(double &Time, bool w_hyphens) {
   return false;
 }
 
+bool DAS_IO::Interface::not_nan() {
+  if (buf[cp] == ',' || buf[cp] == '\r' || buf[cp] == '\n') {
+    return false;
+  }
+  if (strncasecmp((const char *)&buf[cp], "NaN", 3) == 0) {
+    cp += 3;
+    return false;
+  }
+  return true;
+}
+
 bool DAS_IO::Interface::not_nfloat(float *value, float NaNval) {
+  float val;
+  not_spaces();
+  if (not_nan()) {
+    if (not_float(val)) return true;
+    *value = val;
+  } else {
+    *value = NaNval;
+  }
+  return false;
+#ifdef OLD_IMPLEMENTATION
   float val;
   while (cp < nc && buf[cp] == ' ') ++cp;
   if (cp >= nc) return true;
@@ -455,6 +476,16 @@ bool DAS_IO::Interface::not_nfloat(float *value, float NaNval) {
   }
   if (not_float(val)) return true;
   *value = val;
+  return false;
+#endif
+}
+
+bool DAS_IO::Interface::not_ndouble(double &value, double NaNval) {
+  double val;
+  if (not_spaces() || not_nan()) {
+    if (not_double(value)) return true;
+  }
+  value = NaNval;
   return false;
 }
 
