@@ -175,12 +175,15 @@ void CAN_socket::setup() {
   }
   // interface: "CAN0"
   addr.can_family = PF_CAN;
-  strcpy(ifr.ifr_name, "can0");
+  strcpy(ifr.ifr_name, net_interface_name);
   if (ioctl(fd, SIOCGIFINDEX, &ifr)) {
     msg(3, "%s: ioctl() error %d: %s", iname,
       errno, strerror(errno));
   }
   addr.can_ifindex = ifr.ifr_ifindex;
+  msg(MSG_DEBUG, "binding to net interface %s can_ifindex %d",
+    net_interface_name, addr.can_ifindex);
+
   if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
     msg(3, "%s: bind() error %d: %s",
       errno, strerror(errno));
