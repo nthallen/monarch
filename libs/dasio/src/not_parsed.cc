@@ -427,9 +427,12 @@ bool DAS_IO::Interface::not_ISO8601(double &Time, bool w_hyphens) {
   buft.tm_year -= 1900;
   buft.tm_mon -= 1;
   buft.tm_sec = 0;
+  buft.tm_isdst = 0;
+  errno = 0;
   ltime = mktime(&buft);
   if (ltime == (time_t)(-1)) {
-    report_err("%s: mktime returned error", iname);
+    report_err("%s: mktime returned error %d:%s", iname,
+        errno, strerror(errno));
     msg(MSG_DEBUG, "year=%d mon=%d mday=%d hour=%d min=%d sec=%d isdst=%d",
       buft.tm_year, buft.tm_mon, buft.tm_mday, buft.tm_hour, buft.tm_min,
       buft.tm_sec, buft.tm_isdst);
