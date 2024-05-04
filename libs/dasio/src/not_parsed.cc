@@ -487,8 +487,9 @@ bool DAS_IO::Interface::not_ndouble(double &value, double NaNval) {
   double val;
   if (not_spaces() || not_nan()) {
     if (not_double(value)) return true;
+  } else {
+    value = NaNval;
   }
-  value = NaNval;
   return false;
 }
 
