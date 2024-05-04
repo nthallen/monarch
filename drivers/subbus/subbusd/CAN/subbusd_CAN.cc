@@ -1,6 +1,7 @@
 // #undef HAVE_CAN_H
 #include <string.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include "subbusd_CAN_config.h"
 #include "nl_assert.h"
 #include "subbusd_int.h"
