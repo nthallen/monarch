@@ -74,6 +74,7 @@ class CAN_interface;
       inline bool obuf_clear() { return obuf_empty(); }
       bool request_pending;
       bool lost_packet;
+      static const char *net_interface_name;
     protected:
       bool iwritten(int nb);
       const char *ascii_escape();

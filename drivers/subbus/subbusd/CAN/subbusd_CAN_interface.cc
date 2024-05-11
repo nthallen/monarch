@@ -17,6 +17,10 @@
   #include <net/if.h>
 #endif
 
+#ifdef USE_CAN_SOCKET
+  const char *CAN_socket::net_interface_name = "can0";
+#endif
+
 CAN_interface::CAN_interface() :
     request_processing(false),
     req_no(0)
@@ -171,12 +175,15 @@ void CAN_socket::setup() {
   }
   // interface: "CAN0"
   addr.can_family = PF_CAN;
-  strcpy(ifr.ifr_name, "can0");
+  strcpy(ifr.ifr_name, net_interface_name);
   if (ioctl(fd, SIOCGIFINDEX, &ifr)) {
     msg(3, "%s: ioctl() error %d: %s", iname,
       errno, strerror(errno));
   }
   addr.can_ifindex = ifr.ifr_ifindex;
+  msg(MSG_DEBUG, "binding to net interface %s can_ifindex %d",
+    net_interface_name, addr.can_ifindex);
+
   if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
     msg(3, "%s: bind() error %d: %s",
       errno, strerror(errno));
@@ -307,7 +314,7 @@ bool CAN_socket::protocol_input() {
         memset(request.msg->buf, 0, request.msg->bufsz - rep_recd);
         request.clt->request_complete(SBS_NOACK, request.msg->bufsz);
       } else {
-        report_err("%s: CAN_ERR %d", iname, repfrm->data[1]);
+        report_err("%s: CAN_ERR %d", iname, repfrm->data[2]);
         request.clt->request_complete(SBS_RESP_ERROR, 0);
       }
     } else {

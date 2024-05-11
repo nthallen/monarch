@@ -1,11 +1,13 @@
 // #undef HAVE_CAN_H
 #include <string.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include "subbusd_CAN_config.h"
 #include "nl_assert.h"
 #include "subbusd_int.h"
 #include "subbusd_CAN.h"
 #include "dasio/ascii_escape.h"
+#include "oui.h"
 
 using namespace DAS_IO;
 
@@ -358,8 +360,26 @@ void subbusd_CAN::shutdown_subbus() {
 }
 
 void subbusd_CAN_init_options(int argc, char **argv) {
+#ifdef USE_CAN_SOCKET
+	int c;
+
+  optind = OPTIND_RESET;
+  opterr = 0;
+  while ((c = getopt(argc, argv, opt_string)) != -1) {
+    switch (c) {
+      case 'I':
+        CAN_socket::net_interface_name = optarg;
+        break;
+      case '?':
+        fprintf( stderr, "Unrecognized option: '-%c'\n", optopt );
+        exit(1);
+      default: break; // could check for errors
+    }
+  }
+#else
   argc = argc;
   argv = argv;
+#endif
   subbusd_CAN *CAN = new subbusd_CAN();
   nl_assert(subbusd_core::subbusd);
   subbusd_core::subbusd->register_flavor(CAN);

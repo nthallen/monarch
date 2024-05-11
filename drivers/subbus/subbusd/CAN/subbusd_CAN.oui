@@ -4,6 +4,10 @@
 <include> "subbusd_int.h"
 <include> "subbusd_CAN.h"
 
+<opts> "I:"
+<sort>
+  -I <interface> Select CAN network interface name. default is can0
+
 <init>
   subbusd_CAN_init_options(argc, argv);
 
@@ -16,4 +20,4 @@ subbusd_CAN_init_options() is responsible for:
 <include> msg
 <preceed> msg
 <defs>
-  DAS_IO::AppID_t DAS_IO::AppID("CAN", "Subbus CAN Driver", "V1.1");
+  DAS_IO::AppID_t DAS_IO::AppID("CAN", "Subbus CAN Driver", "V1.2");

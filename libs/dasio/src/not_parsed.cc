@@ -427,9 +427,12 @@ bool DAS_IO::Interface::not_ISO8601(double &Time, bool w_hyphens) {
   buft.tm_year -= 1900;
   buft.tm_mon -= 1;
   buft.tm_sec = 0;
+  buft.tm_isdst = 0;
+  errno = 0;
   ltime = mktime(&buft);
   if (ltime == (time_t)(-1)) {
-    report_err("%s: mktime returned error", iname);
+    report_err("%s: mktime returned error %d:%s", iname,
+        errno, strerror(errno));
     msg(MSG_DEBUG, "year=%d mon=%d mday=%d hour=%d min=%d sec=%d isdst=%d",
       buft.tm_year, buft.tm_mon, buft.tm_mday, buft.tm_hour, buft.tm_min,
       buft.tm_sec, buft.tm_isdst);
@@ -440,7 +443,28 @@ bool DAS_IO::Interface::not_ISO8601(double &Time, bool w_hyphens) {
   return false;
 }
 
+bool DAS_IO::Interface::not_nan() {
+  if (buf[cp] == ',' || buf[cp] == '\r' || buf[cp] == '\n') {
+    return false;
+  }
+  if (strncasecmp((const char *)&buf[cp], "NaN", 3) == 0) {
+    cp += 3;
+    return false;
+  }
+  return true;
+}
+
 bool DAS_IO::Interface::not_nfloat(float *value, float NaNval) {
+  float val;
+  not_spaces();
+  if (not_nan()) {
+    if (not_float(val)) return true;
+    *value = val;
+  } else {
+    *value = NaNval;
+  }
+  return false;
+#ifdef OLD_IMPLEMENTATION
   float val;
   while (cp < nc && buf[cp] == ' ') ++cp;
   if (cp >= nc) return true;
@@ -455,6 +479,17 @@ bool DAS_IO::Interface::not_nfloat(float *value, float NaNval) {
   }
   if (not_float(val)) return true;
   *value = val;
+  return false;
+#endif
+}
+
+bool DAS_IO::Interface::not_ndouble(double &value, double NaNval) {
+  double val;
+  if (not_spaces() || not_nan()) {
+    if (not_double(value)) return true;
+  } else {
+    value = NaNval;
+  }
   return false;
 }
 
