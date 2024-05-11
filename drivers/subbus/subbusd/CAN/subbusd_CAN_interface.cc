@@ -314,7 +314,7 @@ bool CAN_socket::protocol_input() {
         memset(request.msg->buf, 0, request.msg->bufsz - rep_recd);
         request.clt->request_complete(SBS_NOACK, request.msg->bufsz);
       } else {
-        report_err("%s: CAN_ERR %d", iname, repfrm->data[1]);
+        report_err("%s: CAN_ERR %d", iname, repfrm->data[2]);
         request.clt->request_complete(SBS_RESP_ERROR, 0);
       }
     } else {
