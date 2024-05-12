@@ -3,10 +3,17 @@
 <include> msg oui
 <include> host_session
 
+<opts> "Q"
+<sort>
+  -Q Connect to Qsrvr Cmd_Server for Quit notification
+<switch>
+  case 'Q': DAS_IO::tm_client::opt_Q = true; break;
+
 <unsort>
 Host_Session function bfr: Where to find bfr to receive telemetry
+Host_Session function Qsrvr: From where to receive Quit notification
 
 <package> appid_default
 <include> "dasio/appid.h"
 <defs>
-  DAS_IO::AppID_t DAS_IO::AppID("tm_clt", "TM Client", "V2.0");
+  DAS_IO::AppID_t DAS_IO::AppID("tm_clt", "TM Client", "V2.1");

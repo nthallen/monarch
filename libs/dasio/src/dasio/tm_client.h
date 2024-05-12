@@ -22,6 +22,7 @@ class tm_client : public DAS_IO::Client, public DAS_IO::tm_rcvr {
     tm_client(int bufsize, bool fast = true);
     // void resize_buffer(int bufsize_in);
     static char *srcnode;
+    static bool opt_Q;
   protected:
     // int bfr_fd;
     bool app_input();
