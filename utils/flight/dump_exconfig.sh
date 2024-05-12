@@ -26,6 +26,7 @@ msg 0 FltNode_Access=$FltNode_Access
 msg 0 SERVICE=$SERVICE
 msg 0 "TM_OPT='$TM_OPT'"
 msg 0 "CMD_OPT='$CMD_OPT'"
+msg 0 "PBS_OPT='$PBS_OPT'"
 msg 0 "MC_OPT='$MC_OPT'"
 msg 0 "SSH_CMD='$SSH_CMD'"
 msg 0 "VERSION=$VERSION"
