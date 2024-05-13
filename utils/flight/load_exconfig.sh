@@ -214,7 +214,8 @@ function Launch {
     # name already exists, so may not need to launch
     if [ -S $wname -a -f $wname.pid ]; then
       pid=`cat $wname.pid`
-      if kill -0 $pid 2>/dev/null; then
+      if p=$(kill -0 $pid 2>&1) || echo $p | grep -q "Operation not permitted"; then
+      # if kill -0 $pid 2>/dev/null; then
         msgf $LaunchVdefault 2 "Launch of $1 Skipped: socket $name still active"
         launch_error=yes
         return 1
