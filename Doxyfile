@@ -907,19 +907,16 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = dasio \
-                         dasio/src \
-                         dasio/src/dasio \
-                         dasio/template \
-                         nl \
-                         nl/src \
-                         tm \
-                         tm/src \
-                         cmdgen \
-                         oui/src \
+INPUT                  = libs/dasio/src \
+                         libs/dasio/src/dasio \
+                         libs/nl \
+                         libs/nl/src \
+                         tools/cmdgen \
+                         tools/oui/src \
                          drivers/subbus/include \
                          drivers/subbus/subbusd \
-                         drivers/subbus/subbusd/CAN
+                         drivers/subbus/subbusd/CAN \
+                         drivers/subbus/subbusd/serusb
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
