@@ -49,6 +49,7 @@ class Reader : public tm_generator, public tm_rcvr {
     void bfr_write_completed() override;
     void lock(const char *by = 0, int line = -1);
     void unlock();
+    void set_autoquit();
     // void buffering(bool bfring) override;
     pthread_mutex_t tmq_mutex;
     bool have_tstamp;
@@ -59,6 +60,7 @@ class Reader : public tm_generator, public tm_rcvr {
     rdr_mlf* mlf;
     bool managing_queues;
     bool tm_queue_blocked;
+    bool auto_quit_requested;
 };
 
 extern "C" {

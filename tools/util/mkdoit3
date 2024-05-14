@@ -337,13 +337,15 @@ if [ $srcmode = realtime ]; then
 elif [ $srcmode = playback ]; then
   lcllogfile=$logfileroot.PB.$SESSION.log
   # rmtlogfile=$lcllogfile
-  TM_OPT=''
+  TM_OPT='-Q'
   CMD_OPT=''
+  PBS_OPT=''
 elif [ $srcmode = SerIn ]; then
   lcllogfile=$logfileroot.SI.$SESSION.log
   # rmtlogfile=$lcllogfile
-  TM_OPT=''
+  TM_OPT='-Q'
   CMD_OPT=''
+  PBS_OPT=''
 else
   msgf 4 "Unsupported srcmode '$srcmode'"
 fi

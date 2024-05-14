@@ -80,7 +80,7 @@ bool rdr_mlf::process_eof() {
   }
   if ( fd == -1 ) {
     if (opt_autoquit) {
-      rdr_ptr->event(tmg_event_quit);
+      rdr_ptr->set_autoquit(); // event(tmg_event_quit);
     }
     flags = 0;
   } else {
@@ -108,7 +108,8 @@ Reader::Reader(int nQrows, rdr_mlf *mlf)
       tm_rcvr(mlf),
       mlf(mlf),
       managing_queues(false),
-      tm_queue_blocked(false) {
+      tm_queue_blocked(false),
+      auto_quit_requested(false) {
   int rv = pthread_mutex_init( &tmq_mutex, NULL );
   if ( rv )
     msg( MSG_FATAL, "Mutex initialization failed: %s",
@@ -145,6 +146,7 @@ void Reader::event(enum tm_gen_event evt) {
       break;
     case tmg_event_quit:
       msg( 0, "Quit event" );
+      auto_quit_requested = false;
       break;
     case tmg_event_fast:
       break;
@@ -154,7 +156,7 @@ void Reader::event(enum tm_gen_event evt) {
   unlock();
   tm_generator::event(evt);
   if (evt == tmg_event_quit) {
-    Shutdown(false); // cancel the full part
+    Shutdown(true);
   }
 }
 
@@ -242,7 +244,8 @@ unsigned int Reader::process_data() {
 
 bool Reader::ready_to_quit() {
   manage_queues();
-  if (is_buffering || !queue_empty() || ncc >= toread)
+  if (auto_quit_requested &&
+      (is_buffering || !queue_empty() || ncc >= toread))
     return false;
   if (tm_generator::ready_to_quit()) {
     Interface::dereference(mlf);
@@ -287,6 +290,13 @@ void Reader::unlock() {
   if (rv)
     msg( MSG_FATAL, "Mutex unlock failed: %s",
             strerror(rv));
+}
+
+void Reader::set_autoquit() {
+  // we set auto_quit_requested after event()
+  // event() will clear auto_quit_requested.
+  event(tmg_event_quit);
+  auto_quit_requested = true;
 }
 
 void tminitfunc() {}
