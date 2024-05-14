@@ -2,6 +2,7 @@
 #ifndef DASIO_SOCKET_H_INCLUDED
 #define DASIO_SOCKET_H_INCLUDED
 
+#include <map>
 #include "interface.h"
 
 namespace DAS_IO {
@@ -374,6 +375,9 @@ class Socket : public Interface {
     UDP_mode_t UDP_mode;
   private:
     static const int MAXPENDING = 5;
+    static bool services_read;
+    static std::map<std::string, std::string> name_to_port;
+    static const char *services_basename;
     /**
      * Handles Socket_Function resolution so connect()
      * should never see that. The resolution is:
@@ -388,6 +392,18 @@ class Socket : public Interface {
      * @return true if getsockopt succeeds.
      */
     bool readSockError(int *sock_err);
+    
+    /**
+     * @param dir The TMBINDIR directory
+     * @param sep A separator string
+     * @param suffix filename suffix
+     * @return true if specified file is not found
+     * Assembles a filename dir, services_basename, sep and suffix.
+     * sep and suffix should both be "" to read the standard services
+     * file. sep should be "." and suffix should be the Experiment
+     * environment value to read services.$Experiment.
+     */
+    bool initialize_services(const char *dir, const char *sep, const char *suffix);
 };
 
 }

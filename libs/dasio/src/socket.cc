@@ -251,7 +251,9 @@ bool Socket::connect() {
         char portname[6];
         
         if (get_service_port(service, portname)) {
-          msg(MSG_FATAL, "%s: Unable to determine service port", iname);
+          msg(MSG_FATAL,
+              "%s: Unable to determine service port for service %s",
+              iname, service);
         }
         
         fd = socket(AF_INET,
@@ -613,105 +615,77 @@ const char *Socket::get_version_string() {
 }
 
 /** Necessary global variables. */
-bool read = false;
-std::map<std::string, std::string> name_to_port;
-const char * filename = "/services";
+bool Socket::services_read = false;
+std::map<std::string, std::string> Socket::name_to_port;
+const char *Socket::services_basename = "services";
 
-/** Re-written by Miles 2020-01-21 */
-bool Socket::get_service_port(const char *service, char *port) {
-  /** First check if the file has already been read in. */
-  if (!read) {
-    /** Begin by opening and reading the file, line by line. */
+bool Socket::initialize_services(const char *dir, const char *sep, const char *suffix) {
+  int namelen = snprintf(0, 0, "%s/%s%s%s", dir, services_basename, sep, suffix);
+  char *fullpath = (char*) new_memory(++namelen);
+  snprintf(fullpath, namelen, "%s/%s%s%s", dir, services_basename, sep, suffix);
+  
+  FILE * portfile = fopen(fullpath, "r");
+  if (portfile == 0)
+    return true;
+  char current_line[80];
+  char ch;
+  
+  while (fgets(current_line, 80, portfile) != NULL) {
+    char name_accumulator[16];
+    int port_number;
     
-    const char *tmbindir = getenv("TMBINDIR");
-    if (tmbindir == 0) {
-      //tmbindir = "bin/1.1";
-      msg(MSG_FATAL, "TMBINDIR not defined!");
-    }
-    char *fullpath = (char *) new_memory(strlen(tmbindir) + strlen(filename) + 1);
-    strcpy(fullpath, tmbindir);
-    strcat(fullpath, filename);
-    
-    FILE * portfile = fopen(fullpath, "r");
-    if (portfile == 0) {
-      port[0] = '-';
-      port[1] = '1';
-      port[2] = '\0';
-      msg(MSG_FATAL, "Cannot access %s!", fullpath);
-      return true;
-    }
-    char current_line[16];
-    char ch;
-    
-    while (fgets(current_line, 16, portfile) != NULL) {
-      char name_accumulator[16];
-      char port_accumulator[8];
-      
-      int scanned = sscanf(current_line, "%s %s", name_accumulator, port_accumulator);
-      if (scanned == 0) {
-        msg(MSG_FATAL, "failed to match service/port identifier!");
-      } else {
-        if (name_accumulator == 0) {
-          msg(MSG_FATAL, "service name failed to initialize!");
-        }
-        if (port_accumulator == 0) {
-          msg(MSG_FATAL, "port number failed to initialize!");
-        }
-        
-        std::string name_string(name_accumulator);
-        std::string port_string(port_accumulator);
-
-        name_to_port[name_string] = port_string;
-        msg(MSG_DBG(1), "read in port %s for service %s", port_accumulator, name_accumulator);
-        memset(name_accumulator, 0, sizeof(name_accumulator));
-        memset(port_accumulator, 0, sizeof(port_accumulator));
+    int scanned = sscanf(current_line, "%s %d", name_accumulator, &port_number);
+    if (scanned < 2) {
+      if (name_accumulator[0] != '#' && name_accumulator[1] != '\n') {
+        msg(MSG_ERROR, "%s: %s: Syntax error");
       }
-    }
-    
-    fclose(portfile);
-    read = true;
-    
-    std::string service_string(service);
-    std::string port_result = name_to_port[service_string];
-    
-    const char *port_c_str = port_result.c_str();
-    strcpy(port, port_c_str);
-    
-    if (isdigit(port[0])) {
-      msg(MSG_DBG(1), "(%s/%s): selected port %s", iname, service, port);
-      return false;
+    } else if (port_number < 1024 || port_number > 65535 ) {
+      msg(MSG_ERROR, "%s: Invalid port number %d for service %s",
+          fullpath, port_number, name_accumulator);
     } else {
-      msg(MSG_FATAL,"no port for %s!", service);
-      port[0] = '-';
-      port[1] = '1';
-      port[2] = '\0';
-      return true;
-    }
-  } else {
-    std::string service_string(service);
-    std::string port_result = name_to_port[service_string];
-    
-    const char *port_c_str = port_result.c_str();
-    strcpy(port, port_c_str);
-    
-    if (isdigit(port[0])) {
-      msg(MSG_DBG(1), "(%s/%s): selected port %s", iname, service, port);
-      return false;
-    } else {
-      msg(MSG_FATAL,"no proper port number for %s!", service);
-      port[0] = '-';
-      port[1] = '1';
-      port[2] = '\0';
-      return true;
+      std::string name_string(name_accumulator);
+      // std::string port_string(port_accumulator);
+
+      name_to_port[name_string] = std::to_string(port_number);
+      msg(MSG_DBG(1), "%s: service %s port %d", fullpath,
+          name_accumulator, port_number);
     }
   }
   
-  /** If we really mess up. */
-  msg(MSG_FATAL,"no port found for %s!", service);
-  port[0] = '-';
-  port[1] = '1';
-  port[2] = '\0';
-  return true;
+  fclose(portfile);
+  free_memory(fullpath);
+  return false;
+}
+
+bool Socket::get_service_port(const char *service, char *port) {
+  if (!services_read) {
+    services_read = true; // Don't report errors more than once
+    
+    const char *tmbindir = getenv("TMBINDIR");
+    const char *experiment = getenv("Experiment");
+    if (tmbindir == 0 || experiment == 0) {
+      //tmbindir = "bin/1.1";
+      msg(MSG_FATAL, "TMBINDIR and/or Experiment undefined!");
+    }
+    bool no_services_found =
+      initialize_services(tmbindir,"","");
+    if (initialize_services(tmbindir,".",experiment)&&
+        no_services_found) {
+      msg(MSG_ERROR, "%s: No services files found for service '%s'",
+        iname, service);
+      return true;
+    }
+  }
+  std::string service_string(service);
+  std::string port_result = name_to_port[service_string];
+  
+  if (port_result.length() == 0) {
+    return true;
+  } else {
+    const char *port_c_str = port_result.c_str();
+    strcpy(port, port_c_str);
+    return false;
+  }
 }
 
 }
