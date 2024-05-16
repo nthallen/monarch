@@ -151,15 +151,6 @@ class Socket : public Interface {
      */
     void set_retries(int max_retries, int min_dly, int max_foldback_dly,
                      bool final = true);
-
-    /**
-     * If the socket is a listener, then return true.
-     * If the socket is a server client, just tear it down.
-     * Otherwise tear it down and attempt to reconnect.
-     * @param The errno value
-     * @return true if event loop should exit
-     */
-    bool read_error(int my_errno);
     /**
      * If the socket is a listener, then return true. (but should not be writing!)
      * If the socket is a server client, just tear it down.
@@ -308,6 +299,15 @@ class Socket : public Interface {
      */
     virtual bool connect_failed();
     
+    /**
+     * If the socket is a listener, then return true.
+     * If the socket is a server client, just tear it down.
+     * Otherwise tear it down and attempt to reconnect.
+     * @param The errno value
+     * @return true if event loop should exit
+     */
+    bool read_error(int my_errno) override;
+
     /**
      * @param reason The reason for not reconnecting
      * @return true if the program should exit the event loop
