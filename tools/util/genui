@@ -460,10 +460,11 @@ EOF
   }
   print DFS
     "dfs.end_col;\n",
-    "dfs.resize(context_level);\n",
     "dfs.set_connection('127.0.0.1', $jsonport);\n",
     "if nargout > 0\n",
     "  dfs_out = dfs;\n",
+    "else\n",
+    "  dfs.resize(context_level);\n",
     "end\n";
   close DFS || warn "Error closing $rt_filename\n";
 }
