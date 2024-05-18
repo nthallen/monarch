@@ -1,0 +1,6 @@
+ModuleDef tm_ipx {
+  Module for updating UDP MTU
+}
+
+cmdbase = tm_ipx.cmd
+

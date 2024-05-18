@@ -5,6 +5,7 @@
 #define TM_IP_EXPORT_H_INCLUDED
 #include "dasio/tm_client.h"
 #include "dasio/serio_pkt.h"
+#include "dasio/cmd_reader.h"
 
 using namespace DAS_IO;
 
@@ -31,12 +32,13 @@ class ipx_tm_out : public Socket {
   public:
     ipx_tm_out(const char *iname);
     void send_row(uint16_t MFCtr, const uint8_t *raw);
+    void update_MTU(int new_MTU);
 #ifdef HAVE_SCAN_DATA
     void enqueue_scan(int32_t scannum);
     void ipx_tm_out::send_scan_data();
 #endif
   protected:
-    ~ipx_tm_out();
+    virtual ~ipx_tm_out();
     void flush();
     uint16_t row_len;
     uint16_t rows_per_row; //*< Scan rows transmitted per TM row
@@ -45,6 +47,7 @@ class ipx_tm_out : public Socket {
     int n_tx_rows_dropped;
     int total_tx_rows_dropped;
     int MTU;
+    const int max_MTU = 1500;
     const int IP_header_len = 20;
     const int UDP_header_len = 8;
     int max_udp_payload;
@@ -64,6 +67,15 @@ class ipx_tm_in : public tm_client {
     void process_init();
     void process_quit();
     ipx_tm_out *tm_out;
+};
+
+class ipx_ctrl : public Cmd_reader {
+  public:
+    ipx_ctrl(const char *iname, const char *cmdchannel, ipx_tm_out *tm_out);
+    bool protocol_input() override;
+  protected:
+    ipx_tm_out *tm_out;
+    // virtual ~ipx_ctrl();
 };
 
 extern const char *ip_export_cross_exp;

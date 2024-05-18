@@ -62,10 +62,10 @@ ipx_tm_out::ipx_tm_out(const char *iname)
       dropping_tx_rows(false),
       n_tx_rows_dropped(0),
       total_tx_rows_dropped(0),
-      MTU(1500),
+      MTU(max_MTU),
       pyld_nc(0)
 {
-  max_udp_payload = MTU - IP_header_len - UDP_header_len;
+  max_udp_payload = max_MTU - IP_header_len - UDP_header_len;
   payload = (uint8_t *)new_memory(max_udp_payload);
 }
 
@@ -78,6 +78,16 @@ ipx_tm_out::~ipx_tm_out() {
     msg(MSG, "%s: total rows dropped: %d", iname,
       n_tx_rows_dropped + total_tx_rows_dropped);
   }
+}
+
+void ipx_tm_out::update_MTU(int new_MTU) {
+  if (new_MTU > max_MTU) {
+    msg(MSG_ERROR, "%s: Requested MTU %d exceeds max %d",
+      iname, new_MTU, max_MTU);
+    new_MTU = max_MTU;
+  }
+  MTU = new_MTU;
+  max_udp_payload = new_MTU - IP_header_len - UDP_header_len;
 }
 
 /**
@@ -333,6 +343,27 @@ void ipx_tm_in::process_quit() {
   ELoop->set_loop_exit();
 }
 
+ipx_ctrl::ipx_ctrl(const char *iname, const char *cmdchannel,
+                    ipx_tm_out *tm_out)
+    : Cmd_reader(iname, 80, cmdchannel),
+      tm_out(tm_out) {}
+
+bool ipx_ctrl::protocol_input() {
+  uint16_t new_MTU;
+  if (buf[cp] == 'Q') {
+    msg(MSG, "%s: process_quit()", iname);
+    ELoop->set_loop_exit();
+  } else if (not_str("M") || not_uint16(new_MTU)) {
+    msg(MSG_ERROR, "%s: Invalid command: '%s'",
+      iname, ascii_escape());
+  } else {
+    msg(MSG, "%s: Updating MTU to %u", iname, new_MTU);
+    tm_out->update_MTU(new_MTU);
+  }
+  consume(nc);
+  return false;
+}
+
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   AppID.report_startup();
@@ -351,6 +382,10 @@ int main(int argc, char **argv) {
     ipx_tm_in *tm_in = new ipx_tm_in(tm_out);
     ELoop.add_child(tm_in);
     tm_in->connect();
+    
+    ipx_ctrl *ctrl = new ipx_ctrl("ctrl", "TMIPX", tm_out);
+    ELoop.add_child(ctrl);
+    ctrl->connect();
     
     ELoop.event_loop();
     ELoop.delete_children();

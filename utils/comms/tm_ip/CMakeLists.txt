@@ -22,3 +22,8 @@ target_include_directories(tm_ip_export PRIVATE
 endif (DEFINED monarch_SOURCE_DIR)
 
 install(TARGETS tm_ip_import tm_ip_export RUNTIME DESTINATION bin)
+
+install(FILES
+  TM/tm_ipx.agm
+  TM/tm_ipx.cmd
+  DESTINATION share/monarch/modules/tm_ipx)
