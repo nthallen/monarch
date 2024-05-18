@@ -115,6 +115,8 @@ void subbusd_core::register_flavor(subbusd_flavor *fl) {
   ssvc.append(fl->flavor);
   srvr.add_subservice(new SubService(ssvc, fl->cloner, (void*)fl));
   devs.push_back(fl);
+  msg(MSG_DEBUG, "Registering svc/ssvc %s/%s",
+    srvr.get_service(), fl->flavor);
 }
 
 void subbusd_core::Start(Server::Srv_type type) {
