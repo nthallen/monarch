@@ -287,6 +287,22 @@ class RTU : public DAS_IO::Serial {
          */
         void setup_data(uint16_t *data);
         // void setup_data(uint32_t *data);
+        /**
+         * Hook for request-level status. When a request is
+         * successfully completed, the specified bit in the
+         * specified status byte will be set. This is useful
+         * in cases where the desired data are not
+         * all located in sequential registers so that
+         * multiple requests are necessary.
+         *
+         * If the status byte is located in a struct that
+         * is being sent to telemetry, the byte should be
+         * cleared in the modbus_device's protocol_gflag()
+         * method.
+         *
+         * @param byte pointer to a bit-mapped status byte
+         * @param bit_num Identifies the bit number
+         */
         void setup_fresh_bit(uint8_t *byte, uint8_t bit_num);
         inline req_state_t get_req_state() { return req_state; }
         const char *ascii_escape();
