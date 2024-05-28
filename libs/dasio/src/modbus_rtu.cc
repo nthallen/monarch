@@ -296,16 +296,18 @@ namespace DAS_IO { namespace Modbus {
     return req;
   }
   
-  RTU::modbus_req::modbus_req() {
-    req_state = Req_unconfigured;
-    device = 0;
-    address = 0;
-    rep_sz = req_sz = 0;
-    count = 0;
-    devID = 0;
-    persistent = false;
-    MB = 0;
-  }
+  RTU::modbus_req::modbus_req()
+      : req_state(Req_unconfigured),
+        device(0),
+        address(0),
+        rep_sz(0),
+        req_sz(0),
+        count(0),
+        devID(0),
+        persistent(false),
+        MB(0),
+        fresh_byte(0),
+        fresh_bit_mask(0) {}
   
   void RTU::modbus_req::setup(RTU::modbus_device *device,
           uint8_t function_code, uint16_t address, uint16_t count,
@@ -496,6 +498,11 @@ namespace DAS_IO { namespace Modbus {
     return;
   }
   
+  void RTU::modbus_req::setup_fresh_bit(uint8_t *byte, uint8_t bitnum) {
+    fresh_byte = byte;
+    fresh_bit_mask = 1<<bitnum;
+  }
+
   const char *RTU::modbus_req::byte_escape(uint8_t byte) {
     static char obuf[4];
     snprintf(obuf, 4, " %02X", byte);
@@ -524,6 +531,9 @@ namespace DAS_IO { namespace Modbus {
   
   void RTU::modbus_req::process_pdu() {
     this->handler(this, device, MB);
+    if (fresh_byte) {
+      *fresh_byte |= fresh_bit_mask;
+    }
   }
   
   /**

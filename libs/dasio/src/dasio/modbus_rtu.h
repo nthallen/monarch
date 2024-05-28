@@ -287,6 +287,7 @@ class RTU : public DAS_IO::Serial {
          */
         void setup_data(uint16_t *data);
         // void setup_data(uint32_t *data);
+        void setup_fresh_bit(uint8_t *byte, uint8_t bit_num);
         inline req_state_t get_req_state() { return req_state; }
         const char *ascii_escape();
         static const char *byte_escape(uint8_t byte);
@@ -324,6 +325,8 @@ class RTU : public DAS_IO::Serial {
         // rep_type_t rep_type;
         RepHandler handler;
         void *dest;
+        uint8_t *fresh_byte;
+        uint8_t fresh_bit_mask;
       protected:
         /**
          * Sets the CRC bytes in the request. The request must
