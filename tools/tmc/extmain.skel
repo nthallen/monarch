@@ -15,7 +15,6 @@
 #include "oui.h"
 #include "dasio/tm_client.h"
 #include "dasio/loop.h"
-#include "dasio/quit.h"
 
 using namespace DAS_IO;
 
@@ -75,8 +74,6 @@ typedef TM_CLIENT_CLASS TM_CLIENT;
   #define EXTRACTION_UPDATE
 #endif
 
-bool tm_client::opt_Q = false;
-
 #ifdef TMC_SERVER_CLASS
 
 /* The TMC_SERVER_CLASS must have a DAS_IO::Loop ELoop member.
@@ -93,11 +90,6 @@ int main(int argc, char **argv) {
   TM_CLIENT *Ext = new TM_CLIENT(4096, TM_CLIENT_FAST);
   srvr->ELoop.add_child(Ext);
   Ext->connect();
-  if (tm_client::opt_Q) {
-    Quit *Q = new Quit(0, 0, "Qsrvr");
-    srvr->ELoop.add_child(Q);
-    Q->connect();
-  }
   EXTRACTION_INIT;
   tminitfunc();
   EXTRACTION_UPDATE;
@@ -119,11 +111,6 @@ int main(int argc, char **argv) {
   Loop ELoop;
   ELoop.add_child(Ext);
   Ext->connect();
-  if (tm_client::opt_Q) {
-    Quit *Q = new Quit(0, false, "Qsrvr");
-    ELoop.add_child(Q);
-    Q->connect();
-  }
   EXTRACTION_INIT;
   tminitfunc();
   EXTRACTION_UPDATE;

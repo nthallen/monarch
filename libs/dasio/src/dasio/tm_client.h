@@ -20,15 +20,16 @@ namespace DAS_IO {
 class tm_client : public DAS_IO::Client, public DAS_IO::tm_rcvr {
   public:
     tm_client(int bufsize, bool fast = true);
+    void adopted() override;
     // void resize_buffer(int bufsize_in);
     static char *srcnode;
     static bool opt_Q;
   protected:
     // int bfr_fd;
-    bool app_input();
-    bool app_connected();
+    bool app_input() override;
+    bool app_connected() override;
     // bool tm_quit;
-    virtual bool process_eof();
+    virtual bool process_eof() override;
 };
 
 class ext_tm_client : public tm_client {

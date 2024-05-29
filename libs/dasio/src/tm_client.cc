@@ -13,12 +13,14 @@
 #include "dasio/msg.h"
 #include "dasio/tm.h"
 #include "dasio/rundir.h"
+#include "dasio/quit.h"
 #include "nl.h"
 #include "nl_assert.h"
 
 namespace DAS_IO {
 
 char *tm_client::srcnode = NULL;
+bool tm_client::opt_Q = false;
 
 void tm_set_srcnode(char *nodename) {
   tm_client::srcnode = nodename;
@@ -33,6 +35,14 @@ tm_client::tm_client(int bufsize, bool fast)
     tm_rcvr(this)
 {
   nl_assert(buf);
+}
+
+void tm_client::adopted() {
+  if (opt_Q) {
+    Quit *Q = new Quit(0, 0, "Qsrvr");
+    ELoop->add_child(Q);
+    Q->connect();
+  }
 }
 
 /**
