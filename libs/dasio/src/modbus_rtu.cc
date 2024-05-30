@@ -63,9 +63,10 @@ namespace DAS_IO { namespace Modbus {
           msg(0, "%s: Request was: %s", iname, pending->ascii_escape());
         consume(nc);
       } else if (!crc_ok(buf, pending->rep_sz)) {
-        msg(MSG_ERROR, "%s: %s on reply", iname,
+        report_err("%s: %s on reply", iname,
           nc > pending->rep_sz ? "CRC error + extra chars" : "CRC error");
-        msg(0, "%s: Request was: %s", iname, pending->ascii_escape());
+        if (not_suppressing())
+          msg(0, "%s: Request was: %s", iname, pending->ascii_escape());
         consume(nc);
       } else {
         cp = pending->rep_sz;
