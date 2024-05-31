@@ -34,10 +34,11 @@ class RTU : public DAS_IO::Serial {
      */
     RTU(const char *iname, int bufsz);
         
-    /**
+    /*
      * @brief Thin wrapper on Interface::ProcessData() to handle update_tc_vmin()
      */
-    bool ProcessData(int flag);
+    // bool ProcessData(int flag);
+    
     /**
      * Provide hex output instead of ASCII
      */
@@ -166,6 +167,19 @@ class RTU : public DAS_IO::Serial {
     std::deque<modbus_req *> req_free;
     std::deque<modbus_req *>::const_iterator cur_poll;
     modbus_req *pending;
+    
+    /**
+     * Set to true if the RS-485 hardware in use does not suppress
+     * echos of outbound requests. This should be included as a
+     * command line option via modbus_rtu.oui, since the same driver
+     * and device may be used with different RS-485 hardware.
+     * There is an implicit assumption that all Modbus::RTU
+     * connections used by any single application will need the same
+     * setting. This seems like a reasonable assumption, since to date
+     * I have never addressed more than one Modbus::RTU chain from any
+     * driver.
+     */
+    static bool suppress_rs485_echos;
     
   protected:
     ~RTU();

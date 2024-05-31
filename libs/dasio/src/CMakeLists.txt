@@ -41,6 +41,7 @@ install(FILES
   json_srvr.oui
   kbdclt.oui
   msg.oui
+  modbus_rtu.oui
   nctable.oui
   no_appid.oui
   server.oui

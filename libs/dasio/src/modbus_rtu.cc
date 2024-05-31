@@ -8,6 +8,8 @@
 #include "nl_assert.h"
 
 namespace DAS_IO { namespace Modbus {
+
+  bool RTU::suppress_rs485_echos = false;
   
   RTU::RTU(const char *iname, int bufsz, const char *path)
       : DAS_IO::Serial(iname, bufsz, path, O_RDWR|O_NONBLOCK) {
@@ -25,16 +27,6 @@ namespace DAS_IO { namespace Modbus {
   
   RTU::~RTU() {}
   
-  bool RTU::ProcessData(int flag) {
-    if (DAS_IO::Interface::ProcessData(flag))
-      return true;
-    if (pending) {
-      // Temporarily disable, since it isn't working
-      // update_tc_vmin(pending->rep_sz - nc);
-    }
-    return false;
-  }
-  
   bool RTU::protocol_input() {
     if (!pending) {
       report_err("%s: Unexpected input", iname);
@@ -43,34 +35,41 @@ namespace DAS_IO { namespace Modbus {
       report_err("%s: Unexpected input during turn around delay", iname);
       consume(nc);
     } else {
-      if (nc < 5) return false; /* dev, cmd|err, exc. code, CRC */
-      else if (!(buf[1] & 0x80) && (nc < pending->rep_sz)) return false;
-      else if (buf[0] != pending->req_buf[0]) {
+      if (suppress_rs485_echos &&
+          not_str((char*)pending->req_buf, pending->req_sz)) {
+        if (cp < nc) {
+          consume(nc);
+        }
+        return false;
+      }
+      if (nc < cp+5) return false; /* dev, cmd|err, exc. code, CRC */
+      else if (!(buf[cp+1] & 0x80) && (nc < pending->rep_sz)) return false;
+      else if (buf[cp] != pending->req_buf[0]) {
         report_err("%s: Reply address mismatch. Expected 0x%02X, Recd 0x%02X",
-            iname, pending->req_buf[0], buf[0]);
+            iname, pending->req_buf[0], buf[cp]);
         consume(nc);
-      } else if ((buf[1] & 0x7F) != pending->req_buf[1]) {
+      } else if ((buf[cp+1] & 0x7F) != pending->req_buf[1]) {
         report_err("%s: Reply function code mismatch. Expected 0x%02X, Recd 0x%02X",
-            iname, pending->req_buf[1], buf[1] & 0x7F);
+            iname, pending->req_buf[1], buf[cp+1] & 0x7F);
         consume(nc);
-      } else if (buf[1] & 0x80) {
-        if (crc_ok(buf, 5)) {
-          report_err("%s: Modbus error code %d", iname, buf[2]);
+      } else if (buf[cp+1] & 0x80) {
+        if (crc_ok(buf+cp, 5)) {
+          report_err("%s: Modbus error code %d", iname, buf[cp+2]);
         } else {
           report_err("%s: CRC error on Modbus error message", iname);
         }
         if (not_suppressing())
           msg(0, "%s: Request was: %s", iname, pending->ascii_escape());
         consume(nc);
-      } else if (!crc_ok(buf, pending->rep_sz)) {
+      } else if (!crc_ok(buf+cp, pending->rep_sz)) {
         report_err("%s: %s on reply", iname,
           nc > pending->rep_sz ? "CRC error + extra chars" : "CRC error");
         if (not_suppressing())
           msg(0, "%s: Request was: %s", iname, pending->ascii_escape());
         consume(nc);
       } else {
-        cp = pending->rep_sz;
         pending->process_pdu();
+        cp += pending->rep_sz;
         if (nc > cp) {
           report_err("%s: Extra chars after reply", iname);
           consume(nc);
@@ -91,41 +90,57 @@ namespace DAS_IO { namespace Modbus {
     static std::string s;
     char snbuf[8];
     uint8_t func = buf[1];
-    int rep_sz;
+    int rep_sz = 0;
     int i = 0;
     s.clear();
-    if (nc > 0) {
+    if (suppress_rs485_echos) {
+      if (pending && cp) {
+        s.append("[Echo]+");
+      } else {
+        s.append("[Echo?]");
+      }
+    }
+    if (nc > cp) {
       s.append("DevID:");
-        s.append(RTU::modbus_req::byte_escape(buf[0]));
-      if (nc > 1) {
-        s.append(" Func:"); s.append(RTU::modbus_req::byte_escape(buf[1]));
+        s.append(RTU::modbus_req::byte_escape(buf[cp]));
+      if (nc > cp+1) {
+        s.append(" Func:");
+        s.append(RTU::modbus_req::byte_escape(buf[cp+1]));
         if (func & 0x80) {
           s.append(" Err:");
-            s.append(RTU::modbus_req::byte_escape(buf[2]));
-            s.append(RTU::modbus_req::byte_escape(buf[3]));
-          rep_sz = 6;
+          if (nc > cp+3) {
+            s.append(RTU::modbus_req::byte_escape(buf[cp+2]));
+            s.append(RTU::modbus_req::byte_escape(buf[cp+3]));
+            rep_sz = 6;
+          }
         } else if (func <= 4) {
-          int NB = buf[2];
-          rep_sz = NB+5;
-          s.append(" NB:");
-            s.append(RTU::modbus_req::byte_escape(NB));
-          s.append(" Data:");
-          for (i = 0; i < NB; ++i) {
-            s.append(RTU::modbus_req::byte_escape(buf[3+i]));
+          if (nc > cp+2) {
+            int NB = buf[cp+2];
+            rep_sz = NB+5;
+            s.append(" NB:");
+              s.append(RTU::modbus_req::byte_escape(NB));
+            s.append(" Data:");
+            for (i = 0; i < NB && nc > cp+3+i; ++i) {
+              s.append(RTU::modbus_req::byte_escape(buf[cp+3+i]));
+            }
           }
         } else {
-          rep_sz = 8;
-          s.append(" Addr:");
-            s.append(RTU::modbus_req::byte_escape(buf[3]));
-            s.append(RTU::modbus_req::byte_escape(buf[4]));
-          s.append(" Other: ");
-            s.append(RTU::modbus_req::byte_escape(buf[5]));
-            s.append(RTU::modbus_req::byte_escape(buf[6]));
+          if (nc > cp+4) {
+            s.append(" Addr:");
+              s.append(RTU::modbus_req::byte_escape(buf[cp+3]));
+              s.append(RTU::modbus_req::byte_escape(buf[cp+4]));
+            if (nc > cp+6) {
+              s.append(" Other: ");
+                s.append(RTU::modbus_req::byte_escape(buf[cp+5]));
+                s.append(RTU::modbus_req::byte_escape(buf[cp+6]));
+              rep_sz = 8;
+            }
+          }
         }
-        if (rep_sz <= nc) {
+        if (rep_sz && cp+rep_sz <= nc) {
           s.append(" CRC:");
-            s.append(RTU::modbus_req::byte_escape(buf[rep_sz-2]));
-            s.append(RTU::modbus_req::byte_escape(buf[rep_sz-1]));
+            s.append(RTU::modbus_req::byte_escape(buf[cp+rep_sz-2]));
+            s.append(RTU::modbus_req::byte_escape(buf[cp+rep_sz-1]));
         }
       }
     }
@@ -213,21 +228,21 @@ namespace DAS_IO { namespace Modbus {
   void RTU::read_pdu_4321(uint32_t *dest, int count) {
     int offset = 3;
     for (int i = 0; count > 0; ++i, --count) {
-      RTU::modbus_req::swap32_4321((uint8_t*)dest, (uint8_t*)&buf[offset+4*i]);
+      RTU::modbus_req::swap32_4321((uint8_t*)dest, (uint8_t*)&buf[cp+offset+4*i]);
       ++dest;
     }
   }
   
   void RTU::read_pdu(uint16_t *dest, int count, int offset) {
     for (int i = 0; count > 0; ++i, --count) {
-      RTU::modbus_req::swap16((uint8_t*)dest, (uint8_t*)&buf[offset+2*i]);
+      RTU::modbus_req::swap16((uint8_t*)dest, (uint8_t*)&buf[cp+offset+2*i]);
       ++dest;
     }
   }
   
   void RTU::read_pdu(uint8_t *dest, int count, int offset) {
     for (int i = 0; count > 0; ++i, --count) {
-      dest[i] = buf[offset+i];
+      dest[i] = buf[cp+offset+i];
     }
   }
   

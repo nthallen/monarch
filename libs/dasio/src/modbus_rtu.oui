@@ -1,0 +1,8 @@
+<package> modbus_rtu
+<include> "dasio/modbus_rtu.h"
+
+<opts> "e"
+<sort>
+  -e Expect and suppress RS-485 Modbus echos'
+<switch>
+  case 'e': DAS_IO::Modbus::RTU::suppress_rs485_echos = true; break;
