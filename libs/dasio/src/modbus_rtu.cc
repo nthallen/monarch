@@ -43,7 +43,8 @@ namespace DAS_IO { namespace Modbus {
         return false;
       }
       if (nc < cp+5) return false; /* dev, cmd|err, exc. code, CRC */
-      else if (!(buf[cp+1] & 0x80) && (nc < pending->rep_sz)) return false;
+      else if (!(buf[cp+1] & 0x80) && (nc < cp+pending->rep_sz))
+        return false;
       else if (buf[cp] != pending->req_buf[0]) {
         report_err("%s: Reply address mismatch. Expected 0x%02X, Recd 0x%02X",
             iname, pending->req_buf[0], buf[cp]);
