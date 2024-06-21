@@ -1,0 +1,9 @@
+<package> @SVC@_col_driver
+<include> "@SVC@_col_driver.h"
+
+<defs>
+  @SVC@_col_driver *@SVC@_col;
+
+<init>
+  @SVC@_col = new @SVC@_col_driver("@SVC@", "@SSVC@");
+  @SVC@_col->init();

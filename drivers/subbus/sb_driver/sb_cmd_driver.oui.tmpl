@@ -1,0 +1,9 @@
+<package> @SVC@_cmd_driver
+<include> "@SVC@_cmd_driver.h"
+
+<defs>
+  @SVC@_cmd_driver *@SVC@_cmd;
+
+<init>
+  @SVC@_cmd = new @SVC@_cmd_driver("@SVC@", "@SSVC@");
+  @SVC@_cmd->init();

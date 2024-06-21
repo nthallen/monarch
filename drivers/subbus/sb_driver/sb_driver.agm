@@ -1,0 +1,34 @@
+Moduledef sb_driver [ SVC=subbusd SSVC=serusb ] {
+  Module to provide a framework for using subbuspp
+  communications within a Monarch instrument
+  definition.
+  
+  SVC is the service name of the subbus library.
+  SSVC is the subservice.
+  
+  These default to subbusd/serusb, but they should be
+  replaced with the specific values. SVC must be unique
+  within the project, since it is used in clase and file
+  names.
+  
+  The default initialization code in the generated .oui
+  files uses @SVC@ and @SSVC@, but the generated .oui
+  file can be editted if more flexibility is required.
+  It may be useful to allow changing the service name
+  and/or the subservice from the command line.
+  
+  This is primarily a template module, creating source files
+  from templates that then require some programming to
+  fill out their functionality.
+}
+
+CPPFLAGS = -I @MODDIR@
+# sb_driver.o : sb_driver.cc @MODDIR@/sb_driver.h
+colbase = sb_driver.cc
+colbase = @SVC@_col_driver.cc:sb_col_driver.cc.tmpl
+colbase = @SVC@_col_driver.oui:sb_col_driver.oui.tmpl
+- : @SVC@_col_driver.h:sb_col_driver.h.tmpl
+cmdbase = sb_driver.cc
+cmdbase = @SVC@_cmd_driver.cc:sb_cmd_driver.cc.tmpl
+cmdbase = @SVC@_cmd_driver.oui:sb_cmd_driver.oui.tmpl
+- : @SVC@_cmd_driver.h:sb_cmd_driver.h.tmpl

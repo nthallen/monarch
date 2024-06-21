@@ -1,0 +1,11 @@
+#include "sb_driver.h"
+
+class @SVC@_cmd_driver : public SB_driver {
+  public:
+    inline @SVC@_cmd_driver(const char *service, const char *subservice) :
+      SB_driver(service, subservice) {}
+    void init(); // Any setup required by the command server
+    void execute(); // Code to execute specific commands
+};
+
+extern @SVC@_cmd_driver *@SVC@_cmd;

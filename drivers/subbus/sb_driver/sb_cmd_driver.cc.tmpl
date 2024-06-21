@@ -1,0 +1,13 @@
+#include "@SVC@_cmd_driver.h"
+#include "nl.h"
+
+void @SVC@_cmd_driver::init() {
+  if (load()) {
+    msg(MSG, "%s: connected to %s", iname, get_subbus_name());
+  }
+  // Any setup required by the command server
+}
+
+void @SVC@_cmd_driver::execute() {
+  // Code to execute specific commands
+}

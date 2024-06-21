@@ -1,0 +1,13 @@
+#include "sb_driver.h"
+
+class @SVC@_col_driver : public SB_driver {
+  public:
+    inline @SVC@_col_driver(const char *service, const char *subservice) :
+      SB_driver(service, subservice) {}
+    void init(); // Any setup required by collection
+    void acquire(); // Code to retrieve data
+  protected:
+    // subbusd_mread_req *req1; // e.g.
+};
+
+extern @SVC@_col_driver *@SVC@_col;

@@ -230,26 +230,29 @@ while (1) {
             die "Source file not found: '$src'\n";
           }
           if ($tgt && $src) {
-            print "specdepbase = $src\n";
+            print "specdepbase = $src\n"
+              unless $src =~ m/.tmpl$/;
             print "spectgtbase = $tgt\n";
-            my $dosubs = $src =~ m/\.in$/;
-            my $tgttmp = "._$tgt";
-            open(my $ifh, "<", $src) ||
-              die "$path:$linenum: unable to open source file '$src'\n";
-            open(my $ofh, ">", $tgttmp) ||
-              die "$path:$linenum: unable to open target temp file '$tgttmp'\n";
-            while (my $line = <$ifh>) {
-              $line = subvars($line, \%Modevars) if $dosubs;
-              print $ofh $line;
-            }
-            close($ifh);
-            close($ofh);
-            # Now compare $tgttmp to $tgt if it exists
-            if (-f $tgt && compare($tgt, $tgttmp) == 0) {
-              unlink($tgttmp);
-            } else {
-              unlink($tgt);
-              rename($tgttmp, $tgt);
+            unless (-f $tgt && $src =~ m/.tmpl$/) {
+              my $dosubs = $src =~ m/\.(?:in|tmpl)$/;
+              my $tgttmp = "._$tgt";
+              open(my $ifh, "<", $src) ||
+                die "$path:$linenum: unable to open source file '$src'\n";
+              open(my $ofh, ">", $tgttmp) ||
+                die "$path:$linenum: unable to open target temp file '$tgttmp'\n";
+              while (my $line = <$ifh>) {
+                $line = subvars($line, \%Modevars) if $dosubs;
+                print $ofh $line;
+              }
+              close($ifh);
+              close($ofh);
+              # Now compare $tgttmp to $tgt if it exists
+              if (-f $tgt && compare($tgt, $tgttmp) == 0) {
+                unlink($tgttmp);
+              } else {
+                unlink($tgt);
+                rename($tgttmp, $tgt);
+              }
             }
             push(@ofiles, $tgt);
           } elsif ( $tgt ) {
