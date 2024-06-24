@@ -108,8 +108,8 @@ class Loop {
      * serialized signal to.
      */
     static uint32_t signals_seen;
-    
-  private:
+
+  protected:
     /**
      * Locates the position in list S of the Interface with the matching fd.
      * Will not match anything if fd < 0.
@@ -117,12 +117,14 @@ class Loop {
      * @return The position in S of the Interface with the matching fd.
      */
     InterfaceList::iterator find_child_by_fd(int fd);
+    /** The list of child interfaces */
+    InterfaceList S;
+  
+  private:
     void loop_init();
     bool loop_active();
     void loop_iterate();
 
-    /** The list of child interfaces */
-    InterfaceList S;
     /** List of interfaces pending deletion */
     InterfaceList PendingDeletion;
     /**
