@@ -23,12 +23,15 @@ Moduledef sb_driver [ SVC=subbusd SSVC=serusb ] {
 }
 
 CPPFLAGS = -I @MODDIR@
-# sb_driver.o : sb_driver.cc @MODDIR@/sb_driver.h
-colbase = sb_driver.cc
-colbase = @SVC@_col_driver.cc:sb_col_driver.cc.tmpl
-colbase = @SVC@_col_driver.oui:sb_col_driver.oui.tmpl
-- : @SVC@_col_driver.h:sb_col_driver.h.tmpl
-cmdbase = sb_driver.cc
-cmdbase = @SVC@_cmd_driver.cc:sb_cmd_driver.cc.tmpl
-cmdbase = @SVC@_cmd_driver.oui:sb_cmd_driver.oui.tmpl
-- : @SVC@_cmd_driver.h:sb_cmd_driver.h.tmpl
+mode (default,col,col_cmd) {
+  colbase = sb_driver.cc
+  colbase = @SVC@_col_driver.cc:sb_col_driver.cc.tmpl
+  colbase = @SVC@_col_driver.oui:sb_col_driver.oui.tmpl
+  - : @SVC@_col_driver.h:sb_col_driver.h.tmpl
+}
+mode (default,cmd,col_cmd) {
+  cmdbase = sb_driver.cc
+  cmdbase = @SVC@_cmd_driver.cc:sb_cmd_driver.cc.tmpl
+  cmdbase = @SVC@_cmd_driver.oui:sb_cmd_driver.oui.tmpl
+  - : @SVC@_cmd_driver.h:sb_cmd_driver.h.tmpl
+}
