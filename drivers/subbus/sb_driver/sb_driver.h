@@ -6,4 +6,5 @@ class SB_driver : public subbuspp {
     void init();
     virtual void setup();
   protected:
+    bool loaded;
 };
