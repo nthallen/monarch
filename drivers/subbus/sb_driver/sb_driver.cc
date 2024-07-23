@@ -13,6 +13,8 @@ void SB_driver::init()
     loaded = true;
     msg(MSG, "%s: connected to %s", iname, get_subbus_name());
     setup();
+  } else {
+    msg(MSG_ERROR, "%s: subbus load failed", iname);
   }
 }
 
