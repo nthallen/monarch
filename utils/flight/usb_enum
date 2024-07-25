@@ -73,8 +73,8 @@ sub load_ports {
       } elsif ($line =~ m/^(\s*)\|__ Port (\d+): Dev (\d+),/) {
         my $newindent = $1;
         my $newindentlen = length($newindent);
-        my $curport = $2;
-        my $curdevnum = $3;
+        my $curport = $2+0;
+        my $curdevnum = $3+0;
         while (@indent && $newindentlen <= $indent[0]->{indentlen}) {
           shift(@indent);
         }
