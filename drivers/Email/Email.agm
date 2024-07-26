@@ -17,6 +17,6 @@ distribution : install-Email
 install-Email :
 	@[ -d @dest@ ] || mkdir -p --mode=775 @dest@
 	@distribute $(FORCE) @dest@ doreport doreport.pm account.pm
-	@@[ $(stat --format=%U @dest@/doreport) = $(id -un) ] && \
-	  chmod +x @dest@/doreport
+	@[ $$(stat --format=%U @dest@/doreport) = $$(id -un) ] && \
+	  chmod +x @dest@/doreport; true
 }
