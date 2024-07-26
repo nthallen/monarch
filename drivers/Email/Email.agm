@@ -13,8 +13,10 @@ mode (default) {
 .PHONY : install-Email
 all-dist : doreport doreport.pm account.pm
 distribution : install-Email
+# Only attempt to chmod doreport if we just copied it
 install-Email :
-	@chmod +x doreport
 	@[ -d @dest@ ] || mkdir -p --mode=775 @dest@
 	@distribute $(FORCE) @dest@ doreport doreport.pm account.pm
+	@@[ $(stat --format=%U @dest@/doreport) = $(id -un) ] && \
+	  chmod +x @dest@/doreport
 }
