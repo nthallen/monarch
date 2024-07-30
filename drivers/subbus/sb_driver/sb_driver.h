@@ -1,3 +1,6 @@
+#ifndef SB_DRIVER_H_INCLUDED
+#define SB_DRIVER_H_INCLUDED
+
 #include "subbuspp.h"
 
 class SB_driver : public subbuspp {
@@ -8,3 +11,5 @@ class SB_driver : public subbuspp {
   protected:
     bool loaded;
 };
+
+#endif
