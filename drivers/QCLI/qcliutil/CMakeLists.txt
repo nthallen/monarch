@@ -55,6 +55,7 @@ install(FILES
   TM/qcli.genui.in
   TM/ssp_amp.AB3R.tmc.in
   TM/ssp_noise.AB3R.tmc.in
+  TM/ssp_noise.ABC3R.tmc.in
   TM/ssp_amp.genui.in
   TM/ssp_noise.genui.in
   TM/ssp_amp_col.tmc.in
