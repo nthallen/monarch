@@ -196,6 +196,58 @@ void mlf_set_ntup( mlf_def_t *mlf, mlf_ntup_t *mlfn ) {
   mlf_set_ixs( mlf, mlfn->ntup );
 }
 
+/**
+ * @brief mlf_init(): Initialize multi-level file operations
+ * @param n_levels The number of directory levels
+ * @param n_files The number of files or directories per level
+ * @param writing True for write operations
+ * @param fbase Root directory
+ * @param fsuffix String to append to the file number
+ * @param config Path of the last file written (for re-initialization)
+ 
+  The multi-level file routines are designed for efficiently
+  storing a large number of sequential files. Most hierarchical
+  file systems become seriously inefficient as the number of
+  files in a single directory becomes large. This is due in large
+  part to the fact that any search for a specific filename
+  requires a linear search through the directory, and hence
+  sequentially accessing each file in a directory is an order n^2
+  operation.
+  
+  The MLF routines address this issue by using multiple directory
+  levels to store sequential files. The number of levels and the
+  number of entries at each level is configurable, depending on
+  the total expected number of files.
+
+  mlf_init() establishes the parameters for subsequent
+  multi-level file operations. n_levels specifies how many levels
+  of directories should be used. n_files specifies the number of
+  files per directory. the writing argument should be non-zero
+  for write operations, zero for read operations. fbase is the
+  name of the first level directory. fsuffix is a suffix that is
+  appended to each file. config is an optional string defining
+  the first file to access. The base and suffix in the config
+  string takes precedence over the fbase and fsuffix parameters.
+  
+  Generated file names are of the form:
+
+  $fbase/\d\d+(/\d\d)* /\d\d\.$fsuffix
+  
+  For reference, the lgr utility uses the following parameters:
+
+    mlf = mlf_init( 3, 60, 1, "LOG", "dat", mlf_config );
+
+  where mlf_config is the output from mlf_find of the path of
+  the last file written (if any). This level of nesting seems
+  to work well in most settings.
+
+  @returns a pointer to a dynamically allocated
+  structure which holds the definitions. Most errors are syntax
+  errors and are fatal, although they can be made non-fatal
+  by manipulating nl_response.
+
+*/
+
 mlf_def_t *mlf_init( int n_levels, int n_files, int writing,
     const char *fbase, const char *fsuffix, const char *config ) {
   mlf_def_t *mlf;
@@ -227,58 +279,6 @@ mlf_def_t *mlf_init( int n_levels, int n_files, int writing,
   mlf_free_mlfn( mlfn );
   return mlf;
 }
-/*
-=Name mlf_init(): Initialize multi-level file operations
-=Subject Multi-level File Routines
-=Synopsis
-
-  #include "mlf.h"
-  mlf_def_t *mlf_init( int n_levels, int n_files, int writing,
-      char *fbase, char *fsuffix, char *config );
-
-=Description
-  
-  The multi-level file routines are designed for efficiently
-  storing a large number of sequential files. Most hierarchical
-  file systems become seriously inefficient as the number of
-  files in a single directory becomes large. This is due in large
-  part to the fact that any search for a specific filename
-  requires a linear search through the directory, and hence
-  sequentially accessing each file in a directory is an order n^2
-  operation.
-  
-  The MLF routines address this issue by using multiple directory
-  levels to store sequential files. The number of levels and the
-  number of entries at each level is configurable, depending on
-  the total expected number of files.
-
-  mlf_init() establishes the parameters for subsequent
-  multi-level file operations. n_levels specifies how many levels
-  of directories should be used. n_files specifies the number of
-  files per directory. the writing argument should be non-zero
-  for write operations, zero for read operations. fbase is the
-  name of the first level directory. fsuffix is a suffix that is
-  appended to each file. config is an optional string defining
-  the first file to access. The base and suffix in the config
-  string takes precedence over the fbase and fsuffix parameters.
-  
-  Generated file names are of the form:
-
-  $fbase/\d\d+(/\d\d)* /\d\d\.$fsuffix
-  
-=Returns
-
-  mlf_init() returns a pointer to a dynamically allocated
-  structure which holds the definitions. Most errors are syntax
-  errors and are fatal, although they can be made non-fatal
-  by manipulating =nl_response=.
-
-=SeeAlso
-
-  =Multi-level File Routines=.
-
-=End  
-*/
 
 /* returns < 0 if current file position preceeds mlfn,
    0 if equal, >0 if later
