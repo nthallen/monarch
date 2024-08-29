@@ -409,7 +409,7 @@ class Interface {
      * @param c A framing character
      * @return false if the character is found.
      */
-    bool not_found(unsigned char c);
+    bool not_found(unsigned char c, bool quiet = false);
     /**
      * @brief Matches a string of hex digits
      *

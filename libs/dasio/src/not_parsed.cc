@@ -27,7 +27,7 @@
 #include "dasio/msg.h"
 #include "nl_assert.h"
 
-bool DAS_IO::Interface::not_found(unsigned char c) {
+bool DAS_IO::Interface::not_found(unsigned char c, bool quiet) {
   unsigned cp0 = cp;
   while ( cp < nc ) {
     if ( buf[cp++] == c )
@@ -35,9 +35,10 @@ bool DAS_IO::Interface::not_found(unsigned char c) {
   }
   if ( nc ) {
     unsigned discard = cp - cp0;
-    report_err(isgraph(c) ? "%s: Synch char '%c' not found -- discarding %u chars"
-                          : "%s: Synch char '\\x%02X' not found -- discarding %u chars",
-                iname, c, discard);
+    if (!quiet)
+      report_err(isgraph(c) ? "%s: Synch char '%c' not found -- discarding %u chars"
+                            : "%s: Synch char '\\x%02X' not found -- discarding %u chars",
+                  iname, c, discard);
     nc = cp = 0;
   }
   return true;
@@ -513,14 +514,14 @@ bool DAS_IO::Interface::not_KW(char *KWbuf, char delim) {
     KWbuf[KWi++] = buf[cp++];  
   }
   if (KWi >= 30) {
-    report_err("%s: Keyword overflow", iname);
+    report_err("%s: Keyword overflow at col %d", iname, cp);
     return true;
   } else if (buf[cp] == delim) {
     KWbuf[KWi] = '\0';
     ++cp;
     return false;
   } else {
-    report_err("%s: Unexpected char in not_KW", iname);
+    report_err("%s: Unexpected char in not_KW at col %d", iname, cp);
     return true;
   }
 }
