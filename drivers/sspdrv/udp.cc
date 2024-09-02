@@ -230,7 +230,7 @@ bool SSP_UDP::tm_sync() {
 void SSP_UDP::output_scan(uint32_t *scan) {
   FILE *ofp;
   ssp_scan_header_t *hdr = (ssp_scan_header_t *)scan;
-  uint32_t *idata = (uint32_t*)(scan+hdr->NWordsHdr);
+  int32_t *idata = (int32_t*)(scan+hdr->NWordsHdr);
   float fdata[SSP_MAX_CHANNELS][SSP_MAX_SAMPLES];
   // time_t now;
   // static time_t last_rpt = 0;
@@ -255,7 +255,7 @@ void SSP_UDP::output_scan(uint32_t *scan) {
   if (ssp_config.LE || do_amp) {
     int i, j, nchans = hdr->NChannels;
     for ( j = 0; j < hdr->NChannels; ++j ) {
-      uint32_t *id = &idata[j];
+      int32_t *id = &idata[j];
       float minv = 0, maxv = 0;
       for ( i = 0; i < hdr->NSamples; ++i ) {
         float sampleval = (*id) * divisor;
