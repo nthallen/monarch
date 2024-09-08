@@ -45,6 +45,7 @@ my %datarate; # rate for each extracted datum
 my %format; # output format for each extracted datum
 my %shortname; # translation from longname to shortname
 my %longname; # translation from shortname to longname
+my %dimension; # dimensions for array definitions
 my $experiment = 'eng';
 my $homedir = 'C:/home/Exp';
 my $header = 'Engineering Data';
@@ -100,15 +101,20 @@ while (<>) {
     $homedir = $1;
   } elsif ( m/^ROWS\s+(\d+)/ ) {
     $ui_limit = $1;
-  } elsif ( m|^\s*(\d+(?:/\d+)?(?:\#\d+(?:/\d+)?)?) # rate
-               \s+(\w[\w\d]*(?::\w[\w\d]*:\d+)?) (?::([-+*/]\S+))? # mnemonic, scale
+  } elsif ( # I don't recall what the '#' syntax in rate was for
+            # This accepts things like '1', '1/2', '1#5', '1/2#5/2'
+            # but apparently later discards everything up to the '#'
+            m,^\s*(\d+(?:/\d+)?(?:\#\d+(?:/\d+)?)?) # rate
+               # mnemonic followed by either bit or array definition
+               \s+(\w[\w\d]* (?: (?::\w[\w\d]*:\d+) | (?:\[\d+\*?\]) )? )
+               (?::([-+*/]\S+))? # scale
                \s+(\w[\w\d]*(?::\w[\w\d]*)?) # group
                \s+(\w[\w\d]*) # plot
                (?:\s+(%\S+))? # format
                (?:\s+:(\w[\w\d]*))? # shortname
                (?:\s+(\[[^\]]+\]))? # legend pos
                (?:\s+(\w[\w\d]*))? # legend
-               \s*$|x ) {
+               \s*$,x ) {
     my ( $rate, $mnemonic, $scale, $group, $plot, $format, $custfunc, $legpos, $legend ) =
       ( $1, $2, $3, $4, $5, $6, $7, $8, $9 );
     my $datum;
@@ -120,6 +126,10 @@ while (<>) {
       } else {
         $bitdefs{$1} = "$2:$3";
       }
+    } elsif ( $mnemonic =~ m/(\w[\w\d]*) \[(\d+)(\*?)\]/x ) {
+      # mnemonic followed by array syntax
+      $datum = $1;
+      $dimension{$datum} = {width => $2, hirate => $3};
     } else {
       $datum = $mnemonic; # and leave $bit undef
     }
