@@ -1,0 +1,18 @@
+<package> VL_init
+<include> "VL_init.h"
+<include> msg oui
+<follow> msg oui
+
+<opts> "p:"
+<sort>
+  -p <port> Serial port on which to operate
+
+<switch>
+  case 'p': VL_port = optarg; break;
+
+<package> appid_default
+<include> "dasio/appid.h"
+<include> msg
+<preceed> msg
+<defs>
+  DAS_IO::AppID_t DAS_IO::AppID("VL_init", "Versalogic COM port initializer", "V1.0");
