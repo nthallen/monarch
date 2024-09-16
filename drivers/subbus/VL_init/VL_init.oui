@@ -3,12 +3,14 @@
 <include> msg oui
 <follow> msg oui
 
-<opts> "p:"
+<opts> "p:s"
 <sort>
   -p <port> Serial port on which to operate
+  -s Set RTS (instead of clearing it)
 
 <switch>
   case 'p': VL_port = optarg; break;
+  case 's': VL_set_RTS = true; break;
 
 <package> appid_default
 <include> "dasio/appid.h"
