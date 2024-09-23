@@ -10,6 +10,7 @@
 #include "VL_init.h"
 
 const char *VL_port = "/dev/ttyS0";
+bool VL_set_RTS = false;
 
 uint8_t read_port(int fd, int addr) {
   int rv = lseek(fd, addr, SEEK_SET);
@@ -68,14 +69,19 @@ void do_VL_init(const char *port)
       errno, strerror(errno));
   }
   uint8_t cur_val = read_port(iofd, addr);
-  uint8_t new_val = cur_val &= ~2; // Clear the RTS bit
+  uint8_t new_val;
+  if (VL_set_RTS) {
+    new_val = cur_val | 2; // Set the RTS bit
+  } else {
+    new_val = cur_val & ~2; // Clear the RTS bit
+  }
   if (cur_val != new_val) {
-    msg(MSG, "Updating MCR register from 0x%02X to 0x%02X",
-      cur_val, new_val);
+    msg(MSG, "Updating MCR register 0x%X from 0x%02X to 0x%02X",
+      addr, cur_val, new_val);
     write_port(iofd, addr, new_val);
   } else {
-    msg(MSG_WARN, "No change to MCR register: 0x%02X",
-      cur_val);
+    msg(MSG_WARN, "No change to MCR register 0x%X: 0x%02X",
+      addr, cur_val);
   }
   close(iofd);
 }
