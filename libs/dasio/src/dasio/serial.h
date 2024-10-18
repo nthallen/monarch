@@ -40,7 +40,8 @@ class Serial : public Interface {
      * @param stopbits The number of stop bits: 1 or 2
      * @param min The minimum number of characters to respond to. Set to -1
      *   to retain basic canonical mode functionality without echo.
-     * @param time The time gap value in non-canonical mode. If min is -1
+     * @param time In non-canonical mode, this is the VTIME time gap value
+     *   in deciseconds specified in TERMIOS(3). If min is -1
      *   (canonical mode), this value is assigned to termios' VEOL, defining
      *   a terminator character in addition to \n. A value of zero defines
      *   no additional terminator characters.
