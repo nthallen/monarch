@@ -210,7 +210,7 @@ while (1) {
         my @files = split(" ", $line);
         for my $file (@files) {
           my ($tgt, $src);
-          if ($file =~ m|^([^:/]+):([^:]*)$|) {
+          if ($file =~ m|^([^:]+):([^:]*)$|) {
             $tgt = $1;
             $src = $2;
           } else {
@@ -235,7 +235,8 @@ while (1) {
             print "spectgtbase = $tgt\n";
             unless (-f $tgt && $src =~ m/.tmpl$/) {
               my $dosubs = $src =~ m/\.(?:in|tmpl)$/;
-              my $tgttmp = "._$tgt";
+              my $tgttmp = "$tgt";
+              $tgttmp =~ s|([^/]+)$|._$1|;
               open(my $ifh, "<", $src) ||
                 die "$path:$linenum: unable to open source file '$src'\n";
               open(my $ofh, ">", $tgttmp) ||
