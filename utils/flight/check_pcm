@@ -1,0 +1,34 @@
+#! /bin/bash
+function nl_error {
+  echo "check_pcm: ERROR $*" >&2
+  exit 1
+}
+
+if [ ! -f Makefile ]; then
+  specs=$(ls *.spec 2>/dev/null)
+  [ -n "$specs" ] || nl_error "No Makefile or .spec found in $PWD"
+  nl_error "No Makefile found. Run appgen first?"
+fi
+
+pcm=$(grep "^PCMFILE=" Makefile | sed -e 's/^.*=//')
+[ -n "$pcm" ] || nl_error "PCMFILE not defined in Makefile: check directory"
+[ -f $pcm ] || nl_error "PCM file '$pcm' not found"
+tgt=$(grep "^TGTDIR=" Makefile | sed -e 's/^.*= *//')
+[ -n "$tgt" ] || nl_error "TGTDIR not defined in Makefile: check directory"
+[ -d "$tgt" ] || nl_error "TGTDIR '$tgt' does not exist"
+if [ -f VERSION ]; then
+  ver=$(cat VERSION)
+else
+  ver=1.0
+fi
+[ -n "$ver" ] || nl_error "VERSION is empty"
+vtgt=$tgt/bin/$ver
+[ -d "$vtgt" ] || nl_error "bin dir $vtgt does not exist"
+[ -f "$vtgt/$pcm" ] || nl_error "pcm file $pcm not found in bin dir $vtgt"
+if cmp --silent $vtgt/$pcm $pcm; then
+  echo "$pcm and $vtgt/$pcm are identical"
+else
+  echo "$pcm and $vtgt/$pcm are different:"
+  echo
+  diff $vtgt/$pcm $pcm | head -n16
+fi

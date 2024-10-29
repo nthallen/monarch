@@ -34,6 +34,7 @@ install(PROGRAMS
   ${CMAKE_CURRENT_SOURCE_DIR}/dircksum
   ${CMAKE_CURRENT_SOURCE_DIR}/dircompare
   ${CMAKE_CURRENT_SOURCE_DIR}/monarch_archive_prep
+  ${CMAKE_CURRENT_SOURCE_DIR}/check_pcm
   DESTINATION bin)
 
 install(PROGRAMS
