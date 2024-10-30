@@ -285,8 +285,7 @@ bool Socket::connect() {
         if (err < 0) {
           msg(MSG_ERROR, "%s: getaddrinfo(%s, %s) failed with error %d: %s",
             iname, hostname, portname, err, gai_strerror(err));
-          reset();
-          return true;
+          return reset() || connect_failed();
         }
         if (res == 0) {
           msg(MSG_FATAL, "%s: getaddrinfo(%s, %s) provided no result",
@@ -297,8 +296,7 @@ bool Socket::connect() {
           if (bind(fd, res->ai_addr, sizeof(struct sockaddr_in)) < 0) {
             msg(MSG_ERROR, "%s: bind(%s, %s) failed with error %d: %s",
               iname, hostname, portname, errno, std::strerror(errno));
-            reset();
-            return false;
+            return reset() || connect_failed();
           }
           if (socket_type == Socket_TCP) {
             if (listen(fd, MAXPENDING) < 0) {

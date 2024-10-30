@@ -318,7 +318,8 @@ class Interface {
     /**
      * Called by protocol_gflag() when gflag(0) is received.
      * @return true on a condition requiring termination of the
-     * event loop.
+     * event loop. Note that the gflag(0) bit of flags must be
+     * set for the global flag 0 to be processed.
      */
     virtual bool tm_sync();
     

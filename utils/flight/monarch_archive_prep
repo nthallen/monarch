@@ -1,0 +1,189 @@
+#! /bin/bash
+# monarch_archive_prep [options]
+#
+# Options:
+#   -q $directory Queue $directory for overnight processing
+#   -s Invoke -p via SSH
+#   -H hostname Name of host to ssh to (localhost)
+#   -D homedir Directory where configuration is found
+#   -A archpfx The prefix to use in archive naming
+#   -p Invoke -P inside nice nohup background execution
+#   -P Perform overnight processing in the foreground
+#
+# Analysis script to run under reduce as:
+#   Analysis='bin/$(cat VERSION)/monarch_archive_prep -A archpfx -q $directory -p'
+# Can also be run in the foreground as
+#   Analysis='bin/$(cat VERSION)/monarch_archive_prep -A archpfx -q $directory -P'
+# Or just queue the run for later processing:
+#   Analysis='bin/$(cat VERSION)/monarch_archive_prep -A archpfx -q $directory'
+#
+# NOTE: The -p processing does not work in automated LOOP_ON_FILE processing,
+# since the entire process tree is shutdown before data acquisition is restarted.
+# The workaround is to invoke the processing via SSH with -s, providing ssh to
+# localhost is configured.
+
+# We may be running via SSH, so need to initialize path
+#cd /home/CH2O
+#archpfx=HCHO
+export PATH=/bin:/usr/bin:/usr/local/bin
+umask g+w
+
+function info {
+  msg -V -n monarch_archive_prep -- "$*"
+}
+
+function nl_error {
+  msg -V -n monarch_archive_prep "[Error] $*" >&2
+  exit 1
+}
+
+opt_q=''
+opt_p=no
+opt_P=no
+opt_s=no
+opt_H=localhost
+
+while getopts "q:H:pPsD:A:" option; do
+  case $option in
+    q) opt_q=$OPTARG;;
+    D) opt_D=$OPTARG;;
+    A) opt_A=$OPTARG;;
+    H) opt_H=$OPTARG;;
+    p) opt_p=yes;;
+    P) opt_P=yes;;
+    s) opt_s=yes;;
+    *) nl_error "Invalid option '-$option'"
+  esac
+done
+
+if [ -d "$opt_D" ]; then
+  cd "$opt_D"
+else
+  opt_D=$(pwd)
+fi
+
+[ -n "$opt_A" ] || nl_error "Option -A archpfx is required"
+
+[ $opt_p = yes -a $opt_P = yes ] &&
+  nl_error "Options -p and -P are mutually exclusive"
+
+if [ -n "$opt_q" ]; then
+  run=${opt_q#*raw/}
+  [ "$run" = "$opt_q" ] &&
+    nl_error "Expected raw/ in directory path '$opt_q'"
+  if [ $opt_H = localhost ]; then
+    [ -d "$opt_q" ] ||
+      nl_error "Specified directory '$opt_q' is not a directory"
+    echo $opt_q >>saved.runs
+    info "Directory $opt_q queued for processing"
+  else
+    ssh $opt_H $0 -D $opt_D -A $opt_A -q $opt_q
+  fi
+fi
+
+if [ $opt_s = yes ]; then
+  info "Invoking analysis via SSH $opt_H"
+  ssh $opt_H $0 -D $opt_D -A $opt_A -p
+fi
+
+if [ $opt_p = yes ]; then
+  info "Proceeding with run analysis in the background"
+  nohup nice -2 $0 -D $opt_D -A $opt_A -P >>analysis.log 2>&1 &
+  exit 0
+fi
+
+if [ $opt_P = yes ]; then
+  echo
+  info "Starting run analysis $(date)"
+  if [ -f saved.runs ]; then
+    rm -f saved.runs.$$
+    mv saved.runs saved.runs.$$
+    dirs=$(cat saved.runs.$$)
+  else
+    dirs=''
+    info "No runs queued for processing"
+  fi
+  for dir in $dirs; do
+    # redo our sanity checks
+    run=${dir#*raw/}
+    msgstatus=0
+    message=$dir
+    if [ ! -d "$dir" ]; then
+      info "[Error] Directory '$dir' not found"
+      msgstatus=2
+      message="$message Directory not found"
+    elif [ "$run" = "$dir" ]; then
+      info "[Error] Expected raw/ in directory path '$dir'"
+    else
+      # Run dircksum -w
+      if [ -f $dir/.MD5SUM ]; then
+        info "Skipping dircksum on $dir"
+      else
+        info "Calculating dircksum on $dir"
+        dircksum -w "$dir"
+      fi
+
+      # Create tar.gz
+      mkdir -p archive/stage0
+      mkdir -p archive/stage
+      if [ -d archive/stage0 -a -d archive/stage ]; then
+        dest=archive/stage0/$(echo $dir | sed -e "s/^raw\//${opt_A}_/; s/\//_/").tar.gz
+        info "Creating archive $dest"
+        tar -czf $dest $dir
+      
+        # Move tar.gz into staging directory
+        mv $dest archive/stage/
+        if [ -f $dest ]; then
+          info "Failed to move $dest into archive/stage"
+          msgstatus=2
+          message="$message: Failed to move into archive/stage"
+        fi
+      else
+        info "Unable to create stage directories"
+        msgstatus=2
+        message="$message: Unable to create stage directories"
+      fi
+    fi
+    [ $msgstatus = 0 ] && message="$message prepared for archiving"
+    echo "[$(date +'%a, %d %b %Y %T %z')] $msgstatus $message" >>report.queue
+  done
+
+  mkdir -p archive/receipt
+  [ -d archive/receipt ] ||
+    info "Failed to create archive/receipt directory"
+  mkdir -p archive/done
+  [ -d archive/done ] ||
+    info "Failed to create archive/done directory"
+
+  # Clear out already backed up runs from staging directory*
+  for rcpt in archive/receipt/*; do
+    dest=''
+    if [ -f $rcpt ]; then
+      case $rcpt in
+        *.rcpt) ;;
+        *) info "[Error] Unrecognized receipt: '$rcpt'";;
+      esac
+      dest=${rcpt##*/}
+      dest=${dest%.rcpt}
+      if [ -f archive/stage/$dest ]; then
+        [ -d archive/done ] &&
+          mv archive/stage/$dest archive/done/
+        if [ -f archive/stage/$dest -o ! -f archive/done/$dest ]; then
+          info "[Error] Move of $dest failed"
+        else
+          info "Moved $dest to done"
+          echo "[$(date +'%a, %d %b %Y %T %z')] 0 Moved $dest to done" >>report.queue
+          rm $rcpt
+        fi
+      elif [ -f archive/done/$dest ]; then
+        info "[Error] $dest already moved to done"
+        rm $rcpt
+      else
+        info "[Error] $dest not found in stage or done"
+        rm $rcpt
+      fi
+    fi
+  done
+fi
+
+rm -f saved.runs.$$

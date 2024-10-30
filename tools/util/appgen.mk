@@ -14,20 +14,20 @@ CXXLINK=$(CXX)
 # AG_LDFLAGS=-L/usr/local/lib -Wl,-rpath -Wl,/usr/local/lib -L/usr/pkg/lib -Wl,-rpath -Wl,/usr/pkg/lib
 ifdef CROSS_COMPILE
 ifdef CROSS_STAGE
-CPPFLAGS=-I$(CROSS_STAGE)/include $(AG_CPPFLAGS)
+CPPFLAGS=-I$(CROSS_STAGE)/include $(AG_CPPFLAGS) $(CL_CPPFLAGS)
 AG_LIBDIR=$(CROSS_STAGE)/lib
 else
-CPPFLAGS=-I/opt/monarch/am335x/include $(AG_CPPFLAGS)
+CPPFLAGS=-I/opt/monarch/am335x/include $(AG_CPPFLAGS) $(CL_CPPFLAGS)
 AG_LIBDIR=/opt/monarch/am335x/lib
 endif
 else
-CPPFLAGS=-I/usr/local/include $(AG_CPPFLAGS)
+CPPFLAGS=-I/usr/local/include $(AG_CPPFLAGS) $(CL_CPPFLAGS)
 AG_LIBDIR=/usr/local/lib
 endif
 AG_LDFLAGS=-L$(AG_LIBDIR)
 
 CXXFLAGS+=$(CPPFLAGS)
-LINK.args=$(CPPFLAGS) $(CXXFLAGS) $(AG_LDFLAGS) $(LDFLAGS) -o $@
+LINK.args=$(CXXFLAGS) $(AG_LDFLAGS) $(LDFLAGS) -o $@
 LINK.norm=$(CC) $(LINK.args)
 LINK.priv=/bin/rm -f $@; $(LINK.norm)
 LINK.normCXX=$(CXXLINK) $(LINK.args)
