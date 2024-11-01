@@ -612,6 +612,13 @@ reference : name_ref { $$ = $1; }
         $$ = $3;
         get_cfnc(&$$, CFLG_TEXT);
       }
+    | KW_TEXT '(' name_ref '[' TK_INTEGER_CONST ']' ')' {
+        $$ = $3;
+        catstattext(&$$, $<l.pretext>4);
+        catstattext(&$$, $<l.pretext>5);
+        catstattext(&$$, $<l.pretext>6);
+        get_cfnc(&$$, CFLG_TEXT);
+      }
     | name_ref derefs { $$ = $1; catstat(&$$, &$2); }
     ;
 name_ref : TK_NAME {

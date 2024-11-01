@@ -1456,21 +1456,21 @@ void get_cfnc(struct sttmnt *s, int cflg) {
   struct nm *datum;
   struct tmtype *ftype;
   
-  assert(s->last->type == STATPC_REF);
-  if (!name_test(s->last->u.nameref, NMTEST_DATA)) {
+  assert(s->first->type == STATPC_REF);
+  if (!name_test(s->first->u.nameref, NMTEST_DATA)) {
     if ( cflg == CFLG_TEXT )
       compile_error(2, "Text conversion of non-TM datum %s",
-                s->last->u.nameref->name);
+                s->first->u.nameref->name);
     else
       compile_error(1, "Conversion of non-TM datum %s",
-                s->last->u.nameref->name);
+                s->first->u.nameref->name);
     return;
   }
   spc = newstpc(STATPC_CONVERT);
-  spc->u.cvt.ref = s->last;
+  spc->u.cvt.ref = s->first;
   spc->u.cvt.cfn = cfn = mk_cvt_func( NULL, 0 );
   assert(spc->u.cvt.ref->u.nameref != NULL);
-  assert(spc->u.cvt.ref->next == NULL);
+  // assert(spc->u.cvt.ref->next == NULL);
 
   /* Determine ftype */
   datum = spc->u.cvt.ref->u.nameref;
@@ -1486,12 +1486,15 @@ void get_cfnc(struct sttmnt *s, int cflg) {
 
   spc->u.cvt.cfn = specify_conv( ftype, cfn, cflg );
 
+#if 0 // I am assuming STATPC_REF is the first, will have asserted before this otherwise
   if (s->first != s->last) {
     assert(s->first != NULL && s->first->next == s->last);
     s->first->next = NULL;
     s->last = s->first;
     catstatpc(s, spc);
-  } else initstat(s, spc);
+  } else
+#endif
+  initstat(s, spc);
 }
 
 /**

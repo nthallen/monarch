@@ -25,6 +25,8 @@
 
 use strict;
 use Getopt::Std;
+use List::Util qw(sum);
+
 my %opts;
 getopts('cjd:o:', \%opts);
 $opts{c} && $opts{j} && die "Cannot select both -c and -j\n";
@@ -101,12 +103,9 @@ while (<>) {
     $homedir = $1;
   } elsif ( m/^ROWS\s+(\d+)/ ) {
     $ui_limit = $1;
-  } elsif ( # I don't recall what the '#' syntax in rate was for
-            # This accepts things like '1', '1/2', '1#5', '1/2#5/2'
-            # but apparently later discards everything up to the '#'
-            m,^\s*(\d+(?:/\d+)?(?:\#\d+(?:/\d+)?)?) # rate
+  } elsif ( m,^\s*(\d+(?:/\d+)?) # rate
                # mnemonic followed by either bit or array definition
-               \s+(\w[\w\d]* (?: (?::\w[\w\d]*:\d+) | (?:\[\d+\*?\]) )? )
+               \s+(\w[\w\d]* (?: (?::\w[\w\d]*:\d+) | (?:\[\d+x?\]) )? )
                (?::([-+*/]\S+))? # scale
                \s+(\w[\w\d]*(?::\w[\w\d]*)?) # group
                \s+(\w[\w\d]*) # plot
@@ -126,15 +125,13 @@ while (<>) {
       } else {
         $bitdefs{$1} = "$2:$3";
       }
-    } elsif ( $mnemonic =~ m/(\w[\w\d]*) \[(\d+)(\*?)\]/x ) {
+    } elsif ( $mnemonic =~ m/(\w[\w\d]*) \[(\d+)(x?)\]/x ) {
       # mnemonic followed by array syntax
       $datum = $1;
       $dimension{$datum} = {width => $2, hirate => $3};
     } else {
       $datum = $mnemonic; # and leave $bit undef
     }
-    # $rate =~ s,/,_,g;
-    $rate =~ s,^.*#,,;
     $rate{$rate} = {} unless defined $rate{$rate};
     $rate{$rate}->{$datum} = 1;
     if ( defined( $datarate{$datum} ) &&
@@ -209,12 +206,21 @@ if ( $opts{c} || $opts{j} ) {
   for my $rate ( @rates ) {
     my @vars = grep $format{$_} !~ m/-$/, sort keys %{$rate{$rate}};
     my @formats = map $format{$_}, @vars;
+    my @width = map $dimension{$_} ? $dimension{$_}->{width} : 1, @vars;
     $rate =~ s|/|_|g;
-    my $n_var = @vars + 1;
-    print CDF "$cdf_type ${experiment}eng_$rate $n_var\n",
-      "  0 T${experiment}eng_$rate %.3lf\n",
-      join( "\n", map "  $_ $vars[$_-1] $formats[$_-1]", ( 1 .. @vars ) ),
-      "\n";
+    my $n_cols = sum(@width) + 1;
+    my $col_n = 1;
+    print CDF "$cdf_type ${experiment}eng_$rate $n_cols\n",
+      "  0 T${experiment}eng_$rate %.3lf\n";
+    for my $var_n (0 .. $#vars) {
+      my $var = $vars[$var_n];
+      my $dim = $dimension{$var} ?
+        '[' . $dimension{$var}->{width} .
+          ( $dimension{$var}->{hirate} ? 'x' : '') . ']'
+        : '';
+      print CDF "  $col_n $vars[$var_n]$dim $formats[$var_n]\n";
+      $col_n += $width[$var_n];
+    }
   }
   close CDF || warn "Error closing $ofile\n";
 } else {
