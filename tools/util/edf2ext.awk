@@ -268,12 +268,11 @@ END {
             ++col
           } else {
             # print "array " res[1] " length " res[2]
-            while (col < j+res[2]) {
-              printf "    " sps[i] ".init_col(" col ", \"" res[1] "\""
-              if ( datfmt[i,j] != "" ) printf ", \"%s\"", datfmt[i,j]
-              print ");"
-              ++col
-            }
+            printf "    " sps[i] ".init_col(" col ", \"" res[1] "\""
+            if ( datfmt[i,j] != "" ) printf ", \"%s\"", datfmt[i,j]
+            print ");"
+            print "    " sps[i] ".init_array(" col ", " res[2] ");"
+            col += res[2]
           }
         } else {
           # verify that datum[i,j] does not exist

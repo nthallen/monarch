@@ -181,9 +181,9 @@ while (<>) {
       $plot{$plt} = [];
       push @{$group{$grp}}, $plt;
     }
-    $legend = $mnemonic unless defined $legend;
+    $legend = $datum unless defined $legend;
     $scale = '' unless defined $scale;
-    push @{$plot{$plt}}, { mnc => $mnemonic, legend => $legend,
+    push @{$plot{$plt}}, { mnc => $datum, legend => $legend,
       legpos => $legpos, scale => $scale };
   } else {
     chomp;
@@ -290,7 +290,7 @@ if ($matdir  && !$opts{j}) {
         die "Unable to write g$experiment$grp.m\n";
       $generated{"g$experiment$grp.m"} = 1;
       print GRP
-        "function fig = g$experiment$grp(varargin);\n",
+        "function fig = g$experiment$grp(varargin)\n",
         "% g$experiment$grp(...)\n",
         "% $grouptext\n",
         "ffig = ne_group(varargin,'$grouptext',",
@@ -320,7 +320,7 @@ if ($matdir  && !$opts{j}) {
           $generated{"$qplt.m"} = 1;
           $generated{"cust_$qplt.m"} = 1;
           print PLT
-            "function $qplt(varargin);\n",
+            "function $qplt(varargin)\n",
             "% $qplt( [...] );\n",
             "% $grouptext $plottext\n";
           my @mnemonics =
