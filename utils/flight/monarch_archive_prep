@@ -1,26 +1,31 @@
 #! /bin/bash
-# monarch_archive_prep [options]
-#
-# Options:
-#   -q $directory Queue $directory for overnight processing
-#   -s Invoke -p via SSH
-#   -H hostname Name of host to ssh to (localhost)
-#   -D homedir Directory where configuration is found
-#   -A archpfx The prefix to use in archive naming
-#   -p Invoke -P inside nice nohup background execution
-#   -P Perform overnight processing in the foreground
-#
-# Analysis script to run under reduce as:
-#   Analysis='bin/$(cat VERSION)/monarch_archive_prep -A archpfx -q $directory -p'
-# Can also be run in the foreground as
-#   Analysis='bin/$(cat VERSION)/monarch_archive_prep -A archpfx -q $directory -P'
-# Or just queue the run for later processing:
-#   Analysis='bin/$(cat VERSION)/monarch_archive_prep -A archpfx -q $directory'
-#
-# NOTE: The -p processing does not work in automated LOOP_ON_FILE processing,
-# since the entire process tree is shutdown before data acquisition is restarted.
-# The workaround is to invoke the processing via SSH with -s, providing ssh to
-# localhost is configured.
+function usage {
+cat <<'EOF'
+monarch_archive_prep [options]
+
+Options:
+  -q $directory Queue $directory for overnight processing
+  -h Display this message
+  -s Invoke -p via SSH
+  -H $hostname Name of host to ssh to (localhost)
+  -D $homedir Directory where configuration is found
+  -A $archpfx The prefix to use in archive naming
+  -p Invoke -P inside nice nohup background execution
+  -P Perform overnight processing in the foreground
+
+Analysis script to run under reduce as:
+  Analysis='bin/$(cat VERSION)/monarch_archive_prep -A archpfx -q $directory -p'
+Can also be run in the foreground as
+  Analysis='bin/$(cat VERSION)/monarch_archive_prep -A archpfx -q $directory -P'
+Or just queue the run for later processing:
+  Analysis='bin/$(cat VERSION)/monarch_archive_prep -A archpfx -q $directory'
+
+NOTE: The -p processing does not work in automated LOOP_ON_FILE processing,
+since the entire process tree is shutdown before data acquisition is restarted.
+The workaround is to invoke the processing via SSH with -s, providing ssh to
+localhost is configured.
+EOF
+}
 
 # We may be running via SSH, so need to initialize path
 #cd /home/CH2O
@@ -43,8 +48,9 @@ opt_P=no
 opt_s=no
 opt_H=localhost
 
-while getopts "q:H:pPsD:A:" option; do
+while getopts "hq:H:pPsD:A:" option; do
   case $option in
+    h) usage; exit 0;;
     q) opt_q=$OPTARG;;
     D) opt_D=$OPTARG;;
     A) opt_A=$OPTARG;;
@@ -68,14 +74,13 @@ fi
   nl_error "Options -p and -P are mutually exclusive"
 
 if [ -n "$opt_q" ]; then
-  run=${opt_q#*raw/}
-  [ "$run" = "$opt_q" ] &&
-    nl_error "Expected raw/ in directory path '$opt_q'"
   if [ $opt_H = localhost ]; then
-    [ -d "$opt_q" ] ||
-      nl_error "Specified directory '$opt_q' is not a directory"
-    echo $opt_q >>saved.runs
-    info "Directory $opt_q queued for processing"
+    run=$(locate_rundir $opt_q)
+    run=${run#*:}
+    [ -n "$run" -a -d "$run" ] ||
+      nl_error "Specified run '$opt_q' not found"
+    echo $run >>saved.runs
+    info "Directory $run queued for processing"
   else
     ssh $opt_H $0 -D $opt_D -A $opt_A -q $opt_q
   fi
