@@ -387,6 +387,7 @@ bool Socket::ProcessData(int flag) {
   if ((flags & flag & Fl_gflags) &&
       protocol_gflag(flags & flag & Fl_gflags))
     return true;
+  else flag &= ~Fl_gflags;
   switch (socket_state) {
     case Socket_locking:
       return connect();
