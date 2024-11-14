@@ -64,10 +64,10 @@ class Loop {
     void clear_delete_queue(bool final=false);
     
     /**
-     * Sets a bit in the global flags word. Selectees can set
+     * Sets a bit in the global flags word. Interfaces can set
      * a corresponding bit in their flags word to request
      * notification when the bit gets set. The function
-     * Selector::gflag(gflag_index) returns the bit that
+     * Interface::gflag(gflag_index) returns the bit that
      * corresponds to set_gflag(gflag_index). gflag_index
      * can take on values from 0 to 8*sizeof(int)-4.
      * @param gflag_index non-negative gflag index.
@@ -148,8 +148,8 @@ class Loop {
      */
     virtual int ProcessTimeout();
     /**
-     * Virtual method to allow Selector to bid on the select() timeout
-     * along with the Selectee children. The minimum timeout value is used.
+     * Virtual method to allow Loop to bid on the select() timeout
+     * along with the Interface children. The minimum timeout value is used.
      * @return a Timeout * indicating the requested timeout value or 0.
      */
     virtual Timeout *GetTimeout();
