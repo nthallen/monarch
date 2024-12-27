@@ -16,10 +16,18 @@ csv_col::csv_col(const char *colname, const char *fmt) {
   dsval = 0;
   dsval_size = 0;
   warned = false;
+  length = 1;
+  is_col = false;
 }
 
 csv_col::~csv_col() {
   if (dsval) free(dsval);
+}
+
+void csv_col::init_array(unsigned int length, bool is_col)
+{
+  this->length = length;
+  this->is_col = is_col;
 }
 
 const char *csv_col::output() {
@@ -28,6 +36,10 @@ const char *csv_col::output() {
 
 const char *csv_col::header() {
   return cname ? cname : "";
+}
+
+const char *csv_col::get_format() {
+  return format;
 }
 
 void csv_col::dsval_resize(int newsize) {
@@ -167,6 +179,19 @@ void csv_file::init_col(unsigned int col_num, const char *colname,
   cols[col_num] = new csv_col(colname, fmt);
 }
 
+void csv_file::init_array(unsigned int col_num, unsigned int length, bool is_col)
+{
+  if (col_num >= cols.size())
+    msg(MSG_FATAL, "col_num %d out of range in csv_file::init_col", col_num);
+  if (! cols[col_num])
+    msg(MSG_FATAL, "Column %d uninitialized in csv_file::init_array",
+      col_num);
+  cols[col_num]->init_array(length, is_col);
+  for (int i = 1; i < length; ++i) {
+    init_col(col_num+i, cols[col_num]->header(), cols[col_num]->get_format());
+  }
+}
+
 void csv_file::set_time(double T) {
   if (cols[0] == 0)
     cols[0] = new csv_col("Time", "%.0lf");
@@ -235,13 +260,28 @@ void csv_file::flush_row() {
         snprintf(jb, jspace, "{\r\n  \"Record\": \"%s\",\r\n  \"%s\": %s",
           filename, cols[0]->header(), cols[0]->output() );
       process_nc(nc, jb, jspace, jneeded);
-      for (unsigned int i = 1; i < cols.size(); ++i) {
+      int i = 1;
+      while (i < cols.size()) {
         if (cols[i]) {
-          nc = snprintf(jb, jspace, ",\r\n  \"%s\": %s",
-            cols[i]->header(), cols[i]->output() );
-          process_nc(nc, jb, jspace, jneeded);
-          // cols[i]->reset();
-        }
+          unsigned int len = cols[i]->get_length();
+          if (len <= 1) {
+            nc = snprintf(jb, jspace, ",\r\n  \"%s\": %s",
+              cols[i]->header(), cols[i]->output() );
+            process_nc(nc, jb, jspace, jneeded);
+            ++i;
+          } else {
+            nc = snprintf(jb, jspace, ",\r\n  \"%s\": [%s",
+              cols[i]->header(), cols[i]->output() );
+            process_nc(nc, jb, jspace, jneeded);
+            for (int j = 1; j < len; ++j) {
+              nc = snprintf(jb, jspace, ",%s", cols[i+j]->output() );
+              process_nc(nc, jb, jspace, jneeded);
+            }
+            nc = snprintf(jb, jspace, "]");
+            process_nc(nc, jb, jspace, jneeded);
+            i += len;
+          }
+        } else ++i;
       }
       nc = snprintf(jb, jspace, "\r\n}\r\n");
       process_nc(nc+1, jb, jspace, jneeded);

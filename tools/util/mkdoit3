@@ -526,14 +526,14 @@ if [ -n "$rmtlogfile" ]; then
   # log="-Logfile \"less.$SESSION.log\" -L"
   if [ $FltNode_Access = Remote ]; then
     msgf -V 0 "Starting less $rmtlogfile on remote system"
-    screen -t logfile /bin/sh -c "echo \$\$ >less.pid.$SESSION; exec $SSH_CMD less +F $rmtlogfile"
+    screen -t logfile /bin/sh -c "echo \$\$ >less.pid.$SESSION; exec $SSH_CMD less +F -S $rmtlogfile"
   else
     msgf -V 0 "Starting less $rmtlogfile on local system"
-    screen -t logfile /bin/sh -c "echo \$\$ >less.pid.$SESSION; exec less +F $rmtlogfile"
+    screen -t logfile /bin/sh -c "echo \$\$ >less.pid.$SESSION; exec less +F -S $rmtlogfile"
   fi
 else
   msgf -V 0 "Starting less $lcllogfile on local system"
-  screen -t logfile /bin/sh -c "echo \$\$ >less.pid.$SESSION; exec less +F $lcllogfile"
+  screen -t logfile /bin/sh -c "echo \$\$ >less.pid.$SESSION; exec less +F -S $lcllogfile"
 fi
 
 TMRUNDIR=/var/run/monarch/run/$Experiment

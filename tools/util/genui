@@ -25,6 +25,8 @@
 
 use strict;
 use Getopt::Std;
+use List::Util qw(sum);
+
 my %opts;
 getopts('cjd:o:', \%opts);
 $opts{c} && $opts{j} && die "Cannot select both -c and -j\n";
@@ -45,6 +47,7 @@ my %datarate; # rate for each extracted datum
 my %format; # output format for each extracted datum
 my %shortname; # translation from longname to shortname
 my %longname; # translation from shortname to longname
+my %dimension; # dimensions for array definitions
 my $experiment = 'eng';
 my $homedir = 'C:/home/Exp';
 my $header = 'Engineering Data';
@@ -100,15 +103,17 @@ while (<>) {
     $homedir = $1;
   } elsif ( m/^ROWS\s+(\d+)/ ) {
     $ui_limit = $1;
-  } elsif ( m|^\s*(\d+(?:/\d+)?(?:\#\d+(?:/\d+)?)?) # rate
-               \s+(\w[\w\d]*(?::\w[\w\d]*:\d+)?) (?::([-+*/]\S+))? # mnemonic, scale
+  } elsif ( m,^\s*(\d+(?:/\d+)?) # rate
+               # mnemonic followed by either bit or array definition
+               \s+(\w[\w\d]* (?: (?::\w[\w\d]*:\d+) | (?:\[\d+x?\]) )? )
+               (?::([-+*/]\S+))? # scale
                \s+(\w[\w\d]*(?::\w[\w\d]*)?) # group
                \s+(\w[\w\d]*) # plot
                (?:\s+(%\S+))? # format
                (?:\s+:(\w[\w\d]*))? # shortname
                (?:\s+(\[[^\]]+\]))? # legend pos
                (?:\s+(\w[\w\d]*))? # legend
-               \s*$|x ) {
+               \s*$,x ) {
     my ( $rate, $mnemonic, $scale, $group, $plot, $format, $custfunc, $legpos, $legend ) =
       ( $1, $2, $3, $4, $5, $6, $7, $8, $9 );
     my $datum;
@@ -120,11 +125,13 @@ while (<>) {
       } else {
         $bitdefs{$1} = "$2:$3";
       }
+    } elsif ( $mnemonic =~ m/(\w[\w\d]*) \[(\d+)(x?)\]/x ) {
+      # mnemonic followed by array syntax
+      $datum = $1;
+      $dimension{$datum} = {width => $2, hirate => $3};
     } else {
       $datum = $mnemonic; # and leave $bit undef
     }
-    # $rate =~ s,/,_,g;
-    $rate =~ s,^.*#,,;
     $rate{$rate} = {} unless defined $rate{$rate};
     $rate{$rate}->{$datum} = 1;
     if ( defined( $datarate{$datum} ) &&
@@ -174,7 +181,7 @@ while (<>) {
       $plot{$plt} = [];
       push @{$group{$grp}}, $plt;
     }
-    $legend = $mnemonic unless defined $legend;
+    $legend = $datum unless defined $legend;
     $scale = '' unless defined $scale;
     push @{$plot{$plt}}, { mnc => $mnemonic, legend => $legend,
       legpos => $legpos, scale => $scale };
@@ -199,12 +206,21 @@ if ( $opts{c} || $opts{j} ) {
   for my $rate ( @rates ) {
     my @vars = grep $format{$_} !~ m/-$/, sort keys %{$rate{$rate}};
     my @formats = map $format{$_}, @vars;
+    my @width = map $dimension{$_} ? $dimension{$_}->{width} : 1, @vars;
     $rate =~ s|/|_|g;
-    my $n_var = @vars + 1;
-    print CDF "$cdf_type ${experiment}eng_$rate $n_var\n",
-      "  0 T${experiment}eng_$rate %.3lf\n",
-      join( "\n", map "  $_ $vars[$_-1] $formats[$_-1]", ( 1 .. @vars ) ),
-      "\n";
+    my $n_cols = sum(@width) + 1;
+    my $col_n = 1;
+    print CDF "$cdf_type ${experiment}eng_$rate $n_cols\n",
+      "  0 T${experiment}eng_$rate %.3lf\n";
+    for my $var_n (0 .. $#vars) {
+      my $var = $vars[$var_n];
+      my $dim = $dimension{$var} ?
+        '[' . $dimension{$var}->{width} .
+          ( $dimension{$var}->{hirate} ? 'x' : '') . ']'
+        : '';
+      print CDF "  $col_n $vars[$var_n]$dim $formats[$var_n]\n";
+      $col_n += $width[$var_n];
+    }
   }
   close CDF || warn "Error closing $ofile\n";
 } else {
@@ -274,7 +290,7 @@ if ($matdir  && !$opts{j}) {
         die "Unable to write g$experiment$grp.m\n";
       $generated{"g$experiment$grp.m"} = 1;
       print GRP
-        "function fig = g$experiment$grp(varargin);\n",
+        "function fig = g$experiment$grp(varargin)\n",
         "% g$experiment$grp(...)\n",
         "% $grouptext\n",
         "ffig = ne_group(varargin,'$grouptext',",
@@ -304,7 +320,7 @@ if ($matdir  && !$opts{j}) {
           $generated{"$qplt.m"} = 1;
           $generated{"cust_$qplt.m"} = 1;
           print PLT
-            "function $qplt(varargin);\n",
+            "function $qplt(varargin)\n",
             "% $qplt( [...] );\n",
             "% $grouptext $plottext\n";
           my @mnemonics =
@@ -333,7 +349,7 @@ if ($matdir  && !$opts{j}) {
                   @{$plot{$plt}};
             print PLT
               "h = timeplot({",
-              join( ",", map "'$_'", @mnemonics ), "}, ...\n",
+              join( ",", map "'$_'", map({ s/\[\d+\]//g; $_ } @mnemonics) ), "}, ...\n",
               "      '$grouptext $plottext', ...\n",
               "      '$plottext', ...\n",
               "      {$legpos",

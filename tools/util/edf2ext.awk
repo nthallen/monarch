@@ -4,6 +4,22 @@
 #
 # Revision 1.1  1993/05/28  20:06:11  nort
 # Initial revision
+function parse_datum(datum, results,     elements, seps) {
+  delete results
+  split(datum, elements, /[\[\]]/, seps)
+  if (length(elements) == 1 && length(seps) == 0) {
+    results[1] = elements[1]
+  } else {
+    if (length(seps) == 2 && seps[1] == "[" && seps[2] == "]" && length(elements) == 3) {
+      results[1] = elements[1]
+      results[2] = elements[2]
+    } else {
+      system( "echo " FILENAME ":" NR " unsupported array syntax: \\'" datum "\\' >&2" )
+      exit( rv = 1 )
+    }
+  }
+}
+
 BEGIN {
   rv = 0
   using_sps = 0
@@ -199,6 +215,7 @@ END {
             k++;
           }
         }
+        # leading {
         print "}"
       }
     }
@@ -235,18 +252,41 @@ END {
     print "        msg(MSG, \"Using Time Delta of %lf\", ext_delta);"
     print "      }"
     print "    }"
+    # trailing }
     for (i = 0; i <= nsps; i++) {
       printf "    " sps[i] ".init();\n"
       if (datum[i,0] == "") datum[i,0] = "Time";
+      col = 0
       for (j = 0; j < ncols[i]; j++) {
-        printf "    " sps[i] ".init_col(" j ", \"" datum[i,j] "\""
-        if ( datfmt[i,j] != "" ) printf ", \"%s\"", datfmt[i,j]
-        print ");"
+        if (j == col) {
+          parse_datum(datum[i,j], res)
+          if (length(res) == 1) {
+            # print "scalar " res[1]
+            printf "    " sps[i] ".init_col(" j ", \"" datum[i,j] "\""
+            if ( datfmt[i,j] != "" ) printf ", \"%s\"", datfmt[i,j]
+            print ");"
+            ++col
+          } else {
+            # print "array " res[1] " length " res[2]
+            printf "    " sps[i] ".init_col(" col ", \"" res[1] "\""
+            if ( datfmt[i,j] != "" ) printf ", \"%s\"", datfmt[i,j]
+            print ");"
+            print "    " sps[i] ".init_array(" col ", " res[2] ");"
+            col += res[2]
+          }
+        } else {
+          # verify that datum[i,j] does not exist
+          if (datum[i,j] != "") {
+            system( "echo " FILENAME ":" NR " Column " j " multiply defined >&2" )
+            exit( rv = 1 )
+          }
+        }
       }
       if (json[i]) {
         print "    " sps[i] ".set_jcb(DAS_IO::json_server::jcb);"
       }
     }
+    # A leading { 
     print "  }"
     # A leading { 
     print "%}"
@@ -255,28 +295,50 @@ END {
     # print the extraction statements
     if (init_only != "yes") {
       for (i = 0; i <= nsps; i++) {
-        k = 0;
+        k = 0
+        col = 1
         for (j = 1; j < ncols[i]; j++) {
           if (datum[i,j] != "") {
+            # leading {
             if (k > 0 && sep[i] == "y") print "}"
             if (k == 0 || sep[i] == "y") {
               print cond[i] "{"
+              # trailing }
               if (using_sps) {
                 print "  edf_ss_insert_val(" sps[i] ", dtime()+ext_delta, 0);"
               } else {
                 print "  " sps[i] ".set_time(dtime()+ext_delta);"
               }
             }
-            if (using_sps) {
-              printf "  ss_set(" sps[i] ", " j ", "
-              print datcnv[i,j] "(" datum[i,j] "));"
+            parse_datum(datum[i,j], res)
+            if (length(res) == 1) {
+              # print "scalar " res[1]
+              if (using_sps) {
+                printf "  ss_set(" sps[i] ", " j ", "
+                print datcnv[i,j] "(" res[1] "));"
+              } else {
+                printf "  " sps[i] ".set_col(" j ", "
+                print datcnv[i,j] "(" res[1] "));"
+              }
+              ++col
+              ++k
             } else {
-              printf "  " sps[i] ".set_col(" j ", "
-              print datcnv[i,j] "(" datum[i,j] "));"
+              # print "array " res[1] " length " res[2]
+              while (col < j+res[2]) {
+                if (using_sps) {
+                  printf "  ss_set(" sps[i] ", " col ", "
+                  print datcnv[i,j] "(" res[1] "[" col-j  "]));"
+                } else {
+                  printf "  " sps[i] ".set_col(" col ", "
+                  print datcnv[i,j] "(" res[1] "[" col-j  "]));"
+                }
+                ++col
+              }
+              ++k
             }
-            k++
           }
         }
+        # leading {
         print "}"
       }
     }
