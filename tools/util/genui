@@ -349,7 +349,7 @@ if ($matdir  && !$opts{j}) {
                   @{$plot{$plt}};
             print PLT
               "h = timeplot({",
-              join( ",", map "'$_'", @mnemonics ), "}, ...\n",
+              join( ",", map "'$_'", map({ s/\[\d+\]//g; $_ } @mnemonics) ), "}, ...\n",
               "      '$grouptext $plottext', ...\n",
               "      '$plottext', ...\n",
               "      {$legpos",
