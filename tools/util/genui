@@ -183,7 +183,7 @@ while (<>) {
     }
     $legend = $datum unless defined $legend;
     $scale = '' unless defined $scale;
-    push @{$plot{$plt}}, { mnc => $datum, legend => $legend,
+    push @{$plot{$plt}}, { mnc => $mnemonic, legend => $legend,
       legpos => $legpos, scale => $scale };
   } else {
     chomp;
