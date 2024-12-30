@@ -23,7 +23,11 @@ else
 fi
 [ -n "$ver" ] || nl_error "VERSION is empty"
 vtgt=$tgt/bin/$ver
-[ -d "$vtgt" ] || nl_error "bin dir $vtgt does not exist"
+if [ ! -d "$vtgt" ]; then
+  echo "bin dir $vtgt does not exist"
+  echo "That's good if this is a new VERSION"
+  exit 0
+fi
 [ -f "$vtgt/$pcm" ] || nl_error "pcm file $pcm not found in bin dir $vtgt"
 if cmp --silent $vtgt/$pcm $pcm; then
   echo "$pcm and $vtgt/$pcm are identical"
