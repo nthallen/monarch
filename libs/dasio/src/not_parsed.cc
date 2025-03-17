@@ -226,29 +226,32 @@ bool DAS_IO::Interface::not_fix(int fix, int16_t &val) {
 int DAS_IO::Interface::match(const char *str) {
   int i;
   for (i = 0; cp+i < nc && *str != '\0' && buf[cp+i] == *str; ++i, ++str);
-  if (*str == '\0') return 1;
+  if (*str == '\0') return i;
   else if (cp+i >= nc) return 0;
   else return -1;
 }
 
 bool DAS_IO::Interface::not_alt(const char *alt1, const char *alt2,
     int &matched, const char *context) {
-  int rv1, rv0;
+  int rv1, rv2;
   matched = 0; // No match
   rv1 = match(alt1);
   if (rv1 > 0) {
     matched = 1; // definite match to alt1
+    cp += rv1;
     return false;
   } else {
-    rv0 = match(alt2);
-    if (rv0 > 0) {
+    rv2 = match(alt2);
+    if (rv2 > 0) {
       matched = 2; // definite match to alt2
+      cp += rv2;
       return false;
     }
   }
-  if (rv0 == 0 || rv1 == 0) return false; // possible match at end of input
+  if (rv2 == 0 || rv1 == 0) return true; // possible match at end of input
   report_err("%s: Unexpected string for '%s' at column %d",
     iname, context, cp);
+  matched = -1;
   return true;
 }
 

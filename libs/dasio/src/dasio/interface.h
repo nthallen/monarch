@@ -761,12 +761,14 @@ class Interface {
      * @brief Match one of two alternative strings
      * @param alt1 First alternative string
      * @param alt2 Second alternative string
-     * @param[out] matched 1 if alt1 matches, 2 if alt2 matches, 0 otherwise
+     * @param[out] matched 1 if alt1 matches, 2 if alt2 matches
      * @param context A string to specify the input context in error messages
      *
      * Originally from SunRoof.cc.
      *
-     * @return false if alt1 or alt2 matches the input.
+     * @return false if alt1 or alt2 matches the input. If true,
+     * and there is a partial match at the end of the input string, matched
+     * is set to 0. Otherwise matched is set to -1
      */
     bool not_alt(const char *alt1, const char *alt2, int &matched,
                  const char *context);
