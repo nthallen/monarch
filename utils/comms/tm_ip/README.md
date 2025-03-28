@@ -18,8 +18,7 @@ to tm_ip_import, but that would steal bandwidth from telemetry.
 I might consider sending responses in specific cases or on
 request.
 
-3/28/2025
-Adding support for side channel data.
+## 3/28/2025 Adding support for side channel data.
 
 Senders will connect with a Client connection to the 'ip_ex/tcp' or
 'ip_ex/udp' service, and then can begin sending packets.
@@ -46,5 +45,5 @@ requiring an acknowledgement. pkt_type_CTRL will be defined to
 support the following functions:
   - Keep Alive (nop)
   - Acknowledge
-    Identifying the last block? not enough info in the hdr for that
-    Identifying the number of bytes received since last ack
+    - Identifying the last block? not enough info in the hdr for that
+    - Identifying the number of bytes received since last ack
