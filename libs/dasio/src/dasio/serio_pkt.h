@@ -4,9 +4,13 @@
 enum serio_pkt_type : uint8_t {
   pkt_type_NULL = 0,
   pkt_type_TM = 'T',
+  pkt_type_CTRL = 'c', // will have a small payload
   pkt_type_PNG_Start = 'P',
   pkt_type_PNG_Cont = 'N',
-  pkt_type_CMD = 'C'
+  pkt_type_CMD = 'C',
+  pkt_type_XIO = 'X',
+  pkt_type_SID = 'S',
+  pkt_type_NPH = 'W'
 };
 
 typedef struct __attribute__((packed)) {

@@ -233,7 +233,7 @@ class Interface {
      */
     void fill_obuf(struct iovec *iov, int nparts);
     /**
-     * @return true if there is no pending data in obuf
+     * @return true if fd is open and there is no pending data in obuf
      */
     inline bool obuf_empty() { return fd >= 0 && n_wiov == 0 && onc == 0; }
     /**

@@ -52,9 +52,13 @@ bool Interface::not_serio_pkt(bool &have_hdr, serio_pkt_type &type,
     }
     switch (hdr.type) {
       case pkt_type_TM:
+      case pkt_type_CTRL:
       case pkt_type_PNG_Start:
       case pkt_type_PNG_Cont:
       case pkt_type_CMD:
+      case pkt_type_XIO:
+      case pkt_type_SID:
+      case pkt_type_NPH:
         break;
       default:
         report_err(isgraph(hdr.type) ?
