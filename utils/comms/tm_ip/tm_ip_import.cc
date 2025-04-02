@@ -8,8 +8,37 @@
 #include "dasio/tm.h"
 #include "dasio/appid.h"
 #include "dasio/ascii_escape.h"
+#include "dasio/serio_pkt.h"
 #include "nl.h"
 #include "oui.h"
+
+ipi_relay::ipi_relay(const char *iname)
+      : Interface(iname, 0),
+        mlf_packet_logger(iname, mlf_base, mlf_config)
+{
+}
+
+ipi_relay *ipi_relay::instance;
+const char *ipi_relay::mlf_base = "Serio";
+const char *ipi_relay::mlf_config;
+
+ipi_relay *ipi_relay::get_instance()
+{
+  if (!instance) {
+    instance = new ipi_relay("relay");
+  }
+  return instance;
+}
+
+bool ipi_relay::forward(const unsigned char *hdr)
+{
+  serio_pkt_hdr *shdr = (serio_pkt_hdr *)hdr;
+  uint16_t len = shdr->length;
+  log_packet(hdr, len);
+  // Now forward to any Clients
+  return false;
+}
+
 
 /**
  * ipi_cmd_in connects to the local command txsrvr to receive commands,

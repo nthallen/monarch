@@ -818,14 +818,29 @@ class Interface {
     bool not_serio_pkt_hdr();
     /**
      * @brief Locates and validates a serio packet
+     * 
+     * Discards any data prior to a valid packet header.
+     *
      * On successful (false) return, cp points to the beginning
-     * of the serio packet header. It is the caller's responsibility
-     * to update cp after processing the contents of the packet.
-     * Discards any data prior to the valid packet header. The header
-     * data (type and length) may be useful when receiving from a
-     * serial device. have_hdr is always set, and type and length
-     * are valid if have_hdr is true. payload is only set if
-     * the function returns false.
+     * of the serio packet header. Even on unsuccessful return,
+     * it may be useful to know if a complete packet header was
+     * located, particularly when receiving data on a serial
+     * device. have_hdr is always set (true or false), and type
+     * and length are valid if have_hdr is true. payload is only
+     * set if the function returns false.
+     *
+     * It is the caller's responsibility to update cp after
+     * processing the contents of the packet. cp needs to be
+     * advanced by sizeof(serio_pkt_hdr)+length.
+     *
+     * On failure (true), one of 3 conditions are true:
+     *  - nc-cp < sizeof(serio_pkt_hdr)
+     *    - i.e. no valid header in the input buffer
+     *  - have_hdr && cp+sizeof(serio_pkt_hdr)+length > nc
+     *  - have_hdr && cp+sizeof(serio_pkt_hdr)+length+1 > nc
+     *    - This last condition is only important when the packet
+     *      contains text (e.g. pkt_type_CMD) and we need space for
+     *      a trailing NUL for string operations.
      *
      * In order to evaluate the CRC, the entire serio packet must
      * be able to fit into the buffer along with space for a trailing

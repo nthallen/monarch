@@ -8,9 +8,208 @@
 #include "dasio/appid.h"
 #include "dasio/ascii_escape.h"
 #include "nl.h"
+#include "nl_assert.h"
 #include "oui.h"
 
+ipx_relay::ipx_relay(const char *iname, ipx_tm_out *udp, ipx_cmd_in *tcp)
+      : Interface(iname, 0),
+        udp(udp),
+        tcp(tcp),
+        msecs_queued(0)
+{
+}
+
+bool ipx_relay::send_udp(const uint8_t *hdr, uint16_t len)
+{
+  // do the necessary bookkeeping, then forward to ipx_tm_out
+  if (udp->CTS())
+  if (len == 0) {
+    serio_pkt_hdr *shdr = (serio_pkt_hdr*)hdr;
+    len = sizeof(serio_pkt_hdr) + shdr->length;
+  }
+  record_nbytes(len + ipx_tm_out::IP_header_len
+                + ipx_tm_out::UDP_header_len);
+  udp->send_udp(hdr, len);
+  return false;
+}
+
+bool ipx_relay::send_tcp_req(ipx_client *caller)
+{
+  // enqueue the request
+  if (caller->tcp_txfr_requested) {
+    if (tcp_queue.empty()) {
+      msg(MSG_ERROR,
+        "%s: tcp_txfr_requested not cleared on empty queue",
+        iname);
+    } else {
+      // Is it already in the queue?
+      msg(MSG_ERROR,
+        "%s: tcp_txfr_requested not cleared on non-empty queue",
+        iname);
+    }
+  }
+  tcp_queue.push_back(caller);
+  process_queue();
+  return false;
+}
+
+void ipx_relay::process_queue()
+{
+  // check the status of the queue
+  if (tcp_queue.empty()) return;
+  ipx_client *rdyclt = tcp_queue.front();
+  record_nbytes(0);
+  if (msecs_queued > 500) {
+    TO.Set(0, msecs_queued-500);
+    flags |= Fl_Timeout;
+  } else if (tcp->CTS()) {
+    // we can send now:
+    const uint8_t *pkt;
+    serio_pkt_hdr *hdr;
+    pkt = rdyclt->get_current_packet();
+    hdr = (serio_pkt_hdr *)pkt;
+    uint16_t len = hdr->length;
+    record_nbytes(len + ipx_tm_out::IP_header_len + TCP_header_len);
+    tcp->send_tcp(pkt, len);
+    flags &= Fl_Timeout;
+    return;
+  } else {
+    msg(MSG_ERROR, "%s: !CTS() with %d msecs_queued", iname, msecs_queued);
+    record_nbytes(1000); // An arbitrary amount
+    TO.Set(0, msecs_queued > 500 ? msecs_queued-500 : 250);
+    flags |= Fl_Timeout;
+  }
+  return;
+}
+
+void ipx_relay::record_nbytes(int nbytes)
+{
+  struct timespec now;
+  clock_gettime(CLOCK_REALTIME, &now);
+  if (msecs_queued) {
+    time_t secs_elapsed = now.tv_sec - when_queued.tv_sec;
+    long nsecs_elapsed = now.tv_nsec - when_queued.tv_nsec;
+    long msecs_elapsed = (secs_elapsed*1000) + (nsecs_elapsed/1000000);
+    if (msecs_elapsed > msecs_queued)
+      msecs_queued = 0;
+    else
+      msecs_queued -= msecs_elapsed;
+  }
+  int msecs = (nbytes*8)/21; // kbps
+  msecs_queued += msecs;
+  when_queued = now;
+}
+
+ipx_relay *ipx_relay::get_instance()
+{
+  if (!instance) {
+    msg(MSG_FATAL, "ipx_relay: Instance not predefined");
+  }
+  return instance;
+}
+
+ipx_relay *ipx_relay::instance;
+
 const char *ip_export_cross_exp;
+
+ipx_type ipx_tcp(false);
+ipx_type ipx_udp(true);
+
+ipx_client::ipx_client(Authenticator *auth, const char *iname, ipx_type *xtype)
+    : Serverside_client(auth, iname, 2048),
+      is_UDP(xtype->is_UDP)
+{
+  relay = ipx_relay::get_instance();
+  set_obufsize(2048);
+}
+
+void ipx_client::xfer_confirmed(uint16_t nbytes)
+{
+  // verify the length of the current header, then
+  // consume it and set the read flag (in case it
+  // has been cleared).
+  serio_pkt_hdr *shdr = (serio_pkt_hdr *)buf;
+  uint16_t len = shdr->length;
+  nl_assert(nbytes == len);
+  nl_assert(nbytes <= nc);
+  report_ok(nbytes);
+  flags |= Fl_Read;
+}
+
+bool ipx_client::protocol_input()
+{
+  bool have_hdr;
+  serio_pkt_type type;
+  uint16_t length;
+  uint8_t *payload;
+  msg(MSG_DBG(1), "%s: Incoming %d bytes", iname, nc);
+  if (not_serio_pkt(have_hdr, type, length, payload))
+  { /* We do not expect partial packets unless the input buffer
+     * has filled (nc == bufsize)
+     */
+    if (nc - cp < sizeof(serio_pkt_hdr)) {
+      if (nc == bufsize) {
+        if (cp) consume(cp);
+        else flags &= ~Fl_Read;
+        return false;
+      }
+    } else if (have_hdr && cp + sizeof(serio_pkt_hdr)+length + 1 > nc) {
+      if (nc == bufsize) {
+        if (cp) consume(cp);
+        else flags &= ~Fl_Read;
+        return false;
+      }
+      /* We could reach here if the buffer filled on the 2nd or 3rd
+       * packet, and we subsequently consumed the first. */
+    } else {
+      report_err("%s: Internal: cp:%d length:%d nc:%d bufsize:%d",
+        iname, cp, length, nc, bufsize);
+      consume(cp);
+    }
+  }
+  // Now we have a valid packet. Since this interface is for side-channel
+  // data, it should not be of a type used for internal data
+  switch (type) {
+    case pkt_type_NULL:
+    case pkt_type_TM:
+    case pkt_type_CMD:
+      report_err(isgraph(type)
+          ? "%s: Invalid packet type '%c' in side channel"
+          : "%s: Invalid packet type %u in side channel",
+          iname, type);
+      cp += sizeof(serio_pkt_hdr) + length;
+      report_ok(cp);
+      return false;
+  }
+
+  if (is_UDP)
+  {
+    relay->send_udp(buf);
+    cp += sizeof(serio_pkt_hdr) + length;
+    report_ok(cp);
+    flags |= Fl_Read;
+  } else {
+    // Need variable and check that we don't have an outstanding request
+    flags &= ~Fl_Read;
+    report_ok(cp); // make sure buf points to packet header
+    relay->send_tcp_req(this);
+  }
+  return false;
+}
+
+void ipx_client::attach(Server *S, ipx_type *xtype)
+{
+  S->add_subservice(
+    new SubService(xtype->is_UDP ? "ipx/udp" : "ipx/tcp",
+                    new_ipx_client, (void*)xtype));
+}
+
+Serverside_client *ipx_client::new_ipx_client(
+        Authenticator *auth, SubService *SS)
+{
+  return new ipx_client(auth, auth->get_client_app(), (ipx_type*)(SS->svc_data));
+}
+
 
 /**
  * Establishes connection to the Relay node and receives
@@ -19,6 +218,7 @@ const char *ip_export_cross_exp;
 ipx_cmd_in::ipx_cmd_in(const char *iname)
     : Client(iname, "Relay", "ip_ex", 0, serio::min_buffer_size)
 {
+  set_obufsize(3000);
   set_retries(-1, 10, 10, false); // Never stop trying
 }
 
@@ -32,7 +232,7 @@ bool ipx_cmd_in::app_input() {
     if (not_serio_pkt(have_hdr, type, length, payload)) {
       if (have_hdr && type != pkt_type_CMD) {
         report_err("%s: Invalid command type: '%c'", iname, type);
-        ++cp;
+        ++cp; // skip over this packet header
         continue;
       }
       return false;
@@ -52,6 +252,11 @@ bool ipx_cmd_in::app_input() {
   return false;
 }
 
+bool ipx_cmd_in::send_tcp(const uint8_t *pkt, uint16_t len)
+{
+  return iwrite((const char *)pkt, len);
+}
+
 bool ipx_cmd_in::process_eof() {
   msg(MSG_ERROR, "%s: Connection dropped", iname);
   return reset();
@@ -63,10 +268,12 @@ ipx_tm_out::ipx_tm_out(const char *iname)
       n_tx_rows_dropped(0),
       total_tx_rows_dropped(0),
       MTU(max_MTU),
-      pyld_nc(0)
+      pyld_nc(0),
+      relay(0)
 {
   max_udp_payload = max_MTU - IP_header_len - UDP_header_len;
   payload = (uint8_t *)new_memory(max_udp_payload);
+  set_obufsize(max_udp_payload);
 }
 
 ipx_tm_out::~ipx_tm_out() {
@@ -152,162 +359,15 @@ void ipx_tm_out::flush() {
     msg(MSG_DEBUG, "%s: Send packet %d bytes", iname, pyld_nc);
     dump_hex(MSG, iname, payload, pyld_nc);
   }
-  iwrite((char*)payload, pyld_nc);
+  if (!relay) relay = ipx_relay::get_instance();
+  relay->send_udp((uint8_t *)payload, pyld_nc);
   pyld_nc = 0;
 }
 
-#ifdef HAVE_SCAN_DATA
-void ipx_tm_out::enqueue_scan(int32_t scannum) {
-  next_scan = scannum;
+void ipx_tm_out::send_udp(const uint8_t *data, int length)
+{
+  iwrite((char*)data, length);
 }
-
-/**
- */
-void ipx_tm_out::send_scan_data() {
-  while (rows_this_row < rows_per_row) {
-    if (cur_scan == 0) {
-      if (next_scan == 0) return;
-      cur_scan = next_scan;
-      next_scan = 0;
-      mlf_set_index(mlf, cur_scan);
-      scan_fd = mlf_next_fd(mlf);
-      nl_error(MSG_DBG(0), "Reading scan %lu from path %s",
-        cur_scan, mlf->fpath);
-      if (scan_fd < 0) { // error is already reported
-        cur_scan = 0;
-        return;
-      }
-      scan_file_size = lseek(scan_fd, 0, SEEK_END);
-      if (scan_file_size < 0 || lseek(scan_fd, 0, SEEK_SET) != 0) {
-        nl_error(2, "Error getting scan %d length");
-        close(scan_fd);
-        scan_fd = -1;
-        cur_scan = 0;
-        return;
-      }
-      if (scan_file_size > scanbufsize) {
-        nl_error(MSG_ERROR, "Scan %d size %lu exceeds max possible %d",
-          cur_scan, scan_file_size, scanbufsize);
-        close(scan_fd);
-        scan_fd = -1;
-        cur_scan = 0;
-        return;
-      }
-      int rv = ::read(scan_fd, scanbuf, scan_file_size);
-      if (rv < 0) {
-        nl_error(MSG_ERROR, "Error %d reading scan %d", errno, cur_scan);
-        close(scan_fd);
-        scan_fd = -1;
-        cur_scan = 0;
-        return;
-      }
-      scan_nb = rv;
-      if (rv < scan_file_size) {
-        nl_error(MSG_WARN, "Short read on scan %d: %d/%d",
-            cur_scan, rv, scan_file_size);
-      }
-      ssp_hdr = (ssp_scan_hdr_t *)scanbuf;
-      int chk_size = sizeof(uint32_t)*(7+ssp_hdr->NChannels*ssp_hdr->NSamples);
-      if (chk_size > scan_file_size) {
-        nl_error(MSG_ERROR, "Scan file %d is short: %d/%d",
-          cur_scan, scan_file_size, chk_size);
-        close(scan_fd);
-        scan_fd = -1;
-        cur_scan = 0;
-        return;
-      } else if (chk_size < scan_file_size) {
-        nl_error(MSG_DBG(0), "Scan file %d is long: %d/%d",
-          cur_scan, scan_file_size, chk_size);
-        scan_file_size = chk_size;
-        if (scan_nb > scan_file_size)
-          scan_nb = scan_file_size;
-      }
-      nl_error(MSG_DBG(0), "Transmitting scan %ld: %lu bytes",
-        cur_scan, scan_file_size);
-      scan_cp = 0;
-      scan_mfctr = 0;
-      scan_mfctr_offset = 1;
-      scan_file_offset = scan_nb;
-    }
-    if (flush_row()) return;
-    if (scan_mfctr < scan_mfctr_offset ||
-        scan_mfctr > scan_mfctr_offset + 255) {
-      // create a header
-      scan_mfctr_offset = scan_mfctr;
-      // row_buf->scan_hdr.scannum = cur_scan;
-      // row_buf->scan_hdr.scansize = scan_file_size;
-      // row_buf->scan_hdr.mfctr_offset = scan_mfctr++;
-      // memset(&row_buf->row[sizeof(scan_hdr_t)], 0,
-        // row_len-sizeof(scan_hdr_t)-3);
-      // row_buf->row[row_len-3] = 0;
-      // memcpy(&(row_buf->row[row_len-2]), &scan_synch, 2);
-      // row_offset = 0;
-      // if (flush_row()) return;
-    }
-    if (scan_nb - scan_cp < row_len-3 &&
-        scan_file_offset < scan_file_size) {
-      // Less than one row of data currently in scanbuf and
-      // more data left in the file, so read in more.
-      if (scan_nb > scan_cp && scan_cp > 0) {
-        memmove(&(row_buf->row[0]), &(row_buf->row[scan_cp]), scan_nb-scan_cp);
-        scan_nb -= scan_cp;
-        scan_cp = 0;
-      }
-      int remaining = scan_file_size - scan_file_offset;
-      int available = scanbufsize - scan_cp;
-      if (remaining > available) {
-        if (available > blocksize) {
-          // round down to fixed number of blocks
-          int blocks = available/blocksize;
-          remaining = blocks*blocksize;
-        } else {
-          remaining = available;
-          // This should really never happen. It would mean the
-          // scanbufsize is not much bigger than the blocksize
-        }
-      }
-      int rv = ::read(scan_fd, scanbuf+scan_cp, remaining);
-      scan_nb += rv;
-      scan_file_offset += rv;
-    }
-    if (scan_cp >= scan_nb) {
-      nl_assert(scan_file_offset >= scan_file_size);
-      nl_assert(scan_fd >= 0);
-      close(scan_fd);
-      scan_fd = -1;
-      cur_scan = 0;
-    } else {
-      uint16_t row_mfc = scan_mfctr++ - scan_mfctr_offset;
-      uint16_t hdr_offset = 0;
-      // transmit a row
-      int available = scan_nb - scan_cp;
-      if (row_mfc == 0) {
-        row_buf->scan_hdr.scannum = cur_scan;
-        row_buf->scan_hdr.scansize = scan_file_size;
-        row_buf->scan_hdr.mfctr_offset = scan_mfctr_offset;
-        hdr_offset = sizeof(scan_hdr_t);
-      }
-      if (available >= row_len-3-hdr_offset) {
-        available = row_len - 3 - hdr_offset;
-        memcpy(&(row_buf->row[hdr_offset]), &scanbuf[scan_cp], available);
-      } else {
-        memcpy(&(row_buf->row[hdr_offset]), &scanbuf[scan_cp], available);
-        memset(&(row_buf->row[hdr_offset+available]), 0,
-          row_len - 3 - available - hdr_offset);
-      }
-      row_buf->row[row_len-3] = row_mfc;
-      memcpy(&(row_buf->row[row_len-2]), &scan_synch, 2);
-      scan_cp += available;
-      row_offset = 0;
-      if (flush_row()) return;
-    }
-  }
-}
-
-void set_cur_photo(uint32_t Photo_Num) {
-  if (TMp) TMp->cur_photo = Photo_Num;
-}
-#endif
 
 ipx_tm_in::ipx_tm_in(ipx_tm_out *tm_out)
     : tm_client(1024),
@@ -348,7 +408,7 @@ ipx_ctrl::ipx_ctrl(const char *iname, const char *cmdchannel,
     : Cmd_reader(iname, 80, cmdchannel),
       tm_out(tm_out) {}
 
-bool ipx_ctrl::protocol_input() {
+bool ipx_ctrl::app_input() {
   uint16_t new_MTU;
   if (buf[cp] == 'Q') {
     msg(MSG, "%s: process_quit()", iname);
@@ -367,29 +427,34 @@ bool ipx_ctrl::protocol_input() {
 int main(int argc, char **argv) {
   oui_init_options(argc, argv);
   AppID.report_startup();
-  { Loop ELoop;
+  { Server S("ipx");
+
+    ipx_client::attach(&S, &ipx_udp);
+    ipx_client::attach(&S, &ipx_tcp);
   
     ipx_cmd_in *cmd_in = new ipx_cmd_in("cmd_in");
     cmd_in->set_cross_exp(ip_export_cross_exp);
-    ELoop.add_child(cmd_in);
+    S.ELoop.add_child(cmd_in);
     cmd_in->connect();
     
     ipx_tm_out *tm_out = new ipx_tm_out("tm_out");
-    ELoop.add_child(tm_out);
+    S.ELoop.add_child(tm_out);
     tm_out->connect();
-    
+
+    ipx_relay::set_instance(new ipx_relay("relay", tm_out, cmd_in));
+    S.ELoop.add_child(ipx_relay::get_instance());
+
     // tm_client iname is hard-coded to tm_client
     ipx_tm_in *tm_in = new ipx_tm_in(tm_out);
-    ELoop.add_child(tm_in);
+    S.ELoop.add_child(tm_in);
     tm_in->connect();
     
     ipx_ctrl *ctrl = new ipx_ctrl("ctrl", "TMIPX", tm_out);
-    ELoop.add_child(ctrl);
+    S.ELoop.add_child(ctrl);
     ctrl->connect();
-    
-    ELoop.event_loop();
-    ELoop.delete_children();
-    ELoop.clear_delete_queue(true);
+
+    msg(MSG_DEBUG, "Entering Server Start");    
+    S.Start(Server::Srv_Unix);
   }
   AppID.report_shutdown();
   return 0;

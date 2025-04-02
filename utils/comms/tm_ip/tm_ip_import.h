@@ -7,10 +7,31 @@
 #include "dasio/client.h"
 #include "dasio/cmd_reader.h"
 #include "dasio/serio_pkt.h"
+#include "mlf_packet_logger.h"
 
 using namespace DAS_IO;
 
-class ipi_cmd_out;
+/**
+ * Supports locally logging of all serio_pkt data, including telemetry
+ * and forwarding of all packets to a relay process. The relay may
+ * provide selective packet relaying.
+ */
+class ipi_relay : public Interface, mlf_packet_logger {
+  public:
+    ipi_relay(const char *iname);
+    /**
+     * Logs packets based on mlf_base and mlf_config inputs, then
+     * forwards them to any connected Clients.
+     * @param hdr Pointer to the header of a validated serio_pkt message.
+     * @returns true on a significant failure
+     */
+    bool forward(const unsigned char *hdr);
+    static ipi_relay *get_instance();
+    static ipi_relay *instance;
+    static const char *mlf_base;
+    static const char *mlf_config;
+  protected:
+};
 
 /**
  * Connect to the local command txsrvr to receive commands,
