@@ -57,13 +57,13 @@ void ipx_relay::process_queue()
 {
   // check the status of the queue
   if (tcp_queue.empty()) return;
-  ipx_client *rdyclt = tcp_queue.front();
   record_nbytes(0);
   if (msecs_queued > 500) {
     TO.Set(0, msecs_queued-500);
     flags |= Fl_Timeout;
   } else if (tcp->CTS()) {
     // we can send now:
+    ipx_client *rdyclt = tcp_queue.front();
     const uint8_t *pkt;
     serio_pkt_hdr *hdr;
     pkt = rdyclt->get_current_packet();
@@ -72,6 +72,8 @@ void ipx_relay::process_queue()
     record_nbytes(len + ipx_tm_out::IP_header_len + TCP_header_len);
     tcp->send_tcp(pkt, len);
     flags &= Fl_Timeout;
+    tcp_queue.pop_front();
+    rdyclt->xfer_confirmed(len);
     return;
   } else {
     msg(MSG_ERROR, "%s: !CTS() with %d msecs_queued", iname, msecs_queued);
@@ -128,6 +130,7 @@ void ipx_client::xfer_confirmed(uint16_t nbytes)
   // verify the length of the current header, then
   // consume it and set the read flag (in case it
   // has been cleared).
+  tcp_txfr_requested = false;
   serio_pkt_hdr *shdr = (serio_pkt_hdr *)buf;
   uint16_t len = shdr->length;
   nl_assert(nbytes == len);
@@ -166,6 +169,7 @@ bool ipx_client::protocol_input()
         iname, cp, length, nc, bufsize);
       consume(cp);
     }
+    return false;
   }
   // Now we have a valid packet. Since this interface is for side-channel
   // data, it should not be of a type used for internal data

@@ -80,6 +80,7 @@ class ipi_cmd_out : public Serverside_client {
      * and sends it.
      */
     bool send_serio_pkt(uint8_t *buf, unsigned int nc);
+    ipi_relay *relay;
 };
 
 class ipi_tm_out;
@@ -99,6 +100,7 @@ class ipi_tm_in : public Socket {
     bool protocol_input();
     void dump_buf();
     bool buffer_dumped;
+    ipi_relay *relay;
     ipi_tm_out *tm_out;
 };
 

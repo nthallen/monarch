@@ -66,7 +66,9 @@ bool ipi_cmd_in::app_input() {
  * ipi_cmd_out
  */
 ipi_cmd_out::ipi_cmd_out(Authenticator *auth, const char *iname)
-    : Serverside_client(auth, iname, serio::min_buffer_size) {
+    : Serverside_client(auth, iname, serio::min_buffer_size),
+      relay(ipi_relay::get_instance())
+{
   set_obufsize(2048);
 }
 
@@ -133,8 +135,42 @@ void ipi_cmd_out::close() {
 }
 
 bool ipi_cmd_out::app_input() {
-  msg(1, "%s: Unexpected input: %s", iname, buf);
-  report_ok(nc);
+  bool have_hdr;
+  serio_pkt_type type;
+  uint16_t length;
+  uint8_t *payload;
+
+  while (cp < nc)
+  {
+    if (not_serio_pkt(have_hdr, type, length, payload))
+    {
+      if (nc - cp < sizeof(serio_pkt_hdr)) {
+        if (nc == bufsize) {
+          if (cp) consume(cp);
+          else flags &= ~Fl_Read;
+          return false;
+        }
+      } else if (have_hdr && cp + sizeof(serio_pkt_hdr)+length + 1 > nc) {
+        if (nc == bufsize) {
+          if (cp) consume(cp);
+          else flags &= ~Fl_Read;
+          return false;
+        }
+        /* We could reach here if the buffer filled on the 2nd or 3rd
+         * packet, and we subsequently consumed the first. */
+      } else {
+        report_err("%s: Internal: cp:%d length:%d nc:%d bufsize:%d",
+          iname, cp, length, nc, bufsize);
+        consume(cp);
+      }
+      return false;
+    }
+    // Now have validated packet
+    relay->forward(&buf[cp]);
+    cp += length+sizeof(serio_pkt_hdr);
+  }
+  // msg(1, "%s: Unexpected input: %s", iname, buf);
+  report_ok(cp);
   return false;
 }
 
@@ -146,7 +182,8 @@ bool ipi_cmd_out::app_input() {
 ipi_tm_in::ipi_tm_in(ipi_tm_out *tm_out)
     : Socket("tm_in", "Relay", "ip_ex", 1500, UDP_READ),
       tm_out(tm_out),
-      buffer_dumped(false)
+      buffer_dumped(false),
+      relay(ipi_relay::get_instance())
 {
   load_tmdac(".");
   set_qerr_threshold(20);
@@ -187,16 +224,17 @@ bool ipi_tm_in::protocol_input() {
         ++cp; // Look for the next one...
       } else {
         int pktlen = length + serio::pkt_hdr_size;
+        relay->forward(&buf[cp]);
         bool rv = tm_out->forward_packet((const char*)&buf[cp], pktlen);
         cp += pktlen;
         if (rv) {
-          report_ok(nc);
+          report_ok(cp);
           return rv;
         }
       }
     }
   }
-  report_ok(nc);
+  report_ok(cp);
   return false;
 }
 
