@@ -19,7 +19,7 @@ ipi_relay::ipi_relay(const char *iname)
 }
 
 ipi_relay *ipi_relay::instance;
-const char *ipi_relay::mlf_base = "Serio";
+const char *ipi_relay::mlf_base = "TMIPI";
 const char *ipi_relay::mlf_config;
 
 ipi_relay *ipi_relay::get_instance()
@@ -218,20 +218,41 @@ bool ipi_tm_in::protocol_input() {
       consume(nc);
       return false;
     } else {
-      if (type != pkt_type_TM || length != tm_info.tm.nbminf-2) {
-        report_err("%s: Invalid packet type '%c' length %d",
-          iname, type, length);
-        ++cp; // Look for the next one...
-      } else {
-        int pktlen = length + serio::pkt_hdr_size;
-        relay->forward(&buf[cp]);
+      switch (type) {
+        case pkt_type_TM:
+          if (length != tm_info.tm.nbminf-2) {
+            report_err("%s: Invalid TM packet length length %d",
+              iname, type, length);
+            ++cp; // Look for the next one...
+            continue;
+          }
+          break;
+        case pkt_type_CTRL:
+        case pkt_type_PNG_Start:
+        case pkt_type_PNG_Cont:
+        case pkt_type_CMD:
+        case pkt_type_XIO:
+        case pkt_type_SID:
+        case pkt_type_NPH:
+          break;
+        default:
+          report_err(isgraph(type)
+            ? "%s: Invalid packet type '%c' length %d"
+            : "%s: Invalid packet type 0x%02X length %d",
+            iname, type, length);
+          ++cp; // Look for the next one...
+          continue;
+      }
+      int pktlen = length + serio::pkt_hdr_size;
+      relay->forward(&buf[cp]);
+      if (type == pkt_type_TM) {
         bool rv = tm_out->forward_packet((const char*)&buf[cp], pktlen);
-        cp += pktlen;
         if (rv) {
           report_ok(cp);
           return rv;
         }
       }
+      cp += pktlen;
     }
   }
   report_ok(cp);

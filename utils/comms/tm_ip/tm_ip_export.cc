@@ -22,14 +22,16 @@ ipx_relay::ipx_relay(const char *iname, ipx_tm_out *udp, ipx_cmd_in *tcp)
 bool ipx_relay::send_udp(const uint8_t *hdr, uint16_t len)
 {
   // do the necessary bookkeeping, then forward to ipx_tm_out
-  if (udp->CTS())
-  if (len == 0) {
-    serio_pkt_hdr *shdr = (serio_pkt_hdr*)hdr;
-    len = sizeof(serio_pkt_hdr) + shdr->length;
+  msg(MSG_DBG(1), "%s: send_udp(hdr, %u)", iname, len);
+  if (udp->CTS()) {
+    if (len == 0) {
+      serio_pkt_hdr *shdr = (serio_pkt_hdr*)hdr;
+      len = sizeof(serio_pkt_hdr) + shdr->length;
+    }
+    record_nbytes(len + ipx_tm_out::IP_header_len
+                  + ipx_tm_out::UDP_header_len);
+    udp->send_udp(hdr, len);
   }
-  record_nbytes(len + ipx_tm_out::IP_header_len
-                + ipx_tm_out::UDP_header_len);
-  udp->send_udp(hdr, len);
   return false;
 }
 
@@ -359,9 +361,10 @@ void ipx_tm_out::send_row(uint16_t MFCtr, const uint8_t *raw) {
 }
 
 void ipx_tm_out::flush() {
-  if (nl_debug_level <= MSG_DEBUG) {
+  if (nl_debug_level <= MSG_DBG(1)) {
     msg(MSG_DEBUG, "%s: Send packet %d bytes", iname, pyld_nc);
-    dump_hex(MSG, iname, payload, pyld_nc);
+    if (nl_debug_level <= MSG_DBG(2))
+      dump_hex(MSG, iname, payload, pyld_nc);
   }
   if (!relay) relay = ipx_relay::get_instance();
   relay->send_udp((uint8_t *)payload, pyld_nc);
