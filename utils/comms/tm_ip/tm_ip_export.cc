@@ -50,6 +50,7 @@ bool ipx_relay::send_tcp_req(ipx_client *caller)
         iname);
     }
   }
+  caller->tcp_txfr_requested = true;
   tcp_queue.push_back(caller);
   process_queue();
   return false;
@@ -59,12 +60,14 @@ void ipx_relay::process_queue()
 {
   // check the status of the queue
   if (tcp_queue.empty()) return;
-  record_nbytes(0);
+  record_nbytes(0); // Update mseqs_queued based on current time
   if (msecs_queued > 500) {
     TO.Set(0, msecs_queued-500);
     flags |= Fl_Timeout;
   } else if (tcp->CTS()) {
     // we can send now:
+    TO.Clear();
+    flags &= Fl_Timeout;
     ipx_client *rdyclt = tcp_queue.front();
     const uint8_t *pkt;
     serio_pkt_hdr *hdr;
@@ -73,9 +76,8 @@ void ipx_relay::process_queue()
     uint16_t len = hdr->length;
     record_nbytes(len + ipx_tm_out::IP_header_len + TCP_header_len);
     tcp->send_tcp(pkt, len);
-    flags &= Fl_Timeout;
     tcp_queue.pop_front();
-    rdyclt->xfer_confirmed(len);
+    rdyclt->tcp_txfr_confirmed(len);
     return;
   } else {
     msg(MSG_ERROR, "%s: !CTS() with %d msecs_queued", iname, msecs_queued);
@@ -84,6 +86,14 @@ void ipx_relay::process_queue()
     flags |= Fl_Timeout;
   }
   return;
+}
+
+bool ipx_relay::protocol_timeout()
+{
+  TO.Clear();
+  flags &= ~Fl_Timeout;
+  process_queue();
+  return false;
 }
 
 void ipx_relay::record_nbytes(int nbytes)
@@ -121,13 +131,15 @@ ipx_type ipx_udp(true);
 
 ipx_client::ipx_client(Authenticator *auth, const char *iname, ipx_type *xtype)
     : Serverside_client(auth, iname, 2048),
-      is_UDP(xtype->is_UDP)
+      is_UDP(xtype->is_UDP),
+      outstanding_bytes(0),
+      ack_bytes_pending(0)
 {
   relay = ipx_relay::get_instance();
   set_obufsize(2048);
 }
 
-void ipx_client::xfer_confirmed(uint16_t nbytes)
+void ipx_client::tcp_txfr_confirmed(uint16_t nbytes)
 {
   // verify the length of the current header, then
   // consume it and set the read flag (in case it
@@ -137,7 +149,22 @@ void ipx_client::xfer_confirmed(uint16_t nbytes)
   uint16_t len = shdr->length;
   nl_assert(nbytes == len);
   nl_assert(nbytes <= nc);
+  ack_bytes_pending += nbytes;
+  if (outstanding_bytes >= 2000) // HARD_CODED PROTOCOL VALUE
+  {
+    send_ACK(ack_bytes_pending);
+    if (ack_bytes_pending > outstanding_bytes)
+    {
+      msg(MSG_ERROR,
+        "%s: ack_bytes_pending exceeds outstanding_bytes: %u:%u",
+        iname, ack_bytes_pending, outstanding_bytes);
+      outstanding_bytes = 0;
+    } else
+      outstanding_bytes -= ack_bytes_pending;
+    ack_bytes_pending = 0;
+  }
   report_ok(nbytes);
+  
   flags |= Fl_Read;
 }
 
@@ -149,28 +176,10 @@ bool ipx_client::protocol_input()
   uint8_t *payload;
   msg(MSG_DBG(1), "%s: Incoming %d bytes", iname, nc);
   if (not_serio_pkt(have_hdr, type, length, payload))
-  { /* We do not expect partial packets unless the input buffer
-     * has filled (nc == bufsize)
-     */
-    if (nc - cp < sizeof(serio_pkt_hdr)) {
-      if (nc == bufsize) {
-        if (cp) consume(cp);
-        else flags &= ~Fl_Read;
-        return false;
-      }
-    } else if (have_hdr && cp + sizeof(serio_pkt_hdr)+length + 1 > nc) {
-      if (nc == bufsize) {
-        if (cp) consume(cp);
-        else flags &= ~Fl_Read;
-        return false;
-      }
-      /* We could reach here if the buffer filled on the 2nd or 3rd
-       * packet, and we subsequently consumed the first. */
-    } else {
-      report_err("%s: Internal: cp:%d length:%d nc:%d bufsize:%d",
-        iname, cp, length, nc, bufsize);
-      consume(cp);
-    }
+  { // Any true return should leave the buffer almost empty
+    // or with a partial packet (have_hdr)
+    // Any CRC errors or oversized packets have been
+    // skipped
     return false;
   }
   // Now we have a valid packet. Since this interface is for side-channel
@@ -183,24 +192,63 @@ bool ipx_client::protocol_input()
           ? "%s: Invalid packet type '%c' in side channel"
           : "%s: Invalid packet type %u in side channel",
           iname, type);
-      cp += sizeof(serio_pkt_hdr) + length;
+      cp += serio::pkt_hdr_size + length;
       report_ok(cp);
+      // if (!is_UDP) iwrite("NACK\n");
       return false;
   }
 
   if (is_UDP)
   {
     relay->send_udp(buf);
-    cp += sizeof(serio_pkt_hdr) + length;
+    cp += serio::pkt_hdr_size + length;
     report_ok(cp);
     flags |= Fl_Read;
   } else {
     // Need variable and check that we don't have an outstanding request
     flags &= ~Fl_Read;
-    report_ok(cp); // make sure buf points to packet header
-    relay->send_tcp_req(this);
+    if (!tcp_txfr_requested) {
+      report_ok(cp); // make sure buf points to packet header
+      outstanding_bytes += serio::pkt_hdr_size + length;
+      relay->send_tcp_req(this);
+    }
   }
   return false;
+}
+
+void ipx_client::serio_pkt_package(
+    serio_pkt_hdr *hdr,
+    serio_pkt_type type,
+    uint8_t *payload,
+    uint16_t payload_length)
+{
+  hdr->LRC = 0;
+  hdr->type = type;
+  hdr->length = payload_length;
+  { unsigned CRC = crc16modbus_word(0,0,0);
+    hdr->CRC = crc16modbus_word(CRC, payload, payload_length);
+    uint8_t *hdrp = (uint8_t *)hdr;
+    for (uint32_t i = 1; i < serio::pkt_hdr_size; ++i) {
+      hdr->LRC += hdrp[i];
+    }
+    hdr->LRC = -hdr->LRC;
+  }
+}
+
+void ipx_client::send_ACK(uint16_t nbytes)
+{
+  if (obuf_empty())
+  {
+    serio_ctrl_packet pkt;
+    pkt.ctrl.subtype = ctrl_subtype_ACK;
+    pkt.ctrl.reserved = 0;
+    pkt.ctrl.length = nbytes;
+    serio_pkt_package(&pkt.hdr, pkt_type_CTRL,
+      (uint8_t*)&pkt.ctrl, sizeof(pkt.ctrl));
+    iwrite((char*)&pkt, sizeof(pkt));
+  } else {
+    msg(MSG_ERROR, "%s: !obuf_empty() in send_ACK", iname);
+  }
 }
 
 void ipx_client::attach(Server *S, ipx_type *xtype)
@@ -222,7 +270,10 @@ Serverside_client *ipx_client::new_ipx_client(
  * commands.
  */
 ipx_cmd_in::ipx_cmd_in(const char *iname)
-    : Client(iname, "Relay", "ip_ex", 0, serio::min_buffer_size)
+    : Client(iname, "Relay", "ip_ex", 0, serio::min_buffer_size),
+      bytes_written(0),
+      bytes_acknowledged(0),
+      bytes_unacknowledged(0)
 {
   set_obufsize(3000);
   set_retries(-1, 10, 10, false); // Never stop trying
@@ -233,6 +284,7 @@ bool ipx_cmd_in::app_input() {
   serio_pkt_type type;
   uint16_t length;
   uint8_t *payload;
+  char save_char;
 
   while (cp < nc) {
     if (not_serio_pkt(have_hdr, type, length, payload)) {
@@ -243,29 +295,72 @@ bool ipx_cmd_in::app_input() {
       }
       return false;
     }
-    if (type != pkt_type_CMD) {
-      report_err("%s: Invalid command type: '%c'", iname, type);
-      ++cp;
-      continue;
+    switch (type)
+    {
+      case pkt_type_CMD:
+        save_char = buf[cp + serio::pkt_hdr_size + length];
+        buf[cp + serio::pkt_hdr_size + length] = '\0';
+        ci_sendcmd(Cmd_Send, (char *)&buf[cp + serio::pkt_hdr_size]);
+        buf[cp + serio::pkt_hdr_size + length] = save_char;
+        cp += serio::pkt_hdr_size + length;
+        break;
+      case pkt_type_CTRL:
+        process_ack(payload);
+        cp += serio::pkt_hdr_size + length;
+        break;
+      default:
+        report_err("%s: Invalid command type: '%c'", iname, type);
+        ++cp;
+        continue;
     }
-    char save_char = buf[cp + serio::pkt_hdr_size + length];
-    buf[cp + serio::pkt_hdr_size + length] = '\0';
-    ci_sendcmd(Cmd_Send, (char *)&buf[cp + serio::pkt_hdr_size]);
-    buf[cp + serio::pkt_hdr_size + length] = save_char;
-    cp += serio::pkt_hdr_size + length;
   }
   report_ok(cp);
   return false;
 }
 
-bool ipx_cmd_in::send_tcp(const uint8_t *pkt, uint16_t len)
-{
-  return iwrite((const char *)pkt, len);
-}
-
 bool ipx_cmd_in::process_eof() {
   msg(MSG_ERROR, "%s: Connection dropped", iname);
   return reset();
+}
+
+bool ipx_cmd_in::send_tcp(const uint8_t *pkt, uint16_t len)
+{
+  bytes_written += len;
+  bytes_unacknowledged = bytes_written - bytes_acknowledged;
+  return iwrite((const char *)pkt, len);
+}
+
+ipx_cmd_in::~ipx_cmd_in()
+{
+  report_bytes();
+}
+
+bool ipx_cmd_in::connected()
+{
+  report_bytes();
+  bytes_written = 0;
+  bytes_acknowledged = 0;
+  bytes_unacknowledged = 0;
+  return false;
+}
+
+void ipx_cmd_in::report_bytes()
+{
+  if (bytes_written || bytes_acknowledged || bytes_unacknowledged)
+  {
+    msg(MSG, "%s: Reconnected bytes_written: %u ack'd: %u unack'd: %u",
+      bytes_written, bytes_acknowledged, bytes_unacknowledged);
+  }
+}
+
+void ipx_cmd_in::process_ack(uint8_t *payload)
+{
+  serio_ctrl_payload *ctrl = (serio_ctrl_payload*)payload;
+  if (ctrl->subtype == ctrl_subtype_ACK)
+  {
+    bytes_acknowledged += ctrl->length;
+    bytes_unacknowledged = bytes_written - bytes_acknowledged;
+  }
 }
 
 ipx_tm_out::ipx_tm_out(const char *iname)

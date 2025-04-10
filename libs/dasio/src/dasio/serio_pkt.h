@@ -20,6 +20,26 @@ typedef struct __attribute__((packed)) {
   uint16_t CRC;
 } serio_pkt_hdr;
 
+enum serio_ctrl_subtype : uint8_t
+{
+  ctrl_subtype_NULL,
+  ctrl_subtype_ACK,
+  ctrl_subtype_NACK
+};
+
+typedef struct __attribute__((packed))
+{
+  serio_ctrl_subtype subtype;
+  uint8_t reserved; // for alignment
+  uint16_t length; // Number of bytes for ACK
+} serio_ctrl_payload;
+
+typedef struct __attribute__((packed))
+{
+  serio_pkt_hdr hdr;
+  serio_ctrl_payload ctrl;
+} serio_ctrl_packet;
+
 class serio {
   public:
     /** Max length of the packet data, excluding the header */

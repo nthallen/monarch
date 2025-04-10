@@ -25,7 +25,14 @@ class ipx_client : public Serverside_client
 {
   public:
     ipx_client(Authenticator *auth, const char *iname, ipx_type *xtype);
-    void xfer_confirmed(uint16_t nbytes);
+    /**
+     * Called by ipx_relay::process_queue() to indicate that the previously
+     * submitted packet has been written to the socket for downlink to
+     * tm_ip_import. This allows the ipx_client to free up the buffer space
+     * and accept more packets.
+     * @param nbytes Number of bytes that have been written to the socket.
+     */
+    void tcp_txfr_confirmed(uint16_t nbytes);
     inline const uint8_t *get_current_packet() { return buf; }
     bool tcp_txfr_requested;
 
@@ -38,7 +45,12 @@ class ipx_client : public Serverside_client
      * downlink, depending on the Subservice.
      */
     bool protocol_input();
+    void serio_pkt_package(serio_pkt_hdr *hdr, serio_pkt_type type,
+          uint8_t *payload, uint16_t payload_length);
+    void send_ACK(uint16_t nbytes);
     bool is_UDP;
+    uint32_t outstanding_bytes;
+    uint16_t ack_bytes_pending;
     ipx_relay *relay;
 };
 
@@ -50,13 +62,19 @@ class ipx_client : public Serverside_client
 class ipx_cmd_in : public Client {
   public:
     ipx_cmd_in(const char *iname);
-    bool app_input();
-    bool send_tcp(const uint8_t *pkt, uint16_t len);
-    inline bool CTS() { return obuf_empty(); }
-  protected:
-    // ~ipx_cmd_in();
+    bool app_input() override;
     /** reset() instead of returning true */
     bool process_eof();
+    bool send_tcp(const uint8_t *pkt, uint16_t len);
+    inline bool CTS() { return bytes_unacknowledged < 2000 && obuf_empty(); }
+  protected:
+    ~ipx_cmd_in();
+    bool connected() override;
+    void report_bytes();
+    void process_ack(uint8_t *payload);
+    uint32_t bytes_written;
+    uint32_t bytes_acknowledged;
+    uint32_t bytes_unacknowledged;
 };
 
 /**
@@ -113,6 +131,7 @@ class ipx_relay : public Interface {
     static ipx_relay *get_instance();
     static const int TCP_header_len = 16; // does not include options, etc.
   protected:
+    bool protocol_timeout() override;
     void record_nbytes(int nbytes);
     void process_queue();
     std::deque<ipx_client*> tcp_queue;

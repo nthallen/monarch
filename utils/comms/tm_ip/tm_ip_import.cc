@@ -67,7 +67,10 @@ bool ipi_cmd_in::app_input() {
  */
 ipi_cmd_out::ipi_cmd_out(Authenticator *auth, const char *iname)
     : Serverside_client(auth, iname, serio::min_buffer_size),
-      relay(ipi_relay::get_instance())
+      relay(ipi_relay::get_instance()),
+      bytes_received(0),
+      bytes_acknowledged(0),
+      bytes_unacknowledged(0)
 {
   set_obufsize(2048);
 }
@@ -119,6 +122,15 @@ bool ipi_cmd_out::send_serio_pkt(uint8_t *xbuf, unsigned int xnc) {
   return iwritev(io,2);
 }
 
+ipi_cmd_out::~ipi_cmd_out()
+{
+  if (bytes_received || bytes_acknowledged || bytes_unacknowledged)
+  {
+    msg(MSG, "%s: Disconnected bytes_rec'd: %u ack'd: %u unack'd: %u",
+      bytes_received, bytes_acknowledged, bytes_unacknowledged);
+  }
+}
+
 bool ipi_cmd_out::connected() {
   if (cmd_out) {
     cmd_out->close();
@@ -143,35 +155,32 @@ bool ipi_cmd_out::app_input() {
   while (cp < nc)
   {
     if (not_serio_pkt(have_hdr, type, length, payload))
-    {
-      if (nc - cp < sizeof(serio_pkt_hdr)) {
-        if (nc == bufsize) {
-          if (cp) consume(cp);
-          else flags &= ~Fl_Read;
-          return false;
-        }
-      } else if (have_hdr && cp + sizeof(serio_pkt_hdr)+length + 1 > nc) {
-        if (nc == bufsize) {
-          if (cp) consume(cp);
-          else flags &= ~Fl_Read;
-          return false;
-        }
-        /* We could reach here if the buffer filled on the 2nd or 3rd
-         * packet, and we subsequently consumed the first. */
-      } else {
-        report_err("%s: Internal: cp:%d length:%d nc:%d bufsize:%d",
-          iname, cp, length, nc, bufsize);
-        consume(cp);
-      }
-      return false;
-    }
-    // Now have validated packet
+      break;
     relay->forward(&buf[cp]);
-    cp += length+sizeof(serio_pkt_hdr);
+    cp += serio::pkt_hdr_size + length;
   }
-  // msg(1, "%s: Unexpected input: %s", iname, buf);
+  bytes_received += cp;
+  bytes_unacknowledged = bytes_received - bytes_acknowledged;
+  if (bytes_unacknowledged > 3000 && obuf_empty())
+    send_ACK(bytes_unacknowledged);
   report_ok(cp);
   return false;
+}
+
+void ipi_cmd_out::send_ACK(uint16_t nbytes)
+{
+  if (obuf_empty())
+  {
+    serio_ctrl_packet pkt;
+    pkt.ctrl.subtype = ctrl_subtype_ACK;
+    pkt.ctrl.reserved = 0;
+    pkt.ctrl.length = nbytes;
+    send_serio_pkt((uint8_t*)&pkt.ctrl, sizeof(pkt.ctrl));
+    bytes_acknowledged += nbytes;
+    bytes_unacknowledged = bytes_received - bytes_acknowledged;
+  } else {
+    msg(MSG_ERROR, "%s: !obuf_empty() in send_ACK", iname);
+  }
 }
 
 /********

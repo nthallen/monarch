@@ -71,8 +71,10 @@ bool Interface::not_serio_pkt(bool &have_hdr, serio_pkt_type &type,
         have_hdr = false;
         continue;
     }
+    // We know packet can fit in buffer. Is it in the buffer?
     if (nc-cp < (unsigned)serio::pkt_hdr_size+hdr.length) {
-      // Full packet not present
+      // It doesn't matter if the buffer is full or not,
+      // we don't have the full pack.
       // consume(cp);
       return true;
     }
@@ -80,8 +82,7 @@ bool Interface::not_serio_pkt(bool &have_hdr, serio_pkt_type &type,
       // It's all there and it can fit, but we're positioned
       // with no room for the final NUL. Why do we need a final
       // NUL?? Oh, for commands, which are sent as text.
-      //consume(cp);
-      return true;
+      // consume(cp);  // we should not consume here.
     }
     uint16_t CRC = crc16modbus_word(0,0,0);
     CRC = crc16modbus_word(CRC,

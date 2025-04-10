@@ -68,6 +68,7 @@ class ipi_cmd_out : public Serverside_client {
     static ipi_cmd_out *cmd_out;
     static int cmds_dropped;
   protected:
+    ~ipi_cmd_out();
     bool connected();
     void close();
     bool app_input(); // unexpected input
@@ -80,7 +81,12 @@ class ipi_cmd_out : public Serverside_client {
      * and sends it.
      */
     bool send_serio_pkt(uint8_t *buf, unsigned int nc);
+    void send_ACK(uint16_t nbytes);
+
     ipi_relay *relay;
+    uint32_t bytes_received;
+    uint32_t bytes_acknowledged;
+    uint32_t bytes_unacknowledged;
 };
 
 class ipi_tm_out;
