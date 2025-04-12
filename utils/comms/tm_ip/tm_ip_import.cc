@@ -161,7 +161,7 @@ bool ipi_cmd_out::protocol_input() {
   }
   bytes_received += cp;
   bytes_unacknowledged = bytes_received - bytes_acknowledged;
-  if (bytes_unacknowledged > 3000 && obuf_empty())
+  if (bytes_unacknowledged > 2000 && obuf_empty())
     send_ACK(bytes_unacknowledged);
   report_ok(cp);
   return false;
@@ -178,6 +178,8 @@ void ipi_cmd_out::send_ACK(uint16_t nbytes)
     send_serio_pkt((uint8_t*)&pkt.ctrl, sizeof(pkt.ctrl));
     bytes_acknowledged += nbytes;
     bytes_unacknowledged = bytes_received - bytes_acknowledged;
+    msg(MSG_DBG(1), "%s: ACK(%u) total rec'd: %u ack'd: %u",
+      iname, nbytes, bytes_received, bytes_acknowledged);
   } else {
     msg(MSG_ERROR, "%s: !obuf_empty() in send_ACK", iname);
   }

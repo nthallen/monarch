@@ -73,14 +73,15 @@ void ipx_relay::process_queue()
     serio_pkt_hdr *hdr;
     pkt = rdyclt->get_current_packet();
     hdr = (serio_pkt_hdr *)pkt;
-    uint16_t len = hdr->length;
+    uint16_t len = hdr->length + serio::pkt_hdr_size;
     record_nbytes(len + ipx_tm_out::IP_header_len + TCP_header_len);
     tcp->send_tcp(pkt, len);
     tcp_queue.pop_front();
     rdyclt->tcp_txfr_confirmed(len);
     return;
   } else {
-    msg(MSG_ERROR, "%s: !CTS() with %d msecs_queued", iname, msecs_queued);
+    msg(MSG_ERROR, "%s: !CTS() with %d msecs_queued",
+      iname, msecs_queued);
     record_nbytes(1000); // An arbitrary amount
     TO.Set(0, msecs_queued > 500 ? msecs_queued-500 : 250);
     flags |= Fl_Timeout;
@@ -148,7 +149,7 @@ void ipx_client::tcp_txfr_confirmed(uint16_t nbytes)
   tcp_txfr_requested = false;
   serio_pkt_hdr *shdr = (serio_pkt_hdr *)buf;
   uint16_t len = shdr->length;
-  nl_assert(nbytes == len);
+  nl_assert(nbytes == len+serio::pkt_hdr_size);
   nl_assert(nbytes <= nc);
   ack_bytes_pending += nbytes;
   if (outstanding_bytes >= 2000) // HARD_CODED PROTOCOL VALUE
@@ -164,6 +165,7 @@ void ipx_client::tcp_txfr_confirmed(uint16_t nbytes)
       outstanding_bytes -= ack_bytes_pending;
     ack_bytes_pending = 0;
   }
+  msg(MSG_DBG(1), "%s: txfr'd %u", iname, nbytes);
   report_ok(nbytes);
   
   flags |= Fl_Read;
@@ -175,45 +177,56 @@ bool ipx_client::protocol_input()
   serio_pkt_type type;
   uint16_t length;
   uint8_t *payload;
-  msg(MSG_DBG(1), "%s: Incoming %s %d bytes",
-    iname, is_UDP ? "UDP" : "TCP",  nc);
-  if (not_serio_pkt(have_hdr, type, length, payload))
-  { // Any true return should leave the buffer almost empty
-    // or with a partial packet (have_hdr)
-    // Any CRC errors or oversized packets have been
-    // skipped
-    return false;
-  }
-  // Now we have a valid packet. Since this interface is for side-channel
-  // data, it should not be of a type used for internal data
-  switch (type) {
-    case pkt_type_NULL:
-    case pkt_type_TM:
-    case pkt_type_CMD:
-      report_err(isgraph(type)
-          ? "%s: Invalid packet type '%c' in side channel"
-          : "%s: Invalid packet type %u in side channel",
-          iname, type);
+  while (cp < nc)
+  {
+    msg(MSG_DBG(1), "%s: Incoming %s %d/%d bytes",
+      iname, is_UDP ? "UDP" : "TCP",  cp, nc);
+    if (not_serio_pkt(have_hdr, type, length, payload))
+    { // Any true return should leave the buffer almost empty
+      // or with a partial packet (have_hdr)
+      // Any CRC errors or oversized packets have been
+      // skipped
+      return false;
+    }
+    msg(MSG_DBG(1), "%s: serio_pkt(%u)", iname, length);
+    // Now we have a valid packet. Since this interface is for side-channel
+    // data, it should not be of a type used for internal data
+    switch (type) {
+      case pkt_type_NULL:
+      case pkt_type_TM:
+      case pkt_type_CMD:
+        report_err(isgraph(type)
+            ? "%s: Invalid packet type '%c' in side channel"
+            : "%s: Invalid packet type %u in side channel",
+            iname, type);
+        cp += serio::pkt_hdr_size + length;
+        report_ok(cp);
+        // if (!is_UDP) iwrite("NACK\n");
+        return false;
+    }
+
+    if (is_UDP)
+    {
+      relay->send_udp(buf);
       cp += serio::pkt_hdr_size + length;
       report_ok(cp);
-      // if (!is_UDP) iwrite("NACK\n");
-      return false;
-  }
-
-  if (is_UDP)
-  {
-    relay->send_udp(buf);
-    cp += serio::pkt_hdr_size + length;
-    report_ok(cp);
-    flags |= Fl_Read;
-    iwrite("OK\n");
-  } else {
-    // Need variable and check that we don't have an outstanding request
-    flags &= ~Fl_Read;
-    if (!tcp_txfr_requested) {
-      report_ok(cp); // make sure buf points to packet header
-      outstanding_bytes += serio::pkt_hdr_size + length;
-      relay->send_tcp_req(this);
+      flags |= Fl_Read;
+      iwrite("OK\n");
+    } else {
+      // Need variable and check that we don't have an outstanding request
+      flags &= ~Fl_Read;
+      if (!tcp_txfr_requested) {
+        report_ok(cp); // make sure buf points to packet header
+        outstanding_bytes += serio::pkt_hdr_size + length;
+        msg(MSG_DBG(1), "%s: outstanding_bytes: %u", iname, outstanding_bytes);
+        relay->send_tcp_req(this);
+        break;
+      }
+      else
+      {
+        flags &= Fl_Read;
+        break;
+      }
     }
   }
   return false;
@@ -330,6 +343,8 @@ bool ipx_cmd_in::send_tcp(const uint8_t *pkt, uint16_t len)
 {
   bytes_written += len;
   bytes_unacknowledged = bytes_written - bytes_acknowledged;
+  msg(MSG_DBG(1), "%s: writing %u, total written: %u unack'd: %u",
+    len, bytes_written, bytes_unacknowledged);
   return iwrite((const char *)pkt, len);
 }
 
@@ -363,6 +378,8 @@ void ipx_cmd_in::process_ack(uint8_t *payload)
   {
     bytes_acknowledged += ctrl->length;
     bytes_unacknowledged = bytes_written - bytes_acknowledged;
+    msg(MSG_DBG(1), "%s: rec'd ACK(%u) total written: %u unACK'd: %u",
+      iname, ctrl->length, bytes_written, bytes_unacknowledged);
   }
 }
 
