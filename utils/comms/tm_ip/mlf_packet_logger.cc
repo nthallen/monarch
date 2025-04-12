@@ -17,6 +17,7 @@ mlf_packet_logger::mlf_packet_logger(const char *iname,
 
 void mlf_packet_logger::log_packet(const unsigned char *bfr, uint16_t pkt_len)
 {
+  msg(MSG_DBG(0), "%s: log %d bytes", miname, pkt_len);
   if (ofd < 0 || 
       ((ofd >= 0) && Bytes_in_File + (int)pkt_len > Bytes_per_File))
     next_file();

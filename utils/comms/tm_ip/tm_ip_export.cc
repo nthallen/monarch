@@ -22,12 +22,12 @@ ipx_relay::ipx_relay(const char *iname, ipx_tm_out *udp, ipx_cmd_in *tcp)
 bool ipx_relay::send_udp(const uint8_t *hdr, uint16_t len)
 {
   // do the necessary bookkeeping, then forward to ipx_tm_out
-  msg(MSG_DBG(1), "%s: send_udp(hdr, %u)", iname, len);
   if (udp->CTS()) {
     if (len == 0) {
       serio_pkt_hdr *shdr = (serio_pkt_hdr*)hdr;
       len = sizeof(serio_pkt_hdr) + shdr->length;
     }
+    msg(MSG_DBG(2), "%s: send_udp(hdr, %u)", iname, len);
     record_nbytes(len + ipx_tm_out::IP_header_len
                   + ipx_tm_out::UDP_header_len);
     udp->send_udp(hdr, len);
@@ -112,6 +112,7 @@ void ipx_relay::record_nbytes(int nbytes)
   int msecs = (nbytes*8)/21; // kbps
   msecs_queued += msecs;
   when_queued = now;
+  msg(MSG_DBG(1), "%s: nbytes: %d msecs_queued: %d", iname, nbytes, msecs_queued);
 }
 
 ipx_relay *ipx_relay::get_instance()
@@ -174,7 +175,8 @@ bool ipx_client::protocol_input()
   serio_pkt_type type;
   uint16_t length;
   uint8_t *payload;
-  msg(MSG_DBG(1), "%s: Incoming %d bytes", iname, nc);
+  msg(MSG_DBG(1), "%s: Incoming %s %d bytes",
+    iname, is_UDP ? "UDP" : "TCP",  nc);
   if (not_serio_pkt(have_hdr, type, length, payload))
   { // Any true return should leave the buffer almost empty
     // or with a partial packet (have_hdr)
@@ -204,6 +206,7 @@ bool ipx_client::protocol_input()
     cp += serio::pkt_hdr_size + length;
     report_ok(cp);
     flags |= Fl_Read;
+    iwrite("OK\n");
   } else {
     // Need variable and check that we don't have an outstanding request
     flags &= ~Fl_Read;
@@ -318,7 +321,7 @@ bool ipx_cmd_in::app_input() {
   return false;
 }
 
-bool ipx_cmd_in::process_eof() {
+bool ipx_cmd_in::app_process_eof() {
   msg(MSG_ERROR, "%s: Connection dropped", iname);
   return reset();
 }
@@ -335,7 +338,7 @@ ipx_cmd_in::~ipx_cmd_in()
   report_bytes();
 }
 
-bool ipx_cmd_in::connected()
+bool ipx_cmd_in::app_connected()
 {
   report_bytes();
   bytes_written = 0;
@@ -457,7 +460,7 @@ void ipx_tm_out::send_row(uint16_t MFCtr, const uint8_t *raw) {
 
 void ipx_tm_out::flush() {
   if (nl_debug_level <= MSG_DBG(1)) {
-    msg(MSG_DEBUG, "%s: Send packet %d bytes", iname, pyld_nc);
+    msg(MSG_DBG(2), "%s: Send packet %d bytes", iname, pyld_nc);
     if (nl_debug_level <= MSG_DBG(2))
       dump_hex(MSG, iname, payload, pyld_nc);
   }

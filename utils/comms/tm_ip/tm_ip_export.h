@@ -64,12 +64,12 @@ class ipx_cmd_in : public Client {
     ipx_cmd_in(const char *iname);
     bool app_input() override;
     /** reset() instead of returning true */
-    bool process_eof();
+    bool app_process_eof();
     bool send_tcp(const uint8_t *pkt, uint16_t len);
-    inline bool CTS() { return bytes_unacknowledged < 2000 && obuf_empty(); }
+    inline bool CTS() { return is_negotiated() && bytes_unacknowledged < 2000 && obuf_empty(); }
   protected:
     ~ipx_cmd_in();
-    bool connected() override;
+    bool app_connected() override;
     void report_bytes();
     void process_ack(uint8_t *payload);
     uint32_t bytes_written;

@@ -75,8 +75,14 @@ namespace DAS_IO {
        */
       virtual bool app_negotiation_failed();
       
-      bool protocol_input();
-      bool process_eof();
+      bool protocol_input() override;
+      /**
+       * Override of DAS_IO::Interface::process_eof() to handle EOF during
+       * authentication. Subclasses should not override process_eof(), but
+       * rather app_process_eof().
+       * @returns from either app_negotiation_failed() or app_process_eof()
+       */
+      bool process_eof() override;
       void close();
       bool connected();
       inline bool is_negotiated() { return clt_state == Clt_negotiated; }
