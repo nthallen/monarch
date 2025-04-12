@@ -66,7 +66,7 @@ bool ipi_cmd_in::app_input() {
  * ipi_cmd_out
  */
 ipi_cmd_out::ipi_cmd_out(Authenticator *auth, const char *iname)
-    : Serverside_client(auth, iname, serio::min_buffer_size),
+    : Serverside_client(auth, iname, 2000),
       relay(ipi_relay::get_instance()),
       bytes_received(0),
       bytes_acknowledged(0),
