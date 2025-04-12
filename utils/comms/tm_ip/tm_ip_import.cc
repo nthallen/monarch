@@ -146,7 +146,7 @@ void ipi_cmd_out::close() {
   msg(0, "%s: Connection closed", iname);
 }
 
-bool ipi_cmd_out::app_input() {
+bool ipi_cmd_out::protocol_input() {
   bool have_hdr;
   serio_pkt_type type;
   uint16_t length;

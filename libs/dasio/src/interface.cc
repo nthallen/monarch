@@ -236,7 +236,7 @@ bool Interface::read_error(int my_errno) {
  */
 bool Interface::protocol_input() {
   if (nc > 0)
-    report_err("Unexpected input");
+    report_err("%s: Unexpected input", iname);
   return false;
 }
 

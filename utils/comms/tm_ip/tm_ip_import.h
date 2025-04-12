@@ -69,9 +69,9 @@ class ipi_cmd_out : public Serverside_client {
     static int cmds_dropped;
   protected:
     ~ipi_cmd_out();
+    bool protocol_input() override;
     bool connected();
     void close();
-    bool app_input(); // unexpected input
     
     /**
      * @param buf pointer to command string
