@@ -25,7 +25,7 @@ class ipi_relay : public Interface, mlf_packet_logger {
      * @param hdr Pointer to the header of a validated serio_pkt message.
      * @returns true on a significant failure
      */
-    bool forward(const unsigned char *hdr);
+    bool forward(const unsigned char *hdr, uint16_t pkt_len);
     static ipi_relay *get_instance();
     static ipi_relay *instance;
     static const char *mlf_base;

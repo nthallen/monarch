@@ -165,10 +165,14 @@ void ipx_client::tcp_txfr_confirmed(uint16_t nbytes)
       outstanding_bytes -= ack_bytes_pending;
     ack_bytes_pending = 0;
   }
-  msg(MSG_DBG(1), "%s: txfr'd %u", iname, nbytes);
   report_ok(nbytes);
-  
+  msg(MSG_DBG(1), "%s: txfr'd: %u nc: %u", iname, nbytes, nc);
   flags |= Fl_Read;
+  if (nc)
+  {
+    TO.Set(0, 0);
+    flags |= Fl_Timeout;
+  }
 }
 
 bool ipx_client::protocol_input()
@@ -177,6 +181,10 @@ bool ipx_client::protocol_input()
   serio_pkt_type type;
   uint16_t length;
   uint8_t *payload;
+  
+  // Using timeout to trigger another pass through protocol_input()
+  TO.Clear();
+  flags &= ~Fl_Timeout;
   while (cp < nc)
   {
     msg(MSG_DBG(1), "%s: Incoming %s %d/%d bytes",

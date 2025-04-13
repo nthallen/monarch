@@ -30,10 +30,10 @@ ipi_relay *ipi_relay::get_instance()
   return instance;
 }
 
-bool ipi_relay::forward(const unsigned char *hdr)
+bool ipi_relay::forward(const unsigned char *hdr, uint16_t len)
 {
-  serio_pkt_hdr *shdr = (serio_pkt_hdr *)hdr;
-  uint16_t len = shdr->length;
+  // serio_pkt_hdr *shdr = (serio_pkt_hdr *)hdr;
+  // uint16_t len = shdr->length + serio::pkt_hdr_size;
   log_packet(hdr, len);
   // Now forward to any Clients
   return false;
@@ -160,10 +160,11 @@ bool ipi_cmd_out::protocol_input() {
       break;
     msg(MSG_DBG(1), "%s: serio_pkt('%c', %u)",
       iname, type, length);
-    relay->forward(&buf[cp]);
-    cp += serio::pkt_hdr_size + length;
+    uint16_t pkt_len = serio::pkt_hdr_size + length;
+    relay->forward(&buf[cp], pkt_len);
+    bytes_received += pkt_len;
+    cp += pkt_len;
   }
-  bytes_received += cp;
   bytes_unacknowledged = bytes_received - bytes_acknowledged;
   msg(MSG_DBG(1), "%s: bytes rec'd: %u ack'd: %u unack'd: %u",
     iname, bytes_received, bytes_acknowledged, bytes_unacknowledged);
@@ -261,7 +262,7 @@ bool ipi_tm_in::protocol_input() {
           continue;
       }
       int pktlen = length + serio::pkt_hdr_size;
-      relay->forward(&buf[cp]);
+      relay->forward(&buf[cp], pktlen);
       if (type == pkt_type_TM) {
         bool rv = tm_out->forward_packet((const char*)&buf[cp], pktlen);
         if (rv) {
