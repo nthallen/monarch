@@ -154,6 +154,8 @@ bool ipi_cmd_out::protocol_input() {
 
   while (cp < nc)
   {
+    msg(MSG_DBG(1), "%s: protocol_input cp:%u nc:%u",
+      iname, cp, nc);
     if (not_serio_pkt(have_hdr, type, length, payload))
       break;
     msg(MSG_DBG(1), "%s: serio_pkt('%c', %u)",
