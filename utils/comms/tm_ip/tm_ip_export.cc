@@ -344,7 +344,7 @@ bool ipx_cmd_in::send_tcp(const uint8_t *pkt, uint16_t len)
   bytes_written += len;
   bytes_unacknowledged = bytes_written - bytes_acknowledged;
   msg(MSG_DBG(1), "%s: writing %u, total written: %u unack'd: %u",
-    len, bytes_written, bytes_unacknowledged);
+    iname, len, bytes_written, bytes_unacknowledged);
   return iwrite((const char *)pkt, len);
 }
 

@@ -136,7 +136,7 @@ bool ipi_cmd_out::connected() {
     cmd_out->close();
   }
   cmd_out = this;
-  msg(0, "%s: Connection established", iname);
+  msg(0, "%s: Connection established, flags=0x%X", iname, flags);
   return false;
 }
 
@@ -156,11 +156,15 @@ bool ipi_cmd_out::protocol_input() {
   {
     if (not_serio_pkt(have_hdr, type, length, payload))
       break;
+    msg(MSG_DBG(1), "%s: serio_pkt('%c', %u)",
+      iname, type, length);
     relay->forward(&buf[cp]);
     cp += serio::pkt_hdr_size + length;
   }
   bytes_received += cp;
   bytes_unacknowledged = bytes_received - bytes_acknowledged;
+  msg(MSG_DBG(1), "%s: bytes rec'd: %u ack'd: %u unack'd: %u",
+    iname, bytes_received, bytes_acknowledged, bytes_unacknowledged);
   if (bytes_unacknowledged > 2000 && obuf_empty())
     send_ACK(bytes_unacknowledged);
   report_ok(cp);

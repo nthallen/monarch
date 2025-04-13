@@ -70,8 +70,8 @@ class ipi_cmd_out : public Serverside_client {
   protected:
     ~ipi_cmd_out();
     bool protocol_input() override;
-    bool connected();
-    void close();
+    bool connected() override;
+    void close() override;
     
     /**
      * @param buf pointer to command string
