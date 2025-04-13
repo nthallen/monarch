@@ -127,7 +127,7 @@ ipi_cmd_out::~ipi_cmd_out()
   if (bytes_received || bytes_acknowledged || bytes_unacknowledged)
   {
     msg(MSG, "%s: Disconnected bytes_rec'd: %u ack'd: %u unack'd: %u",
-      bytes_received, bytes_acknowledged, bytes_unacknowledged);
+      iname, bytes_received, bytes_acknowledged, bytes_unacknowledged);
   }
 }
 
