@@ -240,6 +240,13 @@ bool ipx_client::protocol_input()
   return false;
 }
 
+bool ipx_client::protocol_timeout()
+{
+  if (nc)
+    return protocol_input();
+  return false;
+}
+
 void ipx_client::serio_pkt_package(
     serio_pkt_hdr *hdr,
     serio_pkt_type type,
@@ -301,6 +308,7 @@ ipx_cmd_in::ipx_cmd_in(const char *iname)
 {
   set_obufsize(3000);
   set_retries(-1, 10, 10, false); // Never stop trying
+  flags |= Fl_Read;
 }
 
 bool ipx_cmd_in::app_input() {
@@ -310,6 +318,7 @@ bool ipx_cmd_in::app_input() {
   uint8_t *payload;
   char save_char;
 
+  msg(MSG_DBG(1), "%s: Incoming nc: %u", iname, nc);
   while (cp < nc) {
     if (not_serio_pkt(have_hdr, type, length, payload)) {
       if (have_hdr && type != pkt_type_CMD) {
@@ -388,7 +397,8 @@ void ipx_cmd_in::process_ack(uint8_t *payload)
     bytes_unacknowledged = bytes_written - bytes_acknowledged;
     msg(MSG_DBG(1), "%s: rec'd ACK(%u) total written: %u unACK'd: %u",
       iname, ctrl->length, bytes_written, bytes_unacknowledged);
-  }
+  } else
+    msg(MSG_ERROR, "%s: Invalid control packet", iname);
 }
 
 ipx_tm_out::ipx_tm_out(const char *iname)

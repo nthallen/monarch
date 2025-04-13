@@ -81,7 +81,7 @@ void ipi_cmd_out::attach(Server *srvr, const char *service) {
 
 bool ipi_cmd_out::cond_send_cmd(uint8_t *buf, unsigned int nc) {
   if (cmd_out) {
-    return cmd_out->send_serio_pkt(buf, nc);
+    return cmd_out->send_serio_pkt(buf, nc, pkt_type_CMD);
   } else {
     msg(MSG_WARN, "ipi_cmd_out: No connection: cmd dropped: %s", buf);
     ++cmds_dropped;
@@ -97,13 +97,13 @@ Serverside_client *ipi_cmd_out::new_ipi_cmd_out(
   return new ipi_cmd_out(Auth, Auth->get_client_app());
 }
 
-bool ipi_cmd_out::send_serio_pkt(uint8_t *xbuf, unsigned int xnc) {
+bool ipi_cmd_out::send_serio_pkt(uint8_t *xbuf, unsigned int xnc, serio_pkt_type pkt_type) {
   // We have allocated an obuf, so we can use auto vars for
   // io and hdr
   struct iovec io[2];
   serio_pkt_hdr hdr;
   hdr.LRC = 0;
-  hdr.type = pkt_type_CMD;
+  hdr.type = pkt_type;
   hdr.length = xnc;
   io[0].iov_len = sizeof(serio_pkt_hdr);
   io[0].iov_base = &hdr;
@@ -178,11 +178,11 @@ void ipi_cmd_out::send_ACK(uint16_t nbytes)
 {
   if (obuf_empty())
   {
-    serio_ctrl_packet pkt;
-    pkt.ctrl.subtype = ctrl_subtype_ACK;
-    pkt.ctrl.reserved = 0;
-    pkt.ctrl.length = nbytes;
-    send_serio_pkt((uint8_t*)&pkt.ctrl, sizeof(pkt.ctrl));
+    serio_ctrl_payload ctrl;
+    ctrl.subtype = ctrl_subtype_ACK;
+    ctrl.reserved = 0;
+    ctrl.length = nbytes;
+    send_serio_pkt((uint8_t*)&ctrl, sizeof(ctrl), pkt_type_CTRL);
     bytes_acknowledged += nbytes;
     bytes_unacknowledged = bytes_received - bytes_acknowledged;
     msg(MSG_DBG(1), "%s: ACK(%u) total rec'd: %u ack'd: %u",

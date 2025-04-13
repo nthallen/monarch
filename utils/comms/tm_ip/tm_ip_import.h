@@ -80,7 +80,7 @@ class ipi_cmd_out : public Serverside_client {
      * Wraps the command according to serio_pkt protocol
      * and sends it.
      */
-    bool send_serio_pkt(uint8_t *buf, unsigned int nc);
+    bool send_serio_pkt(uint8_t *buf, unsigned int nc, serio_pkt_type pkt_type);
     void send_ACK(uint16_t nbytes);
 
     ipi_relay *relay;

@@ -44,7 +44,8 @@ class ipx_client : public Serverside_client
      * Receives serio_pkt-encoded messages for UDP or TCP
      * downlink, depending on the Subservice.
      */
-    bool protocol_input();
+    bool protocol_input() override;
+    bool protocol_timeout() override;
     void serio_pkt_package(serio_pkt_hdr *hdr, serio_pkt_type type,
           uint8_t *payload, uint16_t payload_length);
     void send_ACK(uint16_t nbytes);
