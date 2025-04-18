@@ -154,11 +154,11 @@ bool ipi_cmd_out::protocol_input() {
 
   while (cp < nc)
   {
-    msg(MSG_DBG(1), "%s: protocol_input cp:%u nc:%u",
+    msg(MSG_DBG(2), "%s: protocol_input cp:%u nc:%u",
       iname, cp, nc);
     if (not_serio_pkt(have_hdr, type, length, payload))
       break;
-    msg(MSG_DBG(1), "%s: serio_pkt('%c', %u)",
+    msg(MSG_DBG(2), "%s: serio_pkt('%c', %u)",
       iname, type, length);
     uint16_t pkt_len = serio::pkt_hdr_size + length;
     relay->forward(&buf[cp], pkt_len);

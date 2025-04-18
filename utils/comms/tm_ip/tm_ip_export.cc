@@ -7,6 +7,7 @@
 #include "dasio/tm.h"
 #include "dasio/appid.h"
 #include "dasio/ascii_escape.h"
+#include "dasio/quit.h"
 #include "nl.h"
 #include "nl_assert.h"
 #include "oui.h"
@@ -592,6 +593,10 @@ int main(int argc, char **argv) {
     ipx_ctrl *ctrl = new ipx_ctrl("ctrl", "TMIPX", tm_out);
     S.ELoop.add_child(ctrl);
     ctrl->connect();
+
+    Quit *Q = new Quit();
+    Q->connect();
+    S.ELoop.add_child(Q);
 
     msg(MSG_DEBUG, "Entering Server Start");    
     S.Start(Server::Srv_Unix);
