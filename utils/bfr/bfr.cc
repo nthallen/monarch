@@ -459,12 +459,12 @@ bool bfr_output_client::protocol_timeout() {
 }
 
 Serverside_client *new_bfr_input_client(Authenticator *Auth, SubService *SS) {
-  bool blocking = (SS->name == "tm_bfr/input");
+  bool blocking = (SS->svcs == "tm_bfr/input");
   return new bfr_input_client(Auth, Auth->get_client_app(), blocking);
 }
 
 Serverside_client *new_bfr_output_client(Authenticator *Auth, SubService *SS) {
-  bool is_fast = (SS->name == "tm_bfr/fast");
+  bool is_fast = (SS->svcs == "tm_bfr/fast");
   return new bfr_output_client(Auth, Auth->get_client_app(), is_fast);
 }
 

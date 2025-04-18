@@ -13,9 +13,9 @@ namespace DAS_IO {
 
   DAS_IO::Server::Srv_type DAS_IO::Server::server_type = DAS_IO::Server::Srv_type::Srv_Unix;
 
-  SubService::SubService(std::string name, socket_clone_t func, void *svc_data,
+  SubService::SubService(std::string svcs, socket_clone_t func, void *svc_data,
         Authentication_hook hook)
-      : name(name), func(func), svc_data(svc_data), auth_hook(hook) {}
+      : svcs(svcs), func(func), svc_data(svc_data), auth_hook(hook) {}
   SubService::~SubService() {}
 
   SubServices::SubServices() {}
@@ -23,9 +23,9 @@ namespace DAS_IO {
   
   bool SubServices::add_subservice(SubService *def) {
     std::pair<std::map<std::string,SubService *>::iterator,bool> ret;
-    ret = subs.insert( std::pair<std::string,SubService *>(def->name, def));
+    ret = subs.insert( std::pair<std::string,SubService *>(def->svcs, def));
     if (!ret.second) {
-      msg(MSG_ERROR, "SubService %s already defined", def->name.c_str());
+      msg(MSG_ERROR, "SubService %s already defined", def->svcs.c_str());
     }
     return ret.second;
   }

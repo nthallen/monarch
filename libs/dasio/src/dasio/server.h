@@ -40,9 +40,9 @@ namespace DAS_IO {
        * @param func Factory function to the appropriate Socket subclass
        * @param svc_data subservice-specific data reference
        */
-      SubService(std::string name, socket_clone_t func, void *svc_data, Authentication_hook hook = 0);
+      SubService(std::string svcs, socket_clone_t func, void *svc_data, Authentication_hook hook = 0);
       ~SubService();
-      std::string name;
+      std::string svcs;
       socket_clone_t func;
       Authentication_hook auth_hook;
       void *svc_data;
