@@ -81,8 +81,9 @@ void ipx_relay::process_queue()
     rdyclt->tcp_txfr_confirmed(len);
     return;
   } else {
-    msg(MSG_ERROR, "%s: !CTS() with %d msecs_queued",
-      iname, msecs_queued);
+    if (tcp->fd >= 0)
+      msg(MSG_ERROR, "%s: !CTS() with %d msecs_queued",
+        iname, msecs_queued);
     record_nbytes(1000); // An arbitrary amount
     TO.Set(0, msecs_queued > 500 ? msecs_queued-500 : 250);
     flags |= Fl_Timeout;
@@ -182,7 +183,7 @@ bool ipx_client::protocol_input()
   serio_pkt_type type;
   uint16_t length;
   uint8_t *payload;
-  
+
   // Using timeout to trigger another pass through protocol_input()
   TO.Clear();
   flags &= ~Fl_Timeout;
@@ -470,7 +471,7 @@ void ipx_tm_out::send_row(uint16_t MFCtr, const uint8_t *raw) {
     pyld_nc += sizeof(MFCtr);
     memcpy(&payload[pyld_nc], (void*)raw, tm_info.tm.nbminf - 4);
     pyld_nc += tm_info.tm.nbminf - 4;
-    
+
     // Calculate the CRC of io[1] and io[2]
     { unsigned CRC = crc16modbus_word(0,0,0);
       CRC = crc16modbus_word(CRC, &payload[mfc_offset], pyld_nc-mfc_offset);
@@ -572,12 +573,12 @@ int main(int argc, char **argv) {
 
     ipx_client::attach(&S, &ipx_udp);
     ipx_client::attach(&S, &ipx_tcp);
-  
+
     ipx_cmd_in *cmd_in = new ipx_cmd_in("cmd_in");
     cmd_in->set_cross_exp(ip_export_cross_exp);
     S.ELoop.add_child(cmd_in);
     cmd_in->connect();
-    
+
     ipx_tm_out *tm_out = new ipx_tm_out("tm_out");
     S.ELoop.add_child(tm_out);
     tm_out->connect();
@@ -589,7 +590,7 @@ int main(int argc, char **argv) {
     ipx_tm_in *tm_in = new ipx_tm_in(tm_out);
     S.ELoop.add_child(tm_in);
     tm_in->connect();
-    
+
     ipx_ctrl *ctrl = new ipx_ctrl("ctrl", "TMIPX", tm_out);
     S.ELoop.add_child(ctrl);
     ctrl->connect();
@@ -598,7 +599,7 @@ int main(int argc, char **argv) {
     Q->connect();
     S.ELoop.add_child(Q);
 
-    msg(MSG_DEBUG, "Entering Server Start");    
+    msg(MSG_DEBUG, "Entering Server Start");
     S.Start(Server::Srv_Unix);
   }
   AppID.report_shutdown();
