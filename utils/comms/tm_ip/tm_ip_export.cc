@@ -52,6 +52,7 @@ bool ipx_relay::send_tcp_req(ipx_client *caller)
     }
   }
   caller->tcp_txfr_requested = true;
+  caller->reference();
   tcp_queue.push_back(caller);
   process_queue();
   return false;
@@ -70,15 +71,18 @@ void ipx_relay::process_queue()
     TO.Clear();
     flags &= Fl_Timeout;
     ipx_client *rdyclt = tcp_queue.front();
-    const uint8_t *pkt;
-    serio_pkt_hdr *hdr;
-    pkt = rdyclt->get_current_packet();
-    hdr = (serio_pkt_hdr *)pkt;
-    uint16_t len = hdr->length + serio::pkt_hdr_size;
-    record_nbytes(len + ipx_tm_out::IP_header_len + TCP_header_len);
-    tcp->send_tcp(pkt, len);
-    tcp_queue.pop_front();
-    rdyclt->tcp_txfr_confirmed(len);
+    if (rdyclt->fd >= 0) {
+      const uint8_t *pkt;
+      serio_pkt_hdr *hdr;
+      pkt = rdyclt->get_current_packet();
+      hdr = (serio_pkt_hdr *)pkt;
+      uint16_t len = hdr->length + serio::pkt_hdr_size;
+      record_nbytes(len + ipx_tm_out::IP_header_len + TCP_header_len);
+      tcp->send_tcp(pkt, len);
+      tcp_queue.pop_front();
+      rdyclt->tcp_txfr_confirmed(len);
+    }
+    dereference(rdyclt);
     return;
   } else {
     if (tcp->fd >= 0)
