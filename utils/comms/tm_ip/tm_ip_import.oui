@@ -1,6 +1,15 @@
 <package> tm_ip_import
+<include> "tm_ip_import.h"
 <include> msg oui
 <include> host_session
+
+<opts> "N:"
+<sort>
+        -N <logging config for full relay>
+
+<switch>
+  case 'N': ipi_relay::mlf_config = optarg; break;
+
 <unsort>
 Host_Session function tm_gen: Where to locate serin
 
