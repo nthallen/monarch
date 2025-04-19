@@ -576,6 +576,7 @@ int main(int argc, char **argv) {
     cmd_in->connect();
 
     ipi_cmd_out::attach(&S, "ip_ex");
+    ipi_relay_client::attach(&S, "ip_ex/relay");
 
     ipi_tm_out *tm_out = new ipi_tm_out("tm_out", &S);
     S.ELoop.add_child(tm_out);
