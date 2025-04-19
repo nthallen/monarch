@@ -12,10 +12,24 @@
 #include "nl.h"
 #include "oui.h"
 
+/***************
+ * ipi_relay
+ */
 ipi_relay::ipi_relay(const char *iname)
       : Interface(iname, 0),
         mlf_packet_logger(iname, mlf_base, mlf_config)
 {
+}
+
+ipi_relay::~ipi_relay()
+{
+  while (!relay_list.empty()) {
+    ipi_relay_client *P = relay_list.front();
+    if (P->ref_check(2))
+      msg(MSG_ERROR,"%s: ref_count > 1 in clear_delete_queue(final)", P->get_iname());
+    Interface::dereference(P); // delete(P);
+    relay_list.pop_front();
+  }
 }
 
 ipi_relay *ipi_relay::instance;
@@ -36,11 +50,97 @@ bool ipi_relay::forward(const unsigned char *hdr, uint16_t len)
   // uint16_t len = shdr->length + serio::pkt_hdr_size;
   log_packet(hdr, len);
   // Now forward to any Clients
+  for (relayClientList::iterator pos = relay_list.begin();
+       pos != relay_list.end();
+       ++pos )
+  {
+    ipi_relay_client *client = *pos;
+    client->forward(hdr, len);
+  }
   return false;
 }
 
+void ipi_relay::add_client(ipi_relay_client *client)
+{
+  relay_list.push_back(client);
+  client->reference();
+}
 
-/**
+bool ipi_relay::remove_client(ipi_relay_client *client)
+{
+  for (relayClientList::iterator pos = relay_list.begin();
+       pos != relay_list.end();
+       ++pos )
+  {
+    if (client == *pos) {
+      relay_list.erase(pos);
+      Interface::dereference(client);
+      return true;
+    }
+  }
+  return false;
+}
+
+/***************
+ * ipi_relay_client
+ */
+ipi_relay_client::ipi_relay_client(Authenticator *auth, const char *iname)
+    : Serverside_client(auth, iname, 2000),
+      relay(ipi_relay::get_instance()),
+      dropping_packets(false),
+      packets_dropped(0),
+      total_packets_dropped(0)
+{
+  set_obufsize(2048);
+  relay->add_client(this);
+}
+
+ipi_relay_client::~ipi_relay_client()
+{
+  relay->remove_client(this);
+}
+
+bool ipi_relay_client::forward(const unsigned char *hdr, uint16_t pkt_len)
+{
+  if (obuf_empty())
+  {
+    if (dropping_packets)
+    {
+      msg(MSG, "%s: Relay recovered, %d packets dropped",
+                iname, packets_dropped);
+      dropping_packets = false;
+      packets_dropped = 0;
+    }
+    iwrite((const char*)hdr, pkt_len);
+  }
+  else
+  {
+    if (!dropping_packets)
+    {
+      msg(MSG_ERROR, "%s: Relay stalled, dropping packets", iname);
+      dropping_packets = true;
+    }
+    ++packets_dropped;
+    ++total_packets_dropped;
+  }
+  return false;
+}
+
+void ipi_relay_client::attach(Server *srvr, const char *service) {
+  srvr->add_subservice(new SubService(service, new_ipi_relay_client, 0));
+}
+
+Serverside_client *ipi_relay_client::new_ipi_relay_client(
+            Authenticator *Auth, SubService *SS) {
+  return new ipi_relay_client(Auth, Auth->get_client_app());
+}
+
+bool ipi_relay_client::protocol_input()
+{
+  // Handle incoming serio_pkts with commands
+  return false;
+}
+/***************
  * ipi_cmd_in connects to the local command txsrvr to receive commands,
  * then forwards them to ipi_cmd_out.
  */

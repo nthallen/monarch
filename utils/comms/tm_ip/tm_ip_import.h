@@ -3,6 +3,7 @@
  */
 #ifndef TM_IP_IMPORT_H_INCLUDED
 #define TM_IP_IMPORT_H_INCLUDED
+#include <list>
 #include "dasio/server.h"
 #include "dasio/client.h"
 #include "dasio/cmd_reader.h"
@@ -11,12 +12,16 @@
 
 using namespace DAS_IO;
 
+class ipi_relay_client;
+typedef std::list<ipi_relay_client *> relayClientList;
+
 /**
  * Supports locally logging of all serio_pkt data, including telemetry
  * and forwarding of all packets to a relay process. The relay may
  * provide selective packet relaying.
  */
-class ipi_relay : public Interface, mlf_packet_logger {
+class ipi_relay : public Interface, mlf_packet_logger
+{
   public:
     ipi_relay(const char *iname);
     /**
@@ -26,18 +31,40 @@ class ipi_relay : public Interface, mlf_packet_logger {
      * @returns true on a significant failure
      */
     bool forward(const unsigned char *hdr, uint16_t pkt_len);
+    void add_client(ipi_relay_client *client);
+    bool remove_client(ipi_relay_client *client);
     static ipi_relay *get_instance();
     static ipi_relay *instance;
     static const char *mlf_base;
     static const char *mlf_config;
   protected:
+    ~ipi_relay(); // clear out clients
+    relayClientList relay_list;
+};
+
+class ipi_relay_client : public Serverside_client
+{
+  public:
+    ipi_relay_client(Authenticator *auth, const char *iname);
+    bool forward(const unsigned char *hdr, uint16_t pkt_len);
+    static void attach(Server *S, const char *service);
+    static Serverside_client *new_ipi_relay_client(
+        Authenticator *auth, SubService *SS);
+  protected:
+    ~ipi_relay_client();
+    bool protocol_input() override;
+    ipi_relay *relay;
+    bool dropping_packets;
+    int packets_dropped;
+    int total_packets_dropped;
 };
 
 /**
  * Connect to the local command txsrvr to receive commands,
  * then forwards them to ipi_cmd_out.
  */
-class ipi_cmd_in : public Cmd_reader {
+class ipi_cmd_in : public Cmd_reader
+{
   public:
     ipi_cmd_in(const char *iname);
     bool app_input();
@@ -48,7 +75,8 @@ class ipi_cmd_in : public Cmd_reader {
 /**
  * Server accepts connection from remote ip_tm_export
  */
-class ipi_cmd_out : public Serverside_client {
+class ipi_cmd_out : public Serverside_client
+{
   public:
     ipi_cmd_out(Authenticator *auth, const char *iname);
     
