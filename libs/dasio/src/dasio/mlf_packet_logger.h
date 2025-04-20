@@ -5,12 +5,13 @@
 
 namespace DAS_IO {
 
+typedef enum { log_default, log_newfile, log_curfile } log_mode;
+
 class mlf_packet_logger {
   public:
     mlf_packet_logger(const char *iname,
       const char *mlf_base, const char *mlf_config);
     ~mlf_packet_logger();
-    enum log_mode { log_default, log_newfile, log_curfile };
     void log_packet(const uint8_t *bfr, uint32_t pkt_len,
           log_mode mode=log_default);
     void next_file();

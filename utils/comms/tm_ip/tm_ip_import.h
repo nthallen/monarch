@@ -8,7 +8,7 @@
 #include "dasio/client.h"
 #include "dasio/cmd_reader.h"
 #include "dasio/serio_pkt.h"
-#include "mlf_packet_logger.h"
+#include "dasio/mlf_packet_logger.h"
 
 using namespace DAS_IO;
 

@@ -8,12 +8,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include( ../../../oui_setup.cmake )
 
 OUI_FILE(tm_ip_import.oui)
-add_executable(tm_ip_import tm_ip_import.cc tm_ip_importoui.cc
-  mlf_packet_logger.cc)
+add_executable(tm_ip_import tm_ip_import.cc tm_ip_importoui.cc)
 target_link_libraries(tm_ip_import dasio nl pthread)
 OUI_FILE(tm_ip_export.oui)
 add_executable(tm_ip_export tm_ip_export.cc tm_ip_exportoui.cc)
 target_link_libraries(tm_ip_export dasio nl pthread)
+OUI_FILE(tm_ip_relay.oui)
+add_executable(tm_ip_relay tm_ip_relay.cc tm_ip_relayoui.cc)
+target_link_libraries(tm_ip_relay dasio nl pthread)
 
 if (DEFINED monarch_SOURCE_DIR)
 target_include_directories(tm_ip_import PRIVATE
