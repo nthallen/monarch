@@ -24,7 +24,8 @@ target_include_directories(tm_ip_export PRIVATE
   ${monarch_SOURCE_DIR}/libs/dasio/src)
 endif (DEFINED monarch_SOURCE_DIR)
 
-install(TARGETS tm_ip_import tm_ip_export RUNTIME DESTINATION bin)
+install(TARGETS tm_ip_import tm_ip_export tm_ip_relay
+  RUNTIME DESTINATION bin)
 
 install(FILES
   TM/tm_ipx.agm

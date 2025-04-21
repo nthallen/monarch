@@ -15,7 +15,7 @@
 subrelay config: colon-separated list of:
   - serio_pkt_type code letter
   - service name
-  - packet prefix (hex escapes OK, e.g. \xAA\xAA)
+  - packet prefix (hex escapes OK, e.g. \\xAA\\xAA)
   - mlf configuration string
 Host_Session function tm_gen: Where to locate serin
 
