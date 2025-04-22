@@ -4,14 +4,30 @@
 <include> host_session
 <follow> msg
 
+<defs>
+void tm_ip_relay_init_options(int argc, char **argv)
+{
+  int optltr;
+
+  optind = OPTIND_RESET;
+  opterr = 0;
+  while ((optltr = getopt(argc, argv, opt_string)) != -1) {
+    switch (optltr) {
+      case 'E': set_cross_exp(optarg); break;
+      case 'f': tm_ip_relay::init_options(optarg); break;
+      default:
+        break;
+    }
+  }
+}
+
+<init>
+  tm_ip_relay_init_options(argc, argv);
+
 <opts> "E:f:"
 <sort>
   -E <Exp> Set remote Experiment for tm_ip_import to <Exp>
   -f <subrelay options file>
-
-<switch>
-  case 'E': set_cross_exp(optarg); break;
-  case 'f': tm_ip_relay::init_options(optarg); break;
 
 <unsort>
 subrelay config: colon-separated list of:

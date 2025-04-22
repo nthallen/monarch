@@ -48,20 +48,25 @@ void tm_ip_relay::adopted()
   }
 }
 
+/**
+ * Searches forward for a colon or the end of string.
+ * Duplicates the string before the terminator, and
+ * returns the number of characters consumed.
+ */
 static int dup_option(const char *cfg, char **copy)
 {
   int i, j;
   for (i = 0; cfg[i] != 0 && cfg[i] != ':'; ++i);
   int nc = i;
   char *lcl = (char*)new_memory(nc+1);
-  for (i = 0; i < nc; )
+  for (i = 0, j = 0; i < nc; )
   {
     if (i+4 <= nc && cfg[i] == '\\' && cfg[i+1] == 'x' &&
         isxdigit(cfg[i+2]) && isxdigit(cfg[i+3]))
     {
       lcl[j++] =
-        (isxdigit(cfg[i+2]) ? cfg[i+2]-'0' : tolower(cfg[i+2])+10-'a') +
-        ((isxdigit(cfg[i+3]) ? cfg[i+3]-'0' : tolower(cfg[i+3])+10-'a')<<4);
+        (isxdigit(cfg[i+2]) ? tolower(cfg[i+2])+10-'a' : cfg[i+2]-'0') +
+        ((isxdigit(cfg[i+3]) ? tolower(cfg[i+3])+10-'a' : cfg[i+3]-'0')<<4);
       i += 4;
     }
     else
@@ -71,19 +76,31 @@ static int dup_option(const char *cfg, char **copy)
   }
   lcl[j] = '\0';
   *copy = lcl;
+  if (cfg[nc])
+    ++nc;
   return nc;
 }
 
 void tm_ip_relay::init_options(const char *cfg_file)
 {
-  char *optbuf;
+  char *optbuf = 0;
   FILE *fp = fopen(cfg_file, "r");
   if (fp)
   {
-    size_t sz = 80;
-    size_t n = getline(&optbuf, &sz, fp);
-    if (n > 0 && !isspace(optbuf[0]))
-      init_option(optbuf);
+    size_t sz = 0;
+    for (;;)
+    {
+      ssize_t n = getline(&optbuf, &sz, fp);
+      if (n < 0) break;
+      while (n > 0)
+        if (isspace(optbuf[--n]))
+          optbuf[n] = '\0';
+        else break;
+      if (n > 0)
+        init_option(optbuf);
+    }
+    fclose(fp);
+    remove(cfg_file);
   }
 }
 
@@ -91,7 +108,8 @@ void tm_ip_relay::init_option(const char *cfg)
 {
   nl_assert(cfg);
   int nc = strlen(cfg);
-  nl_assert(nc >= 6);
+  if  (nc < 6)
+    msg(MSG_FATAL, "Invalid subrelay configuration string");
   int cp = 0;
   int i;
   tm_ip_relay *relay = get_instance();
