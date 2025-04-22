@@ -1,5 +1,6 @@
 #include <cctype>
 #include <cstring>
+#include <stdio.h>
 #include "dasio/appid.h"
 #include "dasio/quit.h"
 #include "dasio/loop.h"
@@ -9,6 +10,8 @@
 #include "oui.h"
 
 /****** tm_ip_relay ******/
+
+const char *ip_import_cross_exp;
 
 tm_ip_relay::tm_ip_relay()
     : Client("relay", "Relay", "ip_ex", "relay", IBUFSZ)
@@ -69,6 +72,19 @@ static int dup_option(const char *cfg, char **copy)
   lcl[j] = '\0';
   *copy = lcl;
   return nc;
+}
+
+void tm_ip_relay::init_options(const char *cfg_file)
+{
+  char *optbuf;
+  FILE *fp = fopen(cfg_file, "r");
+  if (fp)
+  {
+    size_t sz = 80;
+    size_t n = getline(&optbuf, &sz, fp);
+    if (n > 0 && !isspace(optbuf[0]))
+      init_option(optbuf);
+  }
 }
 
 void tm_ip_relay::init_option(const char *cfg)
@@ -208,6 +224,7 @@ int main(int argc, char **argv)
     AppID.report_startup();
     
     tm_ip_relay *relay = tm_ip_relay::get_instance();
+    relay->set_cross_exp(ip_import_cross_exp);
     ELoop.add_child(relay);
     relay->connect();
     

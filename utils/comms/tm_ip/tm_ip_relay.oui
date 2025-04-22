@@ -4,12 +4,14 @@
 <include> host_session
 <follow> msg
 
-<opts> "I:"
+<opts> "E:f:"
 <sort>
-        -I <subrelay config>
+  -E <Exp> Set remote Experiment for tm_ip_import to <Exp>
+  -f <subrelay options file>
 
 <switch>
-  case 'I': tm_ip_relay::init_option(optarg); break;
+  case 'E': set_cross_exp(optarg); break;
+  case 'f': tm_ip_relay::init_options(optarg); break;
 
 <unsort>
 subrelay config: colon-separated list of:
@@ -18,6 +20,7 @@ subrelay config: colon-separated list of:
   - packet prefix (hex escapes OK, e.g. \\xAA\\xAA)
   - mlf configuration string
 Host_Session function tm_gen: Where to locate serin
+Host_Session function Relay: Where to locate tm_ip_import
 
 <package> appid_default
 <include> "dasio/appid.h"

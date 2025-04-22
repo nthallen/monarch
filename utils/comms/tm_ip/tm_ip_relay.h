@@ -28,12 +28,14 @@ class tm_ip_relay : public Client
     static tm_ip_relay *get_instance();
     void adopted() override;
     /**
+     * @param subrelay_config_file Lines of subrelay config strings:
      * subrelay config: colon-separated list of:
      *   - serio_pkt_type code letter
      *   - service name
      *   - packet prefix (hex escapes OK, e.g. \xAA\xAA)
      *   - mlf configuration string
      */
+    static void init_options(const char*subrelay_config_file);
     static void init_option(const char*subrelay_config);
   protected:
     bool app_input() override;
@@ -88,5 +90,8 @@ class subrelay_client : public Socket
   protected:
     static const int IBUFSIZE = 4000;
 };
+
+extern const char *ip_import_cross_exp;
+inline void set_cross_exp(const char *exp) { ip_import_cross_exp = exp; }
 
 #endif
