@@ -47,3 +47,23 @@ support the following functions:
   - Acknowledge
     - Identifying the last block? not enough info in the hdr for that
     - Identifying the number of bytes received since last ack
+
+### 5/5/2025 Status Update
+
+*tm_ip_export*:
+  - Accept Client connections from experiment-specific drivers
+  - Relay data to tm_ip_import
+  - Local logging is left to those drivers
+  - Status: tested and works
+*tm_ip_import*:
+  - Log all side-channel data in a single mlf archive
+    - Status: tested and works
+  - Provide interface for tm_ip_relay
+    - Status: implemented but not fully tested
+*tm_ip_relay*:
+  - Read configuration from a file
+    - Necessary to work around cygwin command-line quoting issues when
+      specifying packet header strings
+  - Log data separately for each instrument as per configuration file
+  - Accept connections from remote systems for instrument-specific data
+  - Status: implemented but *not tested*
