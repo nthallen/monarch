@@ -4,6 +4,7 @@ Description=Monarch Data Acquisition Service
 [Service]
 RuntimeDirectory=monarch
 RuntimeDirectoryMode=2775
+RuntimeDirectoryPreserve=yes
 ExecStart=/usr/local/libexec/flight.sh
 User=flight
 WorkingDirectory=~
