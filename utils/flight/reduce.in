@@ -118,58 +118,6 @@ if [ ! -d $srcHomeDir/$directory ]; then
   [ -d $directory -o $FltNode_Access = Local ] &&
     msgf 4 "Was not expecting $directory to be local"
     
-  ### Working here:
-  ###   srcHomeDir is defined (but could be empty if path is absolute)
-  ###   directory is defined (and could be relative to /)
-  ### Hence the source directory on the remote system is
-  ### $srcHomeDir/$directory, and we will copy it to $directory
-  ### relative to the current directory.
-
-  #----------------------------------------------------------------
-  # If we ran saverun, the directory name is relative to the
-  # flight directory. If it was specified on the command line,
-  # it may be relative to the GSE directory, relative to the
-  # flight directory, or absolute (beginning with /) In any
-  # case, if it is absolute or exists relative to the GSE
-  # directory, no copying is indicated.
-  #----------------------------------------------------------------
-  # case "$directory" in
-  #   \/*)
-  #     # absolute address
-  #     msgf -2 "absolute address for '$directory'";;
-  #     # CopyData=no;;
-  #   *)
-  #     # relative address
-  #     msgf -2 "relative address for '$directory'"
-  #     if [ -d "$directory" ]; then
-  #       msgf -2 "CopyData is a no"
-  #       CopyData=no
-  #     elif [ -z "$fltdir" ]; then
-  #       pdirs="."
-  #       [ -n "$FlightNode" ] && pdirs="$pdirs /net/$FlightNode$HomeDir"
-  #       [ -n "$AltDir" ] && pdirs="$pdirs $AltDir"
-  #       for pdir in $pdirs; do
-  #         for ppdir in . raw/data raw/flight raw/preflt raw/cal raw/junk; do
-  #           if [ -d $pdir/$ppdir/$directory ]; then
-  #             fltdir=$pdir
-  #             [ $pdir = . ] && CopyData=no
-  #             [ $ppdir = . ] || directory=$ppdir/$directory
-  #             break
-  #           fi
-  #         done
-  #         [ -n "$fltdir" ] && break
-  #       done
-
-  #       # [ -n "$FlightNode" ] && fltdir=/net/$FlightNode$HomeDir
-  #       # [ -z "$fltdir" -o ! -d "$fltdir/$directory" ] && fltdir=$AltDir
-
-  #       [ -z "$fltdir" ] &&
-  #           msgf 0 "Unable to locate data directory $directory"
-  #       [ "$CopyData" != "yes" -a $fltdir != . ] &&
-  #       directory=$fltdir/$directory
-  #     fi;;
-  # esac
-
   # Copy_Data srcdir destdir
   # Copies srcdir to destdir if CopySpace condition holds
   # returns true on success, false otherwise.
