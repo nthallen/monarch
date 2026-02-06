@@ -1,9 +1,11 @@
 #! /bin/bash
 # mk_installers
 #   Locates root of current git repository
-#   Uses the basename of that directory as the
-#   experiment basename. Uses the GitHub remote as
-#   the remote.
+#   Uses the basename of that directory as the experiment basename.
+#   Uses the GitHub remote as the remote.
+#   Reads configuration from setup/setup.cfg. Currently, only settings are:
+#     exp_cygwin_pkgs = pkg1,pkg2
+#     exp_debian_pkgs = pkg1 pkg2
 #   Writes outputs to:
 #    setup/cygwin-monarch-$basename-install.ps1
 #    setup/monarch-$basename-install.sh
@@ -18,6 +20,9 @@ srcdir=/usr/local/share/monarch/setup
 ps1in=cygwin-monarch-install.ps1
 shin=monarch-install.sh
 tgtdir=setup
+config=$tgtdir/setup.cfg
+exp_cygwin_pkgs=''
+exp_debian_pkgs=''
 
 [ -d $srcdir ] || nl_error "Source directory $srcdir not found"
 [ -f $srcdir/$ps1in ] ||
@@ -48,11 +53,19 @@ qurl=`echo $exp_url | sed -e 's/\//\\\\\//g'`
 # Check that target directory exists
 [ -d $tgtdir ] || nl_error "Target directory '$tgtdir' not found"
 
+if [ -f $config ]; then
+  exp_cygwin_pkgs=$(sed -ne 's/^exp_cygwin_pkgs\s*=\s*//p' $config)
+  [ -n "$exp_cygwin_pkgs" ] && exp_cygwin_pkgs=",$exp_cygwin_pkgs"
+  exp_debian_pkgs=$(sed -ne 's/^exp_debian_pkgs\s*=\s*//p' $config)
+  [ -n "$exp_debian_pkgs" ] && exp_debian_pkgs=" $exp_debian_pkgs"
+fi
+
 # Read /usr/local/share/monarch/setup/monarch-install.sh
 #   and insert code at the top to add the command line option
 #   -E basename:URL for this instrument
 shout=monarch-$exp_basename-install.sh
 sed -e "s/exp_option=''/exp_option='$exp_basename:$qurl'/" \
+    -e "s/exp_debian_pkgs=''/exp_debian_pkgs='$exp_debian_pkgs'/" \
     -e "s/monarch-install/monarch-$exp_basename-install/" \
   $srcdir/$shin >$tgtdir/$shout
 chmod +x $tgtdir/$shout
@@ -64,7 +77,7 @@ ps1out=cygwin-monarch-$exp_basename-install.ps1
 # echo sed -e "\"s/exp_option = ''/exp_option = '$exp_basename:$qurl'/\""
 #sed -e "s/exp_option = ''/exp_option = '-E $exp_basename:$qurl'/" \
 #  $srcdir/$ps1in >$tgtdir/$ps1out
-sedrep="{ s/monarch-install/monarch-$exp_basename-install/g; p }"
+sedrep="{ s/monarch-install/monarch-$exp_basename-install/g; s/^\(\s*\$exp_pkgs = \).*$/\1'$exp_cygwin_pkgs'/; p }"
 { sed -ne "1,/@'/ $sedrep" $srcdir/$ps1in
   cat $tgtdir/$shout
   sed -ne "/'@/,$ $sedrep" $srcdir/$ps1in

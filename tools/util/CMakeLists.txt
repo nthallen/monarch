@@ -2,12 +2,17 @@ cmake_minimum_required(VERSION 2.8.8...3.20.0)
 cmake_policy(SET CMP0048 NEW)
 project(monarch_tools_util VERSION 2.0.0)
 
+# Windows now has a sudo program that doesn't work exactly like the Linux version
+if (CYGWIN)
+set (HAVE_SUDO no)
+else (CYGWIN)
 find_program(SUDO_EXE sudo)
 if (SUDO_EXE)
 set(HAVE_SUDO yes)
 else (SUDO_EXE)
 set(HAVE_SUDO no)
 endif (SUDO_EXE)
+endif (CYGWIN)
 
 find_program(SHELL_EXE NAMES bash ksh)
 if (NOT SHELL_EXE)

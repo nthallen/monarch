@@ -7,12 +7,17 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(src)
 
+# Windows now has a sudo program that doesn't work exactly like the Linux version
+if (CYGWIN)
+set (HAVE_SUDO no)
+else (CYGWIN)
 find_program(SUDO_EXE sudo)
 if (SUDO_EXE)
 set(HAVE_SUDO yes)
 else (SUDO_EXE)
 set(HAVE_SUDO no)
 endif (SUDO_EXE)
+endif (CYGWIN)
 
 if (NOT ${CMAKE_CROSSCOMPILING})
 
