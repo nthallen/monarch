@@ -12,6 +12,7 @@ cat <<EOF
    -x  Don't run extractions or analysis
    -a  Don't run analysis
    -A  Run analysis even if -x is specified
+   -k  Pass -k to extract
    -v  Increase verbosity
  
   Reduce performs a series of operations following a data run.
@@ -45,6 +46,7 @@ exit 0
 opt_exts=yes
 opt_anal=yes
 opt_anal_force=no
+opt_k=
 CopyData=yes
 FixDisk=no
 Dircksum=no
@@ -70,6 +72,7 @@ while getopts "aAhxv" option; do
   a) opt_anal=no;;
   h) print_usage;;
   x) opt_exts=no;;
+  k) opt_k=-k;;
   v) let dbg_level=dbg_level-1;;
   \?) echo; exit 1;;
   *) msg -V -n $msgProgram "[ERROR] Unsupported option: -$option"; exit 1;;
@@ -183,7 +186,7 @@ elif [ -z "$Extractions" ]; then
 else
   msgf 0 "Extraction Proceeding ..."
   export Extractions ExtProducts RDR_OPTS
-  extract $directory || msgf 0 "Extraction Apparently Failed"
+  extract $opt_k $directory || msgf 0 "Extraction Apparently Failed"
 fi
 
 #----------------------------------------------------------------

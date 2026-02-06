@@ -87,6 +87,7 @@ debug=""
 while getopts "hdrg:z:F:L:S:" option; do
   case $option in
     h) print_usage;;
+    k) opt_k=-k;;
     r) EXTRACT_DEPTH=1;;
     g) time_opts="$time_opts -g $OPTARG";;
     z) time_opts="$time_opts -z $OPTARG";;
@@ -225,7 +226,7 @@ export TMLOGDIR=$dir
 export TMBINPATH=$MYPATH
 rv=0
 
-clean_runfiles -k || msgf 3 "Unable to shutdown earlier operations"
+clean_runfiles $opt_k || msgf 3 "Unable to shutdown earlier operations"
 
 Launch memo memo -S memosrvr:$SESSION -o extract.log -V || exit 1
 memo_pid=`cat /var/run/monarch/$Experiment/memo.$SESSION.pid`

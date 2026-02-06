@@ -63,7 +63,7 @@ if [ -n "$LOOP_ON_FILE" -a -e "$LOOP_ON_FILE" ]; then
   msgf 0 "Invoking reduce for LOOP_ON_FILE"
   [ -z "$REDUCE_LOG_FILE" ] && REDUCE_LOG_FILE=reducelog.txt
   exec 1>&4 2>&4 # close pipe to flight.sh.log and reopen stdout/err
-  BEDTIME=yes reduce 2>&1 | tee -a $REDUCE_LOG_FILE
+  BEDTIME=yes reduce -k 2>&1 | tee -a $REDUCE_LOG_FILE
   if [ -e "$LOOP_ON_FILE" ]; then
     msgf -V 2 "reduce did not clear LOOP_ON_FILE '$LOOP_ON_FILE'" 2>&1 |
       tee -a $REDUCE_LOG_FILE
