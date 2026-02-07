@@ -66,7 +66,7 @@ function do_tar {
 #----------------------------------------------------------------
 # Process command line options (-x, -a)
 #----------------------------------------------------------------
-while getopts "aAhxv" option; do
+while getopts "aAhxvk" option; do
   case $option in
   A) opt_anal_force=yes;;
   a) opt_anal=no;;
