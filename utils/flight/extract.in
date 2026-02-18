@@ -5,6 +5,7 @@ cat <<EOF
 extract [-h] [-g <time>] [-z <time>] <directory> [prog ...]
  -r Don't recurse
  -g <time> specify start time (see "use rdr")
+ -k Pass -k option to clean_runfiles
  -z <time> specify end time (see "use rdr")
  -F <no> specify the first data file number
  -L <no> specify the last data file number
@@ -84,7 +85,8 @@ msgProgram='extract'
 #----------------------------------------------------------------
 time_opts=""
 debug=""
-while getopts "hdrg:z:F:L:S:" option; do
+opt_k=""
+while getopts "hkdrg:z:F:L:S:" option; do
   case $option in
     h) print_usage;;
     k) opt_k=-k;;
