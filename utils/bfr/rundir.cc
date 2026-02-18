@@ -65,8 +65,8 @@ void setup_rundir(void) {
   const char *runexpdir;
 
   mkfltdir(RUNDIR_TMC);
-  delete_rundir();
-  atexit(&delete_rundir);
+  // delete_rundir();
+  // atexit(&delete_rundir);
   runexpdir = get_runexpdir();
   mkfltdir(runexpdir);
 }

@@ -49,19 +49,29 @@ void tm_client::adopted() {
  * Added 2019 April 3
  * This function creates the PID file.
  */
+static char *pidfilename = 0;
+
+void tm_client_delete_pid_file() {
+  if (pidfilename) {
+    unlink(pidfilename);
+    nl_free_memory(pidfilename);
+    pidfilename = 0;
+  }
+}
+
 bool tm_client::app_connected() {
   int nb1, nb2;
-  char *filename;
   FILE *fp;
   const char *Exp = getenv("Experiment");
   if (Exp == NULL) Exp = "none";
   nb1 = snprintf(NULL, 0, "%s/%s/%d", RUNDIR_TMC, Exp, getpid());
-  filename = (char *)new_memory(nb1+1);
-  nb2 = snprintf(filename, nb1+1, "%s/%s/%d", RUNDIR_TMC, Exp, getpid());
+  pidfilename = (char *)new_memory(nb1+1);
+  nb2 = snprintf(pidfilename, nb1+1, "%s/%s/%d", RUNDIR_TMC, Exp, getpid());
   nl_assert(nb1 == nb2);
-  fp = fopen( filename, "w" );
+  fp = fopen( pidfilename, "w" );
   if (fp) fclose(fp);
-  else msg(MSG_ERROR,"Unable to create run file '%s'", filename);
+  else msg(MSG_ERROR,"Unable to create run file '%s'", pidfilename);
+  atexit(&tm_client_delete_pid_file);
   return false;
 }
 
