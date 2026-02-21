@@ -40,27 +40,6 @@ static const char *get_runexpdir() {
   return red;
 }
 
-void delete_rundir(void) {
-  const char *runexpdir;
-  struct stat buf;
-
-  runexpdir = get_runexpdir();
-  if (stat(runexpdir, &buf) != -1 || errno != ENOENT) {
-    char rmcmd[80];
-    int nb = snprintf(rmcmd, 80, "/bin/rm -rf %s", runexpdir);
-    nl_assert(nb < 80);
-    int rv = system(rmcmd);
-    if (rv == -1) {
-      msg(3, "system(%s) failed: %s", rmcmd, strerror(errno));
-    } else if ( WEXITSTATUS(rv) ) {
-      msg(3, "system(%s) returned non-zero status: %d", WEXITSTATUS(rv));
-    }
-    if (stat(runexpdir, &buf) != -1 || errno != ENOENT) {
-      msg(3, "Failed to delete runexpdir %s", runexpdir);
-    }
-  } // else the directory does not exist
-}
-
 void setup_rundir(void) {
   const char *runexpdir;
 
