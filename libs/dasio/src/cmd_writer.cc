@@ -126,7 +126,7 @@ int Cmd_writer::sendcmd(cmd_hdr_parser *CHPP) {
 
     if (len > 0 && CHPP->cmd[len-1]=='\n') len--;
     msg( CHPP->mode == 'Q' ? -4 : -3,
-        "%s%*.*s", ts, len, len, CHPP->cmd);
+        "%s> %*.*s", ts, len, len, CHPP->cmd);
   }
   if (CHPP->mode == 'X') sent_quit = 1;
   if (playback) return(0);
