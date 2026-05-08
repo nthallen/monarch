@@ -51,16 +51,19 @@ CopyData=yes
 FixDisk=no
 Dircksum=no
 dbg_level=-1
+ReduceExclude=''
 
 function do_tar {
-  # do_tar $SrcRel $DestRel $LocalRel
-  SrcRel=$1
-  DestRel=$2
+  # do_tar $SrcHome $SrcRel $LocalRel
+  SrcHome=$1
+  SrcRel=$2
   LocalRel=$3
+  exclude_rule=''
+  [ -n "ReduceExclude" ] && exclude_rule="--exclude=$ReduceExclude"
   
-  msgf -2 "do_tar: $SSH_TAR_CMD tar -cf- -C $SrcRel $DestRel |"
+  msgf -2 "do_tar: $SSH_TAR_CMD tar -cf- -C $SrcHome $exclude_rule $SrcRel |"
   msgf -2 "  tar -xzf- -C $LocalRel"
-  eval time $SSH_TAR_CMD tar -czf- -C $SrcRel $DestRel | tar -xzf- -C $LocalRel
+  eval time $SSH_TAR_CMD tar -czf- -C $SrcHome $exclude_rule $SrcRel | tar -xzf- -C $LocalRel
 }
 
 #----------------------------------------------------------------
