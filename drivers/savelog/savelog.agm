@@ -12,5 +12,4 @@ Moduledef savelog [ logfile=saverun.log ] {
 }
 
 cmdbase = savelog.cmd:savelog.cmd.in
-IGNORE = savelog.cmd
 OBJ = savelog.cmd

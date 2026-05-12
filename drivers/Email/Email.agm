@@ -9,7 +9,7 @@ mode (default) {
   - : doreport:doreport.in
   - : @cfgsrcdir@doreport.pm:doreport.pm.tmpl
   - : @cfgsrcdir@account.pm:account.pm.tmpl
-  IGNORE = doreport @cfgsrcdir@account.pm
+  IGNORE = @cfgsrcdir@account.pm
   OBJ = doreport
 %%
 .PHONY : install-Email

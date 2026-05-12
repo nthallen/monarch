@@ -41,9 +41,6 @@ genuibase = TMbase.genui:TMbase.genui.in
 - : TMbase.tbl:TMbase.tbl.in
 
 mode (ignore) {
-  IGNORE = freemem.tmc
-  IGNORE = TMbase.genui
-  IGNORE = TMbase.tbl
   OBJ = freemem.tmc
   OBJ = TMbase.genui
   OBJ = TMbase.tbl
