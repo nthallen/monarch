@@ -460,10 +460,10 @@ EOF
   ssh_cfg=$exp_src/setup/ssh_config
   cfg_dir=/etc/monarch/$exp_base
   if [ -f $ssh_cfg ]; then
-    $sudo mkdir -p $cfg_dir
-    [ -d $cfg_dir ] || nl_error "Unable to create $cfg_dir"
-    $sudo cp $ssh_cfg $cfg_dir
-    $sudo chmod g-w $cfg_dir/ssh_config
+    echo "Warning: Use of ssh_config has been deprecated"
+  fi
+  if [ -d $cfg_dir ]; then
+    echo "Warning: Use of $cfg_dir is deprecated: consider deleting"
   fi
   if [ -f $ins_file ]; then
     umask 023 # Make sure not to add g+w to ~/.ssh/config
