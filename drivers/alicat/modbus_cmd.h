@@ -11,6 +11,7 @@ namespace DAS_IO { namespace Modbus {
       bool app_input();
     protected:
       DAS_IO::Modbus::RTU *MB;
+      bool process_cmd();
   };
 
 } }
