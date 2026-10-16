@@ -1,6 +1,6 @@
 # Monarch
-Monarch is a portable data acquisition and control system developed
+Monarch is a portable data acquisition and control system originally developed
 at the [Anderson](https://www.arp.harvard.edu),
-[Keith](https://keith.seas.harvard.edu/) and
-[Keutsch](https://projects.iq.harvard.edu/keutschgroup/home) Groups in
+Keith and
+[Keutsch](https://www.keutschgroup.com) Groups in
 [The Harvard John A. Paulson School of Engineering and Applied Sciences](https://www.seas.harvard.edu/).
